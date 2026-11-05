@@ -240,7 +240,7 @@ test('F4a: dane Weftblade — requiresTarget count 2 (upTo), bez „uproszczenia
   }
 });
 
-test('F4b: ETB Weftblade — oferta par celów, licznik na KAŻDYM wybranym', async () => {
+test('F4b: ETB Weftblade — ziarna celów (G etap 2), licznik na KAŻDYM wybranym', async () => {
   const { execute, playerView } = await import('../src/engine/game-state.js');
   const state = createGameState({ seed: 44, players: [{ id: 'p1' }, { id: 'p2' }] });
   const { jumpToStep } = await import('../src/engine/turn.js');
@@ -263,19 +263,29 @@ test('F4b: ETB Weftblade — oferta par celów, licznik na KAŻDYM wybranym', as
 
   // ETB trigger z dwoma slotami celów — decyzja czeka na p1.
   assert.ok(state.pendingTriggerTargets.length > 0, 'decyzja celu triggera otwarta');
+  const view2Candidates = (st) => playerView(st, 'p1').pendingTriggerTarget.candidateIds.slice(0, 2);
   const offers = playerView(state, 'p1').legalCommands.filter((c) => c.type === 'resolve_trigger_target');
   const pairs = offers.filter((c) => Array.isArray(c.targetIds) && c.targetIds.length === 2);
   const singles = offers.filter((c) => Array.isArray(c.targetIds) && c.targetIds.length === 1);
   const empty = offers.filter((c) => Array.isArray(c.targetIds) && c.targetIds.length === 0);
-  assert.ok(pairs.length >= 3, `oferty PAR celów (a+b, a+e, b+e): ${pairs.length}`);
+  // G, etap 2: legalCommands niesie ZIARNA (pełny zestaw zachłanny +
+  // singletony + pusty), nie wszystkie podzbiory — pozostałe zestawy
+  // kontroler konstruuje z deskryptora, a silnik waliduje przy execute.
+  assert.equal(pairs.length, 1, `ziarno pełnego zestawu (najwcześniejsi kandydaci): ${pairs.length}`);
+  assert.deepEqual([...pairs[0].targetIds].sort(), [...view2Candidates(state)].sort().slice(0, 2).sort(),
+    'ziarno = dwaj najwcześniejsi kandydaci deskryptora');
   // 4 kandydatów: a, b, e oraz sam Weftblade (własny stwór — legalny cel).
   assert.ok(singles.length === 4, `oferty pojedynczych celów: ${singles.length}`);
   assert.ok(empty.length === 1, 'oferta „zero celów" (upTo)');
+  const deskryptor = playerView(state, 'p1').pendingTriggerTarget;
+  assert.equal(deskryptor.maxTargets, 2, 'deskryptor niesie limit slotów');
+  assert.equal(deskryptor.upTo, true, 'deskryptor niesie flagę upTo');
+  assert.deepEqual([...deskryptor.candidateIds].sort(), ['a', 'b', 'e', 'permanent-1'],
+    'deskryptor niesie komplet legalnych kandydatów (Weftblade po rzucie ma id permanent-1)');
 
-  // Wybór pary a+b (oba własne) — licznik +1/+1 na KAŻDYM.
-  const pair = pairs.find((c) => c.targetIds.includes('a') && c.targetIds.includes('b'));
-  assert.ok(pair, 'para a+b w ofercie');
-  assert.ok(execute(state, pair).ok);
+  // Wybór pary a+b (oba własne) SPOZA ziaren — konstruuje kontroler,
+  // silnik waliduje; licznik +1/+1 na KAŻDYM.
+  assert.ok(execute(state, { type: 'resolve_trigger_target', playerId: 'p1', targetIds: ['a', 'b'] }).ok);
   execute(state, { type: 'pass_priority', playerId: 'p1' });
   execute(state, { type: 'pass_priority', playerId: 'p2' });
   assert.equal((state.objects.get('a').counters ?? {})['+1/+1'], 1, 'licznik na a');

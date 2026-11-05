@@ -109,11 +109,13 @@ test('Z4: zdarzenia podziału obrażeń niosą cardId celów (LKI) — log bez �
   assert.ok(execute(state, cast).ok);
   execute(state, { type: 'pass_priority', playerId: state.turn.priorityPlayerId });
   execute(state, { type: 'pass_priority', playerId: state.turn.priorityPlayerId });
-  const pick = playerView(state, 'p2').legalCommands
-    .find((c) => c.type === 'resolve_trigger_target' && (c.targetIds ?? []).length === 2
-      && c.targetIds.includes('chip') && c.targetIds.includes('p1'));
-  assert.ok(pick, 'kombinacja stwór wroga + twarz wroga w ofercie');
-  assert.ok(execute(state, pick).ok);
+  // G, etap 2: kombinacji nie ma w ziarnach — konstruuje ją kontroler
+  // z deskryptora, a silnik waliduje przy execute.
+  assert.ok(!playerView(state, 'p2').legalCommands.some((c) => c.type === 'resolve_trigger_target'
+    && (c.targetIds ?? []).length === 2
+    && (c.targetIds ?? []).includes('chip') && (c.targetIds ?? []).includes('p1')),
+  'dwucelowa kombinacja spoza ziaren (deskryptor ją umożliwia, oferta jej nie wylicza)');
+  assert.ok(execute(state, { type: 'resolve_trigger_target', playerId: 'p2', targetIds: ['chip', 'p1'] }).ok);
   // Trigger na stosie -> rozstrzygnięcie -> decyzja kwot (wzorzec D1 batch40).
   for (let i = 0; i < 12; i += 1) {
     if (state.pendingDamageDivision) break;
@@ -161,11 +163,8 @@ test('Z4b: TOKEN ginący w podziale — nazwa z LKI name (token nie ma cardId)',
   assert.ok(execute(state, cast).ok);
   execute(state, { type: 'pass_priority', playerId: state.turn.priorityPlayerId });
   execute(state, { type: 'pass_priority', playerId: state.turn.priorityPlayerId });
-  const pick = playerView(state, 'p2').legalCommands
-    .find((c) => c.type === 'resolve_trigger_target' && (c.targetIds ?? []).length === 2
-      && c.targetIds.includes(tokenId) && c.targetIds.includes('p1'));
-  assert.ok(pick, 'kombinacja token wroga + twarz wroga w ofercie');
-  assert.ok(execute(state, pick).ok);
+  // G, etap 2: jak Z4 — kombinacja konstruowana z deskryptora, nie z oferty.
+  assert.ok(execute(state, { type: 'resolve_trigger_target', playerId: 'p2', targetIds: [tokenId, 'p1'] }).ok);
   for (let i = 0; i < 12 && !state.pendingDamageDivision; i += 1) {
     if (state.zones.stack.length > 0) {
       assert.ok(execute(state, { type: 'pass_priority', playerId: state.turn.priorityPlayerId }).ok);

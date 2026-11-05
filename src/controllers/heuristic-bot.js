@@ -2114,6 +2114,53 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     return synthesized;
   }
 
+  /**
+   * Zgłoszenie G, etap 2: bot dokłada własne zestawy celów triggera
+   * wielocelowego z deskryptora `pendingTriggerTarget` (ziarna silnika to
+   * tylko zestaw zachłanny + singletony): prefiksy kandydatów uszeregowanych
+   * własną wyceną singletonu zgodną z intencją komendy (friendly = własne
+   * ciała rosnąco, wrogie efekty = cudze ciała rosnąco). Zestawy są legalne
+   * z budowy (podzbiór kandydatów o rozmiarze <= maxTargets), a silnik
+   * waliduje je przy execute jak każdą wybraną kombinację.
+   */
+  function synthesizedTriggerTargetSets(view, existing) {
+    const descriptor = view?.pendingTriggerTarget;
+    if (!descriptor || (descriptor.maxTargets ?? 1) <= 1) return [];
+    const seeds = existing.filter((cmd) => cmd.type === 'resolve_trigger_target' && Array.isArray(cmd.targetIds));
+    if (seeds.length === 0) return [];
+    const template = seeds[0];
+    const candidateIds = [...(descriptor.candidateIds ?? [])];
+    if (candidateIds.length <= 1) return [];
+    const enemyId = (view.players ?? []).find((pl) => pl.id !== view.playerId)?.id ?? null;
+    const rankValue = (id) => {
+      const target = objectOnBoard(view, id);
+      if (!target) {
+        if (id === view.playerId) return template.friendly ? 25 : -40;
+        if (id === enemyId) return template.friendly ? -40 : 25;
+        return 0;
+      }
+      const body = 2 * Math.max(0, target.power ?? 0) + Math.max(0, target.toughness ?? 0);
+      const mine = target.controllerId === view.playerId;
+      return template.friendly ? (mine ? body : -body) : (mine ? -body : body);
+    };
+    const ranked = candidateIds
+      .map((id, index) => ({ id, index, value: rankValue(id) }))
+      .sort((a, b) => b.value - a.value || a.index - b.index)
+      .map(({ id }) => id);
+    const keyOf = (ids) => [...ids].sort().join('|');
+    const existingKeys = new Set(seeds.map((cmd) => keyOf(cmd.targetIds)));
+    const synthesized = [];
+    const maxSize = Math.min(descriptor.maxTargets, ranked.length);
+    for (let size = 2; size <= maxSize; size += 1) {
+      const ids = ranked.slice(0, size);
+      const key = keyOf(ids);
+      if (existingKeys.has(key)) continue;
+      existingKeys.add(key);
+      synthesized.push({ ...template, targetIds: ids });
+    }
+    return synthesized;
+  }
+
   function botCommandCandidates(view) {
     const legal = view?.legalCommands ?? [];
     // N: jednostki automatu liczymy raz per decyzja (filtr castów poniżej).
@@ -2122,6 +2169,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       && !(unitsAuto != null && (castNieopłacalnyAuto(view, cmd, unitsAuto) || triggerPaymentBeyondAuto(view, cmd, unitsAuto))));
     candidates.push(...synthesizedAttackDeclarations(view, candidates));
     candidates.push(...synthesizedBlockDeclarations(view, candidates));
+    candidates.push(...synthesizedTriggerTargetSets(view, candidates));
     // Aktywny protokół zawsze wystawia bezpieczne wyjście (pass/decline/done,
     // a co najmniej concede). Gdyby ten inwariant kiedyś pękł, jawny błąd jest
     // bezpieczniejszy niż ciche złamanie twardego zakazu właściciela.

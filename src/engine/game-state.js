@@ -952,19 +952,53 @@ function untapStepTurnBasedAction(state, { pushToState = true } = {}) {
  * enumeracji Epic).
  */
 /**
- * M166/D: kompozycje liczby `total` na dokładnie `parts` części, każda >= 1
- * (3 na 2 = [1,2],[2,1]; 3 na 3 = [1,1,1]). Porządek odpowiada targetIds.
+ * G, etap 2: ziarna podziału obrażeń zamiast wszystkich kompozycji
+ * (M166/D miało pełną listę `damageDivisionsOf`). Kontroler konstruuje
+ * własny podział z deskryptora `pendingDamageDivision`, a `execute`
+ * waliduje (każdy cel >= 1, suma = total) — kompletność konstrukcyjna.
+ * Ziarna: koncentracja na każdym celu po kolei + podział możliwie równy.
  */
-function damageDivisionsOf(total, parts) {
+function damageDivisionSeeds(total, parts) {
+  if (!Number.isInteger(total) || !Number.isInteger(parts) || parts < 1 || total < parts) return [];
   const out = [];
-  const walk = (prefix, remaining, left) => {
-    if (left === 1) {
-      out.push(Object.freeze([...prefix, remaining]));
-      return;
-    }
-    for (let n = 1; n <= remaining - (left - 1); n += 1) walk([...prefix, n], remaining - n, left - 1);
+  const seen = new Set();
+  const push = (amounts) => {
+    const key = amounts.join(',');
+    if (seen.has(key)) return;
+    seen.add(key);
+    out.push(Object.freeze(amounts));
   };
-  if (Number.isInteger(total) && Number.isInteger(parts) && parts >= 1 && total >= parts) walk([], total, parts);
+  for (let i = 0; i < parts; i += 1) {
+    const amounts = Array(parts).fill(1);
+    amounts[i] += total - parts;
+    push(amounts);
+  }
+  const base = Math.floor(total / parts);
+  const rest = total - base * parts;
+  push(Array.from({ length: parts }, (_, i) => base + (i < rest ? 1 : 0)));
+  return out;
+}
+
+/**
+ * G, etap 2: ziarna zestawów celów triggera wielocelowego zamiast
+ * wszystkich podzbiorów (F enumerował komplet). Pierwsze ziarno = pełny
+ * zestaw zachłanny w kolejności polityki kandydatów (konwencja
+ * „pierwsza oferta” jak dawniej), potem singletony, na końcu pusty
+ * zestaw przy `upTo`. Kontroler konstruuje inne podzbiory z deskryptora
+ * `pendingTriggerTarget`; `execute` waliduje każdy legalny podzbiór.
+ */
+function triggerTargetSeedSubsets(candidateIds, count, upTo) {
+  const out = [];
+  const seen = new Set();
+  const push = (ids) => {
+    const key = [...ids].sort().join('|');
+    if (seen.has(key)) return;
+    seen.add(key);
+    out.push([...ids]);
+  };
+  if (candidateIds.length > 0) push(candidateIds.slice(0, count));
+  for (const id of candidateIds) push([id]);
+  if (upTo) push([]);
   return out;
 }
 
@@ -8762,22 +8796,11 @@ export function playerView(state, playerId) {
     const multiCountOffer = Number.isInteger(multiSpecOffer?.count) && multiSpecOffer.count > 1
       ? multiSpecOffer.count : 1;
     if (multiCountOffer > 1) {
-      // Zgłoszenie F: komplet podzbiorów 1..count (bez limitu wariantów).
-      const variants = [];
-      for (let size = multiCountOffer; size >= 1; size -= 1) {
-        const combo = (start, acc) => {
-          if (acc.length === size) { variants.push([...acc]); return; }
-          for (let i = start; i < legal.length; i += 1) {
-            combo(i + 1, [...acc, legal[i]]);
-          }
-        };
-        combo(0, []);
-      }
-      if (multiSpecOffer.upTo) variants.push([]);
-      // M203/2: warianty w kolejności enumeracji — PIERWSZĄ ofertą jest
-      // pierwszy wariant pełnego rozmiaru (deterministycznie: najwcześniejsze
-      // kandydaty), a wariant pusty („up to") idzie na koniec.
-      for (const targetIds of variants) {
+      // G, etap 2: ziarna zamiast kompletu podzbiorów (F). Pierwsza oferta
+      // jak dawniej = pełny zestaw najwcześniejszych kandydatów (M203/2),
+      // wariant pusty („up to") na końcu; resztę zestawów kontroler
+      // konstruuje z deskryptora, a execute waliduje — bez ucinania.
+      for (const targetIds of triggerTargetSeedSubsets(legal, multiCountOffer, Boolean(multiSpecOffer.upTo))) {
         legalCommands.push(command('resolve_trigger_target', playerId, { targetIds: [...targetIds], friendly: triggerFriendly, removesTarget: triggerRemovesTarget, ...(triggerDebuff ? { debuff: triggerDebuff } : {}), ...(triggerPump ? { pump: triggerPump } : {}), ...(triggerEvasionGrant ? { evasionGrant: true } : {}) }));
       }
     } else {
@@ -9082,10 +9105,11 @@ export function playerView(state, playerId) {
     }
   } else if (state.status === 'active' && !blockedByOthersDecision && state.pendingDamageDivision
     && state.pendingDamageDivision.playerId === playerId) {
-    // M166/D (Inferno Titan): kwoty podziału — jedna oferta na kompozycję
-    // total na N celów (przestrzeń miniaturowa, bez własnego wizarda).
+    // M166/D (Inferno Titan) + G, etap 2: kwoty podziału jako ziarna
+    // (koncentracje + podział równy); wizard i kontrolerzy konstruują
+    // własne kwoty z deskryptora pendingDamageDivision, execute waliduje.
     const pending = state.pendingDamageDivision;
-    for (const amounts of damageDivisionsOf(pending.total, pending.targetIds.length)) {
+    for (const amounts of damageDivisionSeeds(pending.total, pending.targetIds.length)) {
       legalCommands.push(command('resolve_damage_division', playerId, { amounts }));
     }
   } else if (state.status === 'active' && !blockedByOthersDecision
@@ -10389,9 +10413,16 @@ export function playerView(state, playerId) {
     // (uwagi B/C właściciela 2026-08-10 — opcje modala bez nazwy karty).
     pendingTriggerTarget: (() => {
       const head = state.pendingTriggerTargets.find((pending) => triggerTargetDecisionPending(state, pending)) ?? null;
+      // G, etap 2: deskryptor problemu wyboru celów — kandydaci liczeni
+      // dynamicznie (ta sama lista, którą waliduje execute), limit slotów
+      // i flaga upTo; kontroler konstruuje z tego zestaw, silnik waliduje.
+      const specOf = head?.ability?.trigger?.requiresTarget;
       return head ? Object.freeze({
         playerId: head.playerId, sourceId: head.sourceId, cardId: head.cardId ?? null,
-        allowNone: Boolean(head.allowNone), candidateIds: [...(head.candidates ?? [])],
+        allowNone: Boolean(head.allowNone),
+        candidateIds: legalTriggerTargetCandidates(state, head),
+        maxTargets: Number.isInteger(specOf?.count) && specOf.count > 1 ? specOf.count : 1,
+        upTo: Boolean(specOf?.upTo),
         // E (2026-09-25g): „you may [verb] target" — decline w modalu celu
         // ma własne brzmienie („Nie tapuj nikogo (you may)"), inne niż
         // odmowa „up to one"; render.js rozróżnia po tej fladze.

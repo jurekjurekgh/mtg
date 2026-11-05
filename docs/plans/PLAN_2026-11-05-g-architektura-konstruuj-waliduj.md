@@ -137,3 +137,21 @@ Etap 1 (walka) jest **wykonany i po zielonych bramkach**:
   kandydatów), delve/escape i {X} działają po zgłoszeniu F bez
   ucinania tam, gdzie enumeracja jest wyliczalna; ich migracja na
   deskryptor + picker to etapy 2–3 powyżej.
+
+## Etap 2 — triggery wielocelowe i podział obrażeń (realizacja 2026-11-05)
+
+Zakres (ten sam wzorzec co etap 1):
+
+- `resolve_trigger_target` WIELOCELOWY (`requiresTarget.count > 1`):
+  oferty = ziarna (pełny zestaw zachłanny + singletony + pusty przy
+  `upTo`) zamiast wszystkich podzbiorów; deskryptor
+  `view.pendingTriggerTarget` niesie dynamicznych kandydatów,
+  `maxTargets` i `upTo`. Ścieżka jednocelowa zostaje listą dyskretną.
+- `resolve_damage_division`: oferty = ziarna (koncentracje per cel
+  + podział równy) zamiast wszystkich kompozycji; deskryptor
+  `view.pendingDamageDivision` (cele + budżet) już istnieje.
+- Bot dokłada własne zestawy celów z deskryptora (zachłanne prefiksy
+  po własnej wycenie singletonów), jak deklaracje walki w etapie 1.
+- Walidacja przy `execute` bez zmian (podzbiór kandydatów, limit
+  count, kwoty >= 1, suma = budżet) — kompletność konstrukcyjna.
+- Poza zakresem: podział przy RZUCANIU czaru (Fireball/`{X}`) — etap 3.

@@ -52,7 +52,7 @@ function baseState() {
   return state;
 }
 
-test('F/1: trigger wielocelowy — komplet podzbiorów 0..3 przy 9 kandydatach (bez sufitu 32)', () => {
+test('F/1 (po G, etap 2): trigger wielocelowy — komplet kandydatów w deskryptorze, walidacja wybranego zestawu', () => {
   const state = baseState();
   for (let i = 0; i < 6; i += 1) putReal(state, `foe${i}`, 'highland-game', 'p2');
   putReal(state, 'titan', 'inferno-titan', 'p1', 'hand');
@@ -66,12 +66,18 @@ test('F/1: trigger wielocelowy — komplet podzbiorów 0..3 przy 9 kandydatach (
   const view = playerView(state, 'p1');
   const n = view.pendingTriggerTarget.candidateIds.length;
   assert.ok(n >= 8, `szeroka pula kandydatów (${n})`);
+  // F żądał kompletu bez sufitu — po G komplet żyje w DESKRYPTORZE
+  // (wszyscy kandydaci, maxTargets=3), a oferta niesie tylko ziarna:
+  // zestaw zachłanny + singletony + pusty (upTo). Żaden legalny zestaw
+  // nie jest ucięty, bo waliduje go execute, nie lista ofert.
+  assert.equal(view.pendingTriggerTarget.maxTargets, 3, 'deskryptor niesie limit slotów');
   const offers = view.legalCommands.filter((c) => c.type === 'resolve_trigger_target');
-  const sizes = new Set(offers.map((c) => (c.targetIds ?? []).length));
-  assert.deepEqual([...sizes].sort(), [0, 1, 2, 3], 'warianty każdego rozmiaru, w tym jedno- i dwucelowe');
-  const C = (a, b) => { let r = 1; for (let i = 0; i < b; i += 1) r = (r * (a - i)) / (i + 1); return r; };
-  assert.equal(offers.length, C(n, 3) + C(n, 2) + C(n, 1) + 1,
-    `komplet: ${offers.length} ofert dla ${n} kandydatów (dawniej twardy limit 32)`);
+  assert.equal(offers.length, n + 2, `ziarna: ${offers.length} ofert dla ${n} kandydatów (bez sufitu, bez enumeracji podzbiorów)`);
+  const chosen = view.pendingTriggerTarget.candidateIds.slice(-2);
+  const seedKeys = new Set(offers.map((c) => [...(c.targetIds ?? [])].sort().join('|')));
+  assert.ok(!seedKeys.has([...chosen].sort().join('|')), 'wybrany zestaw dwucelowy nie jest ziarnem');
+  assert.ok(execute(state, { type: 'resolve_trigger_target', playerId: 'p1', targetIds: chosen }).ok,
+    'dowolny legalny zestaw z deskryptora przechodzi walidację przy execute');
 });
 
 test('F/2 (po G, etap 1): atak ma komplet kandydatów i walidację wybranego podzbioru', () => {
