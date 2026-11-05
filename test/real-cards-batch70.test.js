@@ -16,7 +16,7 @@ import { gameObjectDataOf } from '../src/cards/materialize.js';
 import { jumpToStep } from '../src/engine/turn.js';
 import { addMana } from '../src/engine/resources.js';
 import { createAbility, ABILITY_TYPE } from '../src/engine/abilities.js';
-import { blockAssignmentViolation, legalBlockerOptions } from '../src/engine/combat.js';
+import { blockAssignmentViolation, blockerSeedAssignments } from '../src/engine/combat.js';
 import { applyEffect } from '../src/engine/effects.js';
 import { parseDeckText } from '../src/cards/deck-text.js';
 import { applyEnterCounters } from '../src/engine/effects.js';
@@ -75,7 +75,7 @@ test('pin: can\'t be blocked by [typ] — bloker artefaktowy odrzucony, zwykły 
     'zwykły stwór blokuje bez przeszkód');
 });
 
-test('pin: can\'t be blocked by [typ] — oferta bloków (legalBlockerOptions) zgodna z walidacją', () => {
+test('pin: can\'t be blocked by [typ] — oferta bloków (blockerSeedAssignments) zgodna z walidacją', () => {
   const state = game();
   synthetic(state, 'evasive', {
     power: 5, toughness: 5,
@@ -85,7 +85,7 @@ test('pin: can\'t be blocked by [typ] — oferta bloków (legalBlockerOptions) z
   plainCreature(state, 'blok-zwykly');
   state.combat = { attackingPlayerId: 'p1', attackers: ['evasive'], blockers: new Map(), blockedAttackers: new Set() };
   state.turn = jumpToStep(state.turn, 'declare_blockers', 'p1');
-  const options = legalBlockerOptions(state, 'p2');
+  const options = blockerSeedAssignments(state, 'p2');
   const offers = options.filter((o) => (o.evasive ?? []).includes('blok-art'));
   assert.deepEqual(offers, [], 'oferta NIE proponuje artefaktowego blokera (kontrakt L48)');
   assert.ok(options.some((o) => (o.evasive ?? []).includes('blok-zwykly')),

@@ -20,7 +20,7 @@ import { createCardRegistry } from '../src/cards/card-data.js';
 import { gameObjectDataOf } from '../src/cards/materialize.js';
 import { addObject, createGameState, execute } from '../src/engine/game-state.js';
 import { jumpToStep } from '../src/engine/turn.js';
-import { legalBlockerOptions } from '../src/engine/combat.js';
+import { blockerSeedAssignments } from '../src/engine/combat.js';
 
 const REGISTRY = createCardRegistry();
 
@@ -74,15 +74,15 @@ function verdict(baseState, assignments) {
 
 test('PR129/F-1 strażnik: fallback oferty bloków nie liczy reguł zbioru negacją (jedno źródło)', () => {
   const src = readFileSync(new URL('../src/engine/combat.js', import.meta.url), 'utf8');
-  const start = src.indexOf('export function legalBlockerOptions');
-  assert.ok(start > 0, 'nie znaleziono legalBlockerOptions');
+  const start = src.indexOf('export function blockerSeedAssignments');
+  assert.ok(start > 0, 'nie znaleziono blockerSeedAssignments');
   const body = src.slice(start); // ostatnia funkcja pliku
   // Konkretna zdublowana bramka: negacja menace + negacja „can't block alone”
   // strzegące pojedynczego `options.push`. (Negacja menace w pętli PAR menace
   // `...'menace')) continue;` jest legalna — chodzi o bramkę singletona.)
   const negatedGate = /!hasKeyword\(state, attacker, 'menace'\)\s*\n\s*&& !hasAloneRestriction/;
   assert.ok(!negatedGate.test(body),
-    'F-1: legalBlockerOptions znów liczy reguły zbioru negacją przy pojedynczym bloku — ma wołać blockAssignmentViolation');
+    'F-1: blockerSeedAssignments znów liczy reguły zbioru negacją przy pojedynczym bloku — ma wołać blockAssignmentViolation');
   assert.ok(!/!hasAloneRestriction\(blocker, 'cantBlockAlone'\)\) options\.push/.test(body),
     'F-1: pojedynczy blok w ofercie znów strzeżony ręczną negacją „can\'t block alone”');
 });
@@ -96,7 +96,7 @@ test('PR129/F-1 zachowanie: gałąź fallback (przekroczony cap) oferuje tylko l
   putCreature(state, 'b2', 'highland-game', 'p2');
   enterBlockStep(state, ['menacer', 'atk0', 'atk1', 'atk2', 'atk3', 'atk4']);
 
-  const offers = legalBlockerOptions(state, 'p2');
+  const offers = blockerSeedAssignments(state, 'p2');
   assert.ok(offers.length > 0, 'gałąź fallback bez ofert — scena bez sensu');
   // Menace: przypisania pod menacerem mają 0 albo ≥2 blokerów, nigdy 1.
   for (const offer of offers) {

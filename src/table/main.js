@@ -1542,6 +1542,9 @@ function bootstrapTable() {
         // osiągalny w wizardzie niezależnie od kształtu menu (CR 509.1b);
         // po zgłoszeniu F (2026-11-05) menu jest kompletne.
         blockCandidates: choiceView.blockCandidates ?? null,
+        // G, etap 1: deskryptor problemu walki — kreator buduje deklarację
+        // z kandydatów i puli, a `options` niesie tylko ziarna startowe.
+        combatDeclaration: choiceView.combatDeclaration ?? null,
         // Uwaga C (2026-08-11): klik w nazwę stwora otwiera pełny ekran karty.
         onOpenCard: (objectId) => openCardFullscreen(objectId),
         onComplete: (built) => {

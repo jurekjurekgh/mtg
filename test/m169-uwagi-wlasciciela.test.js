@@ -14,7 +14,7 @@ import { gameObjectDataOf } from '../src/cards/materialize.js';
 import { jumpToStep } from '../src/engine/turn.js';
 import { addMana } from '../src/engine/resources.js';
 import { createHeuristicBot } from '../src/controllers/heuristic-bot.js';
-import { legalBlockerOptions } from '../src/engine/combat.js';
+import { blockerSeedAssignments } from '../src/engine/combat.js';
 
 const REGISTRY = createCardRegistry();
 
@@ -129,7 +129,7 @@ test('N1: menace — fallback enumeracji pokazuje WSZYSTKICH blokerów pod Slaad
   attackStep(state, 'p2');
   execute(state, { type: 'declare_attackers', playerId: 'p2', attackerIds: ['slaad', 'atk0', 'atk1', 'atk2', 'atk3', 'atk4'] });
   state.turn = { ...state.turn, phase: 'combat', step: 'declare_blockers', activePlayerId: 'p2', priorityPlayerId: 'p1' };
-  const options = legalBlockerOptions(state, 'p1');
+  const options = blockerSeedAssignments(state, 'p1');
   // Każdy bloker musi być widoczny jako kandydat pod Slaadem (menace ≥2).
   const underSlaad = new Set(options.flatMap((opt) => opt.slaad ?? []));
   for (const id of ['kabira', 'tok', 'bell']) {

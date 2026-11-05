@@ -4,7 +4,7 @@ import { createCardRegistry } from '../src/cards/card-data.js';
 import { addObject, createGameState, execute, playerView } from '../src/engine/game-state.js';
 import { gameObjectDataOf } from '../src/cards/materialize.js';
 import { jumpToStep } from '../src/engine/turn.js';
-import { declareAttackers, legalAttackerOptions } from '../src/engine/combat.js';
+import { declareAttackers, attackerSeedDeclarations } from '../src/engine/combat.js';
 
 /**
  * Znalezisko J właściciela (2026-09-17, gry testowe): Ramroller („This
@@ -104,7 +104,7 @@ test('J5 (L48): oferta i walidacja nadal wymagają wymuszonego atakującego', ()
   pole(state, 'ram', 'ramroller');
   pole(state, 'opt', 'highland-game');
 
-  const opcje = legalAttackerOptions(state, 'p1', 64);
+  const opcje = attackerSeedDeclarations(state, 'p1', 64);
   assert.deepEqual(opcje.map((ids) => [...ids]), [['ram'], ['ram', 'opt']], 'każda opcja zawiera wymuszonego');
   assert.throws(() => declareAttackers(state, 'p1', []), /musi atakować/, 'pusta deklaracja odrzucona');
   assert.throws(() => declareAttackers(state, 'p1', ['opt']), /musi atakować/, 'pominięcie wymuszonego odrzucone');

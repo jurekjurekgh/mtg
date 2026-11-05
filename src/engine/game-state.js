@@ -26,7 +26,7 @@ function hasColorForCardId(state, playerId, cardId, phyrexianPay = 0, purpose = 
   if (offerUnits != null) return canPayColoredCostForOffer(state, playerId, requirements, offerUnits, null, purpose);
   return canPayColoredCost(state, playerId, requirements, null, purpose);
 }
-import { attackerBlockPowerRestriction, blockCandidatePool, blockSlotsFor, cantBeBlockedFromEquipment, declareAttackers, declareBlockers, legalAttackerOptions, legalBlockerOptions, mandatoryAttackerIds, mandatoryBlockerIds, minimalMandatoryBlocks, rememberClosedCombat, resolveCombatDamage, buildDamageAssignmentView, buildDefaultDamageAssignments, validateDamageAssignment, validateBlockerDamageAssignment, staticAttackPreventionOf } from './combat.js';
+import { attackerBlockPowerRestriction, blockCandidatePool, blockSlotsFor, cantBeBlockedFromEquipment, declareAttackers, declareBlockers, attackerSeedDeclarations, blockerSeedAssignments, combatDeclarationView, mandatoryAttackerIds, mandatoryBlockerIds, minimalMandatoryBlocks, rememberClosedCombat, resolveCombatDamage, buildDamageAssignmentView, buildDefaultDamageAssignments, validateDamageAssignment, validateBlockerDamageAssignment, staticAttackPreventionOf } from './combat.js';
 import { optionalSpellEffectChoices, castSpell, castCleave, legalSpellCasts, legalCleaveCasts, plotCard, suspendCard, warpCard, resolveTopOfStack, resolveRiotEntry, finishPendingSpell, resumeSuspendedSpell, castEscape, resolveEscapeExile, legalEscapeCasts, declareDelveCast, resolveDelveExile, delveExileLimit, affordableDelveCounts, castFlashback, legalFlashbackCasts, castAdventure, legalAdventureCasts, castAdventureCreature, legalAdventureCreatureCasts, effectiveSpellManaCost, legalTargetCandidates, validateTargets, castMadnessSpell, legalModeCasts, legalXCostCasts, legalFireballCasts, validateVariableTargets, validateFireballTargets, legalTargetCombos, validateDamageDivision, dividedDamageDivisions } from './spells.js';
 import { legalActivatedAbilities, legalManaAbilities, manualManaOfferUnits, activateAbility, performActivation } from './abilities.js';
 import { attachmentRestrictions, deathZoneFor, wardAmountOf, clearMarkedDamage, clearStatModifiers, creatureCantBlock, effectiveAbilities, effectiveKeywords, effectivePower, effectiveToughness, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, grantedStatBonus, hasTemporaryCantBlock, markDamage, modifyStats, transformedCharacteristics, turnFaceUp, untapObject, activatableAbilities, entersTappedNow } from './permanents.js';
@@ -6483,12 +6483,12 @@ export function execute(state, input) {
           // kreatur. CR 508.1: gdy aktywny gracz nie ma ŻADNEGO legalnego
           // atakującego, deklaracja jest pusta i AUTOMATYCZNA — decyzja nie
           // istnieje (dotąd generator wystawiał jedną komendę z pustym
-          // zestawem, bo legalAttackerOptions → [[]]). Auto-przejście przy
+          // zestawem, bo przy braku kandydatów ziarno deklaracji to [[]]). Auto-przejście przy
           // wejściu w krok, wzorzec auto-dobrania (CR 504.1): eventy lokalnie
           // (pushToState: false — kolejność logu), priorytet kroku blokujących
           // dla obrońcy (jak w drodze przez komendę).
           if (state.turn.step === 'declare_attackers'
-              && !legalAttackerOptions(state, state.turn.activePlayerId)
+              && !attackerSeedDeclarations(state, state.turn.activePlayerId)
                 .some((attackerIds) => attackerIds.length > 0)) {
             events.push(declareAttackers(state, state.turn.activePlayerId, [], { pushToState: false, events }));
             const defenderId = state.players.find((player) => player.id !== state.turn.activePlayerId).id;
@@ -7520,7 +7520,7 @@ export function playerView(state, playerId) {
         // PR #171/T (2026-10-21d, zgłoszenie właściciela Azorius Justiciar):
         // detain (CR 701.35) blokuje blok, ale `creatureCantBlock` tego nie
         // czyta — walka to respektuje (combat.js:316 `if (object.detained)
-        // return false` w `legalBlockerOptions`). Widok musi propagować ten
+        // return false` w predykacie kandydata na blokera). Widok musi propagować ten
         // sam fakt (L1/ADR 0017). Dociągamy jawnie `detained` do
         // `entry.cantBlock` — JEDNO źródło dla badge'a "nie może blokować".
         const cantBlockNow = creatureCantBlock(object, state)
@@ -9815,7 +9815,7 @@ export function playerView(state, playerId) {
     if (state.turn.step === 'declare_attackers' && state.turn.activePlayerId === playerId && !state.combat
       && state.zones.stack.length === 0) {
       const seen = new Set();
-      for (const attackerIds of legalAttackerOptions(state, playerId)) {
+      for (const attackerIds of attackerSeedDeclarations(state, playerId)) {
         const key = JSON.stringify(attackerIds);
         if (seen.has(key)) continue;
         seen.add(key);
@@ -9825,7 +9825,7 @@ export function playerView(state, playerId) {
     if (state.turn.step === 'declare_blockers' && state.combat && state.combat.attackingPlayerId !== playerId
       && state.zones.stack.length === 0) {
       const seen = new Set();
-      for (const assignments of legalBlockerOptions(state, playerId)) {
+      for (const assignments of blockerSeedAssignments(state, playerId)) {
         const key = JSON.stringify(assignments);
         if (seen.has(key)) continue;
         seen.add(key);
@@ -10464,6 +10464,10 @@ export function playerView(state, playerId) {
     pendingDamageAssignment: buildDamageAssignmentView(state, playerId),
     // E6: pełna pula kandydatów na blokerów (niezależna od cap-a menu, CR 509.1a).
     blockCandidates: blockerView?.pool ?? null,
+    // G, etap 1: deskryptor problemu deklaracji walki (kandydaci, wymuszeni,
+    // pula). Kreator i kontrolerzy budują z niego jedną wybraną deklarację,
+    // którą silnik waliduje przy execute; legalCommands niesie tylko ziarna.
+    combatDeclaration: combatDeclarationView(state, playerId),
     // F14: liczba użyć, jaką silnik przyjmie od jednego blokera (L48 — wizard
     // musi znać tę samą regułę, żeby nie wysyłać komendy do odrzucenia).
     blockerSlots: blockerView?.slots ?? null,

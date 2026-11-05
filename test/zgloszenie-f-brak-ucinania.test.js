@@ -14,7 +14,7 @@ import { gameObjectDataOf } from '../src/cards/materialize.js';
 import { jumpToStep } from '../src/engine/turn.js';
 import { addMana } from '../src/engine/resources.js';
 import { legalFireballCasts, dividedDamageDivisions } from '../src/engine/spells.js';
-import { legalAttackerOptions, legalBlockerOptions } from '../src/engine/combat.js';
+import { attackCandidateIds, attackerDeclarationViolation, blockerDeclarationViolation, blockerSeedAssignments } from '../src/engine/combat.js';
 
 const REGISTRY = createCardRegistry();
 const READY = { summoningSick: false, summoningSickness: false };
@@ -74,15 +74,19 @@ test('F/1: trigger wielocelowy — komplet podzbiorów 0..3 przy 9 kandydatach (
     `komplet: ${offers.length} ofert dla ${n} kandydatów (dawniej twardy limit 32)`);
 });
 
-test('F/2: deklaracje ataku — komplet podzbiorów przy 6 atakujących (64 > 32)', () => {
+test('F/2 (po G, etap 1): atak ma komplet kandydatów i walidację wybranego podzbioru', () => {
   const state = baseState();
   for (let i = 0; i < 6; i += 1) creature(state, `atk${i}`, 'p1', 2, 2);
-  const options = legalAttackerOptions(state, 'p1');
-  assert.equal(options.length, 64, `2^6 kompletnych deklaracji (jest ${options.length})`);
-  assert.ok(options.some((ids) => ids.length === 4), 'czteroosobowy atak dostępny (tryb ograniczony go nie miał)');
+  assert.deepEqual(attackCandidateIds(state, 'p1'),
+    ['atk0', 'atk1', 'atk2', 'atk3', 'atk4', 'atk5'],
+    'wszyscy zdolni atakujący są w deskryptorze problemu, bez materializacji 64 ofert');
+  assert.equal(attackerDeclarationViolation(state, 'p1', ['atk0', 'atk1', 'atk3', 'atk5']), null,
+    'dowolny legalny podzbiór — tu czterosobowy — przechodzi walidację wybranej deklaracji');
+  assert.equal(attackerDeclarationViolation(state, 'p1', ['atk0', 'atk0']),
+    'Atakujący nie może wystąpić więcej niż raz');
 });
 
-test('F/3: deklaracje bloków — więcej niż dawne 32 przy 4 atakujących i 4 blokujących', () => {
+test('F/3 (po G, etap 1): bloki mają wielomianowe ziarna i walidację złożonego przypisania', () => {
   const state = baseState();
   state.turn = jumpToStep(state.turn, 'declare_attackers', 'p2');
   state.turn.activePlayerId = 'p2';
@@ -92,8 +96,10 @@ test('F/3: deklaracje bloków — więcej niż dawne 32 przy 4 atakujących i 4 
   const declare = playerView(state, 'p2').legalCommands
     .find((c) => c.type === 'declare_attackers' && c.attackerIds.length === 4);
   assert.ok(declare && execute(state, declare).ok, 'deklaracja 4 atakujących');
-  const options = legalBlockerOptions(state, 'p1');
-  assert.ok(options.length > 32, `komplet przypisań ponad dawny sufit (jest ${options.length})`);
+  const seeds = blockerSeedAssignments(state, 'p1');
+  assert.ok(seeds.length <= 22, `ziarna to brak bloku, 16 par, 4 gangi i pokrycie zachłanne (jest ${seeds.length})`);
+  assert.equal(blockerDeclarationViolation(state, 'p1', { a0: ['b0', 'b1'], a1: ['b2'], a3: ['b3'] }), null,
+    'złożone przypisanie spoza ziaren przechodzi walidację wybranej deklaracji');
 });
 
 test('F/4: pula czaru dzielonego nie przycina kandydatów (10 stworów wroga)', () => {

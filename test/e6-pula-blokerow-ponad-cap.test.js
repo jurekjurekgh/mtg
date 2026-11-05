@@ -3,12 +3,12 @@
 //
 // Zgłoszenie właściciela 2026-09-20c: „Czemu świadomie nie naprawiane? Błędy
 // powinny być natychmiast naprawiane, a nie «świadomie nie naprawiane»".
-// Pozycja audytu PR #130 §6 brzmiała: „`legalBlockerOptions` ponad `COMBAT_OPTION_CAP`
+// Pozycja audytu PR #130 §6 brzmiała: „`blockerSeedAssignments` ponad `COMBAT_OPTION_CAP`
 // — fallback tnie OPCJE, nie użycia (L151)". Pomiar 2026-09-20c pokazał, że to
 // za optymistyczne: opcje SĄ nośnikiem puli kandydatów w UI.
 //
 // Łańcuch (zmierzony, nie wywnioskowany):
-//   1. `legalBlockerOptions` (src/engine/combat.js) przy `(atakujący+1)^blokerzy > cap`
+//   1. `blockerSeedAssignments` (src/engine/combat.js) przy `(atakujący+1)^blokerzy > cap`
 //      wchodzi w fallback i na końcu robi `options.slice(0, cap)`;
 //   2. `game-state.js` zamienia każdą ofertę na komendę `declare_blockers`
 //      w `legalCommands` → to są `request.options` decyzji;
@@ -30,7 +30,7 @@
 //   10 × 10                    → 32 oferty, braki 69
 //
 // Naprawa: rozdzielenie DWÓCH pojęć, które były sklejone (L41):
-//   - MENU szybkich przypisań (`legalBlockerOptions`) zostaje ograniczone cap-em
+//   - MENU szybkich przypisań (`blockerSeedAssignments`) zostaje ograniczone cap-em
 //     — to kwestia rozmiaru listy, nie legalności;
 //   - PULA kandydatów (`blockCandidatePool`) jest liczona wprost z reguł, bez
 //     enumeracji, więc cap jej nie dotyczy; widok niesie ją jako
@@ -47,7 +47,7 @@ import { gameObjectDataOf } from '../src/cards/materialize.js';
 import { addObject, createGameState, execute, playerView } from '../src/engine/game-state.js';
 import { jumpToStep } from '../src/engine/turn.js';
 import { addMana } from '../src/engine/resources.js';
-import { blockCandidatePool, legalBlockerOptions } from '../src/engine/combat.js';
+import { blockCandidatePool, blockerSeedAssignments } from '../src/engine/combat.js';
 
 const REGISTRY = createCardRegistry();
 
@@ -151,7 +151,7 @@ test('E6/2: pula domyka to, co menu ponad cap-em wycięło (pomiar klasy, nie je
   const raport = [];
   for (const scena of sceny) {
     const { state, attackerIds, blockerIds } = combatScene({ ...scena, seed: 606 + scena.atk });
-    const offers = legalBlockerOptions(state, 'p2');
+    const offers = blockerSeedAssignments(state, 'p2');
     assert.ok(offers.length > 0, 'oferty bloków wystawione');
     const suma = sumaOfert(offers, attackerIds);
     const pula = blockCandidatePool(state, 'p2');
@@ -239,15 +239,21 @@ test('E6/6: strażnik łańcucha silnik → widok → main.js → wizard (pin na
   assert.match(gameState, /slots\[blockerId\] = blockSlotsFor\(state, state\.objects\.get\(blockerId\)\)/,
     'sloty w widoku nie pochodzą z `blockSlotsFor` (kopia reguły w warstwie widoku?)');
 
-  // main.js przekazuje pulę z widoku do wizarda walki.
+  // main.js przekazuje pulę i deskryptor problemu walki z widoku do wizarda.
   assert.match(main, /blockCandidates:\s*choiceView\.blockCandidates/,
     'main.js nie przekazuje `blockCandidates` do `renderCombatWizard` — łańcuch przerwany');
+  assert.match(main, /combatDeclaration:\s*choiceView\.combatDeclaration/,
+    'main.js nie przekazuje `combatDeclaration` do `renderCombatWizard` — łańcuch deskryptora przerwany');
+  assert.match(gameState, /combatDeclaration: combatDeclarationView\(state, playerId\)/,
+    'widok nie niesie deskryptora problemu walki z silnika');
 
-  // Wizard rysuje kandydatów z puli: per atakujący i w listach id.
-  assert.match(choice, /blockCandidates\?\.\[attackerId\]/,
-    'wizard nie bierze kandydatów per atakujący z puli (tylko z wyciętego menu)');
-  assert.match(choice, /Object\.entries\(blockCandidates \?\? \{\}\)/,
-    'wizard nie uzupełnia pulą listy atakujących/kandydatów');
+  // Wizard rysuje kandydatów z puli deskryptora: per atakujący i w listach id.
+  assert.match(choice, /effectiveBlockCandidates\?\.\[attackerId\]/,
+    'wizard nie bierze kandydatów per atakujący z puli deskryptora');
+  assert.match(choice, /Object\.entries\(effectiveBlockCandidates \?\? \{\}\)/,
+    'wizard nie uzupełnia pulą deskryptora listy atakujących/kandydatów');
+  assert.match(choice, /declaration\?\.pool \?\? blockCandidates/,
+    'wizard nie preferuje puli z deskryptora walki');
 
   // Warstwa UI NIE liczy legalności bloków sama (reguły żyją w silniku).
   assert.ok(!/blockAssignmentViolation/.test(choice),

@@ -4,7 +4,7 @@ import { createCardRegistry } from '../src/cards/card-data.js';
 import { createGameState, addObject } from '../src/engine/game-state.js';
 import { gameObjectDataOf } from '../src/cards/materialize.js';
 import { jumpToStep } from '../src/engine/turn.js';
-import { declareAttackers, legalAttackerOptions } from '../src/engine/combat.js';
+import { declareAttackers, attackerSeedDeclarations } from '../src/engine/combat.js';
 
 /**
  * M270 błąd #9 (CR 508.1d) — wymóg „attacks each combat IF ABLE" (goad,
@@ -64,7 +64,7 @@ test('samotny atak takiego stwora pozostaje nielegalny (CR 508.1c)', () => {
 
 test('gracz ZAWSZE ma legalną opcję deklaracji (brak deadlocku)', () => {
   const state = stan({ zPartnerem: false });
-  const opcje = legalAttackerOptions(state, 'p1');
+  const opcje = attackerSeedDeclarations(state, 'p1');
   assert.ok(opcje.length > 0, 'silnik oferuje przynajmniej jedną deklarację');
   const legalne = opcje.filter((ids) => deklaruj(stan({ zPartnerem: false }), ids) === 'ok');
   assert.ok(legalne.length > 0, 'co najmniej jedna oferta przechodzi walidację');

@@ -869,15 +869,22 @@ function viewCreatureHasStatic(view, id, field) {
  * (2^n atakujących, iloczyn przy blokach) — przełącznik tak/nie przy każdym
  * zdolnym stworze + „Zatwierdź". Finalną komendę buduje się z zaznaczonych.
  */
-export function renderCombatWizard(host, { kind, view, session, options, blockCandidates = null, onComplete, onCancel, onOpenCard, onHoverCard = null, onHoverCardEnd = null }) {
+export function renderCombatWizard(host, { kind, view, session, options, blockCandidates = null, combatDeclaration = null, onComplete, onCancel, onOpenCard, onHoverCard = null, onHoverCardEnd = null }) {
   clearChoiceElement(host);
   const isAttackers = kind === 'attackers';
-  // Unikalni kandydaci: suma id ze wszystkich oferowanych wariantów.
+  // G, etap 1: deskryptor problemu z widoku (kandydaci/wymuszeni/pula) jest
+  // źródłem wierszy kreatora; `options` niesie już tylko ziarna startowe.
+  // Bez deskryptora (stare wywołania/testy) wraca wywodzenie z sumy ofert.
+  const declaration = combatDeclaration?.role === (isAttackers ? 'attackers' : 'blockers')
+    ? combatDeclaration : null;
+  const effectiveBlockCandidates = declaration?.pool ?? blockCandidates;
+  // Unikalni kandydaci: deskryptor, a w fallbacku suma id z oferowanych wariantów.
   const candidateIds = [];
   const seenIds = new Set();
   const pushId = (id) => { if (!seenIds.has(id)) { seenIds.add(id); candidateIds.push(id); } };
   if (isAttackers) {
-    for (const cmd of options) for (const id of cmd.attackerIds ?? []) pushId(id);
+    if (declaration) for (const id of declaration.candidateIds ?? []) pushId(id);
+    else for (const cmd of options) for (const id of cmd.attackerIds ?? []) pushId(id);
   } else {
     for (const cmd of options) {
       for (const [attackerId, blockerIds] of Object.entries(cmd.assignments ?? {})) {
@@ -889,7 +896,7 @@ export function renderCombatWizard(host, { kind, view, session, options, blockCa
     // historycznie menu było ograniczone capem i pary bez wiersza były
     // nieosiągalne (CR 509.1a). Po zgłoszeniu F (2026-11-05) oferty są
     // kompletne, a pula zostaje bezpośrednim źródłem wierszy wizarda.
-    for (const [attackerId, blockerIds] of Object.entries(blockCandidates ?? {})) {
+    for (const [attackerId, blockerIds] of Object.entries(effectiveBlockCandidates ?? {})) {
       pushId(attackerId);
       for (const id of blockerIds ?? []) pushId(id);
     }
@@ -898,7 +905,9 @@ export function renderCombatWizard(host, { kind, view, session, options, blockCa
   const inEvery = (id) => options.every((cmd) => (isAttackers
     ? (cmd.attackerIds ?? []).includes(id)
     : Object.keys(cmd.assignments ?? {}).includes(id)));
-  const mandatory = new Set(candidateIds.filter(inEvery));
+  const mandatory = declaration && isAttackers
+    ? new Set(declaration.mandatoryIds ?? [])
+    : new Set(candidateIds.filter(inEvery));
 
   const selected = new Set(mandatory);
   const blockedBy = new Map(); // atakujący → wybrani blokerzy (dla bloków)
@@ -960,7 +969,7 @@ export function renderCombatWizard(host, { kind, view, session, options, blockCa
       }
     }
     // E6: pula z widoku domyka kandydatów, których menu (cap) nie pokazało.
-    for (const id of blockCandidates?.[attackerId] ?? []) {
+    for (const id of effectiveBlockCandidates?.[attackerId] ?? []) {
       if (!seen.has(id)) { seen.add(id); cand.push(id); }
     }
     const current = blockedBy.get(attackerId) ?? [];
@@ -990,7 +999,7 @@ export function renderCombatWizard(host, { kind, view, session, options, blockCa
     }
     // E6: atakujący, dla którego cap wyciął WSZYSTKIE oferty bloku, i tak musi
     // mieć sekcję (pula może dla niego mieć kandydatów).
-    for (const id of Object.keys(blockCandidates ?? {})) {
+    for (const id of Object.keys(effectiveBlockCandidates ?? {})) {
       if (!seen.has(id)) { seen.add(id); attackerIds.push(id); }
     }
     for (const attackerId of attackerIds) renderAttackerBlockers(attackerId);
@@ -1093,7 +1102,7 @@ export function renderCombatWizard(host, { kind, view, session, options, blockCa
       if (mandatory.size > 0) {
         const hint = choiceNode(host, 'div', 'zone-empty', 'Stwory z przymusem ataku muszą atakować — odznaczono pozostałe.');
         hint.className = 'zone-empty combat-wizard-error';
-        renderCombatWizard(host, { kind, view, session, options, blockCandidates, onComplete, onCancel });
+        renderCombatWizard(host, { kind, view, session, options, blockCandidates, combatDeclaration, onComplete, onCancel });
         return;
       }
       const wanted = [...mandatory];

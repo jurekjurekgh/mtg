@@ -2256,8 +2256,9 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
   const xDescriptor = object.spell?.xCost ?? object.xCost ?? null;
   const xDeclared = xDescriptor ? xValue : 0;
   if (xDescriptor) {
-    const cap = xDescriptor.cap ?? 15;
-    if (!Number.isInteger(xDeclared) || xDeclared < 0 || xDeclared > cap) {
+    // Zgłoszenie F (2026-11-05): X ogranicza wyłącznie opłacalność kosztu.
+    // Dawny `cap` deskryptora był budżetem enumeracji ofert, nie regułą karty.
+    if (!Number.isInteger(xDeclared) || xDeclared < 0) {
       throw new Error('Nieprawidłowa wartość X');
     }
   } else if (xValue) {

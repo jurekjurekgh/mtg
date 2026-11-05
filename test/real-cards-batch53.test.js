@@ -6,7 +6,7 @@ import { gameObjectDataOf } from '../src/cards/materialize.js';
 import { jumpToStep } from '../src/engine/turn.js';
 import { addMana } from '../src/engine/resources.js';
 import { moveObjectDirectly } from '../src/engine/objects.js';
-import { legalBlockerOptions } from '../src/engine/combat.js';
+import { blockerSeedAssignments } from '../src/engine/combat.js';
 import { effectiveKeywords, effectivePower, effectiveToughness } from '../src/engine/permanents.js';
 import { resolveUntilDecision, optionalTriggerOpen } from './helpers/deferred-trigger.js';
 
@@ -311,7 +311,7 @@ test('B53: Rust-Shield Rampager — bloker o mocy 2 nie może blokować, o mocy 
   assert.ok(execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['ram'] }).ok);
   execute(state, { type: 'pass_priority', playerId: 'p1' }); // D: okno po deklaracji (CR 508.2)
   execute(state, { type: 'pass_priority', playerId: 'p2' });
-  const options = legalBlockerOptions(state, 'p2');
+  const options = blockerSeedAssignments(state, 'p2');
   assert.ok(options.some((assignment) => (assignment.ram ?? []).includes('strong')), 'silny bloker dostępny');
   for (const assignment of options) {
     assert.ok(!(assignment.ram ?? []).includes('weak'), 'bloker 2/2 nie może blokować');

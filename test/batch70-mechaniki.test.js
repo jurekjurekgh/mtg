@@ -25,7 +25,7 @@ import { jumpToStep } from '../src/engine/turn.js';
 import { addMana } from '../src/engine/resources.js';
 import { legalSpellCasts, legalFlashbackCasts, effectiveSpellManaCost } from '../src/engine/spells.js';
 import { createAbility, ABILITY_TYPE } from '../src/engine/abilities.js';
-import { blockAssignmentViolation, legalBlockerOptions } from '../src/engine/combat.js';
+import { blockAssignmentViolation, blockerSeedAssignments } from '../src/engine/combat.js';
 import { attackerCanBeBlocked } from '../src/controllers/heuristic-bot.js';
 import { coloredPipsOf } from '../src/engine/mana-cost.js';
 import { addCounter, removeCounter } from '../src/engine/counters.js';
@@ -210,14 +210,14 @@ test('B70/M2 widok: próg ewazji jest informacją PUBLICZNĄ dla bota (ADR 0017)
   assert.equal(entry?.cantBeBlockedByPower, 2, 'PlayerView musi nieść próg mocy');
 });
 
-test('B70/M2 oferta bloków: `legalBlockerOptions` nie proponuje blokera za słabego', () => {
+test('B70/M2 oferta bloków: `blockerSeedAssignments` nie proponuje blokera za słabego', () => {
   const state = setup();
   wolf(state, 'wolf');
   creature(state, 'maly', 'p2', 1, 1);
   creature(state, 'duzy', 'p2', 4, 4);
   state.combat = { attackingPlayerId: 'p1', attackers: ['wolf'], blockers: new Map(), blockedAttackers: new Set() };
   state.turn = jumpToStep(state.turn, 'declare_blockers', 'p1');
-  const options = legalBlockerOptions(state, 'p2');
+  const options = blockerSeedAssignments(state, 'p2');
   assert.deepEqual(options.filter((o) => (o.wolf ?? []).includes('maly')), [],
     'oferta nie może proponować blokera łamiącego próg (kontrakt L48)');
   assert.ok(options.some((o) => (o.wolf ?? []).includes('duzy')), 'oferta proponuje legalnego blokera');
@@ -618,13 +618,13 @@ test('B70/M6 oferta: X jest enumerowane 0..cap i tylko w granicach opłacalnej m
     'koszt bazowy {1}{B} = 2, pula {B}{B}+2 → X = 0, 1, 2 (CR 601.2f: X jest częścią kosztu całkowitego)');
 });
 
-test('B70/M6 oferta: cap deskryptora obcina X nawet przy dużej puli many', () => {
+test('B70/M6 oferta: dawny cap deskryptora nie obcina X przy dużej puli many (F)', () => {
   const state = createGameState({ seed: 70, players: [{ id: 'p1' }, { id: 'p2' }] });
   state.turn = jumpToStep(state.turn, 'main', 'p1');
   state.turn.activePlayerId = state.turn.priorityPlayerId = 'p1';
   xPermanent(state, { id: 'xp', manaCost: 2, xCost: { cap: 2 }, mana: 10, colors: ['B'] });
-  assert.deepEqual(permanentOffers(state, 'xp').map((c) => c.xValue), [0, 1, 2],
-    'cap = 2 mimo puli 10 many (deskryptor ogranicza enumerację)');
+  assert.deepEqual(permanentOffers(state, 'xp').map((c) => c.xValue), [0, 1, 2, 3, 4, 5, 6, 7, 8],
+    'jedynym sufitem jest budżet: koszt bazowy 2 z puli 10 many daje X = 0..8');
 });
 
 test('B70/M6 rzut: wybrane X wchodzi w koszt many i liczniki wejścia (spellX + entersWithCounters)', () => {
@@ -645,17 +645,18 @@ test('B70/M6 rzut: wybrane X wchodzi w koszt many i liczniki wejścia (spellX + 
   assert.equal(permanent.counters?.['+1/+1'], 2, '„enters with X +1/+1 counters” (CR 614.1c)');
 });
 
-test('B70/M6 walidacja: ujemny i niecałkowity X oraz X ponad cap są odrzucane', () => {
+test('B70/M6 walidacja: ujemny i niecałkowity X odrzucane, X ponad dawny cap przyjęte (F)', () => {
   const state = createGameState({ seed: 70, players: [{ id: 'p1' }, { id: 'p2' }] });
   state.turn = jumpToStep(state.turn, 'main', 'p1');
   state.turn.activePlayerId = state.turn.priorityPlayerId = 'p1';
   xPermanent(state, { id: 'xp', manaCost: 2, xCost: { cap: 2 }, mana: 10, colors: ['B'] });
   const bazowa = { type: 'cast_permanent', playerId: 'p1', objectId: 'xp' };
-  for (const zly of [-1, 1.5, 3]) {
+  for (const zly of [-1, 1.5]) {
     assert.equal(execute(state, { ...bazowa, xValue: zly }).ok, false,
-      `X = ${zly} musi być odrzucone (całkowite, 0 ≤ X ≤ cap)`);
+      `X = ${zly} musi być odrzucone (całkowite i nieujemne)`);
   }
-  assert.equal(execute(state, { ...bazowa, xValue: 1 }).ok, true, 'poprawny X = 1 przechodzi');
+  assert.equal(execute(state, { ...bazowa, xValue: 3 }).ok, true,
+    'X = 3 przechodzi mimo dawnego deskryptorowego cap = 2, bo koszt jest opłacalny');
 });
 
 test('B70/M6 wejście BEZ rzutu: X = 0, więc zero liczników (CR 107.3a na innych strefach)', () => {

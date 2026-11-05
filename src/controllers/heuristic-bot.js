@@ -1987,12 +1987,54 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
    * wybór główny, lookahead i polityki symulacji — losowość nie może przywrócić
    * usuniętego wariantu.
    */
+  /**
+   * Zgłoszenie G, etap 1: silnik wystawia deklaracje ataku jako ziarna, a bot
+   * dokłada własne prefiksowe kandydatury z deskryptora walki. Ranking jest
+   * prostą strategią kontrolera (siła bojowa), natomiast ostateczną kolejność
+   * deklaracji kanonizuje kolejność kandydatów z widoku. Pomijamy jedyny
+   * nielegalny kształt wynikający wprost z deskryptora: samotnego stwora
+   * z „can't attack alone”.
+   */
+  function synthesizedAttackDeclarations(view, existing) {
+    const declaration = view?.combatDeclaration;
+    if (!declaration || declaration.role !== 'attackers') return [];
+    const candidateIds = [...(declaration.candidateIds ?? [])];
+    if (candidateIds.length === 0) return [];
+    const mandatoryIds = new Set(declaration.mandatoryIds ?? []);
+    const aloneIds = new Set(declaration.aloneIds ?? []);
+    const byId = new Map((view.zones?.battlefield ?? []).map((object) => [object.id, object]));
+    const strength = (id) => {
+      const object = byId.get(id);
+      return 2 * Math.max(0, combatPower(object)) + Math.max(0, object?.toughness ?? 0);
+    };
+    const optionalIds = candidateIds
+      .filter((id) => !mandatoryIds.has(id))
+      .map((id, index) => ({ id, index }))
+      .sort((a, b) => strength(b.id) - strength(a.id) || a.index - b.index)
+      .map(({ id }) => id);
+    const existingKeys = new Set(existing
+      .filter((cmd) => cmd.type === 'declare_attackers')
+      .map((cmd) => [...(cmd.attackerIds ?? [])].sort().join('\u0000')));
+    const synthesized = [];
+    for (let count = 1; count <= optionalIds.length; count += 1) {
+      const chosen = new Set([...mandatoryIds, ...optionalIds.slice(0, count)]);
+      const attackerIds = candidateIds.filter((id) => chosen.has(id));
+      if (attackerIds.length === 1 && aloneIds.has(attackerIds[0])) continue;
+      const key = [...attackerIds].sort().join('\u0000');
+      if (existingKeys.has(key)) continue;
+      existingKeys.add(key);
+      synthesized.push({ type: 'declare_attackers', playerId: view.playerId, attackerIds });
+    }
+    return synthesized;
+  }
+
   function botCommandCandidates(view) {
     const legal = view?.legalCommands ?? [];
     // N: jednostki automatu liczymy raz per decyzja (filtr castów poniżej).
     const unitsAuto = castFiltersApplicable(view) ? autoManaJednostki(view) : null;
     const candidates = legal.filter((cmd) => botMayPayCreatureSacrificeCost(view, cmd)
       && !(unitsAuto != null && (castNieopłacalnyAuto(view, cmd, unitsAuto) || triggerPaymentBeyondAuto(view, cmd, unitsAuto))));
+    candidates.push(...synthesizedAttackDeclarations(view, candidates));
     // Aktywny protokół zawsze wystawia bezpieczne wyjście (pass/decline/done,
     // a co najmniej concede). Gdyby ten inwariant kiedyś pękł, jawny błąd jest
     // bezpieczniejszy niż ciche złamanie twardego zakazu właściciela.
@@ -10790,9 +10832,9 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
    *
    * Semantyka: „zamierza" = istnieje legalny zestaw atakujących zawierający
    * ten stwór, którego wycena jest DODATNIA (lepsza niż pass = 0). Zestawy
-   * enumerujemy jak silnik (`boundedSubsets`: wszystkie podzbiory przy małej
-   * liczbie atakujących, inaczej pojedyncze / wszystkie-bez-jednego /
-   * wszystkie) — bot wybiera jeden z nich w kroku deklaracji.
+   * przegląda strategia bota (przy małej liczbie atakujących wszystkie
+   * podzbiory, inaczej pojedyncze / wszystkie-bez-jednego / wszystkie) —
+   * bot wybiera jeden z nich w kroku deklaracji.
    *
    * Reentrancja: wycena ataku nie woła tej bramki (bramka siedzi wyłącznie
    * w gałęzi `activate_ability`), ale flaga `attackIntentEval` jest

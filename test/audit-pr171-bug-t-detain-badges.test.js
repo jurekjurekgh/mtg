@@ -5,7 +5,7 @@
 // Pin H/4: generic, nie spec-case dla Azorius Justiciar. Każdy stwór z
 // `object.detained === true` MUSI emitować dwa badge'e: jeden o blokadzie
 // ataku, jeden o blokadzie zdolności (CR 701.35). Silnik REALNIE blokuje
-// (combat.js:316 → legalBlockerOptions 'cant block'; abilities.js:1444 →
+// (combat.js:316 → blockerSeedAssignments 'cant block'; abilities.js:1444 →
 // throw „Zatrzymany permanent nie aktywuje zdolności") — widok MUSI to
 // odzwierciedlać, bo klasa L1/ADR 0017: skutek widoczny w grze musi być
 // widoczny na stole.
