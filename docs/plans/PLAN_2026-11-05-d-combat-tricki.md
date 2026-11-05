@@ -217,3 +217,14 @@ złapana; K4/3 świadomie przestawiony na główną fazę. `npm test` 9993/9993,
 build 77 modułów / 5712,9 kB. Golden-master: dryf tylko
 ravnica-wur|innistrad-wu@1001 (299→284 decyzji) — fixture zregenerowany
 świadomie z notą w nagłówku testu. `npm run test:all` 10261/10261.
+
+## Etap 10 (kontynuacja, 2026-11-05): K5 — kontrczary i odpowiedzi na stos
+
+Zakres: czy bot trzyma kontrczar na to, co się liczy — nie przepala kontry
+na błahy czar w pierwszej głównej przeciwnika i nie pasuje, gdy wróg rzuca
+coś, co wygrywa grę. Pomiar na prawdziwych decyzjach: stos z czarem wroga
+(błahy 1/1 za {1} kontra zagrożenie 6/6 / czar dobierający / usunięcie
+mojego stwora), bot z kontrą i maną. Naprawa tylko przy potwierdzonej
+luce, po deskryptorze (`counter_spell`, `counter_spell_unless_pays`),
+zero nazw kart. Dowód: testy, mutacja, pakiet pokrewny, `npm test`,
+build, `test:all` (golden-master tylko świadomie).
