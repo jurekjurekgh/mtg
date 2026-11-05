@@ -18998,3 +18998,5 @@ Audyt #177 A79: Ward i ręczna mana Sciona, atomowość błędnej płatności; h
 - 2026-11-05 — Zgłoszenie D/7: bramka `pumpBiteHoldPenalty` — instant „pump własnego stwora + ugryzienie” (Diplomatic Relations) trzymany na walkę; DR/1–DR/4 4/4 z mutacją, fast 9985/9985, test:all 10253/10253, build 77/5709,7 kB. Pomiar K4: Shock rzucany w twarz przy 20 życia w podtrzymaniu (luka następnego etapu), część instant-removalu palona w podtrzymaniu.
 
 - 2026-11-05 — Zgłoszenie D/8 (K4a): instant-burn w twarz poza walką trzymany na moment śmiertelny (`faceBurnHoldPenalty`); K4/1–K4/4 4/4 z mutacją, pięć pinów starej konwencji twarzy świadomie zaktualizowanych, fast 9989/9989, test:all 10257/10257, build 77/5711,3 kB. Dalej w roadmapie: K4b timing removalu, K5 kontrczary, K6 reszta.
+
+- 2026-11-05 — Zgłoszenie D/9 (K4b): instant-removal we własnym podtrzymaniu/kroku dobrania czeka na główną (`removalUpkeepHoldPenalty`); K4b/1–K4b/4 4/4 z mutacją, fast 9993/9993, test:all 10261/10261; golden-master scoringu zregenerowany świadomie (dryf tylko 1/6 partii). Zostają K5 (kontrczary) i K6 (reszta instantów).
