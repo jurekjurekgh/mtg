@@ -191,6 +191,22 @@ brak trwającej walki. Testy `test/zgloszenie-d-k4-twarz.test.js` (K4/1–K4/4)
 B/7 Epic Experiment (Shock śmiertelny przy 2 życia). `npm test` 9989/9989,
 build 77 modułów / 5711,3 kB, `npm run test:all` 10257/10257.
 
-**Do następnych sesji:** K4b (timing instant-removalu), K5 (kontrczary),
-K6 (reszta: dobieranie, tokeny, tutorzy, Fog), po kolei: reprodukcja →
-test RED → naprawa po deskryptorze → bramki.
+## Etap 9 (kontynuacja, 2026-11-05): K4b — instant-removal we własnym podtrzymaniu
+
+Pomiar K4: Shock, Bring Low, Consign to Dream i Douse in Gloom bot rzuca
+już we własnym podtrzymaniu. Karta nie jest zmarnowana (cel ginie tak
+samo), ale decyzja zapada przed dobraniem karty i przed główną fazą, bez
+żadnej pilności — instant powinien poczekać na główną albo na odpowiedź.
+Zakres (wąski, po deskryptorze): instant z efektem usuwającym permanent
+przeciwnika (śmiertelne `damage` w stwora, `destroy_permanent`,
+`exile_permanent`, bounce) we WŁASNYM kroku podtrzymania/dobrania traci
+karę trzymania `removalUpkeepHoldPenalty`. Tura przeciwnika, walka,
+główne fazy i sorcery bez zmian — tam timing jest treścią instanta.
+
+Dowód: testy K4b/1–K4b/4 (podtrzymanie — pas; główna — rzut; podtrzymanie
+przeciwnika — rzut; nieśmiertelne obrażenia w stwora bez zmian), mutacja,
+pakiet pokrewny, `npm test`, build, `test:all`.
+
+**Do następnych sesji:** K5 (kontrczary), K6 (reszta: dobieranie, tokeny,
+tutorzy, Fog), po kolei: reprodukcja → test RED → naprawa po deskryptorze
+→ bramki.
