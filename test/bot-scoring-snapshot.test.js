@@ -75,6 +75,16 @@ import {
  *     Zmierzona różnica: tylko ravnica-wur|innistrad-wu@1001 (298→299 decyzji,
  *     scoreSum 3186.9495→3166.2283); pozostałe pięć śladów bitowo identycznych.
  *     To nie jest pomiar jakości gry ani tuning parametrów.
+ *   - 37a41eab… → abc4017e… (zgłoszenie G, etap 1 — poprawki bramkowe,
+ *     2026-11-05): bot dokłada własne syntezowane deklaracje bloków
+ *     z deskryptora (gangi prefiksowe i pokrycia w permutowanych
+ *     porządkach blokerów), żeby widzieć krzyżowe przypisania bez
+ *     powrotu silnika do enumeracji. Zmierzona różnica: TYLKO
+ *     ravnica-wur|innistrad-wu@1001 (256 decyzji bez zmian liczby,
+ *     scoreSum 1963.8357→1860.8982; block 8→7, cast_spell 5→3,
+ *     pass_priority 207→209); pozostałe pięć śladów bitowo identycznych.
+ *     Kontrola jakości: test/bot-benchmark.test.js 10/10 (progi regresji),
+ *     co nie dowodzi równej siły gry. Świadoma regeneracja.
  *   - b8c7f8cc… → 37a41eab… (zgłoszenie G, etap 1, 2026-11-05): walka
  *     przechodzi z enumeracji kombinacji na ziarna + deskryptor problemu;
  *     bot heurystyczny dokłada własne prefiksowe deklaracje ataku. Zmierzona

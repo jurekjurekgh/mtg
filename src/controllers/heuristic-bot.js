@@ -2028,6 +2028,92 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     return synthesized;
   }
 
+  /**
+   * Zgłoszenie G, etap 1: bot dokłada własne kandydatury bloków z deskryptora
+   * (pula par), nie z enumeracji silnika: prefiksowe gangi na jednego
+   * atakującego (żeby wybrać najmniejszy gang zabijający) oraz pokrycia
+   * wieloatakujące w kilku porządkach blokerów (permutacje przypisań).
+   * Synteza działa tylko bez wymogów bloku (`mandatoryIds`) — przy wymogach
+   * kandydatami są solverowe ziarna silnika. Kształty są legalne z budowy:
+   * bloker używany co najwyżej raz, menace dostaje 0 albo >=2 blokerów,
+   * a samotny „can't block alone” nie jest całą deklaracją.
+   */
+  function synthesizedBlockDeclarations(view, existing) {
+    const declaration = view?.combatDeclaration;
+    if (!declaration || declaration.role !== 'blockers') return [];
+    if ((declaration.mandatoryIds ?? []).length > 0) return [];
+    const pool = declaration.pool ?? {};
+    const attackerIds = [...(declaration.attackerIds ?? Object.keys(pool))];
+    if (attackerIds.length === 0) return [];
+    const byId = new Map((view.zones?.battlefield ?? []).map((object) => [object.id, object]));
+    const keyOf = (assignments) => Object.keys(assignments ?? {}).sort()
+      .map((attackerId) => `${attackerId}:${[...(assignments[attackerId] ?? [])].sort().join(',')}`)
+      .join('|');
+    const existingKeys = new Set(existing
+      .filter((cmd) => cmd.type === 'declare_blockers')
+      .map((cmd) => keyOf(cmd.assignments)));
+    const synthesized = [];
+    const add = (assignments) => {
+      const cleaned = Object.fromEntries(Object.entries(assignments ?? {})
+        .filter(([, ids]) => Array.isArray(ids) && ids.length > 0)
+        .map(([attackerId, ids]) => [attackerId, [...ids]]));
+      const usedBlockers = [...new Set(Object.values(cleaned).flat())];
+      if (usedBlockers.length === 0) return;
+      if (usedBlockers.length === 1 && byId.get(usedBlockers[0])?.cantBlockAlone === true) return;
+      const key = keyOf(cleaned);
+      if (existingKeys.has(key)) return;
+      existingKeys.add(key);
+      synthesized.push({ type: 'declare_blockers', playerId: view.playerId, assignments: cleaned });
+    };
+    // Gangi prefiksowe: bot sam wybiera, ilu blokerów poświęcić na atakującego.
+    for (const attackerId of attackerIds) {
+      const blockers = [...(pool[attackerId] ?? [])];
+      for (let count = 2; count <= blockers.length; count += 1) {
+        add({ [attackerId]: blockers.slice(0, count) });
+      }
+    }
+    // Pokrycia: kolejność atakujących (deklarowana albo od największego
+    // zagrożenia) x kolejność blokerów (puli albo odwrotna) daje permutacje
+    // przypisań bez enumerowania iloczynu kartezjańskiego.
+    const strength = (id) => {
+      const object = byId.get(id);
+      return 2 * Math.max(0, combatPower(object)) + Math.max(0, object?.toughness ?? 0);
+    };
+    const allBlockers = [];
+    for (const attackerId of attackerIds) {
+      for (const blockerId of pool[attackerId] ?? []) {
+        if (!allBlockers.includes(blockerId)) allBlockers.push(blockerId);
+      }
+    }
+    const byThreat = [...attackerIds]
+      .map((id, index) => ({ id, index }))
+      .sort((a, b) => strength(b.id) - strength(a.id) || a.index - b.index)
+      .map(({ id }) => id);
+    const cover = (orderedAttackers, blockerOrder) => {
+      const rank = new Map(blockerOrder.map((id, index) => [id, index]));
+      const used = new Set();
+      const assignments = {};
+      for (const attackerId of orderedAttackers) {
+        const attacker = byId.get(attackerId);
+        const needed = (attacker?.keywords ?? []).includes('menace') ? 2 : 1;
+        const available = [...(pool[attackerId] ?? [])]
+          .filter((blockerId) => !used.has(blockerId))
+          .sort((a, b) => (rank.get(a) ?? 0) - (rank.get(b) ?? 0));
+        if (available.length < needed) continue;
+        const chosen = available.slice(0, needed);
+        assignments[attackerId] = chosen;
+        for (const blockerId of chosen) used.add(blockerId);
+      }
+      add(assignments);
+    };
+    const reversed = [...allBlockers].reverse();
+    cover(attackerIds, allBlockers);
+    cover(attackerIds, reversed);
+    cover(byThreat, allBlockers);
+    cover(byThreat, reversed);
+    return synthesized;
+  }
+
   function botCommandCandidates(view) {
     const legal = view?.legalCommands ?? [];
     // N: jednostki automatu liczymy raz per decyzja (filtr castów poniżej).
@@ -2035,6 +2121,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     const candidates = legal.filter((cmd) => botMayPayCreatureSacrificeCost(view, cmd)
       && !(unitsAuto != null && (castNieopłacalnyAuto(view, cmd, unitsAuto) || triggerPaymentBeyondAuto(view, cmd, unitsAuto))));
     candidates.push(...synthesizedAttackDeclarations(view, candidates));
+    candidates.push(...synthesizedBlockDeclarations(view, candidates));
     // Aktywny protokół zawsze wystawia bezpieczne wyjście (pass/decline/done,
     // a co najmniej concede). Gdyby ten inwariant kiedyś pękł, jawny błąd jest
     // bezpieczniejszy niż ciche złamanie twardego zakazu właściciela.

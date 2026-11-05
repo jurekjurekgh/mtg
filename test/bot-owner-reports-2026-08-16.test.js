@@ -141,7 +141,7 @@ test('D: Escape z kosztem 4 STWORÓW z grobu jest za drogi — bot nie ucieka (a
 // ---------------------------------------------------------------------------
 
 test('D2: Escape z dużym grobem — oferty bez wybuchu: cast tylko po celach,'
-  + ' wygnanie jako pending z capowanymi ofertami (jak crew/combat)', () => {
+  + ' wygnanie jako pending z kompletnymi ofertami (F)', () => {
   const state = botTurn();
   put(state, { id: 'oblivion', cardId: 'sweet-oblivion', controllerId: 'p2', zone: 'graveyard', kind: 'spell' });
   // 10 innych kart w grobie → dawny kształt to C(10,4)=210 podzbiorów × 2 cele
@@ -161,7 +161,7 @@ test('D2: Escape z dużym grobem — oferty bez wybuchu: cast tylko po celach,'
   assert.ok(state.pendingEscapeExile, 'pending Escape jest');
   const view2 = playerView(state, 'p2');
   const exiles = view2.legalCommands.filter((c) => c.type === 'resolve_escape_exile');
-  assert.ok(exiles.length <= 32,
-    `enumeracja podzbiorów dla bota nadal capowana do 32 (jak M103/D): ${exiles.length}`);
+  assert.equal(exiles.length, 210,
+    `komplet podzbiorów C(10,4) bez dawnego capa (F; picker w etapie 3 G): ${exiles.length}`);
   assert.ok(exiles.length > 0, 'bot ma oferty resolve_escape_exile');
 });

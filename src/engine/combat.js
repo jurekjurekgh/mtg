@@ -394,11 +394,13 @@ export function attackerDeclarationViolation(state, playerId, attackerIds) {
     return error.message;
   }
   if (attackers.some((object) => !isLegalAttacker(state, object, playerId))) return 'Nielegalny atakujący';
+  // Wymóg ataku (CR 508.1d: „attacks each combat if able”) musi być spełniony.
   const missing = mandatoryAttackerIds(state, playerId)
     .filter((id) => !attackerIds.includes(id));
   if (missing.length > 0) {
     return 'Stwór z wymogiem ataku (goad lub „attacks each combat if able\") musi atakować w tym combacie';
   }
+  // Restrykcja „can't attack alone” (CR 508.1c): samotna deklaracja jest nielegalna.
   if (attackers.length === 1 && attackers.some((object) => hasAloneRestriction(object, 'cantAttackAlone'))) {
     return 'Stwór z „can\'t attack alone\" musi atakować z co najmniej jednym innym stworem';
   }
