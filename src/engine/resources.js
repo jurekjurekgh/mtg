@@ -201,6 +201,13 @@ function maxPipsCovered(units, pipReqs) {
   return count;
 }
 
+/** Czy produkcja źródła zwiększa dopasowanie many do brakujących pipów? */
+function manaUnitsImprovePipCoverage(poolUnits, producedUnits, requirements) {
+  if (!Array.isArray(producedUnits) || producedUnits.length === 0) return false;
+  return maxPipsCovered([...poolUnits, ...producedUnits], requirements)
+    > maxPipsCovered(poolUnits, requirements);
+}
+
 /**
  * Pierwszy kolor pipa z deficytem w puli (kolejność wymagań) — grant tapany
  * w finansowanie bierze TEN kolor (bramka i tapCostedManaSource liczą go tak
@@ -711,6 +718,16 @@ export function spendMana(state, playerId, amount, requirements = [], purpose = 
       const grantColor = plannedGrant ?? (sourceGrant > 0
         ? (firstUncoveredPipColor(expandManaPool(player.manaPool), requirements) ?? srcColors[0] ?? 'G')
         : null);
+      // A grant plan wyznacza dokładnie te granty, które są potrzebne do
+      // pokrycia pipów. Dla zwykłych źródeł sprawdzamy dopasowanie: sam fakt,
+      // że kolor występuje w wymaganiach, nie oznacza, że kolejna jednostka
+      // tego koloru pomaga (np. druga Góra przy koszcie {R}{G}{W}).
+      if (sourceGrant > 0 && plannedGrant == null) continue;
+      const poolUnits = expandManaPool(player.manaPool);
+      const producedUnits = sourceGrant > 0
+        ? Array.from({ length: sourceGrant }, () => [plannedGrant])
+        : [srcColors];
+      if (!manaUnitsImprovePipCoverage(poolUnits, producedUnits, requirements)) continue;
       // Wspólny predykat zamiast `srcColors.some((c) => reqColors.has(c))`
       // (audyt PR #145, zn. F6 — klasa L48/M174 oferta=walidacja): zbiór
       // kolorów źródła BEZBARWNEGO jest pusty, więc stary warunek nigdy nie
@@ -745,6 +762,9 @@ export function spendMana(state, playerId, amount, requirements = [], purpose = 
         if (covered) break;
         // Wspólny predykat: bezbarwne źródło (colors []) też domyka pip {C}.
         if (!unitCoversAnyRequirement(entry.colors, requirements)) continue;
+        const poolUnits = expandManaPool(player.manaPool);
+        const producedUnits = Array.from({ length: entry.amount }, () => [...entry.colors]);
+        if (!manaUnitsImprovePipCoverage(poolUnits, producedUnits, requirements)) continue;
         // A: rezerwa jak lądy wyżej (wolne tapnięcie też zjada świeżą bazę).
         const freshCovers = matchColorRequirements(
           [...expandManaPool(player.manaPool), ...freshManaUnits(state, playerId, purpose)], requirements);
@@ -763,8 +783,13 @@ export function spendMana(state, playerId, amount, requirements = [], purpose = 
         const ability = activatableTreasureAbilityOf(object, playerId);
         if (!ability) continue;
         if (!unitCoversAnyRequirement(ability.colors, singleColorRequirements(new Set(requirements.flat())))) continue;
-        const need = firstUncoveredPipColor(expandManaPool(player.manaPool), requirements);
-        tapTreasureForMana(state, playerId, id, { grantColor: need ?? ability.colors[0] });
+        const poolUnits = expandManaPool(player.manaPool);
+        const need = firstUncoveredPipColor(poolUnits, requirements);
+        const grantColor = ability.colors.includes(need) ? need
+          : ability.colors.find((color) => manaUnitsImprovePipCoverage(poolUnits, [[color]], requirements));
+        if (grantColor == null
+          || !manaUnitsImprovePipCoverage(poolUnits, [[grantColor]], requirements)) continue;
+        tapTreasureForMana(state, playerId, id, { grantColor });
         covered = matchColorRequirements(expandManaPool(player.manaPool), requirements);
       }
     }
