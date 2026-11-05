@@ -808,6 +808,12 @@ export function legalActivatedAbilities(state, playerId) {
           object.equipment.equipFor?.equip ?? Infinity,
         );
         if (cheapestEquip > mana) continue;
+        // Equip wybiera cel w CR 702.6a — użyj wspólnej listy legalnych
+        // celów, by uwzględnić hexproof/shroud i ochronę przed kolorem
+        // źródła. Własna pętla poniżej nadal filtruje kontrolę/no-op i koszt.
+        const legalEquipTargets = new Set(legalTargetCandidates(
+          state, playerId, { type: 'creature_you_control' }, object,
+        ));
         for (const targetId of state.zones.battlefield) {
           const target = state.objects.get(targetId);
           // CR 702.6a: equipment nie może wyposażyć SAMEGO SIEBIE — oferta
@@ -833,6 +839,7 @@ export function legalActivatedAbilities(state, playerId) {
             : (object.equipment.colors ?? []);
           if (target?.zone === 'battlefield' && target.kind === 'creature'
             && target.controllerId === playerId && target.id !== id
+            && legalEquipTargets.has(targetId)
             && equipForTarget <= mana
             && object.attachedTo !== target.id
             && canPayColoredCost(state, playerId, colorRequirementsOf({ colors: targetColors }))) {

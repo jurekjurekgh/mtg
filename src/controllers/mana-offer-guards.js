@@ -195,7 +195,7 @@ export function castBeyondAutoMana(view, cmd, units = autoManaUnits(view)) {
  * Bot musi najpierw wykonać taką aktywację, bo executor nie poświęca nic sam.
  * Mana Powerstone może opłacić zdolność (nie chodzi o rzut czaru). */
 export function triggerPaymentBeyondAuto(view, cmd, units = autoManaUnits(view)) {
-  if (!['resolve_pay_or_sacrifice', 'resolve_optional_pay_choice'].includes(cmd?.type) || cmd.pay !== true) return false;
+  if (!['resolve_pay_or_sacrifice', 'resolve_optional_pay_choice', 'resolve_counter_pay_choice', 'resolve_ward_pay_choice'].includes(cmd?.type) || cmd.pay !== true) return false;
   const available = [...units, ...restrictedManaUnits(view)];
   const pips = (cmd.costColors ?? []).map((color) => [color]);
   return (cmd.cost ?? 0) > available.length || (pips.length > 0 && !matchColorRequirements(available, pips));
