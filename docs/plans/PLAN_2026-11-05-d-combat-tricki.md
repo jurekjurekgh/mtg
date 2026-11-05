@@ -138,6 +138,22 @@ odkręcenie Savage Surge, liczniki po naprawie K1). Jedna potwierdzona luka:
   opłacalnym usunięciem zaakceptowanym jako koszt utraty triku — do
   rozstrzygnięcia pomiarem scen walki i poza nią).
 
+## Etap 7 (kontynuacja, 2026-11-05): Diplomatic Relations — pump + ugryzienie
+
+Potwierdzona pomiarem luka z audytu K2/K3: instant łączący tymczasowy pump
+własnego stwora z ugryzieniem (`damage_from_target_power`) bot rzuca w
+podtrzymaniu, bo ugryzienie zabijające cel jest wyceniane jak zwykłe
+usunięcie (oferta 11 > pas 0), a pump jest tylko riderem. To ten sam kształt
+triku co K1, tylko z pumpem czasowym zamiast licznika.
+
+Naprawa generyczna (ADR 0002, zero nazw kart): bramka trzymania na poziomie
+rzutu — instant z pumpem na własnego stwora i ugryzieniem z tego stwora
+traci poza oknem walki nowy parametr `pumpBiteHoldPenalty`. Okna jak w K1:
+cel pumpu już walczy; blokujący-niespodzianka po deklaracji atakujących
+wroga; pump domyka grę w tym ataku. Dowód: testy DR/1–DR/4 (pas w
+podtrzymaniu i głównej, rzut w walce po blokach i w obronie), mutacja,
+pakiet pokrewny, `npm test`, build, `test:all`.
+
 **Do następnych sesji:** K4 (removal/obrażenia — okna odpowiedzi, rzuty
 w twarz), K5 (kontrczary), K6 (reszta: dobieranie, tokeny, tutorzy, Fog),
 po kolei: reprodukcja → test RED → naprawa po deskryptorze → bramki.
