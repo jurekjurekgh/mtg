@@ -2124,12 +2124,12 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
    * waliduje je przy execute jak każdą wybraną kombinację.
    */
   function synthesizedTriggerTargetSets(view, existing) {
-    const descriptor = view?.pendingTriggerTarget;
-    if (!descriptor || (descriptor.maxTargets ?? 1) <= 1) return [];
+    const targetProblem = view?.pendingTriggerTarget;
+    if (!targetProblem || (targetProblem.maxTargets ?? 1) <= 1) return [];
     const seeds = existing.filter((cmd) => cmd.type === 'resolve_trigger_target' && Array.isArray(cmd.targetIds));
     if (seeds.length === 0) return [];
     const template = seeds[0];
-    const candidateIds = [...(descriptor.candidateIds ?? [])];
+    const candidateIds = [...(targetProblem.candidateIds ?? [])];
     if (candidateIds.length <= 1) return [];
     const enemyId = (view.players ?? []).find((pl) => pl.id !== view.playerId)?.id ?? null;
     const rankValue = (id) => {
@@ -2150,7 +2150,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     const keyOf = (ids) => [...ids].sort().join('|');
     const existingKeys = new Set(seeds.map((cmd) => keyOf(cmd.targetIds)));
     const synthesized = [];
-    const maxSize = Math.min(descriptor.maxTargets, ranked.length);
+    const maxSize = Math.min(targetProblem.maxTargets, ranked.length);
     for (let size = 2; size <= maxSize; size += 1) {
       const ids = ranked.slice(0, size);
       const key = keyOf(ids);
