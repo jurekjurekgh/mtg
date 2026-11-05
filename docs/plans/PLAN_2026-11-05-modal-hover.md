@@ -142,3 +142,8 @@ Zakres etapu:
   źródłowego decyzji; pozostałe kreatory bez zmian.
 - [x] Bramy: `npm test` + `npm run build`, osobny commit i push; pełny
   `test:all` przed końcem zadania, aktualizacja historii/handoffu/PR.
+
+Wykonanie etapu 7: RED 5/6 → GREEN 6/6 (`HOVER/6` — nazwa w zdaniu nagłówka,
+jedno wystąpienie, hover działa, klik nie otwiera); mutacja segmentacji
+(`at = -1`) 1/6 czerwonych. Testy pokrewne modalnych czarów/Epic/clash
+100/100 bez zmian. Pełny `test:all` **10244/10244** (osobny pomiar w logu sesji).

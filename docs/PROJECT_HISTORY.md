@@ -27,6 +27,13 @@
 - Nowe testy `test/modal-hover-nazwy.test.js`: RED 1/5 → GREEN 5/5, mutacja 2/5. Stare testy modali bez osłabiania (ścieżka dotykowa = dotychczasowy klik): pakiety pokrewne 178/178 i 192/192. Bramy: fast **9975/9975**, build **77/5702,0 kB**, pełny `test:all` **10243/10243** (605,6 s), 0 fail / 0 skip. Plan: `docs/plans/PLAN_2026-11-05-modal-hover.md`; handoff: `docs/setup/HANDOFF_2026-11-05-modal-hover.md`. Bez scalania i pełnego B0.
 
 
+## 2026-11-05 — etap 7: hover nazwy czaru na szczycie modala wyboru trybu
+
+- Dopytanie właściciela: czy hover objął nazwę czaru na szczycie modala wyboru trybu i listę kart u góry kreatorów biblioteki. Pomiar: kreatory biblioteki (chipy) miały hover od etapów 2–4; nagłówek wyboru trybu był zwykłym tekstem (hoverowalna nazwa tylko dla clash i Epic Experiment).
+- `afa6d99`: `renderMultiTargetWizard` osadza nazwę `introCard` jako segment-podgląd wewnątrz zdania nagłówka bez dublowania; `main.js` podaje `introCard` dla castMode, chooseModes (też krok „rzuć albo odmów") i chooseOneOrBoth. RED 5/6 → GREEN 6/6, mutacja segmentacji złapana, pokrewne modalne 100/100.
+- Bramy: fast **9976/9976**, build **77/5703,7 kB**, pełny `test:all` **10244/10244**, 0 fail / 0 skip. Plan: `docs/plans/PLAN_2026-11-05-modal-hover.md`; handoff: `docs/setup/HANDOFF_2026-11-05-modal-hover.md`. Bez scalania.
+
+
 ## 2026-11-04 — zgłoszenie C: Magma Pummeler nie marnuje refleksu
 
 - Bot wybierał największe ciało i zadawał nieśmiertelne obrażenia. Przyczyna: oferta `resolve_trigger_target` nie przekazywała `pending.extra` do `resolveDamageAmount`, więc `amountFromContext:'countersRemoved'` nie trafiało do `cmd.damage` i bot omijał wspólną politykę obrażeń.
