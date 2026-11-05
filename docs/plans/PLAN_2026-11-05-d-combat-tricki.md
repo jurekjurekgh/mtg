@@ -228,3 +228,23 @@ mojego stwora), bot z kontrą i maną. Naprawa tylko przy potwierdzonej
 luce, po deskryptorze (`counter_spell`, `counter_spell_unless_pays`),
 zero nazw kart. Dowód: testy, mutacja, pakiet pokrewny, `npm test`,
 build, `test:all` (golden-master tylko świadomie).
+
+## Wynik audytu K5 (pomiar, bez luki)
+
+Sonda decyzji (`.arena/checkpoint/d-k5-probe.mjs`, Cancel + mana, czar
+wroga na stosie): trywialny czar MV1 i stwór 1/1 — bot trzyma kontrę
+(oferta −10); duży stwór, removal, dobieranie, Fireball — kontruje
+(82–124). Polityka M237/2 + premia za zatrzymane zagrożenie działa.
+Świadomie poza zakresem: bot nie jest archetypem kontrolnym, więc nie
+modelujemy „trzymania many pod kontrę” kosztem rozwoju stołu.
+
+## Etap 11 (kontynuacja, 2026-11-05): K6 — instanty z tokenami w podtrzymaniu
+
+Pomiar K6 (`.arena/checkpoint/d-k6-probe.mjs`): Fog/prewencje, tutorzy
+i ramp bot trzyma; dobieranie w podtrzymaniu uznane za akceptowalne
+(karta przed dobraniem kroku bywa plusem). Luka tej samej rodziny co K4b:
+Raise the Alarm i Carrion Call bot rzuca we własnym podtrzymaniu —
+tokeny nie zyskują nic przed główną fazą, a instant traci wartość
+zaskoczenia (blokujący znikąd w turze wroga). Bramka jak K4b: instant
+z `create_token` we własnym upkeep/draw traci `tokenUpkeepHoldPenalty`;
+tura wroga i walka bez zmian. Dowód: testy K6/1–K6/3, mutacja, bramki.
