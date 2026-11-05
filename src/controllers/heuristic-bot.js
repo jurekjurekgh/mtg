@@ -12850,6 +12850,9 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // flaga mówi, czy ten czar odbił ≥1 cel wroga.
         let bounceCastHadFoeTarget = false;
         let tokenCastHadCreatureEffect = false; // PMSSB-2/B (F1): timing raz na rzut
+        let friendlyStatCounterTarget = null; // zgłoszenie D: cel trwałego licznika statystyk na własnym stworze
+        let friendlyStatCounterAmount = 0;    // zgłoszenie D: suma takich liczników na tym celu
+        let spellUntapsFriendlyCreature = false; // zgłoszenie D: odkręcenie własnego stwora (blokujący-niespodzianka)
         let spellMakesTokens = false; // PMSSB-2/C (F7): tie-break kosztem (dowolny token)
         for (const effect of scoredEffects) {
           // M91 (uwaga C właściciela): efekty USUWAJĄCE permanent (destroy,
@@ -13314,6 +13317,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           // istniała, bot rzucał Twiddle-Odkręcenie na górę przeciwnika
           // w swoim upkeepie (audyt Żywym Testerem M146).
           if (effect.type === 'untap_permanent') {
+            const untapRecipient = objectOnBoard(view, cmd.targets?.[effect.targetIndex ?? 0]) ?? target;
+            if (untapRecipient?.controllerId === view.playerId && untapRecipient.kind === 'creature') {
+              spellUntapsFriendlyCreature = true;
+            }
             // Savage-like: wartość odkręcenia wliczona w blok pump (A) — nie dublujemy
             if (isSavageLikeSpell(spell)) {
               // Brak dodatkowej punktacji — cały efekt savage wyceniony razem
@@ -13912,6 +13919,15 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             // {T}-zdolności (pomiar PRZED: 0 pkt i cel wybierany z enumeracji).
             score += counterEffectValue(view, target, effect.counter ?? '+1/+1',
               Math.max(1, effect.amount ?? 1));
+            // Zgłoszenie D: znacznik bramki trzymania (ocena niżej, raz na rzut).
+            const counterRecipient = objectOnBoard(view, cmd.targets?.[effect.targetIndex ?? 0]) ?? target;
+            const counterDelta = counterStatDelta(effect.counter ?? '+1/+1', Math.max(1, effect.amount ?? 1));
+            if (counterDelta && (counterDelta.power > 0 || counterDelta.toughness > 0)
+              && counterRecipient?.controllerId === view.playerId && counterRecipient.kind === 'creature'
+              && (friendlyStatCounterTarget == null || friendlyStatCounterTarget.id === counterRecipient.id)) {
+              friendlyStatCounterTarget = counterRecipient;
+              friendlyStatCounterAmount += Math.max(1, effect.amount ?? 1);
+            }
           }
           // PMSSB-23/F3: rider rozlania liczników (wcześniej 0 pkt).
           if (effect.type === 'add_counter_to_creatures_you_control') {
@@ -13972,6 +13988,33 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // bota widziałby sam zysk z „if the gift was promised” i obiecywał
         // dar zawsze — także wtedy, gdy indestructible nic nie zmienia.
         if (cmd.gifted === true) score -= P.drawCardValue * 0.5;
+        // Zgłoszenie D (2026-11-05): instant z trwałym licznikiem statystyk na
+        // własnego stwora to combat trick — poza oknem walki bot TRZYMA kartę.
+        // Płaska wartość licznika (`counterHostValue`) nie zależy od fazy (poza
+        // skromną karą po walce), więc bez bramki bot rzucał „jak tylko miał
+        // manę” (pomiar sondy: podtrzymanie 64 do 0 dla pasu). Dozwolone okna:
+        // (1) cel już walczy (atakujący/blokujący) — licznik wycenia wyżej
+        // model walki; (2) wróg zadeklarował atakujących, a cel może blokować
+        // (tapnięty tylko, gdy ten sam czar go odkręca) — blokujący, o którym
+        // przeciwnik nie wiedział; (3) licznik domyka grę w tym ataku (zegar
+        // jak `counterLethalClockBonus`). Sorcery nie wchodzi (`spell.timing`),
+        // zdolności aktywowane zostają przy wycenie M429.
+        if (spell?.timing === 'instant' && friendlyStatCounterTarget) {
+          const trickTarget = friendlyStatCounterTarget;
+          const foe = enemy(view);
+          const closesGame = Boolean(foe) && canAttackNow(trickTarget)
+            && (trickTarget.power ?? 0) + friendlyStatCounterAmount >= (foe.life ?? 20)
+            && attackHitsFace(view, trickTarget);
+          const enemyDeclaredAttackers = Boolean(view.combat)
+            && view.combat.attackingPlayerId !== view.playerId
+            && (view.combat.attackers ?? []).length > 0
+            && ['declare_attackers', 'declare_blockers'].includes(view.turn.step);
+          const surpriseBlocker = enemyDeclaredAttackers
+            && (!trickTarget.tapped || spellUntapsFriendlyCreature);
+          if (!combatTrickWindow(view, trickTarget) && !surpriseBlocker && !closesGame) {
+            score -= P.counterInstantHoldPenalty ?? 0;
+          }
+        }
         return finish(score);
       }
       case 'activate_ability': {

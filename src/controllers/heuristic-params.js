@@ -512,6 +512,14 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   'counterEvasionBonus',         // gospodarz, którego ataku przeciwnik nie zatrzyma
   'counterLateWindowPenalty',    // kara, gdy walka tej tury już za nami (Główna 2 / faza końcowa)
   'counterLethalClockBonus',     // licznik domyka grę: moc ≥ życie przeciwnika, atak nie do zatrzymania
+  // Zgłoszenie D (2026-11-05): instant z trwałym licznikiem statystyk to
+  // combat trick — poza oknem walki bot ma go TRZYMAĆ, a nie rzucać „bo ma
+  // manę”. Kara jest na poziomie rzutu (nie efektu) i świadomie większa niż
+  // typowa suma baza czaru + płaska wartość licznika, żeby decyzja zapadła
+  // też dla dużego gospodarza; okna-wyjątki (walka, która trwa, niespodzianka
+  // blokująca po ataku wroga, domknięcie gry) liczy bot, nie parametr.
+  // ×0 = zachowanie sprzed zgłoszenia D (anty-over-fix jak w rodzinie M429).
+  'counterInstantHoldPenalty',   // kara za instant-liczniki rzucone poza oknem walki
   // M429 („P2 Memory's Journey"): rodzina „wtasowanie kart z grobu do
   // biblioteki". Dotąd efekt był wart płasko 4 + 2·karty (NIEZALEŻNIE od stanu
   // biblioteki — pomiar: 58 pkt przy 30 i przy 12 kartach, a wariant z ZERO
@@ -1171,6 +1179,7 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   counterEvasionBonus: 5,
   counterLateWindowPenalty: 4,
   counterLethalClockBonus: 50,
+  counterInstantHoldPenalty: 120, // zgłoszenie D: patrz uzasadnienie przy HEURISTIC_PARAM_KEYS
   // M429 „wtasowanie kart z grobu do biblioteki" (P2 Memory's Journey).
   // Próg presji = `librarySafeMargin` (20, istniejąca rodzina biblioteczna).
   // Dopłata ratunkowa 8/kartę: 3 karty przy cienkiej bibliotece = 34 pkt efektu
