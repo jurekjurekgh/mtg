@@ -14062,6 +14062,26 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           });
           if (faceBurn) score -= P.faceBurnHoldPenalty ?? 0;
         }
+        // Zgłoszenie D etap 9 (K4b): instant-removal we WŁASNYM podtrzymaniu
+        // lub kroku dobrania. Karta robi swoje, ale decyzja zapada przed
+        // dobraniem i główną fazą, bez pilności — bot ma poczekać na główną
+        // albo odpowiedź. Po deskryptorze: śmiertelne obrażenia w stwora,
+        // destroy, exile albo bounce permanenta przeciwnika. Tura wroga,
+        // walka i główne fazy bez zmian (tam timing jest treścią instanta).
+        if (spell?.timing === 'instant' && myTurn(view) && ['upkeep', 'draw'].includes(view.turn.step)) {
+          const earlyRemoval = scoredEffects.some((e) => {
+            const tid = cmd.targets?.[e?.targetIndex ?? 0];
+            const t = tid ? objectOnBoard(view, tid) : null;
+            if (!t || t.controllerId === view.playerId) return false;
+            if (e.type === 'damage') {
+              const amt = Number.isInteger(e.amount) ? e.amount : 0;
+              return amt > 0 && damageIsLethal(view, tid, amt);
+            }
+            return ['destroy_permanent', 'exile_permanent', 'bounce_permanent',
+              'bounce_to_library_top', 'bounce_to_library_bottom'].includes(e.type);
+          });
+          if (earlyRemoval) score -= P.removalUpkeepHoldPenalty ?? 0;
+        }
         return finish(score);
       }
       case 'activate_ability': {

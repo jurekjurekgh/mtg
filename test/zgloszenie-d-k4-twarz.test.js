@@ -87,8 +87,10 @@ test('K4/2: główna, wróg 2 życia — Shock w twarz domyka grę, bot rzuca', 
   assert.deepEqual(chosen.targets, ['p2']);
 });
 
-test('K4/3: podtrzymanie — Shock w stwora wroga (usunięcie) bez zmian, bot rzuca', () => {
-  const s = game('p1', 'upkeep', 'p1', 20);
+test('K4/3: główna — Shock w stwora wroga (usunięcie) bez zmian po bramce twarzy, bot rzuca', () => {
+  // Etap 9 (K4b) celowo zmienił podtrzymanie (removal czeka na główną);
+  // tu pilnujemy, że bramka K4a nie dotyka obrażeń w stwora.
+  const s = game('p1', 'main1', 'p1', 20);
   put(s, 'shock', 'shock', 'p1', 'hand');
   creature(s, 'wrog', 'p2', 2, 2);
   mountains(s);
