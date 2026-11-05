@@ -168,6 +168,21 @@ burn w twarz poza walką bez domknięcia gry). Następny etap K4: polityka
 obrażeń w twarz (tylko śmiertelne albo realna presja zegara) oraz timing
 instant-removalu (trzymanie na odpowiedź vs strata tempa).
 
-**Do następnych sesji:** K4 (removal/obrażenia — okna odpowiedzi, rzuty
-w twarz), K5 (kontrczary), K6 (reszta: dobieranie, tokeny, tutorzy, Fog),
-po kolei: reprodukcja → test RED → naprawa po deskryptorze → bramki.
+## Etap 8 (kontynuacja, 2026-11-05): K4a — obrażenia w twarz poza walką
+
+Zmierzona luka: Shock w twarz przy 20 życia przeciwnika w podtrzymaniu —
+bot rzuca, choć 2 obrażenia nic nie zmieniają i karta powinna czekać na
+smiertelny moment albo odpowiedź. Zakres etapu: polityka obrażeń w gracza
+z czaru instant (po deskryptorze `damage` i celu-graczu, zero nazw kart):
+poza oknem walki i bez domknięcia gry rzut w twarz traci karę trzymania.
+Timing instant-removalu na stwory (bot zabija już w podtrzymaniu) zostaje
+jako osobna obserwacja K4b — strata dotyczy elastyczności, nie samej karty.
+
+Dowód: testy K4/1–K4/4 (twarz przy 20 życia — pas; twarz śmiertelna —
+rzut; obrażenia w stwora w podtrzymaniu bez zmian; twarz w walce przy
+domykaniu bez zmian), mutacja, pakiet pokrewny, `npm test`, build,
+`test:all`.
+
+**Do następnych sesji:** K4b (timing instant-removalu), K5 (kontrczary),
+K6 (reszta: dobieranie, tokeny, tutorzy, Fog), po kolei: reprodukcja →
+test RED → naprawa po deskryptorze → bramki.
