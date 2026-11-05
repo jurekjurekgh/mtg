@@ -5,7 +5,7 @@ import { installPressActivation } from './gestures.js';
 import { renderPickerCancel, renderPickerChipList, renderPickerRow, renderPickerSection } from './picker.js';
 import { OPTION_IGNORABLE_TYPES, polishPluralCount } from './render.js';
 import { commandOptionKey, faceDownLabel } from './session.js';
-import { commandForCrewSelection, crewSelectionPower, commandForDiscardSelection, commandForEpicDiscardSelection, commandForSelection, commandForMulliganSelection, commandForMulliganBottomSelection, commandForSacrificeSelection, commandForTargetIdsSelection, commandForSingleTargetSelection, commandForCastWindowSelection, commandForButtonsSelection, commandForTapXSelection, commandForChooseOneOrBoth, commandForChooseModes, stunCandidatesFor } from './multi-target.js';
+import { commandForCrewSelection, crewSelectionPower, commandForDiscardSelection, commandForEpicDiscardSelection, commandForSelection, commandForMulliganSelection, commandForMulliganBottomSelection, commandForXSelection, commandForSacrificeSelection, commandForTargetIdsSelection, commandForSingleTargetSelection, commandForCastWindowSelection, commandForButtonsSelection, commandForTapXSelection, commandForChooseOneOrBoth, commandForChooseModes, stunCandidatesFor } from './multi-target.js';
 
 function clearChoiceElement(element) {
   if (element) element.textContent = '';
@@ -1443,7 +1443,7 @@ export function renderMultiTargetWizard(host, { view, session, plan, commands, s
     if (costKey && costChoice == null) return null;
     const giftArgs = giftSelectionArgs();
     if (giftArgs == null) return null;
-    return commandForSelection((commands ?? []).filter(costMatches), {
+    return commandForXSelection(plan, (commands ?? []).filter(costMatches), {
       targets: [...chosen],
       xValue: plan.hasX ? xValue : null,
       // H: bez wybranego celu nie podajemy stuna (wariant pusty);

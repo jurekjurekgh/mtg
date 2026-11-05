@@ -311,6 +311,38 @@ export function commandForSelection(commands, {
   }) ?? null;
 }
 
+/**
+ * G, etap 3 (wzorzec kreatora walki): komenda dla wyboru ze stepperem X.
+ * Najpierw dokładny wariant z oferty (dawne zachowanie), a gdy X/celów
+ * nie ma wśród ZIAREN oferty — konstrukcja z planu (cele z puli planu,
+ * liczba celów w widełkach, X w [xMin, xMax]) na szablonie oferty tego
+ * samego czaru. Silnik waliduje rzut przy wykonaniu, więc kreator nie
+ * klinuje się na wartości X spoza ziaren. Poza zakresem X (brak hasX)
+ * albo przy wyborze spoza reguł planu zwraca null jak dawniej.
+ */
+export function commandForXSelection(plan, commands, {
+  targets = [], xValue = null, stunTargetId = undefined,
+  gifted = undefined, giftRecipientId = undefined,
+} = {}) {
+  const offered = commandForSelection(commands, {
+    targets, xValue, stunTargetId, gifted, giftRecipientId,
+  });
+  if (offered) return offered;
+  if (!plan?.hasX || !Number.isInteger(xValue)) return null;
+  if (xValue < plan.xMin || xValue > plan.xMax) return null;
+  const chosen = (targets ?? []).filter((id) => id != null);
+  if (chosen.some((id) => !(plan.targets ?? []).includes(id))) return null;
+  if (!plan.xOnly && (chosen.length < plan.minTargets || chosen.length > plan.maxTargets)) return null;
+  const template = (commands ?? []).find((cmd) => cmd
+    && (Array.isArray(cmd.targets) || isPlainPermanentXCommand(cmd)));
+  if (!template) return null;
+  const constructed = { ...template, xValue };
+  if (Array.isArray(template.targets)) constructed.targets = [...targets];
+  if (stunTargetId !== undefined) constructed.stunTargetId = stunTargetId;
+  if (gifted !== undefined) constructed.gifted = gifted;
+  if (giftRecipientId !== undefined) constructed.giftRecipientId = giftRecipientId;
+  return constructed;
+}
 // ===========================================================================
 // M257-r5/C (uwaga z testów): koszt dodatkowy „poświęć stwora” — OSOBNE
 // wybory zamiast iloczynu.

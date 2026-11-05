@@ -2621,27 +2621,25 @@ export function dividedDamageDivisions(state, playerId, object) {
   const pool = [...candidates].sort((a, b) => rank(a) - rank(b));
   const total = divided.total;
   const out = [];
-  const compositions = (parts, left) => {
-    if (parts === 1) return [[left]];
-    const result = [];
-    for (let first = 1; first <= left - (parts - 1); first += 1) {
-      for (const rest of compositions(parts - 1, left - first)) result.push([first, ...rest]);
-    }
-    return result;
+  // G, etap 3: ziarna zamiast iloczynu podzbiory x kompozycje (F): koncentracja
+  // na kazdym kandydacie solo + dla rosnacych zestawow czolowki rankingu
+  // koncentracja na pierwszym i podzial mozliwie rowny. Kreator konstruuje
+  // wlasne zestawy/kwoty, a validateDamageDivision waliduje przy rzucie --
+  // kompletnosc konstrukcyjna bez listy do uciacia.
+  const seenDiv = new Set();
+  const pushDiv = (entries) => {
+    const key = entries.map((e) => `${e.id}:${e.amount}`).join('|');
+    if (seenDiv.has(key)) return;
+    seenDiv.add(key);
+    out.push(entries);
   };
-  const subsets = (start, k) => {
-    if (k === 0) return [[]];
-    const result = [];
-    for (let i = start; i <= pool.length - k; i += 1) {
-      for (const rest of subsets(i + 1, k - 1)) result.push([pool[i], ...rest]);
-    }
-    return result;
-  };
-  for (let k = 1; k <= Math.min(total, pool.length); k += 1) {
-    const parts = compositions(k, total);
-    for (const set of subsets(0, k)) {
-      for (const amounts of parts) out.push(set.map((id, i) => ({ id, amount: amounts[i] })));
-    }
+  for (const id of pool) pushDiv([{ id, amount: total }]);
+  for (let k = 2; k <= Math.min(total, pool.length); k += 1) {
+    const set = pool.slice(0, k);
+    pushDiv(set.map((id, i) => ({ id, amount: i === 0 ? total - (k - 1) : 1 })));
+    const base = Math.floor(total / k);
+    const rest = total - base * k;
+    pushDiv(set.map((id, i) => ({ id, amount: base + (i < rest ? 1 : 0) })));
   }
   return out;
 }
@@ -3321,33 +3319,54 @@ export function legalFireballCasts(state, playerId, objectId, object, manaAvaila
   const players = state.players.map((p) => p.id);
   const allTargets = [...creatures, ...players];
   if (allTargets.length === 0) return casts;
-  // Zgłoszenie F: podzbiory 1..wszystkie cele (Fireball „any number”)
-  // i X do pełnego budżetu — bez limitów kombinacji ani sufitu X.
-  const maxTargets = allTargets.length;
-  const subsets = (arr, k) => {
-    if (k === 0) return [[]];
-    if (arr.length < k) return [];
-    const [head, ...rest] = arr;
-    const withHead = subsets(rest, k - 1).map((x) => [head, ...x]);
-    return [...withHead, ...subsets(rest, k)];
-  };
   const base = object.manaCost ?? 0; // {R}
-  // X ograniczamy do 15 — pokrywa praktyczne użycia (lethal), bez setek
-  // tysięcy wariantów przy dużej puli many (stack overflow przy spreadzie).
-  for (let n = 1; n <= maxTargets; n += 1) {
-    const extra = Math.max(0, n - 1);
-    for (const combo of subsets(allTargets, n)) {
-      // Etap F/4: rzut „without paying its mana cost" — X = 0 (CR 107.3b),
-      // koszt {X}{R} zniesiony, ale dopłata {1} za każdy cel ponad pierwszy
-      // to zwiększenie kosztu, które płaci się nadal (CR 601.2f).
-      if (withoutManaCost) {
-        if (extra <= manaAvailable) casts.push({ objectId, targets: combo, xValue: 0 });
-        continue;
-      }
-      const maxX = manaAvailable - base - extra;
-      for (let X = 1; X <= maxX; X += 1) {
-        casts.push({ objectId, targets: combo, xValue: X });
-      }
+  // G, etap 3: ziarna zamiast iloczynu podzbiory celow x zakres X (F):
+  // pojedyncze cele (X smiertelne i maksymalne), zestaw wrogich stworow,
+  // wszyscy oraz wrogie stwory + gracz — kazdy z maksymalnym oplacalnym X.
+  // Dowolny inny zestaw/X konstruuje kreator (stepper), a walidacja rzutu
+  // (validateFireballTargets + bramka kosztu) przyjmuje kazdy legalny —
+  // kompletnosc konstrukcyjna bez listy do uciacia.
+  const seenCast = new Set();
+  const pushCast = (targets, xValue) => {
+    const key = `${[...targets].sort().join('|')}#${xValue}`;
+    if (seenCast.has(key)) return;
+    seenCast.add(key);
+    casts.push({ objectId, targets: [...targets], xValue });
+  };
+  const maxXFor = (n) => manaAvailable - base - Math.max(0, n - 1);
+  const lethalX = (id) => {
+    const target = state.objects.get(id);
+    if (target && target.toughness != null) return Math.max(1, target.toughness - (target.damage ?? 0));
+    const player = state.players.find((entry) => entry.id === id);
+    return player ? Math.max(1, player.life) : null;
+  };
+  // Etap F/4: rzut „without paying its mana cost" — X = 0 (CR 107.3b),
+  // koszt {X}{R} zniesiony, ale dopłata {1} za każdy cel ponad pierwszy
+  // to zwiększenie kosztu, które płaci się nadal (CR 601.2f).
+  if (withoutManaCost) {
+    for (const targetId of allTargets) pushCast([targetId], 0);
+  } else {
+    for (const targetId of allTargets) {
+      const maxX = maxXFor(1);
+      if (maxX < 1) continue;
+      const xs = new Set([1, maxX]);
+      const lethal = lethalX(targetId);
+      if (lethal != null && lethal >= 1 && lethal <= maxX) xs.add(lethal);
+      for (const X of [...xs].sort((a, b) => a - b)) pushCast([targetId], X);
+    }
+  }
+  const enemyCreatures = creatures.filter((id) => state.objects.get(id)?.controllerId !== playerId);
+  const enemyPlayerId = players.find((id) => id !== playerId) ?? null;
+  const seedSets = [];
+  if (enemyCreatures.length >= 2) seedSets.push(enemyCreatures);
+  if (allTargets.length >= 2) seedSets.push(allTargets);
+  if (enemyCreatures.length >= 1 && enemyPlayerId) seedSets.push([...enemyCreatures, enemyPlayerId]);
+  for (const set of seedSets) {
+    if (withoutManaCost) {
+      if (Math.max(0, set.length - 1) <= manaAvailable) pushCast(set, 0);
+    } else {
+      const maxX = maxXFor(set.length);
+      if (maxX >= 1) pushCast(set, maxX);
     }
   }
   return casts;
@@ -3802,8 +3821,32 @@ export function legalXCostCasts(state, playerId, objectId, object, manaAvailable
     if (blackX && X > 0 && !canPayColoredCost(state, playerId, reqs)) continue;
     feasibleX.push(X);
   }
+  // G, etap 3: ziarna X per zestaw celow zamiast pelnego zakresu --
+  // minimum (0), maksimum oplacalne oraz progi: X rowne pozostalej
+  // wytrzymalosci celu-stwora albo zyciu celu-gracza (zabojstwo / burn
+  // smiertelny). Inne wartosci konstruuje kreator (stepper X), a bramka
+  // rzutu waliduje -- kompletnosc konstrukcyjna.
+  const feasibleSet = new Set(feasibleX);
+  const seedXsFor = (combo) => {
+    const xs = new Set();
+    if (feasibleX.length > 0) {
+      xs.add(feasibleX[0]);
+      xs.add(feasibleX[feasibleX.length - 1]);
+    }
+    for (const id of combo ?? []) {
+      const target = state.objects.get(id);
+      if (target && target.toughness != null) {
+        const need = Math.max(0, target.toughness - (target.damage ?? 0));
+        if (feasibleSet.has(need)) xs.add(need);
+      } else {
+        const player = state.players.find((entry) => entry.id === id);
+        if (player && feasibleSet.has(player.life)) xs.add(player.life);
+      }
+    }
+    return [...xs].sort((a, b) => a - b);
+  };
   for (const combo of pools) {
-    for (const X of feasibleX) {
+    for (const X of seedXsFor(combo)) {
       casts.push({ objectId, targets: combo, xValue: X });
     }
   }

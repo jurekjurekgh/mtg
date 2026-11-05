@@ -76,12 +76,14 @@ function wybierzBota(state) {
   return { view, chosen, passScore };
 }
 
-test('B/1: oferta niesie warianty X od 0 do maksimum (kontrakt silnika)', () => {
+test('B/1 (po G, etap 3): oferta niesie ZIARNA X — minimum i maksimum (kontrakt silnika)', () => {
   const state = stan();
   const { view } = wybierzBota(state);
   const oferty = view.legalCommands.filter((c) => c.type === 'cast_spell' && c.objectId === 'ee');
-  assert.ok(oferty.length >= 7, `oferty X dla Epic Experiment: ${oferty.map((o) => o.xValue).join(',')}`);
-  assert.deepEqual(oferty.map((o) => o.xValue), [0, 1, 2, 3, 4, 5, 6], 'X = 0..maxKoszt');
+  // Ziarna: X minimalne (0) i maksymalne oplacalne (6); wartosci posrednie
+  // konstruuje kreator (stepper X w [xMin, xMax]), bramka rzutu waliduje.
+  assert.deepEqual(oferty.map((o) => o.xValue), [0, 6],
+    `ziarna X dla Epic Experiment: ${oferty.map((o) => o.xValue).join(',')}`);
 });
 
 test('B/2: w Main 2 bot rzuca Epic Experiment z MAKSYMALNYM opłacalnym X', () => {
