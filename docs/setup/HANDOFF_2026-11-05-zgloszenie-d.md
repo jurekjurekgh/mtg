@@ -21,10 +21,17 @@
 
 ## Następne kroki (kolejne sesje, po kolei)
 
-1. Diplomatic Relations (`pump + damage_from_target_power`): potwierdzona
-   luka — bot rzuca w podtrzymaniu (oferta 11). Bramka okna dla ugryzienia.
-2. K4: removal i obrażenia z instantu (okna odpowiedzi, rzuty w twarz).
-3. K5: kontrczary. K6: dobieranie, tokeny, tutorzy, prewencje (Fog).
+1. K4: obrażenia w twarz poza walką (Shock przy 20 życia w podtrzymaniu —
+   zmierzona luka) i timing instant-removalu.
+2. K5: kontrczary. K6: dobieranie, tokeny, tutorzy, prewencje (Fog).
 
 Sonda audytowa: `.arena/checkpoint/d-audit-probe.mjs` (podtrzymanie, wolna
 mana — rzut = luka). Bez scalania PR bez decyzji właściciela.
+
+## Etap 7 (ta sama sesja, commit `5b1ea34`)
+
+Diplomatic Relations naprawiony: bramka `pumpBiteHoldPenalty` (120) dla
+instantu „pump + ugryzienie z własnego stwora”. Testy
+`test/zgloszenie-d-diplomatic-okno.test.js` (DR/1–DR/4) 4/4, mutacja
+złapana, pakiet pokrewny 89/89, fast 9985/9985, `test:all` 10253/10253,
+build 77 modułów / 5709,7 kB. Pomiar K4 zapisany w planie (Shock w twarz).
