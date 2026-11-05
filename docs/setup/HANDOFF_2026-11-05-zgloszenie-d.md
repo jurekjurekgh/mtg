@@ -46,3 +46,13 @@ zaktualizowanych. Fast 9989/9989, `test:all` 10257/10257.
 Następne: K4b (timing instant-removalu na stwory), K5 (kontrczary),
 K6 (reszta). Sondy: `.arena/checkpoint/d-k4-probe.mjs`,
 `d-audit-probe.mjs`.
+
+## Etap 9 (commit `dd0c1cb`): K4b — timing instant-removalu
+
+Bramka `removalUpkeepHoldPenalty` (120): instant-removal we własnym
+podtrzymaniu/kroku dobrania czeka na główną. Testy K4b/1–K4b/4 4/4 +
+mutacja; golden-master zregenerowany świadomie (dryf 1/6 partii,
+commit `3778492`). Fast 9993/9993, `test:all` 10261/10261.
+
+Następne: K5 (kontrczary — czy bot trzyma manę i kontruje tylko to, co
+się liczy), potem K6 (dobieranie, tokeny, tutorzy, prewencje/Fog).

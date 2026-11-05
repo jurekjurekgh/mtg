@@ -210,3 +210,10 @@ pakiet pokrewny, `npm test`, build, `test:all`.
 **Do następnych sesji:** K5 (kontrczary), K6 (reszta: dobieranie, tokeny,
 tutorzy, Fog), po kolei: reprodukcja → test RED → naprawa po deskryptorze
 → bramki.
+
+**Etap 9 ZAMKNIĘTY (commit `dd0c1cb`, regeneracja golden-mastera `3778492`).**
+Bramka `removalUpkeepHoldPenalty` (120). Testy K4b/1–K4b/4 4/4, mutacja
+złapana; K4/3 świadomie przestawiony na główną fazę. `npm test` 9993/9993,
+build 77 modułów / 5712,9 kB. Golden-master: dryf tylko
+ravnica-wur|innistrad-wu@1001 (299→284 decyzji) — fixture zregenerowany
+świadomie z notą w nagłówku testu. `npm run test:all` 10261/10261.
