@@ -931,7 +931,7 @@ export function legalActivatedAbilities(state, playerId) {
         const comboRank = (combo) => combo.reduce((max, cid) => Math.max(max, zoneRank.get(cid) ?? 0), 0);
         combos.sort((left, right) => (comboPenalty(left) - comboPenalty(right))
           || (comboRank(left) - comboRank(right)));
-        for (const combo of combos.slice(0, 12)) {
+        for (const combo of combos) { // zgłoszenie F: bez odcinania kombinacji
           out.push({ objectId: id, abilityIndex: index, ability, sacrificeCreatureIds: combo });
         }
         continue;

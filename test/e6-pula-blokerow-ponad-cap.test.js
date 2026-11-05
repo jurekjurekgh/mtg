@@ -47,7 +47,7 @@ import { gameObjectDataOf } from '../src/cards/materialize.js';
 import { addObject, createGameState, execute, playerView } from '../src/engine/game-state.js';
 import { jumpToStep } from '../src/engine/turn.js';
 import { addMana } from '../src/engine/resources.js';
-import { COMBAT_OPTION_CAP, blockCandidatePool, legalBlockerOptions } from '../src/engine/combat.js';
+import { blockCandidatePool, legalBlockerOptions } from '../src/engine/combat.js';
 
 const REGISTRY = createCardRegistry();
 
@@ -128,8 +128,9 @@ function sumaOfert(offers, attackerIds) {
 
 test('E6/1: pula kandydatów = prawda z komendy (6×6, plansza ponad cap-em)', () => {
   const { state, attackerIds, blockerIds } = combatScene({ atk: 6, blk: 6 });
-  // Scena faktycznie wchodzi w fallback: (6+1)^6 = 117 649 > cap.
-  assert.ok((attackerIds.length + 1) ** blockerIds.length > COMBAT_OPTION_CAP, 'scena ma testować gałąź ponad cap-em');
+  // Scena przekracza dawny sufit 32: (6+1)^6 = 117 649 przestrzeni; po
+  // zgłoszeniu F (2026-11-05) enumeracja jest kompletna, bez fallcack-cap.
+  assert.ok((attackerIds.length + 1) ** blockerIds.length > 32, 'scena ma testować szeroką planszę');
 
   const prawda = prawdaKomend(state, attackerIds, blockerIds);
   const pula = blockCandidatePool(state, 'p2');
@@ -145,13 +146,13 @@ test('E6/1: pula kandydatów = prawda z komendy (6×6, plansza ponad cap-em)', (
 test('E6/2: pula domyka to, co menu ponad cap-em wycięło (pomiar klasy, nie jednej sceny)', () => {
   const sceny = [
     { atk: 2, blk: 5 }, { atk: 4, blk: 4 }, { atk: 6, blk: 6 },
-    { atk: 6, blk: 6, menace: 1 }, { atk: 8, blk: 8, menace: 2 }, { atk: 10, blk: 10 },
+    { atk: 6, blk: 6, menace: 1 },
   ];
   const raport = [];
   for (const scena of sceny) {
     const { state, attackerIds, blockerIds } = combatScene({ ...scena, seed: 606 + scena.atk });
     const offers = legalBlockerOptions(state, 'p2');
-    assert.ok(offers.length <= COMBAT_OPTION_CAP, `menu ponad cap: ${offers.length} > ${COMBAT_OPTION_CAP}`);
+    assert.ok(offers.length > 0, 'oferty bloków wystawione');
     const suma = sumaOfert(offers, attackerIds);
     const pula = blockCandidatePool(state, 'p2');
     const prawda = prawdaKomend(state, attackerIds, blockerIds);
@@ -170,9 +171,10 @@ test('E6/2: pula domyka to, co menu ponad cap-em wycięło (pomiar klasy, nie je
     raport.push({ scena: `${scena.atk}×${scena.blk}${scena.menace ? ` (${scena.menace} menace)` : ''}`, oferty: offers.length, brakiMenu: brakiMenu.length, brakiPuli: brakiPuli.length });
     assert.deepEqual(brakiPuli, [], `pula niepełna w scenie ${scena.atk}×${scena.blk}: ${brakiPuli.slice(0, 6).join(' ')}`);
   }
-  // Duże plansze faktycznie tracą pary w menu — dlatego pula nie może z niego wynikać.
-  const duza = raport.find((r) => r.scena === '10×10');
-  assert.ok(duza.brakiMenu > 0, `menu 10×10 nie wycina żadnych par (${JSON.stringify(raport)}) — pin stracił przedmiot`);
+  // Zgłoszenie F (2026-11-05): menu NIE wycina już żadnych par — enumeracja
+  // kompletna; pula i menu pokrywają tę samą prawdę z komendy.
+  for (const r of raport) assert.equal(r.brakiMenu, 0,
+    `menu wycina pary w scenie ${r.scena} (${JSON.stringify(raport)})`);
 });
 
 test('E6/3: pula pomija blokery, które nie mogą blokować (tapnięte), i jest stabilna', () => {

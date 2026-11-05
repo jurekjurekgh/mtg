@@ -23,7 +23,7 @@ import { createCardRegistry } from '../src/cards/card-data.js';
 import { gameObjectDataOf } from '../src/cards/materialize.js';
 import { addCounter } from '../src/engine/counters.js';
 import { replaceObject } from '../src/engine/permanents.js';
-import { legalBlockerOptions, blockSlotsFor, COMBAT_OPTION_CAP } from '../src/engine/combat.js';
+import { legalBlockerOptions, blockSlotsFor } from '../src/engine/combat.js';
 
 const REGISTRY = createCardRegistry();
 
@@ -102,11 +102,9 @@ test('E4/3 (anty-over-fix): bloker o 1 slocie nadal bez podwójnego bloku', () =
   assert.equal(r.ok, false, 'silnik odrzuca podwójne użycie blokera o 1 slocie');
 });
 
-test('E4/4: oferta nadal mieści się w capie i nie ma duplikatów przypisań', () => {
+test('E4/4: oferta kompletna (bez dawnego capa) i nie ma duplikatów przypisań', () => {
   const state = scena();
   const options = legalBlockerOptions(state, 'p1');
-  assert.ok(options.length <= COMBAT_OPTION_CAP,
-    `rozrost przebiegów nie może wysadzić limitu oferty (jest ${options.length})`);
   // To samo przypisanie powstawało wieloma ścieżkami enumeracji (kolejność
   // atakujących, powtórzone przebiegi) — oferta ma mieć JEDEN wpis na
   // przypisanie, inaczej „liczba opcji” rośnie ponad cap.

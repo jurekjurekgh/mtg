@@ -26,8 +26,8 @@ function hasColorForCardId(state, playerId, cardId, phyrexianPay = 0, purpose = 
   if (offerUnits != null) return canPayColoredCostForOffer(state, playerId, requirements, offerUnits, null, purpose);
   return canPayColoredCost(state, playerId, requirements, null, purpose);
 }
-import { COMBAT_OPTION_CAP, attackerBlockPowerRestriction, blockCandidatePool, blockSlotsFor, cantBeBlockedFromEquipment, declareAttackers, declareBlockers, legalAttackerOptions, legalBlockerOptions, mandatoryAttackerIds, mandatoryBlockerIds, minimalMandatoryBlocks, rememberClosedCombat, resolveCombatDamage, buildDamageAssignmentView, buildDefaultDamageAssignments, validateDamageAssignment, validateBlockerDamageAssignment, staticAttackPreventionOf } from './combat.js';
-import { optionalSpellEffectChoices, castSpell, castCleave, legalSpellCasts, legalCleaveCasts, plotCard, suspendCard, warpCard, resolveTopOfStack, resolveRiotEntry, finishPendingSpell, resumeSuspendedSpell, castEscape, resolveEscapeExile, legalEscapeCasts, ESCAPE_OPTION_CAP, DELVE_OPTION_CAP, declareDelveCast, resolveDelveExile, delveExileLimit, affordableDelveCounts, castFlashback, legalFlashbackCasts, castAdventure, legalAdventureCasts, castAdventureCreature, legalAdventureCreatureCasts, effectiveSpellManaCost, legalTargetCandidates, validateTargets, castMadnessSpell, legalModeCasts, legalXCostCasts, legalFireballCasts, validateVariableTargets, validateFireballTargets, legalTargetCombos, validateDamageDivision, dividedDamageDivisions } from './spells.js';
+import { attackerBlockPowerRestriction, blockCandidatePool, blockSlotsFor, cantBeBlockedFromEquipment, declareAttackers, declareBlockers, legalAttackerOptions, legalBlockerOptions, mandatoryAttackerIds, mandatoryBlockerIds, minimalMandatoryBlocks, rememberClosedCombat, resolveCombatDamage, buildDamageAssignmentView, buildDefaultDamageAssignments, validateDamageAssignment, validateBlockerDamageAssignment, staticAttackPreventionOf } from './combat.js';
+import { optionalSpellEffectChoices, castSpell, castCleave, legalSpellCasts, legalCleaveCasts, plotCard, suspendCard, warpCard, resolveTopOfStack, resolveRiotEntry, finishPendingSpell, resumeSuspendedSpell, castEscape, resolveEscapeExile, legalEscapeCasts, declareDelveCast, resolveDelveExile, delveExileLimit, affordableDelveCounts, castFlashback, legalFlashbackCasts, castAdventure, legalAdventureCasts, castAdventureCreature, legalAdventureCreatureCasts, effectiveSpellManaCost, legalTargetCandidates, validateTargets, castMadnessSpell, legalModeCasts, legalXCostCasts, legalFireballCasts, validateVariableTargets, validateFireballTargets, legalTargetCombos, validateDamageDivision, dividedDamageDivisions } from './spells.js';
 import { legalActivatedAbilities, legalManaAbilities, manualManaOfferUnits, activateAbility, performActivation } from './abilities.js';
 import { attachmentRestrictions, deathZoneFor, wardAmountOf, clearMarkedDamage, clearStatModifiers, creatureCantBlock, effectiveAbilities, effectiveKeywords, effectivePower, effectiveToughness, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, grantedStatBonus, hasTemporaryCantBlock, markDamage, modifyStats, transformedCharacteristics, turnFaceUp, untapObject, activatableAbilities, entersTappedNow } from './permanents.js';
 import { addCounter, removeCounter, hasCounter } from './counters.js';
@@ -53,7 +53,7 @@ import { canCastByLinkedExilePermission } from './linked-exile-cast.js';
  * mulliganie ma ≤7 kart, więc maksimum podzbiorów to C(7,3)=C(7,4)=35 —
  * poprzednie 32 obcinało 3 kombinacje przy 4. mulliganie (i tyleż przy 3.).
  */
-const MULLIGAN_BOTTOM_OPTION_CAP = 35;
+// Zgłoszenie F: brak limitu wariantów mulligana (dawniej cap 35).
 
 /**
  * Stabilny klucz tożsamości komendy — do deduplikacji oferty (M125/A).
@@ -780,37 +780,16 @@ function drawStepTurnBasedAction(state) {
  * »zawsze wybieramy «nie odkręcaj»«), a kontroler nie miał oferty — patrz
  * test/audyt-m431-untap-choice.test.js i ADR 0022 (»supported« = 100% Oracle).
  */
-const UNTAP_CHOICE_CAP = 32;
+// Zgłoszenie F: brak limitu wariantów wyboru odkręceń (dawniej cap 32).
 
 function untapChoiceOffers(state, playerId) {
   const candidates = untapChoiceCandidates(state, playerId);
   const out = [{ keepTappedIds: [] }];
-  if (candidates.length <= 5) {
-    // Pełna enumeracja podzbiorów (≤ 32 warianty) — przy pięciu kandydatach
-    // gracz zobaczy KAŻDĄ realnie różną kombinację. Oba ekstrema (pusty zbiór
-    // i pełny) są w tej enumeracji.
-    const n = candidates.length;
-    for (let mask = 1; mask < (1 << n); mask += 1) {
-      const keepTappedIds = [];
-      for (let i = 0; i < n; i += 1) if (mask & (1 << i)) keepTappedIds.push(candidates[i]);
-      out.push({ keepTappedIds });
-    }
-    return out;
-  }
-  // Powyżej progu: enumeracja po rozmiarze (L19 — nigdy 2^n): najpierw
-  // pojedyncze pozostawienia, potem pary i trójki, aż do wyczerpania capu.
-  // Oba EKSTREMA są legalnym wyborem CR 502.3 i nie mogą wypaść przez cap
-  // (L48: walidacja przyjmuje dowolny podzbiór kandydatów, więc oferta bez
-  // „zostaw wszystkie" ucina ruch, którego komenda by nie odrzuciła).
-  // Pusty zbiór jest już pierwszy. Pełny dokładamy przed cięciem.
-  out.push({ keepTappedIds: [...candidates] });
-  for (let k = 1; k <= 3 && out.length < UNTAP_CHOICE_CAP; k += 1) {
-    const walk = (pos, prefix) => {
-      if (out.length >= UNTAP_CHOICE_CAP) return;
-      if (prefix.length === k) { out.push({ keepTappedIds: [...prefix] }); return; }
-      for (let i = pos; i < candidates.length; i += 1) walk(i + 1, [...prefix, candidates[i]]);
-    };
-    walk(0, []);
+  const n = candidates.length;
+  for (let mask = 1; mask < (1 << n); mask += 1) {
+    const keepTappedIds = [];
+    for (let i = 0; i < n; i += 1) if (mask & (1 << i)) keepTappedIds.push(candidates[i]);
+    out.push({ keepTappedIds });
   }
   return out;
 }
@@ -6509,7 +6488,7 @@ export function execute(state, input) {
           // (pushToState: false — kolejność logu), priorytet kroku blokujących
           // dla obrońcy (jak w drodze przez komendę).
           if (state.turn.step === 'declare_attackers'
-              && !legalAttackerOptions(state, state.turn.activePlayerId, COMBAT_OPTION_CAP)
+              && !legalAttackerOptions(state, state.turn.activePlayerId)
                 .some((attackerIds) => attackerIds.length > 0)) {
             events.push(declareAttackers(state, state.turn.activePlayerId, [], { pushToState: false, events }));
             const defenderId = state.players.find((player) => player.id !== state.turn.activePlayerId).id;
@@ -7209,17 +7188,17 @@ function exileAdditionalCostCandidates(state, playerId, object) {
  *
  * `legalCommands` jest kompletnym kontraktem dla kontrolera: każda oferowana
  * komenda jest akceptowana przez `execute` (pilnuje tego test własnościowy).
- * Dla deklaracji combat opcje są enumerowane do limitu COMBAT_OPTION_CAP;
- * powyżej niego widok oferuje warianty pusty/pojedyncze/pełny, a pełna
- * walidacja pozostaje wyłącznie po stronie engine.
+ * Dla deklaracji combat opcje są enumerowane W PEŁNI (zgłoszenie F
+ * właściciela, 2026-11-05: żaden limit wariantów w żadnej gałęzi); pełna
+ * walidacja pozostaje po stronie engine.
  */
 /**
  * E6 (2026-09-20c): pula kandydatów na blokujących dla widoku BRONIĄCEGO.
  *
- * Widok niesie ją osobno od `options` decyzji, bo opcje są ograniczone
- * `COMBAT_OPTION_CAP` (rozmiar menu), a wizard bloków rysował kandydatów z sumy
- * ofert — legalne pary wycięte przez cap nie miały wiersza i gracz nie mógł ich
- * zadeklarować (CR 509.1a). Pole jest wyłącznie tam, gdzie jest decyzja:
+ * Widok niesie ją osobno od `options` decyzji: historycznie menu było
+ * ograniczone capem i legalne pary bez wiersza wizarda były nieosiągalne
+ * (CR 509.1a); po zgłoszeniu F (2026-11-05) enumeracja jest kompletna, a pula
+ * zostaje jako bezpośrednie źródło wierszy wizarda. Pole jest wyłącznie tam, gdzie jest decyzja:
  * krok deklaracji bloków, walka zadeklarowana, stos pusty, gracz broniący,
  * bloki jeszcze niezadeklarowane (warunki lustrzane wobec `legalCommands`).
  */
@@ -8220,8 +8199,8 @@ export function playerView(state, playerId) {
     //   1. DEDUPLIKACJA po multizbiorze NAZW kart — jeden wariant na realnie
     //      różną decyzję (to jest właściwa naprawa; gracz przestaje wybierać
     //      spośród klonów);
-    //   2. CAP jak w reszcie enumeracji (COMBAT_OPTION_CAP/CREW_OPTION_CAP =
-    //      32) — zabezpieczenie na wypadek ręki z samymi różnymi kartami.
+    //   2. (dawniej: cap 32 jak w reszcie enumeracji — usunięty na polecenie
+    //      właściciela, zgłoszenie F 2026-11-05: żadnego ucinania wariantów).
     //
     // Kolejność pozostaje deterministyczna (ADR 0005): idziemy po podzbiorach
     // w stałym porządku i bierzemy pierwszy reprezentant każdej klasy.
@@ -8241,7 +8220,7 @@ export function playerView(state, playerId) {
       if (seen.has(key)) continue;
       seen.add(key);
       unique.push(combo);
-      if (unique.length >= MULLIGAN_BOTTOM_OPTION_CAP) break;
+
     }
     // unshift odwraca kolejność, więc wkładamy od tyłu — gracz widzi warianty
     // w tej samej kolejności, w jakiej je wyliczyliśmy.
@@ -8783,15 +8762,13 @@ export function playerView(state, playerId) {
     const multiCountOffer = Number.isInteger(multiSpecOffer?.count) && multiSpecOffer.count > 1
       ? multiSpecOffer.count : 1;
     if (multiCountOffer > 1) {
-      const MULTI_TRIGGER_TARGET_CAP = 32;
+      // Zgłoszenie F: komplet podzbiorów 1..count (bez limitu wariantów).
       const variants = [];
       for (let size = multiCountOffer; size >= 1; size -= 1) {
         const combo = (start, acc) => {
-          if (variants.length >= MULTI_TRIGGER_TARGET_CAP) return;
           if (acc.length === size) { variants.push([...acc]); return; }
           for (let i = start; i < legal.length; i += 1) {
             combo(i + 1, [...acc, legal[i]]);
-            if (variants.length >= MULTI_TRIGGER_TARGET_CAP) return;
           }
         };
         combo(0, []);
@@ -8835,16 +8812,14 @@ export function playerView(state, playerId) {
     // botów i fuzzera; gracz dostaje wizard multiselect po kandydatach i
     // komponuje komendę sam (walidacja silnika jest i tak niezależna).
     const pending = state.pendingEscapeExile;
-    const cap = ESCAPE_OPTION_CAP;
+    // Zgłoszenie F: komplet podzbiorów kosztu Escape (bez limitu).
     const results = [];
     const rec = (start, chosen) => {
-      if (results.length >= cap) return;
       if (chosen.length === pending.exileCount) { results.push([...chosen]); return; }
       for (let i = start; i < pending.candidateIds.length; i += 1) {
         chosen.push(pending.candidateIds[i]);
         rec(i + 1, chosen);
         chosen.pop();
-        if (results.length >= cap) return;
       }
     };
     if (pending.exileCount > 0) rec(0, []);
@@ -8859,16 +8834,15 @@ export function playerView(state, playerId) {
     // i fuzzera; gracz dostaje wizard multiselect i komponuje komendę sam.
     const pending = state.pendingDelveExile;
     const affordable = new Set(pending.affordableCounts ?? []);
+    // Zgłoszenie F: komplet podzbiorów Delve (bez limitu).
     const results = [];
     const rec = (start, chosen) => {
-      if (results.length >= DELVE_OPTION_CAP) return;
       if (chosen.length >= pending.minExile && affordable.has(chosen.length)) results.push([...chosen]);
       if (chosen.length === pending.maxExile) return;
       for (let i = start; i < pending.candidateIds.length; i += 1) {
         chosen.push(pending.candidateIds[i]);
         rec(i + 1, chosen);
         chosen.pop();
-        if (results.length >= DELVE_OPTION_CAP) return;
       }
     };
     rec(0, []);
@@ -9733,9 +9707,9 @@ export function playerView(state, playerId) {
         const xDesc = object.xCost ?? object.spell.xCost;
         const baseCost = effectiveSpellManaCost(state, object);
         const xReqs = [...coloredPipsOf(object.cardId, 0)];
-        const xCap = xDesc.cap ?? 15;
+        // Zgłoszenie F: X do pełnego budżetu many (bez sufitu 15).
         if (!canPayColoredCostForOffer(state, playerId, xReqs, ofertaUnitsUA.units, null, spellManaPurpose(object))) continue;
-        const maxX = Math.max(0, Math.min(xCap, manaAvailableForOffer(object, xReqs) - baseCost));
+        const maxX = Math.max(0, manaAvailableForOffer(object, xReqs) - baseCost);
         for (let xValue = 0; xValue <= maxX; xValue += 1) {
           legalCommands.push(command('cast_permanent', playerId, { objectId: id, xValue }));
         }
@@ -9841,7 +9815,7 @@ export function playerView(state, playerId) {
     if (state.turn.step === 'declare_attackers' && state.turn.activePlayerId === playerId && !state.combat
       && state.zones.stack.length === 0) {
       const seen = new Set();
-      for (const attackerIds of legalAttackerOptions(state, playerId, COMBAT_OPTION_CAP)) {
+      for (const attackerIds of legalAttackerOptions(state, playerId)) {
         const key = JSON.stringify(attackerIds);
         if (seen.has(key)) continue;
         seen.add(key);
@@ -9851,7 +9825,7 @@ export function playerView(state, playerId) {
     if (state.turn.step === 'declare_blockers' && state.combat && state.combat.attackingPlayerId !== playerId
       && state.zones.stack.length === 0) {
       const seen = new Set();
-      for (const assignments of legalBlockerOptions(state, playerId, COMBAT_OPTION_CAP)) {
+      for (const assignments of legalBlockerOptions(state, playerId)) {
         const key = JSON.stringify(assignments);
         if (seen.has(key)) continue;
         seen.add(key);

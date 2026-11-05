@@ -1538,9 +1538,9 @@ function bootstrapTable() {
       renderCombatWizard(els.choiceRequestBody, { ...(typeof modalObjectHoverProps !== 'undefined' ? modalObjectHoverProps : {}),
         kind: request.type === 'declare_attackers' ? 'attackers' : 'blockers',
         view: choiceView, session, options: request.options,
-        // E6: pula kandydatów na blokerów z widoku — menu (`request.options`)
-        // jest ograniczone `COMBAT_OPTION_CAP`, a legalny blok musi być
-        // osiągalny niezależnie od niego (CR 509.1b).
+        // E6: pula kandydatów na blokerów z widoku — legalny blok musi być
+        // osiągalny w wizardzie niezależnie od kształtu menu (CR 509.1b);
+        // po zgłoszeniu F (2026-11-05) menu jest kompletne.
         blockCandidates: choiceView.blockCandidates ?? null,
         // Uwaga C (2026-08-11): klik w nazwę stwora otwiera pełny ekran karty.
         onOpenCard: (objectId) => openCardFullscreen(objectId),

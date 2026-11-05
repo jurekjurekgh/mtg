@@ -75,6 +75,13 @@ import {
  *     Zmierzona różnica: tylko ravnica-wur|innistrad-wu@1001 (298→299 decyzji,
  *     scoreSum 3186.9495→3166.2283); pozostałe pięć śladów bitowo identycznych.
  *     To nie jest pomiar jakości gry ani tuning parametrów.
+ *   - a9ded3e5… → b8c7f8cc… (zgłoszenie F, 2026-11-05): usunięcie limitów
+ *     enumeracji wariantów (cap 32 itd.) na polecenie właściciela. Zmierzona
+ *     różnica: TYLKO hashe 2 z 6 partii (ravnica-wur|innistrad-wu@1000 i
+ *     dominaria-brg|mirrodin-wu@1001) — liczba decyzji, scoreSum i
+ *     chosenKinds WYBRANYCH komend są bitowo identyczne we wszystkich
+ *     partiach; zmienił się wyłącznie zbiór OFEROWANYCH (niewybranych)
+ *     wariantów, które bot teraz widzi w komplecie. Świadoma regeneracja.
  *   - 0e1c042c… → abc34db7… (audyt #177 A74, APNAP): w @1000 po
  *     Summary Judgment w turze 15 gracz random dostał nowy wybór kolejności
  *     Elgaud Inquisitor / Selhoff Occultist. Wybrał Occultist jako pierwszy,

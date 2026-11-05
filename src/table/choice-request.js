@@ -885,10 +885,10 @@ export function renderCombatWizard(host, { kind, view, session, options, blockCa
         for (const id of blockerIds) pushId(id);
       }
     }
-    // E6 (2026-09-20c): `options` to MENU ograniczone `COMBAT_OPTION_CAP`, a
-    // pula kandydatów z widoku jest liczona wprost z reguł — bez niej pary
-    // wycięte przez cap nie miałyby wiersza i legalny blok (CR 509.1a) byłby
-    // dla człowieka nieosiągalny (pomiar: 6×6 → 5 par, 10×10 → 69 par).
+    // E6 (2026-09-20c): pula kandydatów z widoku jest liczona wprost z reguł;
+    // historycznie menu było ograniczone capem i pary bez wiersza były
+    // nieosiągalne (CR 509.1a). Po zgłoszeniu F (2026-11-05) oferty są
+    // kompletne, a pula zostaje bezpośrednim źródłem wierszy wizarda.
     for (const [attackerId, blockerIds] of Object.entries(blockCandidates ?? {})) {
       pushId(attackerId);
       for (const id of blockerIds ?? []) pushId(id);

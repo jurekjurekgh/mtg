@@ -76,7 +76,9 @@ test('M245/1: przy ≥6 atakujących oferta NIESIE „wszyscy bez jałowej sztuk
     'pełny atak nadal oferowany');
   assert.ok(options.some((set) => JSON.stringify([...set].sort()) === JSON.stringify([...flyersOnly].sort())),
     '„latający bez 3/2" (wszystkie-minus-jeden) MUSI być w ofercie — dotąd go nie było');
-  assert.ok(options.length <= 32, 'cap 32 dotrzymany');
+  // Zgłoszenie F właściciela (2026-11-05): żaden limit enumeracji — dawniej
+  // pinowany tu „cap 32 dotrzymany”; oferta jest teraz kompletna.
+  assert.ok(options.length > 32, `enumeracja bez sufitu przy ≥6 atakujących (jest ${options.length})`);
 });
 
 test('M245/2: bot wybiera atak SAMYMI latającymi — 3/2 zostaje w tyle (zgłoszenie M)', () => {

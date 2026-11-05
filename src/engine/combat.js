@@ -1549,31 +1549,19 @@ function defendingPlayerIdOf(state) {
  * są tylko dla małych pul, przy większych planszach widok oferuje warianty
  * pusty/pojedyncze/pełny. Walidacja w execute pozostaje niezależna i pełna.
  */
-export const COMBAT_OPTION_CAP = 32;
+// Zgłoszenie F (2026-11-05, polecenie właściciela): ŻADNEGO ucinania
+// enumeracji — dawniej `COMBAT_OPTION_CAP = 32` przycinał podzbiory przy
+// większych planszach (tryb ograniczony: puste/singletony/wszyscy/minus-jeden),
+// więc legalne deklaracje były nieodstępne. Enumeracja jest kompletna;
+// kolejność generowania bez zmian (determinizm ofert).
 
-function boundedSubsets(ids, cap) {
-  if (ids.length === 0) return [[]];
-  if (2 ** ids.length <= cap) {
-    const all = [[]];
-    for (const id of ids) {
-      const extended = all.map((subset) => [...subset, id]);
-      all.push(...extended);
-    }
-    return all;
+function boundedSubsets(ids) {
+  const all = [[]];
+  for (const id of ids) {
+    const extended = all.map((subset) => [...subset, id]);
+    all.push(...extended);
   }
-  // M245 (zgłoszenie M właściciela, 2026-08-27): tryb ograniczony (2^n > cap)
-  // zostawiał wyłącznie puste/singletony/wszystkich — więc bot z sześcioma
-  // i więcej atakującymi NIE MÓGŁ wybrać „wszyscy oprócz tego jednego",
-  // który zginie bez niczego w blokera (typowy wybór taktyczny: zostaw
-  // marną sztukę). Dokładamy podzbiory „wszystkie minus jeden":
-  // 1 + n + n + 1 <= 32 mieści się jeszcze dla n = 15 (przy większej armii
-  // odcinamy końcówkowe minus-jeden po dawnej kolejności — deterministycznie,
-  // ADR 0005).
-  const singles = ids.map((id) => [id]);
-  const all = ids.slice();
-  const allButOne = ids.map((skip) => ids.filter((id) => id !== skip));
-  const out = [[], ...singles, ...allButOne, all];
-  return out.slice(0, cap);
+  return all;
 }
 
 /** Wszystkie zbiory atakujących, które gracz może teraz legalnie zadeklarować. */
@@ -1597,7 +1585,7 @@ export function blockSlotsFor(state, blocker) {
   return slots;
 }
 
-export function legalAttackerOptions(state, playerId, cap = COMBAT_OPTION_CAP) {
+export function legalAttackerOptions(state, playerId) {
   const legal = [];
   for (const id of state.zones.battlefield) {
     const object = state.objects.get(id);
@@ -1609,7 +1597,7 @@ export function legalAttackerOptions(state, playerId, cap = COMBAT_OPTION_CAP) {
   // (znalezisko J: oferta, walidacja i auto-deklaracja to jedno źródło).
   const mandatory = mandatoryAttackerIds(state, playerId);
   const optional = legal.filter((id) => !mandatory.includes(id));
-  return boundedSubsets(optional, cap)
+  return boundedSubsets(optional)
     .map((subset) => [...mandatory, ...subset])
     // „Can't attack alone" (Ember Beast, CR 508.1c): opcja z JEDNYM
     // atakującym, który ma to ograniczenie, nie może być zaoferowana —
@@ -1881,15 +1869,11 @@ export function blockAssignmentViolation(state, attacker, blockerIds, declaredBl
 
 
 /** Wszystkie legalne przypisania blokujących dla bieżącego combat. */
-export function legalBlockerOptions(state, playerId, cap = COMBAT_OPTION_CAP) {
+export function legalBlockerOptions(state, playerId) {
   const problem = blockingProblem(state, playerId);
   const { attackers, blockers } = problem;
-  let combinations = 1;
-  for (const id of blockers) {
-    combinations *= blockSubsetCount(problem.targets.get(id).length, problem.slots.get(id), cap);
-    if (combinations > cap) break;
-  }
-  if (combinations <= cap) {
+  // Zgłoszenie F: zawsze pełna enumeracja przypisań (bez sufitu opcji).
+  {
     const all = [{}];
     for (const id of blockers) {
       const subsets = nonemptyBlockSubsets(problem.targets.get(id), problem.slots.get(id));
@@ -1899,120 +1883,12 @@ export function legalBlockerOptions(state, playerId, cap = COMBAT_OPTION_CAP) {
         for (const attacker of subset) (candidate[attacker] ??= []).push(id);
         extended.push(candidate);
       }
-      all.push(...extended);
+      // Iteracyjnie, nie przez rozpakowanie: przy szerokich planszach lista
+      // rośnie wykładniczo i `push(...extended)` przekracza limit argumentów.
+      for (const candidate of extended) all.push(candidate);
     }
-    return requiredBlockOptions(state, playerId, all, cap, problem);
+    return requiredBlockOptions(state, playerId, all, problem);
   }
-  const options = [{}];
-  // Prawdziwy cap przenosi także część małych układów wieloslotowych do
-  // fallbacku (np. 4×3×3=36). Nie wolno wtedy zgubić dodatkowego slotu:
-  // reprezentant multibloku poprzedza singletony, które mogłyby wypełnić cap.
-  for (const id of blockers) {
-    if (problem.slots.get(id) < 2) continue;
-    let primary = {}; let completed = null;
-    for (const attacker of problem.targets.get(id)) {
-      if (Object.keys(primary).length >= problem.slots.get(id)) break;
-      const candidate = { ...primary, [attacker]: [id] };
-      const legal = completeBlockingAssignment(problem, candidate);
-      if (legal) { primary = candidate; completed = legal; }
-    }
-    if (completed && Object.values(completed).filter((ids) => ids.includes(id)).length > 1) options.push(completed);
-  }
-  for (const attackerId of attackers) {
-    const attacker = state.objects.get(attackerId);
-    for (const blockerId of blockers) {
-      const blocker = state.objects.get(blockerId);
-      // F-1 audytu PR #128 (L41/L48): pojedynczy blok przechodzi przez TEN SAM
-      // predykat co walidacja `declareBlockers` — warstwa zbioru (menace,
-      // „can't block alone", zakazy blokowania blokera) ma JEDNO źródło prawdy.
-      // Wcześniej ta gałąź trzymała własną, negowaną kopię reguł (trzecia kopia)
-      // poza zasięgiem strażnika rodziny M387/D.
-      if (blockAssignmentViolation(state, attacker, [blockerId]) === null) options.push({ [attackerId]: [blockerId] });
-    }
-  }
-  const free = blockers.slice();
-  const freeSlots = new Map(problem.slots);
-  const greedy = {};
-  // Fix B (zgłoszenie właściciela 2026-09-27: bot przy 8 życiach nie chumpował
-  // 3/3, choć przeżycie wymagało bloku 4/5 + chumpa 3/3): gałąź nad-cap
-  // oferowała dokładnie JEDNO przypisanie wieloatakujące (greedy) i `break`
-  // przy pierwszym nieblokowalnym atakującym (tu: latający 7/5 zadeklarowany
-  // jako pierwszy) UBIJAŁ je w całości — bot fizycznie nie mógł zestawić
-  // bloku ratującego życie. `continue`: nieblokowalny atakujący nie przerywa
-  // pokrywania pozostałych. Kolejność wg zagrożenia (moc malejąco, stabilnie):
-  // gdy ciał jest mniej niż atakujących, wariant „kto pierwszy zadeklarowany,
-  // ten zablokowany" mógł zostawić największe zagrożenie odblokowane mimo
-  // istniejącego przeżycia — bot i tak wybiera spośród ofert wg punktacji
-  // (M146/M257), greedy ma tylko DAĆ mu pokrywający wariant.
-  const greedyOrder = [...attackers].sort((x, y) =>
-    (effectivePower(state.objects.get(y), state) ?? 0) - (effectivePower(state.objects.get(x), state) ?? 0));
-  for (const attackerId of greedyOrder) {
-    const attacker = state.objects.get(attackerId);
-    const menace = hasKeyword(state, attacker, 'menace');
-    const needed = menace ? 2 : 1;
-    const chosen = [];
-    while (chosen.length < needed) {
-      const blockerId = free.find((id) => !chosen.includes(id) && canBlock(state, attacker, state.objects.get(id)));
-      if (blockerId === undefined) break;
-      chosen.push(blockerId);
-    }
-    if (chosen.length < needed) continue; // nie da się legalnie zablokować (menace / brak ciał) — pokryj resztę
-    for (const blockerId of chosen) {
-      freeSlots.set(blockerId, freeSlots.get(blockerId) - 1);
-      if (freeSlots.get(blockerId) === 0) free.splice(free.indexOf(blockerId), 1);
-    }
-    greedy[attackerId] = chosen;
-  }
-  if (Object.keys(greedy).length > 0) options.push(greedy);
-  // M169/N (uwaga właściciela, Gray Slaad z menace): fallback (enumeracja
-  // ponad cap) proponował pojedyncze bloki TYLKO dla atakujących bez menace
-  // i jedną skombinowaną opcję greedy — każdemu blokerowi przypisanym w greedy
-  // pod WCZEŚNIEJSZEGO atakującego. Blokujący „zużyty" w greedy znikał z
-  // kandydatów atakującego z menace w wizardzie (kandydaci = suma ofert).
-  // Dokładamy ograniczony zestaw PAR pod KAŻDEGO atakującego z menace, żeby
-  // pełna pula blokerów była widoczna i wybieralna (silnik i tak waliduje).
-  for (const attackerId of attackers) {
-    const attacker = state.objects.get(attackerId);
-    if (!attacker || !hasKeyword(state, attacker, 'menace')) continue;
-    const pool = blockers.filter((id) => canBlock(state, attacker, state.objects.get(id)));
-    let addedPairs = 0;
-    for (let i = 0; i < pool.length && addedPairs < 8; i += 1) {
-      for (let j = i + 1; j < pool.length && addedPairs < 8; j += 1) {
-        options.push({ [attackerId]: [pool[i], pool[j]] });
-        addedPairs += 1;
-      }
-    }
-  }
-  // M245 (zgłoszenie M właściciela): w trybie ograniczonym kończyliśmy na
-  // parytach/singletonach/greedy — nie mogliśmy zadeklarować „blokuję WSZYSTKIM
-  // poza jedną sztuką" (najczęstszy świadomy ruch: ochronić najdroższego
-  // blokera przed tracącym blokiem). Dokładamy pełne przypisanie oraz warianty
-  // „wszystkie minus jeden" per atakujący, póki mieści cap (wybierane
-  // deterministycznie, ADR 0005). Każde przypisanie walidujemy tymi samymi
-  // regułami co walidacja declareBlockers (canBlock/menace/cantBlockAlone),
-  // by oferta pozostała spójna z engine (L48).
-  for (const attackerId of attackers) {
-    const attacker = state.objects.get(attackerId);
-    const pool = blockers.filter((id) => canBlock(state, attacker, state.objects.get(id)));
-    const candidateSets = [pool, ...pool.map((skip) => pool.filter((id) => id !== skip))];
-    for (const set of candidateSets) {
-      if (options.length >= cap) break;
-      if (set.length === 0) continue;
-      if (options.some((o) => JSON.stringify(o) === JSON.stringify({ [attackerId]: set }))) continue;
-      if (blockAssignmentViolation(state, attacker, set) !== null) continue;
-      options.push({ [attackerId]: set });
-    }
-  }
-  // Jeżeli greedy zostawił pojedynczy blok „alone”, uzupełnij deklarację
-  // minimalnym legalnym partnerem (także pod innym atakującym).
-  const completedGreedy = completeBlockingAssignment(problem, greedy);
-  if (completedGreedy && Object.keys(completedGreedy).length > 0) options.push(completedGreedy);
-  const unique = new Map();
-  for (const assignment of options) {
-    const key = Object.keys(assignment).sort().map((id) => `${id}=${[...assignment[id]].sort().join(',')}`).join('|');
-    if (!unique.has(key)) unique.set(key, assignment);
-  }
-  return requiredBlockOptions(state, playerId, [...unique.values()], cap, problem);
 }
 
 /** Dane par/slotów są policzone raz; nie zależą od cap menu ani kolejności ofert. */
@@ -2169,13 +2045,13 @@ export function minimalMandatoryBlocks(state, playerId, forced) {
 }
 
 /** Wspólny filtr obydwu gałęzi menu; dokładny świadek nigdy nie ginie przez cap. */
-function requiredBlockOptions(state, playerId, options, cap, problem) {
+function requiredBlockOptions(state, playerId, options, problem) {
   const forced = mandatoryBlockerIds(state, playerId, problem);
-  if (forced.length === 0) return options.filter(problem.valid).slice(0, cap);
+  if (forced.length === 0) return options.filter(problem.valid);
   const maximum = maximalRequiredBlocks(state, playerId, forced, problem);
   const optimal = options.filter((a) => fulfilledBlockRequirements(state, a) === maximum.count && problem.valid(a));
   if (optimal.length === 0) optimal.push(maximum.assignment);
-  return optimal.slice(0, cap);
+  return optimal;
 }
 
 /** Liczba podzbiorów celów jednego blokera, z zatrzymaniem powyżej cap. */

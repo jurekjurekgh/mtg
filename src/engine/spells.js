@@ -2604,7 +2604,8 @@ export function validateDamageDivision(state, playerId, object, damageDivision) 
  * planeswalkerzy, na końcu własne stwory — to one wypadają przy dużej planszy.
  * Walidacja przyjmuje KAŻDY legalny podział (oferta ⊆ walidacja, L48).
  */
-export const DIVIDED_POOL_CAP = 8;
+// Zgłoszenie F: pula kandydatów BEZ przycinania (dawniej DIVIDED_POOL_CAP = 8
+// odcinał kandydatów rankingiem). Kolejność ranków zostaje (pierwsze oferty).
 export function dividedDamageDivisions(state, playerId, object) {
   const divided = object.spell?.divided;
   if (!divided) return [];
@@ -2617,37 +2618,7 @@ export function dividedDamageDivisions(state, playerId, object) {
     if (target?.kind === 'creature') return target.controllerId === playerId ? 4 : 0;
     return 2; // planeswalker
   };
-  // PMSSB-46 (2026-10-03g, O1 z audytu PR #150; korekta w audycie PR #153,
-  // F2): `sort + slice(0, CAP)` odcinało gracza-wroga (rank=1) przy 8+
-  // wrogich stworach (rank=0), więc Fiery Justice nie mogła dobić przeciwnika
-  // przy szerokim stole. Rezerwacja reprezentanta każdej nie-pustej klasy
-  // celów (poza najniższą — stwory wroga) obowiązuje jednak TYLKO wtedy, gdy
-  // pula jest faktycznie przycinana: bez cięcia zmiana kolejności psuła
-  // kontrakt docblocka („najpierw stwory przeciwników, potem gracze…”), a
-  // pierwsza oferta przestawiała się z celu-stwora na gracza. Przy cięciu
-  // odpada najniżej uprzywilejowany kandydat od KOŃCA listy ranków, z
-  // pominięciem reprezentantów — gracz-wróg wchodzi na swoją pozycję ranku,
-  // a stwory wroga zachowują przód puli. Kształt generyczny (bez nazw kart,
-  // ADR 0002); self (rank=3) bez rezerwacji — samouszkodzenie marginalne
-  // (ADR 0022 §4).
-  const byRank = [...candidates].sort((a, b) => rank(a) - rank(b));
-  let pool = byRank;
-  if (byRank.length > DIVIDED_POOL_CAP) {
-    const reservedClasses = [1, 2]; // gracz-wróg, planeswalker
-    const reserved = new Set();
-    for (const cls of reservedClasses) {
-      const rep = byRank.find((id) => rank(id) === cls);
-      if (rep) reserved.add(rep);
-    }
-    let toDrop = byRank.length - DIVIDED_POOL_CAP;
-    const kept = [];
-    for (let i = byRank.length - 1; i >= 0; i -= 1) {
-      const id = byRank[i];
-      if (toDrop > 0 && !reserved.has(id)) { toDrop -= 1; continue; }
-      kept.push(id);
-    }
-    pool = kept.reverse();
-  }
+  const pool = [...candidates].sort((a, b) => rank(a) - rank(b));
   const total = divided.total;
   const out = [];
   const compositions = (parts, left) => {
@@ -3350,9 +3321,9 @@ export function legalFireballCasts(state, playerId, objectId, object, manaAvaila
   const players = state.players.map((p) => p.id);
   const allTargets = [...creatures, ...players];
   if (allTargets.length === 0) return casts;
-  // Podzbiory rozmiaru 1..min(allTargets.length, 3) — limit kombinacji,
-  // żeby oferta nie eksplodowała przy dużej planszy (Fireball „any number").
-  const maxTargets = Math.min(allTargets.length, 3);
+  // Zgłoszenie F: podzbiory 1..wszystkie cele (Fireball „any number”)
+  // i X do pełnego budżetu — bez limitów kombinacji ani sufitu X.
+  const maxTargets = allTargets.length;
   const subsets = (arr, k) => {
     if (k === 0) return [[]];
     if (arr.length < k) return [];
@@ -3373,7 +3344,7 @@ export function legalFireballCasts(state, playerId, objectId, object, manaAvaila
         if (extra <= manaAvailable) casts.push({ objectId, targets: combo, xValue: 0 });
         continue;
       }
-      const maxX = Math.min(manaAvailable - base - extra, 15);
+      const maxX = manaAvailable - base - extra;
       for (let X = 1; X <= maxX; X += 1) {
         casts.push({ objectId, targets: combo, xValue: X });
       }
@@ -3809,7 +3780,7 @@ export function legalXCostCasts(state, playerId, objectId, object, manaAvailable
   const casts = [];
   const baseCost = effectiveSpellManaCost(state, object);
   const maxX = Math.max(0, manaAvailable - baseCost);
-  const cap = object.spell.xCost.cap ?? 15;
+  // Zgłoszenie F: bez sufitu X (dawniej deskryptorowe `cap ?? 15`).
   const targetSpec = object.spell.targets ?? [];
   // „up to one target" (pozycja opcjonalna) też przechodzi przez wspólny
   // enumerator — oferta = walidacja (L48), z zależnościami pozycji włącznie.
@@ -3824,7 +3795,7 @@ export function legalXCostCasts(state, playerId, objectId, object, manaAvailable
   // zależy od combo. Parametr manaAvailable to górne ograniczenie.
   const purpose = spellManaPurpose(object);
   const feasibleX = [];
-  for (let X = 0; X <= Math.min(maxX, cap); X += 1) {
+  for (let X = 0; X <= maxX; X += 1) {
     const reqs = [...basePips];
     if (blackX) for (let i = 0; i < X; i += 1) reqs.push(['B']);
     if (X > producibleMana(state, playerId, null, purpose, reqs) - baseCost) break;
@@ -4047,10 +4018,10 @@ function castModalSpell(state, playerId, objectId, modeIndex, targets, stunTarge
 }
 
 /** Limit oferowanych podzbiorów wygnania Escape (jak CREW_OPTION_CAP). */
-export const ESCAPE_OPTION_CAP = 32;
+// Zgłoszenie F: usunięto ESCAPE_OPTION_CAP (enumeracja kompletna).
 
 /** Limit oferowanych podzbiorów wygnania Delve (jak ESCAPE_OPTION_CAP). */
-export const DELVE_OPTION_CAP = 32;
+// Zgłoszenie F: usunięto DELVE_OPTION_CAP (enumeracja kompletna).
 
 /**
  * Delve (CR 702.66, Hooting Mandrills): „Each card you exile from your
@@ -4259,7 +4230,6 @@ export function legalEscapeCasts(state, playerId) {
     // oferta dla botów/enumeracje w legalCommands, gracz dostaje
     // multiselect z kandydatów.
     void subsets;
-    void ESCAPE_OPTION_CAP;
   }
   return casts;
 }
