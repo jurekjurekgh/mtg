@@ -113,3 +113,27 @@ Decyzje dyskretne (ląd, czar bez celów, pass…) zostają listą jak dziś.
   ze zgłoszenia F tam zostaje do czasu ich etapów.
 - Commit F `50e2da3` w części walki zostaje zastąpiony tym etapem;
   w pozostałych gałęziach obowiązuje do etapów 2–3.
+
+## Realizacja etapu 1 — STAN (2026-11-05)
+
+Etap 1 (walka) jest **wykonany i po zielonych bramkach**:
+
+- Kod: `9e8355b` (rdzeń: deskryptor `combatDeclaration`, ziarna solvera,
+  wizard UI z deskryptora, prefiksowe deklaracje ataku bota) oraz
+  `6bf7891` (poprawki bramkowe: botowe `synthesizedBlockDeclarations`
+  — gangi prefiksowe i pokrycia w permutowanych porządkach blokerów
+  z deskryptora, bez powrotu silnika do enumeracji; przywrócone kotwice
+  CR 508.1c/508.1d przy walidacji ataku; piny A8/D2 przepisane po F).
+- Dowód: `test/zgloszenie-g-walka-konstruuj.test.js` 7/7;
+  `npm test` 10013/10013; `npm run build` OK; `test:all` 10281/10281;
+  benchmark bota 10/10.
+- Golden-master wyceny bota regenerowany świadomie dwa razy
+  (rejestr w `test/bot-scoring-snapshot.test.js`):
+  `b8c7f8cc… → 37a41eab…` (ziarna + deskryptor) oraz
+  `37a41eab… → abc4017e…` (botowa synteza bloków; dryf 1/6 partii).
+- Świadome resztki do etapów 2–3 (nie defekty etapu 1): enumeracje
+  triggerów wielocelowych, podziału obrażeń, mulligan bottom, untap
+  choice (oferta robocza botów; walidacja przyjmuje każdy podzbiór
+  kandydatów), delve/escape i {X} działają po zgłoszeniu F bez
+  ucinania tam, gdzie enumeracja jest wyliczalna; ich migracja na
+  deskryptor + picker to etapy 2–3 powyżej.
