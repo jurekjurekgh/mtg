@@ -91,21 +91,53 @@ Klasy bez luki zamykamy pomiarem w tym planie, nie „na oko".
 
 ## Etapy tej sesji (K1)
 
-- [ ] Etap 1: reprodukcja sondą — Dragonscale Boon w podtrzymaniu własnej
+- [x] Etap 1: reprodukcja sondą — Dragonscale Boon w podtrzymaniu własnej
   tury przy wolnej manie: bot rzuca zamiast pasować; w walce po deklaracji
   blokujących rzuca i to się opłaca (kontrola pozytywna).
-- [ ] Etap 2: testy RED (`test/zgloszenie-d-dragonscale-okno.test.js`):
+- [x] Etap 2: testy RED (`test/zgloszenie-d-dragonscale-okno.test.js`):
   pas w podtrzymaniu i w głównej bez walki; rzut w walce zmieniającej wynik;
   wyjątki: licznik ratujący stwora przed śmiertelnymi obrażeniami,
   licznik domykający grę; odkręcenie dokłada nieoczekiwanego blokującego.
-- [ ] Etap 3: naprawa w `heuristic-bot.js` (+ parametr w
+- [x] Etap 3: naprawa w `heuristic-bot.js` (+ parametr w
   `heuristic-params.js`): bramka trzymania instant-liczników poza walką,
   premia bojowa ridera odkręcenia. Zero nazw kart.
-- [ ] Etap 4: bramki — pakiet pokrewny wycen bota, `npm test`,
+- [x] Etap 4: bramki — pakiet pokrewny wycen bota, `npm test`,
   `npm run build`; osobny commit i push. Golden-master scoringu: świadoma
   regeneracja tylko, gdy dryf dotyczy wyłącznie scen instant-liczników.
-- [ ] Etap 5: dokończenie audytu K2–K6 pomiarem (sondy wycen per klasa);
+- [~] Etap 5: dokończenie audytu K2–K6 pomiarem (sondy wycen per klasa);
   klasy z luką dostają własne etapy/testy w kolejnych commitach tej sesji
   albo wpis do tego planu jako kontynuacja następnej sesji.
-- [ ] Etap 6: pełny `npm run test:all`, plan/historia/handoff, opis PR #179,
+- [x] Etap 6: pełny `npm run test:all`, plan/historia/handoff, opis PR #179,
   CI i `mergeable_state`. Bez scalania, force-push, nowych kart, pełnego B0.
+
+## Wynik sesji 2026-11-05 (K1 + audyt pomiarowy K2/K3)
+
+**K1 ZAMKNIĘTE (commit `fcb8a83`).** Bramka trzymania w gałęzi `cast_spell`
+bota: instant z korzystnym licznikiem statystyk na własnego stwora traci poza
+oknem walki nowy parametr `counterInstantHoldPenalty` (120, `×0` = dawne
+zachowanie). Okna dozwolone: cel już walczy, blokujący-niespodzianka po
+deklaracji atakujących wroga (tapnięty cel tylko, gdy ten sam czar go
+odkręca), licznik domykający grę w tym ataku. Sorcery i zdolności aktywowane
+bez zmian. Dowód: `test/zgloszenie-d-dragonscale-okno.test.js` (D/1–D/5 na
+prawdziwych decyzjach bota: RED 3/5 przy kontroli pozytywnej, po naprawie
+5/5; mutacja kary 120→0 przywraca błąd D/1–D/2). Piny PMSSB-23 zaktualizowane
+świadomie: zestaw `OKNA_OFF` wyłącza też bramkę D, sceny na parametrach
+domyślnych mają wyniki niższe o karę. Bramki: pakiet pokrewny 103/103,
+`npm test` 9981/9981, build 77 modułów / 5707,4 kB, `npm run test:all`
+10249/10249.
+
+**Audyt K2/K3 POMIAREM (sonda `.arena/checkpoint/d-audit-probe.mjs`):**
+scena „własne podtrzymanie, wolna mana, własne stwory 2/2” dla 24 instantów
+profilu triku — bot trzyma 23 (wszystkie pumpy tymczasowe, granty, samo
+odkręcenie Savage Surge, liczniki po naprawie K1). Jedna potwierdzona luka:
+
+- **Diplomatic Relations** (`pump + damage_from_target_power`, klasy K3/K4):
+  bot rzuca w podtrzymaniu (wynik oferty 11 > pas 0) — ugryzienie wyceniane
+  jak usunięcie poza oknem walki. Następny etap: bramka okna dla
+  pump+ugryzienie (rzut poza walką tylko, gdy ugryzienie jest realnym,
+  opłacalnym usunięciem zaakceptowanym jako koszt utraty triku — do
+  rozstrzygnięcia pomiarem scen walki i poza nią).
+
+**Do następnych sesji:** K4 (removal/obrażenia — okna odpowiedzi, rzuty
+w twarz), K5 (kontrczary), K6 (reszta: dobieranie, tokeny, tutorzy, Fog),
+po kolei: reprodukcja → test RED → naprawa po deskryptorze → bramki.

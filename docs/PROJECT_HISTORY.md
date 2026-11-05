@@ -18992,3 +18992,5 @@ Audyt #177 A79: Ward i ręczna mana Sciona, atomowość błędnej płatności; h
 - 2026-11-03 — A111–A113: 34 kwarantannowe RED / 4 kontrole, utrata LKI Imp/finality i mieszane APNAP po Shock oraz realnej walce. Baza/#177 identyczny wynik; izolowana próba 34/38, 4 RED w A113, NIE WDRAŻAĆ. Produkcja bez zmian; B0 nie uruchamiano.
 
 - 2026-11-03 — po A111–A113 fast produkcji **9819 pass / 114 skip / 0 fail**; powiązane **405 pass / 98 skip**, wymuszone **114 RED / 18 GREEN**. Slow **268 pass / 0 skip / 0 fail**.
+
+- 2026-11-05 — Zgłoszenie D/K1: bot trzyma instantowe combat triki z trwałymi licznikami statystyk na okno walki (bramka `counterInstantHoldPenalty`, wyjątki: walka w toku, blokujący-niespodzianka po ataku wroga, domknięcie gry); testy D/1–D/5 5/5 z mutacją, fast 9981/9981, test:all 10249/10249, build 77/5707,4 kB. Audyt pomiarowy K2/K3: 23/24 instantów-trików trzymanych poza walką; potwierdzona luka Diplomatic Relations (pump+ugryzienie w podtrzymaniu) — następny etap roadmapy K1–K6 w planie `docs/plans/PLAN_2026-11-05-d-combat-tricki.md`.
