@@ -19002,3 +19002,5 @@ Audyt #177 A79: Ward i ręczna mana Sciona, atomowość błędnej płatności; h
 - 2026-11-05 — Zgłoszenie D/9 (K4b): instant-removal we własnym podtrzymaniu/kroku dobrania czeka na główną (`removalUpkeepHoldPenalty`); K4b/1–K4b/4 4/4 z mutacją, fast 9993/9993, test:all 10261/10261; golden-master scoringu zregenerowany świadomie (dryf tylko 1/6 partii). Zostają K5 (kontrczary) i K6 (reszta instantów).
 
 - 2026-11-05 — Zgłoszenie D/10–11: K5 (kontrczary) zamknięte pomiarem bez luki; K6 — instant-tokeny we własnym podtrzymaniu trzymane (`tokenUpkeepHoldPenalty`), K6/1–K6/3 3/3 z mutacją, fast 9996/9996, test:all 10264/10264. Roadmapa audytu instantów K1–K6 domknięta.
+
+- 2026-11-05 — Zgłoszenie E (Inferno Titan): modal podziału obrażeń otwierał ptaszkowy kreator „do N celów” zamiast kreatora kwot (kolejność gałęzi w openChoiceRequest) — gracz mógł wybrać tylko 0 albo 3 cele, a podział był wymuszony 1/1/1. Gałąź damage_division przesunięta przed kreatory ptaszkowe; kreator podziału pozwala potwierdzić zero celów (trigger „up to”). Testy E/1–E/4 5/5 z mutacją, fast 10001/10001, test:all 10269/10269, build 77/5714,6 kB.
