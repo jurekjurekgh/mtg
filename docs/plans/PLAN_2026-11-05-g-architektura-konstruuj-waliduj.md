@@ -174,3 +174,23 @@ Etap 2 (triggery wielocelowe + podział obrażeń) jest **wykonany**:
   golden-master bota bez dryfu (fixture bez zmian).
 - Został etap 3: mulligan bottom, untap choice, delve/escape exile,
   czary z `{X}` i Fireball (podział przy rzucaniu).
+
+## Etap 3 — pozostałe decyzje kombinatoryczne (realizacja 2026-11-05)
+
+Dwie rodziny, ten sam wzorzec (ziarna + deskryptor + walidacja):
+
+- 3a, decyzje oczekujące: `resolve_mulligan_bottom_choice` (ziarna:
+  okna cykliczne ręki z dedupem po multizbiorze nazw; bot dokłada
+  zestaw najniższej straty), `resolve_untap_choice` (ziarna: odkręć
+  wszystko / singletony / trzymaj wszystkich; deskryptor już jest),
+  `resolve_escape_exile` (ziarno kolejności grobu + okna; bot dokłada
+  najtańszy zestaw), `resolve_delve_exile` (ziarno per opłacalna
+  liczba; bot dokłada najtańszy zestaw per liczba). Deskryptory
+  escape/delve/untap istnieją; mulligan bottom dostaje deskryptor
+  `pendingMulliganBottom` (ręka + count), żeby bot nie czytał ofert.
+- 3b, rzuty: `legalXCostCasts` (ziarna X: 0, max, progi zabójstwa celu),
+  `legalFireballCasts` (ziarna: pojedyncze cele z X lethal/max,
+  zestaw wrogich stworów, wszyscy), `dividedDamageDivisions` przy
+  rzucie (ziarna podziału jak w etapie 2). Walidacje rzutu
+  (`validateFireballTargets`, `validateDamageDivision`, bramka X)
+  są niezależne od oferty — kompletność konstrukcyjna.

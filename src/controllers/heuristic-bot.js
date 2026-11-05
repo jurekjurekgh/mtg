@@ -2161,6 +2161,107 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     return synthesized;
   }
 
+  /**
+   * Zgłoszenie G, etap 3a: bot dokłada własne wybory decyzji oczekujących
+   * z ich deskryptorów (ziarna silnika są porządkowe, nie wartościowe):
+   *   - mulligan bottom: zestaw kart o najmniejszej stracie trzymania
+   *     (ta sama miara co wycena `resolve_mulligan_bottom_choice`);
+   *   - escape: najtańszy zestaw grobu wg `escapeExileCostOf`;
+   *   - delve: najtańszy zestaw dla KAŻDEJ opłacalnej liczby kart;
+   *   - untap: prefiksy źródeł uszeregowane wartością trzymanych bytów
+   *     (lustro wyceny `resolve_untap_choice` z `lockedByCandidate`).
+   * Zestawy są legalne z budowy (podzbiory kandydatów deskryptora we
+   * właściwej liczbie), a silnik waliduje je przy execute.
+   */
+  function synthesizedPendingSelections(view, existing) {
+    const synthesized = [];
+    const ma = (type) => existing.some((cmd) => cmd.type === type);
+    const bottom = view?.pendingMulliganBottom;
+    if (bottom && ma('resolve_mulligan_bottom_choice')) {
+      const handById = new Map((view.zones?.hand ?? []).map((o) => [o.id, o]));
+      const ids = (bottom.handIds ?? []).filter((id) => handById.has(id));
+      const count = Math.min(bottom.count ?? 0, ids.length);
+      if (count > 0 && ids.length > count) {
+        const loss = (id) => {
+          const card = handById.get(id);
+          const isLand = (card.kind ?? '') === 'land' || (card.types ?? []).includes('Land');
+          if (isLand) return 100;
+          const body = 2 * (card.power ?? 0) + (card.toughness ?? 0);
+          return 60 - (card.manaCost ?? 0) * 5 + Math.min(body, 10);
+        };
+        const chosen = new Set([...ids]
+          .map((id, index) => ({ id, index, loss: loss(id) }))
+          .sort((a, b) => a.loss - b.loss || a.index - b.index)
+          .slice(0, count)
+          .map(({ id }) => id));
+        const cardIds = ids.filter((id) => chosen.has(id));
+        if (!existing.some((cmd) => cmd.type === 'resolve_mulligan_bottom_choice'
+          && [...(cmd.cardIds ?? [])].sort().join('|') === [...cardIds].sort().join('|'))) {
+          synthesized.push({ type: 'resolve_mulligan_bottom_choice', playerId: view.playerId, cardIds });
+        }
+      }
+    }
+    const escape = view?.pendingEscapeExile;
+    if (escape && ma('resolve_escape_exile') && escape.exileCount > 0) {
+      const graveById = new Map((view.zones?.graveyard ?? []).map((o) => [o.id, o]));
+      const ranked = [...(escape.candidateIds ?? [])]
+        .filter((id) => graveById.has(id))
+        .map((id, index) => ({ id, index, cost: escapeExileCostOf(view, graveById.get(id)) }))
+        .sort((a, b) => a.cost - b.cost || a.index - b.index);
+      if (ranked.length >= escape.exileCount) {
+        const exileIds = ranked.slice(0, escape.exileCount).map(({ id }) => id);
+        if (!existing.some((cmd) => cmd.type === 'resolve_escape_exile'
+          && [...(cmd.exileIds ?? [])].sort().join('|') === [...exileIds].sort().join('|'))) {
+          synthesized.push({ type: 'resolve_escape_exile', playerId: view.playerId, exileIds });
+        }
+      }
+    }
+    const delve = view?.pendingDelveExile;
+    if (delve && ma('resolve_delve_exile')) {
+      const graveById = new Map((view.zones?.graveyard ?? []).map((o) => [o.id, o]));
+      const ranked = [...(delve.candidateIds ?? [])]
+        .filter((id) => graveById.has(id))
+        .map((id, index) => ({ id, index, cost: escapeExileCostOf(view, graveById.get(id)) }))
+        .sort((a, b) => a.cost - b.cost || a.index - b.index)
+        .map(({ id }) => id);
+      for (const count of delve.affordableCounts ?? []) {
+        if (count <= 0 || count > ranked.length) continue;
+        const exileIds = ranked.slice(0, count);
+        if (!existing.some((cmd) => cmd.type === 'resolve_delve_exile'
+          && [...(cmd.exileIds ?? [])].sort().join('|') === [...exileIds].sort().join('|'))) {
+          synthesized.push({ type: 'resolve_delve_exile', playerId: view.playerId, exileIds });
+        }
+      }
+    }
+    const untap = view?.pendingUntapChoice;
+    if (untap && ma('resolve_untap_choice')) {
+      const wartosci = untap.lockedByCandidate ?? {};
+      const value = (sourceId) => (wartosci[sourceId] ?? []).reduce((sum, lockedId) => {
+        const byt = objectOnBoard(view, lockedId);
+        if (!byt) return sum;
+        const worth = (byt.power ?? 0) + (byt.toughness ?? 0);
+        return sum + (byt.controllerId === view.playerId
+          ? -P.untapChoiceOwnLockPenalty - worth
+          : P.untapChoiceLockValue + 2 * worth);
+      }, 0);
+      const ranked = [...(untap.candidateIds ?? [])]
+        .map((id, index) => ({ id, index, value: value(id) }))
+        .sort((a, b) => b.value - a.value || a.index - b.index)
+        .map(({ id }) => id);
+      const seenUntap = new Set(existing
+        .filter((cmd) => cmd.type === 'resolve_untap_choice')
+        .map((cmd) => [...(cmd.keepTappedIds ?? [])].sort().join('|')));
+      for (let size = 1; size <= ranked.length; size += 1) {
+        const keepTappedIds = ranked.slice(0, size);
+        const key = [...keepTappedIds].sort().join('|');
+        if (seenUntap.has(key)) continue;
+        seenUntap.add(key);
+        synthesized.push({ type: 'resolve_untap_choice', playerId: view.playerId, keepTappedIds });
+      }
+    }
+    return synthesized;
+  }
+
   function botCommandCandidates(view) {
     const legal = view?.legalCommands ?? [];
     // N: jednostki automatu liczymy raz per decyzja (filtr castów poniżej).
@@ -2170,6 +2271,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     candidates.push(...synthesizedAttackDeclarations(view, candidates));
     candidates.push(...synthesizedBlockDeclarations(view, candidates));
     candidates.push(...synthesizedTriggerTargetSets(view, candidates));
+    candidates.push(...synthesizedPendingSelections(view, candidates));
     // Aktywny protokół zawsze wystawia bezpieczne wyjście (pass/decline/done,
     // a co najmniej concede). Gdyby ten inwariant kiedyś pękł, jawny błąd jest
     // bezpieczniejszy niż ciche złamanie twardego zakazu właściciela.

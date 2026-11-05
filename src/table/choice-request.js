@@ -5,7 +5,7 @@ import { installPressActivation } from './gestures.js';
 import { renderPickerCancel, renderPickerChipList, renderPickerRow, renderPickerSection } from './picker.js';
 import { OPTION_IGNORABLE_TYPES, polishPluralCount } from './render.js';
 import { commandOptionKey, faceDownLabel } from './session.js';
-import { commandForCrewSelection, crewSelectionPower, commandForDiscardSelection, commandForEpicDiscardSelection, commandForSelection, commandForMulliganSelection, commandForSacrificeSelection, commandForTargetIdsSelection, commandForSingleTargetSelection, commandForCastWindowSelection, commandForButtonsSelection, commandForTapXSelection, commandForChooseOneOrBoth, commandForChooseModes, stunCandidatesFor } from './multi-target.js';
+import { commandForCrewSelection, crewSelectionPower, commandForDiscardSelection, commandForEpicDiscardSelection, commandForSelection, commandForMulliganSelection, commandForMulliganBottomSelection, commandForSacrificeSelection, commandForTargetIdsSelection, commandForSingleTargetSelection, commandForCastWindowSelection, commandForButtonsSelection, commandForTapXSelection, commandForChooseOneOrBoth, commandForChooseModes, stunCandidatesFor } from './multi-target.js';
 
 function clearChoiceElement(element) {
   if (element) element.textContent = '';
@@ -1476,7 +1476,7 @@ export function renderMultiTargetWizard(host, { view, session, plan, commands, s
     : plan.discardMode
     ? commandForDiscardSelection(plan, [...chosen])
     : plan.cardIdsMode
-    ? commandForMulliganSelection(commands, [...chosen], defOfMulliganCard)
+    ? commandForMulliganBottomSelection(plan, commands, [...chosen], defOfMulliganCard)
     : keepMode
       ? commandForMulliganKeepSelection(commands, [...chosen][0] ?? null)
       : buttonsMode

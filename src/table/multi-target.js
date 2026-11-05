@@ -1403,6 +1403,30 @@ export function commandForMulliganSelection(commands, cardIds, defOf = null) {
   return cmd ?? null;
 }
 
+/**
+ * G, etap 3 (wzorzec kreatora walki z etapu 1): komenda dla wyboru
+ * mulligan-bottom. Najpierw reprezentant z oferty (dawne zachowanie,
+ * M304), a gdy wyboru nie ma wśród ZIAREN oferty — konstrukcja z planu
+ * (kandydaci + wymagana liczba), bo silnik waliduje każdy legalny zestaw
+ * przy execute; kreator nie może klinować się na nieobecności wariantu.
+ * Wybór spoza puli albo o złej liczbie nadal daje null (brak komendy).
+ */
+export function commandForMulliganBottomSelection(plan, commands, cardIds, defOf = null) {
+  const offered = commandForMulliganSelection(commands, cardIds, defOf);
+  if (offered) return offered;
+  const list = [...(cardIds ?? [])];
+  const pool = plan?.cardIds ?? plan?.targets ?? [];
+  if (!plan || plan.type !== 'resolve_mulligan_bottom_choice') return null;
+  if (list.length !== (plan.count ?? -1)) return null;
+  if (new Set(list).size !== list.length) return null;
+  if (list.some((id) => !pool.includes(id))) return null;
+  return {
+    type: 'resolve_mulligan_bottom_choice',
+    playerId: plan.playerId ?? commands?.[0]?.playerId ?? null,
+    cardIds: list,
+  };
+}
+
 
 /** Odrzuć N kart: zwarty plan z oferty pojedynczych kandydatów i decyzji.
  * Bez generowania podzbiorów ręki; engine waliduje pełną listę cardIds. */

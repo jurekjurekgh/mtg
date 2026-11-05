@@ -780,16 +780,29 @@ function drawStepTurnBasedAction(state) {
  * »zawsze wybieramy «nie odkręcaj»«), a kontroler nie miał oferty — patrz
  * test/audyt-m431-untap-choice.test.js i ADR 0022 (»supported« = 100% Oracle).
  */
-// Zgłoszenie F: brak limitu wariantów wyboru odkręceń (dawniej cap 32).
+// G, etap 3: ziarna wyboru odkręceń zamiast 2^n podzbiorów (F zniósł cap,
+// ale pełna enumeracja przy >31 kandydatach była wykładnicza). Kontroler
+// konstruuje własny podzbiór z deskryptora `pendingUntapChoice` (kandydaci
+// + lockedByCandidate), a walidacja przy execute przyjmuje każdy podzbiór
+// kandydatów — kompletność konstrukcyjna, bez listy do ucięcia.
 
 function untapChoiceOffers(state, playerId) {
   const candidates = untapChoiceCandidates(state, playerId);
   const out = [{ keepTappedIds: [] }];
-  const n = candidates.length;
-  for (let mask = 1; mask < (1 << n); mask += 1) {
-    const keepTappedIds = [];
-    for (let i = 0; i < n; i += 1) if (mask & (1 << i)) keepTappedIds.push(candidates[i]);
-    out.push({ keepTappedIds });
+  for (const id of candidates) out.push({ keepTappedIds: [id] });
+  if (candidates.length > 1) out.push({ keepTappedIds: [...candidates] });
+  return out;
+}
+
+/** Okna cykliczne listy: n podzbiorów o rozmiarze k (ziarna selekcji). */
+function cyclicWindows(ids, k) {
+  if (k <= 0) return [[]];
+  if (ids.length < k) return [];
+  const out = [];
+  for (let start = 0; start < ids.length; start += 1) {
+    out.push(ids.slice(start, start + k).length === k
+      ? ids.slice(start, start + k)
+      : [...ids.slice(start), ...ids.slice(0, (start + k) % ids.length)]);
   }
   return out;
 }
@@ -8238,18 +8251,14 @@ export function playerView(state, playerId) {
     //
     // Kolejność pozostaje deterministyczna (ADR 0005): idziemy po podzbiorach
     // w stałym porządku i bierzemy pierwszy reprezentant każdej klasy.
-    const subsets = (arr, k) => {
-      if (k === 0) return [[]];
-      if (arr.length < k) return [];
-      const [head, ...rest] = arr;
-      const withHead = subsets(rest, k - 1).map((s) => [head, ...s]);
-      return [...withHead, ...subsets(rest, k)];
-    };
+    // G, etap 3: ziarna = okna cykliczne ręki (n podzbiorów zamiast
+    // C(n,k)); dedup po multizbiorze nazw zostaje — bot/wizard konstruują
+    // własny zestaw z deskryptora pendingMulliganBottom, execute waliduje.
     const expected = Math.min(pending.count, pending.handIds.length);
     const nameOfCard = (id) => state.objects.get(id)?.cardId ?? id;
     const seen = new Set();
     const unique = [];
-    for (const combo of subsets(pending.handIds, expected)) {
+    for (const combo of cyclicWindows(pending.handIds, expected)) {
       const key = combo.map(nameOfCard).sort().join('|');
       if (seen.has(key)) continue;
       seen.add(key);
@@ -8835,18 +8844,15 @@ export function playerView(state, playerId) {
     // botów i fuzzera; gracz dostaje wizard multiselect po kandydatach i
     // komponuje komendę sam (walidacja silnika jest i tak niezależna).
     const pending = state.pendingEscapeExile;
-    // Zgłoszenie F: komplet podzbiorów kosztu Escape (bez limitu).
-    const results = [];
-    const rec = (start, chosen) => {
-      if (chosen.length === pending.exileCount) { results.push([...chosen]); return; }
-      for (let i = start; i < pending.candidateIds.length; i += 1) {
-        chosen.push(pending.candidateIds[i]);
-        rec(i + 1, chosen);
-        chosen.pop();
-      }
-    };
-    if (pending.exileCount > 0) rec(0, []);
+    // G, etap 3: ziarna = okna cykliczne grobu (pierwsze = kolejność grobu,
+    // jak dawna pierwsza oferta); bot/wizard konstruują własny zestaw
+    // z deskryptora pendingEscapeExile, execute waliduje — bez ucinania.
+    const results = pending.exileCount > 0 ? cyclicWindows(pending.candidateIds, pending.exileCount) : [[]];
+    const seenExile = new Set();
     for (const exileIds of results) {
+      const key = [...exileIds].sort().join('|');
+      if (seenExile.has(key)) continue;
+      seenExile.add(key);
       legalCommands.push(command('resolve_escape_exile', playerId, { exileIds }));
     }
   } else if (state.status === 'active' && !blockedByOthersDecision && activeDelveExile) {
@@ -8856,21 +8862,18 @@ export function playerView(state, playerId) {
     // wariantu, którego płatność odrzuci), cap jak przy Escape. Dla botów
     // i fuzzera; gracz dostaje wizard multiselect i komponuje komendę sam.
     const pending = state.pendingDelveExile;
-    const affordable = new Set(pending.affordableCounts ?? []);
-    // Zgłoszenie F: komplet podzbiorów Delve (bez limitu).
-    const results = [];
-    const rec = (start, chosen) => {
-      if (chosen.length >= pending.minExile && affordable.has(chosen.length)) results.push([...chosen]);
-      if (chosen.length === pending.maxExile) return;
-      for (let i = start; i < pending.candidateIds.length; i += 1) {
-        chosen.push(pending.candidateIds[i]);
-        rec(i + 1, chosen);
-        chosen.pop();
+    // G, etap 3: ziarna per OPŁACALNA liczba (okna cykliczne grobu);
+    // bot/wizard konstruują własny zestaw z deskryptora
+    // pendingDelveExile, execute waliduje — bez ucinania.
+    const affordableCounts = [...(pending.affordableCounts ?? [])].sort((a, b) => a - b);
+    const seenDelve = new Set();
+    for (const count of affordableCounts) {
+      for (const exileIds of cyclicWindows(pending.candidateIds, count)) {
+        const key = [...exileIds].sort().join('|');
+        if (seenDelve.has(key)) continue;
+        seenDelve.add(key);
+        legalCommands.push(command('resolve_delve_exile', playerId, { exileIds }));
       }
-    };
-    rec(0, []);
-    for (const exileIds of results) {
-      legalCommands.push(command('resolve_delve_exile', playerId, { exileIds }));
     }
   } else if (state.status === 'active' && !blockedByOthersDecision && activeDiscardChoice) {
     // Oczekująca decyzja odrzucenia (Temat 4): decydent wybiera KARTĘ z ręki.
@@ -10307,6 +10310,14 @@ export function playerView(state, playerId) {
     // choose not to untap". Widok niesie kandydatów (żeby panel wystawił
     // wybór) ORAZ ilu bytów każde źródło pilnuje (żeby wycena była liczona
     // z danych, nie z kolejności ofert — L169).
+    // G, etap 3: deskryptor odłożenia po mulliganie (własna ręka decydenta
+    // + ile kart odłożyć) — kontroler konstruuje zestaw, silnik waliduje.
+    pendingMulliganBottom: (state.pendingMulliganBottom && state.pendingMulliganBottom.playerId === playerId)
+      ? {
+          count: state.pendingMulliganBottom.count,
+          handIds: [...state.pendingMulliganBottom.handIds],
+        }
+      : null,
     pendingUntapChoice: (state.pendingUntapChoice && state.pendingUntapChoice.playerId === playerId)
       ? {
           candidateIds: [...state.pendingUntapChoice.candidateIds],

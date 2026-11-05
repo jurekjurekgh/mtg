@@ -141,7 +141,7 @@ test('D: Escape z kosztem 4 STWORÓW z grobu jest za drogi — bot nie ucieka (a
 // ---------------------------------------------------------------------------
 
 test('D2: Escape z dużym grobem — oferty bez wybuchu: cast tylko po celach,'
-  + ' wygnanie jako pending z kompletnymi ofertami (F)', () => {
+  + ' wygnanie jako pending z deskryptorem (G etap 3)', () => {
   const state = botTurn();
   put(state, { id: 'oblivion', cardId: 'sweet-oblivion', controllerId: 'p2', zone: 'graveyard', kind: 'spell' });
   // 10 innych kart w grobie → dawny kształt to C(10,4)=210 podzbiorów × 2 cele
@@ -161,7 +161,13 @@ test('D2: Escape z dużym grobem — oferty bez wybuchu: cast tylko po celach,'
   assert.ok(state.pendingEscapeExile, 'pending Escape jest');
   const view2 = playerView(state, 'p2');
   const exiles = view2.legalCommands.filter((c) => c.type === 'resolve_escape_exile');
-  assert.equal(exiles.length, 210,
-    `komplet podzbiorów C(10,4) bez dawnego capa (F; picker w etapie 3 G): ${exiles.length}`);
-  assert.ok(exiles.length > 0, 'bot ma oferty resolve_escape_exile');
+  // G, etap 3: komplet żyje w DESKRYPTORZE (10 kandydatów, exileCount=4),
+  // oferta niesie ziarna (okna cykliczne grobu), a dowolny legalny zestaw
+  // waliduje execute — bez wyliczania C(10,4)=210 wariantów.
+  assert.equal(view2.pendingEscapeExile.candidateIds.length, 10, 'deskryptor: komplet kandydatów grobu');
+  assert.equal(view2.pendingEscapeExile.exileCount, 4, 'deskryptor: koszt wygnania');
+  assert.equal(exiles.length, 10, `ziarna-okna zamiast kompletu podzbiorów: ${exiles.length}`);
+  assert.ok(exiles.every((c) => (c.exileIds ?? []).length === 4), 'każde ziarno w pełnym koszcie');
+  assert.ok(execute(state, { type: 'resolve_escape_exile', playerId: 'p2', exileIds: ['g0', 'g2', 'g5', 'g8'] }).ok,
+    'zestaw spoza okien przechodzi walidację przy execute');
 });
