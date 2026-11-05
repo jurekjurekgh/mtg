@@ -59,3 +59,15 @@ decyzje kombinatoryczne. Plan:
   (FixB/T3) — ziarna złożone i synteza botowa są celowe, nie cofać.
 - Przy zmianie limitów ofert sprawdzaj też walidację przy `execute`
   (kap {X} żył w dwóch miejscach — oferty i `resources.js`).
+
+## Etap 2 — WYKONANY (2026-11-05, po etapie 1)
+
+Triggery wielocelowe (`resolve_trigger_target`, count > 1) i podział
+obrażeń (`resolve_damage_division`) działają jak walka: ziarna w
+`legalCommands`, deskryptory `pendingTriggerTarget` (kandydaci,
+`maxTargets`, `upTo`) i `pendingDamageDivision` (cele, budżet), botowa
+synteza zestawów celów, walidacja przy `execute` bez zmian. Commity:
+`625c04d` + poprawki bramkowe. Dowód:
+`test/zgloszenie-g2-triggery-podzial.test.js` 6/6; `npm test`
+10019/10019; `test:all` 10287/10287; golden-master bota bez dryfu.
+Został tylko etap 3 (mulligan bottom, untap, delve/escape, `{X}`/Fireball).

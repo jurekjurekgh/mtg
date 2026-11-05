@@ -155,3 +155,22 @@ Zakres (ten sam wzorzec co etap 1):
 - Walidacja przy `execute` bez zmian (podzbiór kandydatów, limit
   count, kwoty >= 1, suma = budżet) — kompletność konstrukcyjna.
 - Poza zakresem: podział przy RZUCANIU czaru (Fireball/`{X}`) — etap 3.
+
+## Realizacja etapu 2 — STAN (2026-11-05)
+
+Etap 2 (triggery wielocelowe + podział obrażeń) jest **wykonany**:
+
+- Kod: `625c04d` — oferty `resolve_trigger_target` (count > 1) to ziarna
+  (`triggerTargetSeedSubsets`: zestaw zachłanny + singletony + pusty),
+  oferty `resolve_damage_division` to ziarna (`damageDivisionSeeds`:
+  koncentracje + podział równy); deskryptor `pendingTriggerTarget`
+  rozszerzony o dynamicznych kandydatów, `maxTargets` i `upTo`;
+  bot dokłada `synthesizedTriggerTargetSets` (prefiksy po własnej
+  wycenie singletonów). UI już konstruowało obie decyzje z deskryptorów.
+- Poprawki bramkowe: nazwa zmiennej bota (strażnik pól-widm PR #164)
+  i pin panelu B1/1 pod liczbę ziaren.
+- Dowód: `test/zgloszenie-g2-triggery-podzial.test.js` 6/6;
+  `npm test` 10019/10019; build OK; `test:all` 10287/10287;
+  golden-master bota bez dryfu (fixture bez zmian).
+- Został etap 3: mulligan bottom, untap choice, delve/escape exile,
+  czary z `{X}` i Fireball (podział przy rzucaniu).
