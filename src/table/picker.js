@@ -150,6 +150,8 @@ function renderPickerChip(host, {
   nameClassName = '',
   markClassName = '',
   onOpenCard = null,
+  onHoverCard = null,
+  onHoverCardEnd = null,
 } = {}) {
   const row = mkElement('div', host);
   row.className = joinClasses('picker-chip', rowClassName);
@@ -164,12 +166,15 @@ function renderPickerChip(host, {
     row.appendChild(indexEl);
   }
   const nameEl = mkElement('span', host);
-  const openable = typeof onOpenCard === 'function' && cardId != null;
-  nameEl.className = joinClasses(openable ? 'picker-chip-name is-openable' : 'picker-chip-name', nameClassName);
+  const hoverable = typeof onHoverCard === 'function' && cardId != null;
+  const openable = !hoverable && typeof onOpenCard === 'function' && cardId != null;
+  nameEl.className = joinClasses(hoverable || openable ? 'picker-chip-name is-openable' : 'picker-chip-name', nameClassName);
   nameEl.textContent = String(label ?? '');
-  if (openable) {
-    // Nazwa karty otwiera pełny ekran (`log-card` + `dataset.cardId` — delegacja
-    // w main.js, M167/C) i nie zaznacza niczego obok.
+  if (hoverable) {
+    attachNameHover(nameEl, () => cardId, onHoverCard, onHoverCardEnd);
+  } else if (openable) {
+    // Dotyk (brak kursora): nazwa karty otwiera pełny ekran (`log-card` +
+    // `dataset.cardId` — delegacja w main.js, M167/C) i nie zaznacza niczego obok.
     if (nameEl.dataset) nameEl.dataset.cardId = String(cardId);
     nameEl.addEventListener('click', (e) => {
       if (e && typeof e.preventDefault === 'function') e.preventDefault();
@@ -204,6 +209,8 @@ export function renderPickerChipList(host, {
   numbered = true,
   indexLabelOf = null,
   onOpenCard = null,
+  onHoverCard = null,
+  onHoverCardEnd = null,
 } = {}) {
   const list = mkElement('div', host);
   list.className = joinClasses('picker-chip-list', listClassName);
@@ -222,28 +229,46 @@ export function renderPickerChipList(host, {
     nameClassName,
     markClassName,
     onOpenCard,
+    onHoverCard,
+    onHoverCardEnd,
   }));
   return { list, rows: rows.map((r) => r.row), nameEls: rows.map((r) => r.nameEl) };
 }
 
 /**
- * Nazwa wiersza: osobny cel kliknięcia (pełny ekran karty) albo czysty tekst.
+ * Hover nazwy karty w modalu wyboru (zgłoszenie właściciela 2026-11-05):
+ * najechanie kursorem pokazuje podgląd ilustracji (ten sam co na stole),
+ * klik w nazwę znika. `mousemove` podnosi podgląd także, gdy wiersz
+ * przerysował się POD kursorem (sam `mouseenter` wtedy milczy — wzorzec
+ * `revive` hovera stołu). `idOf` zwraca identyfikator karty dla wywołującego,
+ * więc helper nie zna semantyki id (objectId vs cardId — patrz M300/M301/M302).
+ */
+function attachNameHover(nameEl, idOf, onHoverCard, onHoverCardEnd) {
+  nameEl.addEventListener('mouseenter', (e) => onHoverCard(idOf(), e));
+  nameEl.addEventListener('mousemove', (e) => onHoverCard(idOf(), e));
+  if (typeof onHoverCardEnd === 'function') {
+    nameEl.addEventListener('mouseleave', () => onHoverCardEnd());
+  }
+}
+
+/**
+ * Nazwa wiersza: cel hovera (podgląd karty) albo — tylko na dotyku — cel
+ * kliknięcia w pełny ekran, albo czysty tekst.
  * `html` przyjmuje WYŁĄCZNIE markup generowany w tym kodzie (ikony many z
  * `mana-icons.js`) — nazwy kart idą przez `label`, czyli `textContent`.
  */
-function renderPickerName(host, { className, label, html, openable, onOpenCard, id, openId = null }) {
+function renderPickerName(host, { className, label, html, openable, onOpenCard, onHoverCard = null, onHoverCardEnd = null, id, openId = null }) {
   const nameEl = mkElement('span', host);
   nameEl.className = joinClasses('picker-name', className);
   if (html) nameEl.innerHTML = html;
   else nameEl.textContent = String(label ?? '');
   host.appendChild(nameEl);
-  // Nazwa otwiera pełny ekran karty i NIE przełącza ptaszka (stopPropagation,
-  // wzorzec M66 z wizarda walki). Bez `onOpenCard` nazwa pozostaje tekstem.
-  // A1/A2 cd. (zgłoszenie właściciela: wszystkie modale z ptaszkami/radiem —
-  // nazwa karty klikalna do pełnego ekranu): dodajemy klasę `log-card` oraz
-  // `dataset.cardId`, żeby delegacja pełnego ekranu w `main.js` (M167/C) łapała
-  // te kliknięcia tak samo jak nazwy w panelu logu/stosu. Dotyczy stepperów,
-  // checkboxów i radiobuttonów wszystkich wizardów.
+  // Zgłoszenie właściciela 2026-11-05: w modalach wyboru podgląd karty daje
+  // HOVER nad nazwą, nie klik. Gdy wywołujący poda `onHoverCard`, nazwa nie
+  // dostaje ani handlera kliku, ani klasy `log-card`/`dataset.cardId`
+  // (delegacja pełnego ekranu w main.js) — klik w nazwę zachowuje się wtedy
+  // jak klik w resztę wiersza. `onOpenCard` zostaje wyłącznie ścieżką
+  // dotykową (brak kursora = brak hovera).
   // `openId` pozwala przekazać inny identyfikator do podglądu niż `id` wiersza
   // (potrzebne, gdy wiersz reprezentuje decyzję-enum, a jego nazwą jest karta
   // rozpoznawana po cardId, a nie objectId — patrz M300/M301/M302).
@@ -251,10 +276,15 @@ function renderPickerName(host, { className, label, html, openable, onOpenCard, 
   // F2 (audyt PR #101): parametr `openLabel` był martwy (nikt go nie podawał)
   // i pułapką — trafiłby etykietą w pole o semantyce IDENTYFIKATORA.
   const dataCardId = targetId;
+  if (openable && typeof onHoverCard === 'function' && targetId != null) {
+    nameEl.className = joinClasses(nameEl.className, 'is-openable');
+    attachNameHover(nameEl, () => targetId, onHoverCard, onHoverCardEnd);
+    return nameEl;
+  }
   if (openable && typeof onOpenCard === 'function' && targetId != null) {
     nameEl.className = joinClasses(nameEl.className, 'is-openable', 'log-card');
     if (nameEl.dataset) nameEl.dataset.cardId = String(dataCardId);
-    // UWAGA C (2026-09-25b): klik w nazwę = pełny ekran karty, NIE akcja
+    // UWAGA C (2026-09-25b): tap w nazwę = pełny ekran karty, NIE akcja
     // przycisku-rodzica (panel akcji: nazwa w `.action` z pressem).
     markPressExempt(nameEl);
     nameEl.addEventListener('click', (e) => {
@@ -312,6 +342,8 @@ export function renderPickerRow(host, {
   onStep = null,
   onActivate = null,
   onOpenCard = null,
+  onHoverCard = null,
+  onHoverCardEnd = null,
   openCardId = null,
   stopRowPropagation = false,
 } = {}) {
@@ -348,6 +380,8 @@ export function renderPickerRow(host, {
       // i dorzucenie klikalnej nazwy dałoby dwa różne skutki w tym samym celu.
       openable: false,
       onOpenCard,
+      onHoverCard,
+      onHoverCardEnd,
       id,
     });
     nameEl.className = joinClasses(nameEl.className, 'picker-button-label');
@@ -376,6 +410,8 @@ export function renderPickerRow(host, {
       html,
       openable: true,
       onOpenCard,
+      onHoverCard,
+      onHoverCardEnd,
       id,
       openId: openCardId ?? id,
     });
@@ -464,6 +500,8 @@ export function renderPickerRow(host, {
       html,
       openable: true,
       onOpenCard,
+      onHoverCard,
+      onHoverCardEnd,
       id,
       openId: openCardId ?? id,
     });

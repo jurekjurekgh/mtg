@@ -65,24 +65,24 @@ Pułapki:
 
 ## Etapy
 
-- [ ] Etap 1: testy RED w nowym pliku `test/modal-hover-nazwy.test.js`:
+- [x] Etap 1: testy RED w nowym pliku `test/modal-hover-nazwy.test.js`:
   wiersz pickera (checkbox/radio/stepper), chip i `renderPeekButton` —
   `mouseenter` w nazwę wywołuje hover z identyfikatorem karty, `mouseleave`
   go chowa, a `click` w nazwę NIE otwiera pełnego ekranu ani nie niesie
   `log-card`/`dataset.cardId`. Wariant bez hovera (dotyk): klik nadal otwiera.
   Dodatkowo strażnik źródła: picker nie zna już ścieżki „klik = pełny ekran",
   gdy podano hover.
-- [ ] Etap 2: `src/table/picker.js` — parametry `onHoverCard(id, event)` /
+- [x] Etap 2: `src/table/picker.js` — parametry `onHoverCard(id, event)` /
   `onHoverCardEnd()` w `renderPickerName`, `renderPickerChip` /
   `renderPickerChipList` i `renderPickerRow`; hover ma pierwszeństwo przed
   klikiem, `onOpenCard` zostaje wyłącznie ścieżką dotykową. Aktualizacja
   komentarza kontraktu pliku.
-- [ ] Etap 3: `src/table/choice-request.js` — `renderPeekButton` dostaje
+- [x] Etap 3: `src/table/choice-request.js` — `renderPeekButton` dostaje
   `onHover` / `onHoverEnd`; wszystkie kreatory (look/chipy, walka, podział
   obrażeń, wielocelowy, damage, escape, delve, search-batch) oraz
   `renderChoiceRequest` przepinają parametry hover obok dotychczasowych
   `onOpenCard*`. `src/table/mana-wizard.js` — wiersze Delve tak samo.
-- [ ] Etap 4: `src/table/main.js` — adapter hovera modala: rozwiązuje
+- [x] Etap 4: `src/table/main.js` — adapter hovera modala: rozwiązuje
   objectId/cardId na `info` i woła istniejący `createScryfallHover(els)`;
   okablowanie wszystkich wywołań kreatorów: przy dostępnym hoverze (mysz)
   podajemy wyłącznie callbacki hover, na dotyku — dotychczasowe `onOpenCard*`.

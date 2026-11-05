@@ -913,7 +913,7 @@ export function wizardSourceName(source, session) {
  * Anuluj. Teksty wędrują przez textContent (kontrakt render.js).
  */
 export function renderManaWizard(host, model, {
-  onTapSource, onSelectTapCost, onCancelTapCost, onToggleDelve, onConfirm, onCancel, onOpenCard, session = null,
+  onTapSource, onSelectTapCost, onCancelTapCost, onToggleDelve, onConfirm, onCancel, onOpenCard, onHoverCard = null, onHoverCardEnd = null, session = null,
 }) {
   host.textContent = '';
   if (model.tapCostSelection) {
@@ -1022,6 +1022,8 @@ export function renderManaWizard(host, model, {
         nameClassName: 'mana-wizard-delve-name',
         onToggle: (on, id) => onToggleDelve?.(id, on),
         onOpenCard: typeof onOpenCard === 'function' ? onOpenCard : null,
+        onHoverCard: typeof onHoverCard === 'function' ? onHoverCard : null,
+        onHoverCardEnd: typeof onHoverCardEnd === 'function' ? onHoverCardEnd : null,
       });
     }
     host.appendChild(delveList);

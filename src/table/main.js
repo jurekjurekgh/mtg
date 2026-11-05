@@ -197,6 +197,80 @@ function bootstrapTable() {
   // „Rozgrywka” — powiększona karta ze Scryfall, tor stały (bez trybów
   // FOT i KON). `null` na dotyku (tam tap otwiera pełny ekran).
   const scryfallHover = createScryfallHover(els);
+  // Zgłoszenie właściciela 2026-11-05: hover nazwy karty w MODALACH WYBORU —
+  // ten sam podgląd co na stole/cmentarzu (ta sama warstwa `hoverPreview`
+  // i renderer), zasilany informacją rozwiązaną z identyfikatora wiersza.
+  // Na dotyku `scryfallHover` jest nullem, więc callbacki hover też są null
+  // i picker wraca do tapnięcia w nazwę (pełny ekran) — jedynej drogi
+  // podglądu bez kursora.
+  let modalHoverKey = null;
+  function modalHoverInfoByCardId(cardId) {
+    if (!session) return null;
+    const details = session.cardDetails(cardId);
+    if (!details) return null;
+    return {
+      name: details.name,
+      colors: details.colors ?? [],
+      kind: details.kind ?? inferKindForCard(details),
+      types: details.types ?? [],
+      subtypes: details.subtypes ?? [],
+      keywords: details.keywords ?? [],
+      manaCost: details.manaCost ?? null,
+      power: details.power, toughness: details.toughness,
+      livePower: details.power, liveToughness: details.toughness,
+      spell: details.spell ?? null,
+      abilities: details.abilities ?? [],
+      morph: details.morph ?? null,
+      set: details.set ?? null,
+      imageUri: details.imageUri ?? null,
+      artId: details.artId ?? null,
+      faceDown: false,
+    };
+  }
+  function modalHoverInfoByObjectId(objectId) {
+    if (!session) return null;
+    const view = session.view();
+    for (const list of Object.values(view.zones ?? {})) {
+      const found = (list ?? []).find((o) => o.id === objectId);
+      if (found) {
+        if (found.hidden) return null; // FoW: cudzej ukrytej karty nie pokazujemy
+        return cardInfoForFullscreen(found);
+      }
+    }
+    return null;
+  }
+  function showModalHover(key, info, e) {
+    if (!scryfallHover || !info) return;
+    const active = String(els.hoverPreview?.className ?? '').includes('active');
+    if (active && modalHoverKey === key) return; // mousemove pod tym samym wierszem
+    modalHoverKey = key;
+    scryfallHover.start(info, e);
+  }
+  const modalHoverByObjectId = scryfallHover
+    ? (objectId, e) => showModalHover(`obj:${objectId}`, modalHoverInfoByObjectId(objectId), e)
+    : null;
+  const modalHoverByCardId = scryfallHover
+    ? (cardId, e) => showModalHover(`card:${cardId}`, modalHoverInfoByCardId(cardId), e)
+    : null;
+  const modalHoverEnd = scryfallHover
+    ? () => { modalHoverKey = null; scryfallHover.end(); }
+    : null;
+  /** Props hovera dla kreatorów, których nazwa jest obiektem (cele, walka). */
+  const modalObjectHoverProps = {
+    onHoverCard: modalHoverByObjectId,
+    onHoverCardByCardId: modalHoverByCardId,
+    onHoverCardEnd: modalHoverEnd,
+  };
+  /** Props hovera dla kreatorów, których nazwa jest kartą z katalogu. */
+  const modalCardHoverProps = {
+    onHoverCard: modalHoverByCardId,
+    onHoverCardEnd: modalHoverEnd,
+  };
+  /** Props hovera dla kreatorów z nazwą po cardId w osobnym kanale. */
+  const modalCardIdHoverProps = {
+    onHoverCardByCardId: modalHoverByCardId,
+    onHoverCardEnd: modalHoverEnd,
+  };
   /**
    * M198/B (screenshot właściciela): komunikaty systemowe zamiast pasa
    * czerwonego tekstu w układzie pokazują się w warstwie z guzikiem
@@ -710,7 +784,7 @@ function bootstrapTable() {
           cardId: option.done === true ? null : epicCardDefinitionId(option.cardId),
         };
       });
-      renderMultiTargetWizard(els.choiceRequestBody, {
+      renderMultiTargetWizard(els.choiceRequestBody, { ...(typeof modalObjectHoverProps !== 'undefined' ? modalObjectHoverProps : {}),
         view: choiceView,
         session,
         plan: epicCardPlan,
@@ -762,7 +836,7 @@ function bootstrapTable() {
     const discardPlan = discardPlanOf(request.options ?? [], choiceView);
     if (discardPlan) {
       const source = discardPlan.sourceCardId ? `${session.nameOf(discardPlan.sourceCardId)} — ` : '';
-      renderMultiTargetWizard(els.choiceRequestBody, {
+      renderMultiTargetWizard(els.choiceRequestBody, { ...(typeof modalObjectHoverProps !== 'undefined' ? modalObjectHoverProps : {}),
         view: choiceView, session, plan: discardPlan, commands: request.options,
         intro: `${source}zaznacz ${discardPlan.count} ${polishPluralCount(discardPlan.count, 'kartę', 'karty', 'kart')} do odrzucenia${discardPlan.purpose === 'cost' ? ' jako koszt' : ''}:`,
         onOpenCard: openCardFullscreen,
@@ -774,7 +848,7 @@ function bootstrapTable() {
     }
     const mulliganPlan = mulliganBottomPlanOf(request.options ?? []);
     if (mulliganPlan) {
-      renderMultiTargetWizard(els.choiceRequestBody, {
+      renderMultiTargetWizard(els.choiceRequestBody, { ...(typeof modalObjectHoverProps !== 'undefined' ? modalObjectHoverProps : {}),
         view: choiceView,
         session,
         plan: mulliganPlan,
@@ -798,7 +872,7 @@ function bootstrapTable() {
     const proliferatePlan = proliferatePlanOf(request.options ?? []);
     if (proliferatePlan) {
       const pendingProliferate = choiceView.pendingProliferate;
-      renderMultiTargetWizard(els.choiceRequestBody, {
+      renderMultiTargetWizard(els.choiceRequestBody, { ...(typeof modalObjectHoverProps !== 'undefined' ? modalObjectHoverProps : {}),
         view: choiceView,
         session,
         plan: proliferatePlan,
@@ -823,7 +897,7 @@ function bootstrapTable() {
       // wizardzie podziału obrażeń — komendy nie znają `sourceId`.
       const upToSource = choiceView.pendingTriggerTarget?.cardId
         ? session.nameOf(choiceView.pendingTriggerTarget.cardId) : null;
-      renderMultiTargetWizard(els.choiceRequestBody, {
+      renderMultiTargetWizard(els.choiceRequestBody, { ...(typeof modalObjectHoverProps !== 'undefined' ? modalObjectHoverProps : {}),
         view: choiceView,
         session,
         plan: upToPlan,
@@ -862,7 +936,7 @@ function bootstrapTable() {
         const src = session.state?.objects?.get(oneOrBothPlan.objectId);
         return src?.spell?.modes?.[modeIndex]?.name ?? `cel ${modeIndex + 1}`;
       });
-      renderMultiTargetWizard(els.choiceRequestBody, {
+      renderMultiTargetWizard(els.choiceRequestBody, { ...(typeof modalObjectHoverProps !== 'undefined' ? modalObjectHoverProps : {}),
         view: choiceView,
         session,
         plan: oneOrBothPlan,
@@ -889,7 +963,7 @@ function bootstrapTable() {
       // Okna opcjonalnego rzutu: odmowa jest osobną decyzją, nie jednym z
       // sześciu wariantów trybów. Po „Rzuć” wracamy do tego samego kreatora.
       const first = [otherModeOptions[0], componentOptions[0]];
-      renderMultiTargetWizard(els.choiceRequestBody, {
+      renderMultiTargetWizard(els.choiceRequestBody, { ...(typeof modalObjectHoverProps !== 'undefined' ? modalObjectHoverProps : {}),
         view: choiceView, session, commands: first,
         plan: { buttonsMode: true, rows: [{ id: 'opt-0', label: 'Nie rzucaj' }, { id: 'opt-1', label: 'Rzuć — wybierz tryby' }] },
         intro: `${choiceGroupTitle(request, session, choiceView)} — rzuć albo odmów:`,
@@ -903,7 +977,7 @@ function bootstrapTable() {
       return;
     }
     if (chooseModesPlan && otherModeOptions.length === 0) {
-      renderMultiTargetWizard(els.choiceRequestBody, {
+      renderMultiTargetWizard(els.choiceRequestBody, { ...(typeof modalObjectHoverProps !== 'undefined' ? modalObjectHoverProps : {}),
         view: choiceView, session, plan: chooseModesPlan, commands: modeOptionsForSet,
         intro: `${choiceGroupTitle(request, session, choiceView)} — wybierz ${chooseModesPlan.count} tryby:`,
         onOpenCard: openCardFullscreen, onOpenCardByCardId: openCardFullscreenByCardId,
@@ -936,7 +1010,7 @@ function bootstrapTable() {
         label: modeNameList[castModePlan.modes[i]]?.name ?? `tryb ${castModePlan.modes[i] + 1}`,
         ...(castModePlan.epicChoiceMode ? { cardId: epicModeCardId } : {}),
       }));
-      renderMultiTargetWizard(els.choiceRequestBody, {
+      renderMultiTargetWizard(els.choiceRequestBody, { ...(typeof modalObjectHoverProps !== 'undefined' ? modalObjectHoverProps : {}),
         view: choiceView,
         session,
         plan: castModePlan,
@@ -976,7 +1050,7 @@ function bootstrapTable() {
       const epicObject = session.state?.objects?.get(epicTargetPlan.cardId) ?? null;
       const epicCardId = epicObject?.cardId && session.cardDetails(epicObject.cardId)
         ? epicObject.cardId : null;
-      renderMultiTargetWizard(els.choiceRequestBody, {
+      renderMultiTargetWizard(els.choiceRequestBody, { ...(typeof modalObjectHoverProps !== 'undefined' ? modalObjectHoverProps : {}),
         view: choiceView,
         session,
         plan: epicTargetPlan,
@@ -1038,7 +1112,7 @@ function bootstrapTable() {
       const epicObject = session.state?.objects?.get(epicDiscardPlan.cardId) ?? null;
       const epicCardId = epicObject?.cardId && session.cardDetails(epicObject.cardId)
         ? epicObject.cardId : null;
-      renderMultiTargetWizard(els.choiceRequestBody, {
+      renderMultiTargetWizard(els.choiceRequestBody, { ...(typeof modalObjectHoverProps !== 'undefined' ? modalObjectHoverProps : {}),
         view: choiceView,
         session,
         plan: epicDiscardPlan,
@@ -1066,7 +1140,7 @@ function bootstrapTable() {
         label: labels[i],
         cardId: cardIdForChoiceOption(option),
       }));
-      renderMultiTargetWizard(els.choiceRequestBody, {
+      renderMultiTargetWizard(els.choiceRequestBody, { ...(typeof modalObjectHoverProps !== 'undefined' ? modalObjectHoverProps : {}),
         view: choiceView,
         session,
         plan: castWindowPlan,
@@ -1091,7 +1165,7 @@ function bootstrapTable() {
     if (tapXPlan) {
       const tapXSource = (choiceView.zones?.battlefield ?? []).find((o) => o.id === tapXPlan.objectId);
       const tapXName = tapXSource?.cardId ? session.nameOf(tapXSource.cardId) : null;
-      renderMultiTargetWizard(els.choiceRequestBody, {
+      renderMultiTargetWizard(els.choiceRequestBody, { ...(typeof modalObjectHoverProps !== 'undefined' ? modalObjectHoverProps : {}),
         view: choiceView,
         session,
         plan: tapXPlan,
@@ -1113,7 +1187,7 @@ function bootstrapTable() {
       const dividedSource = [...(choiceView.zones?.hand ?? []), ...(choiceView.zones?.battlefield ?? []),
         ...(choiceView.zones?.graveyard ?? []), ...(choiceView.zones?.exile ?? [])]
         .find((o) => o.id === dividedPlan.objectId);
-      renderDamageDivisionWizard(els.choiceRequestBody, {
+      renderDamageDivisionWizard(els.choiceRequestBody, { ...(typeof modalObjectHoverProps !== 'undefined' ? modalObjectHoverProps : {}),
         view: choiceView,
         session,
         candidateIds: dividedPlan.candidateIds,
@@ -1155,7 +1229,7 @@ function bootstrapTable() {
       const giftIntro = hasGiftDimension
         ? `${choiceGroupTitle(titleRequest, session, choiceView)} — wybierz ${targetPhrase} i ${giftPhrase}:`
         : undefined;
-      renderMultiTargetWizard(els.choiceRequestBody, {
+      renderMultiTargetWizard(els.choiceRequestBody, { ...(typeof modalObjectHoverProps !== 'undefined' ? modalObjectHoverProps : {}),
         view: choiceView,
         session,
         plan: multiPlan,
@@ -1192,7 +1266,7 @@ function bootstrapTable() {
         ...(choiceView.zones?.graveyard ?? []), ...(choiceView.zones?.exile ?? [])]
         .find((o) => o.id === sacrificePlan.objectId);
       const targetSpec = ((registry.get(sourceObject?.cardId) ?? {}).spell?.targets ?? [])[0] ?? null;
-      renderMultiTargetWizard(els.choiceRequestBody, {
+      renderMultiTargetWizard(els.choiceRequestBody, { ...(typeof modalObjectHoverProps !== 'undefined' ? modalObjectHoverProps : {}),
         view: choiceView,
         session,
         plan: sacrificePlan,
@@ -1244,7 +1318,7 @@ function bootstrapTable() {
         seenBatchCard.add(cardId);
         searchBatch.rows.push({ cardId, count: Math.max(1, counts.get(cardId) ?? 1) });
       }
-      renderSearchBatchWizard(els.choiceRequestBody, {
+      renderSearchBatchWizard(els.choiceRequestBody, { ...(typeof modalCardIdHoverProps !== 'undefined' ? modalCardIdHoverProps : {}),
         view: choiceView,
         session,
         plan: searchBatch,
@@ -1278,7 +1352,7 @@ function bootstrapTable() {
       const intro = hasExplicitSource
         ? null
         : `${choiceGroupTitle(request, session, choiceView)} — wskaż ${singlePlan.itemLabel ?? 'cel'}:`;
-      renderMultiTargetWizard(els.choiceRequestBody, {
+      renderMultiTargetWizard(els.choiceRequestBody, { ...(typeof modalObjectHoverProps !== 'undefined' ? modalObjectHoverProps : {}),
         view: choiceView,
         session,
         plan: singlePlan,
@@ -1307,7 +1381,7 @@ function bootstrapTable() {
         { id: 'keep', label: `Zatrzymaj rękę (${handSize} ${polishPluralCount(handSize, 'karta', 'karty', 'kart')})` },
         { id: 'mulligan', label: 'Weź mulligan' },
       ];
-      renderMultiTargetWizard(els.choiceRequestBody, {
+      renderMultiTargetWizard(els.choiceRequestBody, { ...(typeof modalObjectHoverProps !== 'undefined' ? modalObjectHoverProps : {}),
         view: choiceView,
         session,
         plan: mulliganKeep,
@@ -1326,7 +1400,7 @@ function bootstrapTable() {
     // nie po karcie, która ją wprowadziła (ADR 0002, M293).
     if (lookKind === 'peek-pick') {
       const pending = choiceView.pendingFertileThicket;
-      renderPeekPickOrderWizard(els.choiceRequestBody, {
+      renderPeekPickOrderWizard(els.choiceRequestBody, { ...(typeof modalCardHoverProps !== 'undefined' ? modalCardHoverProps : {}),
         cards: pending.cards.map((card) => ({ id: card.id, cardId: card.cardId, name: session.nameOf(card.cardId) })),
         basicLandIds: pending.basicLandIds ?? [],
         // M201/F: nazwa karty z danych (ADR 0002) — intro nazywa źródło decyzji.
@@ -1350,7 +1424,7 @@ function bootstrapTable() {
     // komendę; legalCommands nie enumeruje żadnych permutacji.
     if (lookKind === 'pick-one-rest-bottom') {
       const pending = choiceView.pendingLookTopN;
-      renderPickOneRestBottomWizard(els.choiceRequestBody, {
+      renderPickOneRestBottomWizard(els.choiceRequestBody, { ...(typeof modalCardHoverProps !== 'undefined' ? modalCardHoverProps : {}),
         cards: pending.cards.map((card) => ({ id: card.id, cardId: card.cardId, name: session.nameOf(card.cardId) })),
         pickTo: pending.pickTo,
         sourceName: pending.sourceCardId ? session.nameOf(pending.sourceCardId) : null,
@@ -1374,7 +1448,7 @@ function bootstrapTable() {
       const pending = lookKind === 'surveil' ? choiceView.pendingSurveil
         : lookKind === 'index' ? choiceView.pendingIndex
         : choiceView.pendingScry;
-      renderLookWizard(els.choiceRequestBody, {
+      renderLookWizard(els.choiceRequestBody, { ...(typeof modalCardHoverProps !== 'undefined' ? modalCardHoverProps : {}),
         kind: lookKind,
         // M167/C (uwaga właściciela): karty w wizardzie scry/surveil są
         // KLIKALNE — cardId + handler pełnoekranowej ilustracji (jak nazwy
@@ -1411,7 +1485,7 @@ function bootstrapTable() {
     // M66 (B/R): walka — zamiast list kombinacji wizard z przełącznikami
     // (atakujący/blokujący) i stepperami (rozdzielanie obrażeń).
     if (request.type === 'declare_attackers' || request.type === 'declare_blockers') {
-      renderCombatWizard(els.choiceRequestBody, {
+      renderCombatWizard(els.choiceRequestBody, { ...(typeof modalObjectHoverProps !== 'undefined' ? modalObjectHoverProps : {}),
         kind: request.type === 'declare_attackers' ? 'attackers' : 'blockers',
         view: choiceView, session, options: request.options,
         // E6: pula kandydatów na blokerów z widoku — menu (`request.options`)
@@ -1442,7 +1516,7 @@ function bootstrapTable() {
         play(request.options[0]);
         return;
       }
-      renderDamageDivisionWizard(els.choiceRequestBody, {
+      renderDamageDivisionWizard(els.choiceRequestBody, { ...(typeof modalObjectHoverProps !== 'undefined' ? modalObjectHoverProps : {}),
         view: choiceView, session,
         candidateIds: pt.candidateIds, total: pt.divisionTotal,
         maxTargets: pt.maxTargets ?? 3,
@@ -1474,7 +1548,7 @@ function bootstrapTable() {
         const object = session.state?.objects?.get(id);
         return { id, cardId: object?.cardId ?? null, name: session.nameOfObject(id) ?? id };
       });
-      renderEscapeExileWizard(els.choiceRequestBody, {
+      renderEscapeExileWizard(els.choiceRequestBody, { ...(typeof modalCardHoverProps !== 'undefined' ? modalCardHoverProps : {}),
         candidates: cards,
         exileCount: pending.exileCount,
         sourceName: pending.sourceCardId ? session.nameOf(pending.sourceCardId) : null,
@@ -1505,7 +1579,7 @@ function bootstrapTable() {
         const object = session.state?.objects?.get(id);
         return { id, cardId: object?.cardId ?? null, name: session.nameOfObject(id) ?? id };
       });
-      renderDelveExileWizard(els.choiceRequestBody, {
+      renderDelveExileWizard(els.choiceRequestBody, { ...(typeof modalCardHoverProps !== 'undefined' ? modalCardHoverProps : {}),
         candidates: cards,
         maxExile: pending.maxExile,
         affordableCounts: pending.affordableCounts ?? null,
@@ -1540,6 +1614,7 @@ function bootstrapTable() {
         // przycisku zatwierdzenia — wizard składa komendę ze stepperów, więc
         // sam liczy jej kształt, a tu dokładamy tożsamość komendy.
         probeKeyFor: (built) => commandOptionKey(built),
+        ...(typeof modalObjectHoverProps !== 'undefined' ? modalObjectHoverProps : {}),
         onComplete: (cmd) => {
           hideModal('choice-request');
           play(cmd);
@@ -1567,7 +1642,7 @@ function bootstrapTable() {
         label: labels[i],
         cardId: cardIdForChoiceOption(option),
       }));
-      renderMultiTargetWizard(els.choiceRequestBody, {
+      renderMultiTargetWizard(els.choiceRequestBody, { ...(typeof modalObjectHoverProps !== 'undefined' ? modalObjectHoverProps : {}),
         view: choiceView,
         session,
         plan: buttonsPlan,
@@ -1593,7 +1668,7 @@ function bootstrapTable() {
       const labels = labelChoiceOptions(opts, session, choiceView);
       opts.forEach((option, i) => optionLabels.set(option, labels[i]));
     }
-    renderChoiceRequest(els.choiceRequestBody, request, {
+    renderChoiceRequest(els.choiceRequestBody, request, { ...(typeof modalCardHoverProps !== 'undefined' ? modalCardHoverProps : {}),
       // Nagłówek modala = ten sam opis co etykieta w „Twoje działania"
       // („Aura: Benevolent Blessing", „Wybierz: Mulligan" — uwaga A, 2026-08-10).
       introLabel: choiceGroupTitle(request, session, choiceView),
@@ -2876,7 +2951,7 @@ function bootstrapTable() {
 
   /** A2: modal kreatora załogi; Zatwierdź wraca do play() z pominięciem re-wejścia. */
   function openCrewWizard({ plan, intro }) {
-    renderMultiTargetWizard(els.choiceRequestBody, {
+    renderMultiTargetWizard(els.choiceRequestBody, { ...(typeof modalObjectHoverProps !== 'undefined' ? modalObjectHoverProps : {}),
       view: session.view(),
       session,
       plan,
@@ -3244,6 +3319,8 @@ function bootstrapTable() {
       },
       onOpenCard: typeof openCardFullscreenByCardId === 'function'
         ? openCardFullscreenByCardId : null,
+      onHoverCard: typeof modalHoverByCardId === 'function' ? modalHoverByCardId : null,
+      onHoverCardEnd: typeof modalHoverEnd === 'function' ? modalHoverEnd : null,
       session,
       // B: Anuluj w kreatorze PODRZĘDNYM wraca do nadrzędnego (pierwotny czar
       // nadal czeka); Anuluj w nadrzędnym zamyka całą płatność (M106/Z10).
