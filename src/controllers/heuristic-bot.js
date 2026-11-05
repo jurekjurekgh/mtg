@@ -2262,6 +2262,42 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     return synthesized;
   }
 
+  /**
+   * Zgłoszenie G, etap 3b: silnik niesie ziarna X (min / progi / max),
+   * a bot dokłada własne warianty pośrednie dla każdej grupy rzutu
+   * (ten sam czar, te same cele): każdy całkowity X między najmniejszym
+   * a największym ziarnem, z kosztem skorygowanym o deltę X (pole `cost`
+   * ofert jest liniowe w X). Legalność z budowy pilnuje bramka rzutu
+   * przy wykonaniu wyboru przez bota (bot zwraca tylko warianty z tego
+   * samego przedziału, który silnik uznał za opłacalny).
+   */
+  function synthesizedXCastVariants(view, existing) {
+    const groups = new Map();
+    for (const cmd of existing) {
+      if (!Number.isInteger(cmd?.xValue)) continue;
+      if (cmd.type !== 'cast_spell' && cmd.type !== 'cast_permanent') continue;
+      const key = [cmd.type, cmd.objectId, [...(cmd.targets ?? [])].sort().join('|'), cmd.modeIndex ?? ''].join('#');
+      const group = groups.get(key) ?? { template: cmd, min: cmd.xValue, max: cmd.xValue, seen: new Set() };
+      group.min = Math.min(group.min, cmd.xValue);
+      group.max = Math.max(group.max, cmd.xValue);
+      group.seen.add(cmd.xValue);
+      if (cmd.xValue >= group.template.xValue) group.template = cmd;
+      groups.set(key, group);
+    }
+    const synthesized = [];
+    for (const group of groups.values()) {
+      for (let X = group.min; X <= group.max; X += 1) {
+        if (group.seen.has(X)) continue;
+        const variant = { ...group.template, xValue: X };
+        if (Number.isFinite(group.template.cost) && Number.isInteger(group.template.xValue)) {
+          variant.cost = group.template.cost + (X - group.template.xValue);
+        }
+        synthesized.push(variant);
+      }
+    }
+    return synthesized;
+  }
+
   function botCommandCandidates(view) {
     const legal = view?.legalCommands ?? [];
     // N: jednostki automatu liczymy raz per decyzja (filtr castów poniżej).
@@ -2272,6 +2308,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     candidates.push(...synthesizedBlockDeclarations(view, candidates));
     candidates.push(...synthesizedTriggerTargetSets(view, candidates));
     candidates.push(...synthesizedPendingSelections(view, candidates));
+    candidates.push(...synthesizedXCastVariants(view, candidates));
     // Aktywny protokół zawsze wystawia bezpieczne wyjście (pass/decline/done,
     // a co najmniej concede). Gdyby ten inwariant kiedyś pękł, jawny błąd jest
     // bezpieczniejszy niż ciche złamanie twardego zakazu właściciela.

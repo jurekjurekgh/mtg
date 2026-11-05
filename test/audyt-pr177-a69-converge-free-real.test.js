@@ -41,7 +41,7 @@ test('A69: Halo Forager wydaje kolory na zdolność, nie na darmowy Kaleidoscorc
 
 test('A69: Epic Experiment płaci kolorową manę, ale odnaleziony Kaleidoscorch jest darmowy',()=>{
  const s=setup();put(s,'kal','kaleidoscorch','library');put(s,'forest','basic-forest','library');put(s,'epic','epic-experiment');mana(s,['U','R','G','B','W']);
- act(s,view(s).legalCommands.find(c=>c.type==='cast_spell'&&c.objectId==='epic'&&c.xValue===2));until(s,()=>s.pendingEpicExperiment!=null);
+ const epicSzablon=view(s).legalCommands.find(c=>c.type==='cast_spell'&&c.objectId==='epic');assert.ok(epicSzablon,'ziarno Epic Experiment');act(s,{...epicSzablon,xValue:2});until(s,()=>s.pendingEpicExperiment!=null);
 const choice=view(s).legalCommands.find(c=>c.type==='resolve_epic_choice'&&c.targets?.includes('p2'));act(s,choice);
  assert.equal(countColorsOfManaSpent(stack(s).manaColorsSpent),0);act(s,view(s).legalCommands.find(c=>c.type==='resolve_epic_choice'&&c.done));until(s,()=>s.zones.stack.length===0);assert.equal(life(s),20);assert.equal(kal(s).zone,'graveyard');
 });

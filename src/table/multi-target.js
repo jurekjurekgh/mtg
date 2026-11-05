@@ -338,6 +338,23 @@ export function commandForXSelection(plan, commands, {
   if (!template) return null;
   const constructed = { ...template, xValue };
   if (Array.isArray(template.targets)) constructed.targets = [...targets];
+  // Pole `cost` ofert jest łącznym kosztem wariantu: konstrukcja koryguje
+  // je o deltę X oraz dopłatę za dodatkowe cele, ESTYMOWANĄ z ofert tej
+  // samej grupy (dwa warianty o tym samym X i liczbie celów +-1) — bez
+  // niej etykiety i deskryptor płatności pokazywałyby koszt szablonu.
+  if (Number.isFinite(template.cost) && Number.isInteger(template.xValue)) {
+    let surcharge = 0;
+    const byLength = new Map();
+    for (const cmd of commands ?? []) {
+      if (cmd?.xValue === template.xValue && Array.isArray(cmd.targets) && Number.isFinite(cmd.cost)
+        && !byLength.has(cmd.targets.length)) byLength.set(cmd.targets.length, cmd.cost);
+    }
+    for (const [len, cost] of byLength) {
+      if (byLength.has(len + 1)) { surcharge = Math.max(0, byLength.get(len + 1) - cost); break; }
+    }
+    constructed.cost = template.cost + (xValue - template.xValue)
+      + surcharge * (chosen.length - (template.targets?.length ?? chosen.length));
+  }
   if (stunTargetId !== undefined) constructed.stunTargetId = stunTargetId;
   if (gifted !== undefined) constructed.gifted = gifted;
   if (giftRecipientId !== undefined) constructed.giftRecipientId = giftRecipientId;

@@ -9,7 +9,7 @@
 //        celów z możliwością dodania ptaszka i potem sprawdzeniem legalności."
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { multiTargetPlanOf, commandForSelection } from '../src/table/multi-target.js';
+import { multiTargetPlanOf, commandForSelection, commandForXSelection } from '../src/table/multi-target.js';
 import { targetTypeLabel, describeSpellEffects } from '../src/table/render.js';
 import { createCardRegistry } from '../src/cards/card-data.js';
 
@@ -140,16 +140,20 @@ test('M195/C: REALNY Fireball — 232 kombinacje stają się 6 celów + licznik 
     });
   }
   const commands = playerView(state, 'p1').legalCommands.filter((c) => c.objectId === 'spell');
-  assert.ok(commands.length > 50,
-    `to jest właśnie problem ze zgłoszenia — ${commands.length} kombinacji`);
+  // G, etap 3: silnik nie wylicza już kombinacji (dawniej 232) — oferta to
+  // ziarna (pojedyncze cele x X smiertelne/max + zestawy), a ekran wyboru
+  // konstruuje dowolny zestaw/X z planu.
+  assert.ok(commands.length > 0 && commands.length <= 30,
+    `ziarna zamiast kombinacji: ${commands.length}`);
   const plan = multiTargetPlanOf(commands);
   assert.ok(plan, 'Fireball dostaje ekran wyboru');
   assert.ok(plan.targets.length <= 8,
     `zamiast ${commands.length} przycisków — ${plan.targets.length} celów do zaznaczenia`);
   assert.equal(plan.hasX, true, 'i licznik X zamiast osobnego przycisku na każdą wartość');
-  // Każdy wybór z ekranu musi wracać do komendy, którą silnik uznał za legalną.
-  const chosen = commandForSelection(commands, { targets: [plan.targets[0]], xValue: plan.xMax });
-  assert.ok(chosen && commands.includes(chosen), 'zatwierdzenie daje legalną komendę silnika');
+  // Każdy wybór z ekranu wraca do komendy: ziarna albo konstrukcji z planu,
+  // którą bramka rzutu waliduje przy wykonaniu (G, etap 3).
+  const chosen = commandForXSelection(plan, commands, { targets: [plan.targets[0]], xValue: plan.xMax });
+  assert.ok(chosen, 'zatwierdzenie daje komendę (ziarno albo konstrukcja)');
 });
 
 test('M195/C1: REALNY Wrap in Flames — podzbiory celów zamiast kombinacji', async () => {

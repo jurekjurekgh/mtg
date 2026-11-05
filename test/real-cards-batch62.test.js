@@ -817,9 +817,17 @@ const fjScene = () => {
   addMana(state, 'p1', 3, { colors: ['R', 'G', 'W'] });
   return state;
 };
-const cmdOf = (state, division) => fjVariants(state).find((c) => c.targets[0] === 'p2'
-  && c.damageDivision.length === division.length
-  && division.every(([id, amount]) => c.damageDivision.some((d) => d.id === id && d.amount === amount)));
+const cmdOf = (state, division) => {
+  const found = fjVariants(state).find((c) => c.targets[0] === 'p2'
+    && c.damageDivision.length === division.length
+    && division.every(([id, amount]) => c.damageDivision.some((d) => d.id === id && d.amount === amount)));
+  if (found) return found;
+  // G, etap 3: podzial spoza ziaren konstruujemy na szablonie oferty —
+  // validateDamageDivision waliduje przy rzucie.
+  const template = fjVariants(state)[0];
+  assert.ok(template, 'szablon oferty Fiery Justice');
+  return { ...template, targets: ['p2'], damageDivision: division.map(([id, amount]) => ({ id, amount })) };
+};
 const lifeOf = (s, id) => player(s, id).life;
 const inGrave = (s, cardId, ownerId) => [...s.objects.values()].some((o) => o.cardId === cardId && o.ownerId === ownerId && o.zone === 'graveyard');
 
@@ -853,7 +861,7 @@ test('B62/210: Fiery Justice — w jednym rzucie obrażenia idą do gracza i do 
 test('B62/210: Fiery Justice — oferta: każdy cel ≥1, suma 5, bez powtórzeń, zawiera podział na 5 celów', () => {
   const state = fjScene();
   const all = fjVariants(state);
-  assert.ok(all.length > 20, 'wiele podziałów');
+  assert.ok(all.length >= 8, `ziarna podziałów (koncentracje + równe): ${all.length}`);
   for (const c of all) {
     assert.equal(c.damageDivision.reduce((s, d) => s + d.amount, 0), 5);
     assert.ok(c.damageDivision.every((d) => d.amount >= 1));
