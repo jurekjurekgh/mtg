@@ -124,6 +124,9 @@ test('B/6: w Main 2 bot nie rzuca Epic Experiment dla X<3', () => {
 
 test('B/7: Main 1 nadal wykorzystuje manę na inną sensowną kartę', () => {
   const state = stan({ step: 'main1' });
+  // D etap 8 (K4a): Shock w twarz trzymamy poza walką bez lethal — tu
+  // przeciwnik ma 2 życia, więc Shock nadal jest sensownym zagraniem Main 1.
+  state.players = state.players.map((p) => (p.id === 'p2' ? { ...p, life: 2 } : p));
   const shock = gameObjectDataOf(REGISTRY.get('shock'));
   addObject(state, {
     id: 'shock-card', instanceId: 'i-shock-card', cardId: 'shock',

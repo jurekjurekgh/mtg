@@ -165,8 +165,10 @@ test('PMSSB36-C1: Tackle Artist na polu — rzut instanta/sorcery dostaje warto�
   // M (2026-10-09): Shock czysto-ofensywny (isDamageOnly) — start −1 zamiast
   // bazy 50; wartość twarzy 10 bez zmian → 9. Różnice między wariantami
   // (boardPayoffWeight) bez zmian — pinuje je osobny assert.
-  assert.equal(shock(undefined, false), 9, 'bez Artysty — 10 (twarz) − 1 (isDamageOnly)');
-  assert.equal(bez0, 9, 'pokrętło 0 = ten sam wynik');
+  // D etap 8 (K4a): Shock w twarz przy zdrowym wrogu dostaje karę trzymania
+  // −120, więc dawne 9 to dziś −111; różnica z Artystą (powyżej) bez zmian.
+  assert.equal(shock(undefined, false), -111, 'bez Artysty — dawne 9 minus kara trzymania twarzy D');
+  assert.equal(bez0, -111, 'pokrętło 0 = ten sam wynik');
   // gałąź „pięć lub więcej many” = DWA liczniki (Rage of Purphoros {4}{R}, cel: stwór wroga)
   const duzy = (params) => {
     const s = game();

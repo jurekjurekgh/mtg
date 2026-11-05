@@ -95,8 +95,10 @@ test('M: lethal (4 dmg w 4/4) — bot rzuca czysto-ofensywny czar mimo startu �
   assert.deepEqual(chosen.targets, ['big']);
 });
 
-test('M kontrola: czysto-ofensywny czar w TWARZ (Shock, 2/20 życia) — bot rzuca', () => {
-  // Wartość twarzy sama w sobie uzasadnia rzut: −1 + (6 + 40×0,1) = 9 > 0.
+test('M kontrola: czysto-ofensywny czar w TWARZ (Shock, 2/20 życia) — bot TRZYMA (D etap 8)', () => {
+  // Zgłoszenie D etap 8 (K4a): instant-burn w twarz poza walką bez lethal
+  // jest spalony — dawna wartość twarzy 9 dostaje karę trzymania −120 →
+  // −111 i bot pasuje. Wymiar twarzy w `damageTargetValue` bez zmian.
   const state = createGameState({ seed: 42, players: [{ id: 'p1', life: 20 }, { id: 'p2', life: 20 }] });
   state.turn = jumpToStep(state.turn, 'main', 'p2');
   state.turn.activePlayerId = 'p2';
@@ -112,9 +114,8 @@ test('M kontrola: czysto-ofensywny czar w TWARZ (Shock, 2/20 życia) — bot rzu
   const chosen = bot.chooseCommand(playerView(state, 'p2'));
   const opts = bot.trace().at(-1).options.filter((o) => o.cmd.includes('cast_spell(sh'));
   const face = opts.find((o) => o.cmd === 'cast_spell(sh->p1)');
-  assert.equal(face?.score, 9);
-  assert.equal(chosen.type, 'cast_spell');
-  assert.deepEqual(chosen.targets, ['p1']);
+  assert.equal(face?.score, -111, '9 (dawna wartość twarzy) − 120 kary trzymania D');
+  assert.notEqual(chosen.type, 'cast_spell');
 });
 
 test('M kontrola: chip poza walką — zakaz bez zmian (Keep Out w main vs 4/5)', () => {

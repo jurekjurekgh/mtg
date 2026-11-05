@@ -14045,6 +14045,23 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             }
           }
         }
+        // Zgłoszenie D etap 8 (K4a): instantowe obrażenia w TWARZ przeciwnika
+        // poza walką trzymamy na moment śmiertelny albo odpowiedź w walce.
+        // `damageTargetValue` płaci twarzy proporcję życia niezależnie od
+        // fazy (Shock przy 20 życia: dodatni wynik), więc bot palił burn
+        // w podtrzymaniu. Bramka po deskryptorze (ADR 0002): efekt `damage`,
+        // cel = gracz przeciwnika (nie stwór — usunięcie bez zmian), kwota
+        // mniejsza od życia wroga (nie domyka gry), brak trwającej walki.
+        if (spell?.timing === 'instant' && !view.combat) {
+          const foe = enemy(view);
+          const faceBurn = foe && scoredEffects.some((e) => {
+            if (e?.type !== 'damage') return false;
+            const amt = Number.isInteger(e.amount) ? e.amount : 0;
+            return amt > 0 && amt < (foe.life ?? 20)
+              && cmd.targets?.[e.targetIndex ?? 0] === foe.id;
+          });
+          if (faceBurn) score -= P.faceBurnHoldPenalty ?? 0;
+        }
         return finish(score);
       }
       case 'activate_ability': {

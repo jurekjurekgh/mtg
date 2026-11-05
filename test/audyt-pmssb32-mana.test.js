@@ -200,8 +200,10 @@ test('PMSSB-32/A5 (L48, F3 rozwiązane): filtr koloru auto-płaci SILNIK — rę
   assert.equal(o.wynik('activate_ability(dev#1'), -8, 'wartość sprzed pętli (M150/C1)');
   // M (2026-10-09): Shock to czar czysto-ofensywny (isDamageOnly) — start −1
   // zamiast bazy 50; wartość twarzy 10 bez zmian → 9 (decyzja bez zmiany).
-  assert.equal(o.oferta('cast_spell(h-shock->p2')?.score, 9, 'silnik oferuje rzut — sam finansuje filtr');
-  assert.equal(o.wybrany.type, 'cast_spell', 'bot rzuca czar, zamiast filtrować manę ręcznie');
+  assert.equal(o.oferta('cast_spell(h-shock->p2')?.score, -111, 'D etap 8: dawne 9 − 120 kary trzymania twarzy; oferta rzutu istnieje i silnik nadal finansuje filtr');
+  // D etap 8: Shock w twarz jest trzymany, więc bot pasuje — nadal NIE
+  // filtruje many ręcznie (wymiar auto-płatności silnika bez zmian).
+  assert.equal(o.wybrany.type, 'pass_priority', 'bot trzyma Shock (D), zamiast filtrować manę ręcznie');
 });
 
 test('PMSSB-32/A5b (F3+F6): Skarb auto-płaci CZAR Z CELEM — oferta rzutu istnieje (M179/E)', () => {
