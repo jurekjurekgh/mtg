@@ -6,7 +6,7 @@ import { gameObjectDataOf } from '../src/cards/materialize.js';
 import { jumpToStep } from '../src/engine/turn.js';
 import { commandLabel } from '../src/table/render.js';
 import { renderMultiTargetWizard } from '../src/table/choice-request.js';
-import { multiTargetPlanOf } from '../src/table/multi-target.js';
+import { multiTargetPlanOf, commandForXSelection } from '../src/table/multi-target.js';
 
 /**
  * Zgłoszenie właściciela C1 (2026-09-10): „Fireball (koszt {X}{R}, wybrałem
@@ -83,8 +83,12 @@ test('C1/2: etykieta Fireballa pokazuje ŁĄCZNY koszt wariantu, nie tylko druk'
   };
   const view = playerView(state, 'p1');
   const casts = view.legalCommands.filter((c) => c.type === 'cast_spell' && c.xValue != null);
-  const multi = casts.find((c) => c.targets.length === 2 && c.xValue === 3);
-  assert.ok(multi, 'setup: wariant X=3 z 2 celami');
+  // G, etap 3: wariant X=3 z 2 celami konstruuje kreator z planu (ziarna
+  // nie wyliczają kazdej pary) — koszt konstrukcji = X + baza + doplata.
+  const plan = multiTargetPlanOf(casts);
+  assert.ok(plan?.hasX, 'setup: plan z licznikiem X');
+  const multi = commandForXSelection(plan, casts, { targets: plan.targets.slice(0, 2), xValue: 3 });
+  assert.ok(multi, 'setup: konstrukcja X=3 z 2 celami');
   const label = commandLabel(multi, sessionLike, view).replace(/<[^>]*>/g, '');
   // X=3, 2 cele → 3 + 1(R) + 1(drugi cel) = 5 many: {4}{R}; ikony many
   // dają po strip-tagów zapis „4R" (bez klamer). Wariantem odróżniającym

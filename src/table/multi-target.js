@@ -344,13 +344,18 @@ export function commandForXSelection(plan, commands, {
   // niej etykiety i deskryptor płatności pokazywałyby koszt szablonu.
   if (Number.isFinite(template.cost) && Number.isInteger(template.xValue)) {
     let surcharge = 0;
-    const byLength = new Map();
+    const excessByLength = new Map();
     for (const cmd of commands ?? []) {
-      if (cmd?.xValue === template.xValue && Array.isArray(cmd.targets) && Number.isFinite(cmd.cost)
-        && !byLength.has(cmd.targets.length)) byLength.set(cmd.targets.length, cmd.cost);
+      if (Number.isInteger(cmd?.xValue) && Array.isArray(cmd.targets) && Number.isFinite(cmd.cost)
+        && !excessByLength.has(cmd.targets.length)) {
+        excessByLength.set(cmd.targets.length, cmd.cost - cmd.xValue);
+      }
     }
-    for (const [len, cost] of byLength) {
-      if (byLength.has(len + 1)) { surcharge = Math.max(0, byLength.get(len + 1) - cost); break; }
+    for (const [len, excess] of excessByLength) {
+      if (excessByLength.has(len + 1)) {
+        surcharge = Math.max(0, excessByLength.get(len + 1) - excess);
+        break;
+      }
     }
     constructed.cost = template.cost + (xValue - template.xValue)
       + surcharge * (chosen.length - (template.targets?.length ?? chosen.length));
