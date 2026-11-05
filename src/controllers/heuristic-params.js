@@ -536,6 +536,10 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   // kroku dobrania — decyzja zapada przed główną fazą bez żadnej pilności,
   // więc bot ma poczekać (ta sama karta, lepsza informacja). ×0 = dawne.
   'removalUpkeepHoldPenalty',    // kara za instant-removal we własnym upkeep/draw
+  // Zgłoszenie D etap 11 (K6): ta sama rodzina timingu — tokeny z instantu
+  // przed główną fazą nic nie zyskują, a tracą wartość zaskoczenia w turze
+  // wroga. ×0 = zachowanie sprzed etapu 11.
+  'tokenUpkeepHoldPenalty',      // kara za instant-tokeny we własnym upkeep/draw
   // M429 („P2 Memory's Journey"): rodzina „wtasowanie kart z grobu do
   // biblioteki". Dotąd efekt był wart płasko 4 + 2·karty (NIEZALEŻNIE od stanu
   // biblioteki — pomiar: 58 pkt przy 30 i przy 12 kartach, a wariant z ZERO
@@ -1199,6 +1203,7 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   pumpBiteHoldPenalty: 120, // zgłoszenie D etap 7: patrz uzasadnienie przy HEURISTIC_PARAM_KEYS
   faceBurnHoldPenalty: 120, // zgłoszenie D etap 8 (K4a): patrz uzasadnienie przy HEURISTIC_PARAM_KEYS
   removalUpkeepHoldPenalty: 120, // zgłoszenie D etap 9 (K4b): patrz uzasadnienie przy HEURISTIC_PARAM_KEYS
+  tokenUpkeepHoldPenalty: 120, // zgłoszenie D etap 11 (K6): patrz uzasadnienie przy HEURISTIC_PARAM_KEYS
   // M429 „wtasowanie kart z grobu do biblioteki" (P2 Memory's Journey).
   // Próg presji = `librarySafeMargin` (20, istniejąca rodzina biblioteczna).
   // Dopłata ratunkowa 8/kartę: 3 karty przy cienkiej bibliotece = 34 pkt efektu

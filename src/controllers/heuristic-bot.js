@@ -14082,6 +14082,14 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           });
           if (earlyRemoval) score -= P.removalUpkeepHoldPenalty ?? 0;
         }
+        // Zgłoszenie D etap 11 (K6): instant z tokenami we własnym
+        // podtrzymaniu/kroku dobrania — tokeny nie zaatakują (choroba
+        // przyzwania), nie blokują (nie ma walki), a czar traci wartość
+        // zaskoczenia w turze wroga. Jak K4b: poczekać na główną.
+        if (spell?.timing === 'instant' && myTurn(view) && ['upkeep', 'draw'].includes(view.turn.step)
+          && scoredEffects.some((e) => e?.type === 'create_token' || e?.type === 'create_copy_token')) {
+          score -= P.tokenUpkeepHoldPenalty ?? 0;
+        }
         return finish(score);
       }
       case 'activate_ability': {
