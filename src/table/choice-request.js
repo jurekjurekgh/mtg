@@ -1131,10 +1131,10 @@ export function renderCombatWizard(host, { kind, view, session, options, blockCa
  * realizuje „among one, two, or three"), maksymalnie `maxTargets`.
  * onComplete dostaje { targetIds, amounts } w kolejności kandydatów.
  */
-export function renderDamageDivisionWizard(host, { view, session, candidateIds, total, maxTargets = 3, sourceName = null, onComplete, onCancel, onOpenCard = null, onHoverCard = null, onHoverCardEnd = null }) {
+export function renderDamageDivisionWizard(host, { view, session, candidateIds, total, maxTargets = 3, sourceName = null, allowZeroTargets = false, onComplete, onCancel, onOpenCard = null, onHoverCard = null, onHoverCardEnd = null }) {
   clearChoiceElement(host);
   choiceNode(host, 'div', 'choice-request-intro',
-    `${sourceName ? `${sourceName} — ` : ''}podziel ${total} obraż${total === 1 ? 'enie' : (total >= 2 && total <= 4 ? 'enia' : 'eń')} między maks. ${maxTargets} celów (suma musi wynosić ${total}):`);
+    `${sourceName ? `${sourceName} — ` : ''}podziel ${total} obraż${total === 1 ? 'enie' : (total >= 2 && total <= 4 ? 'enia' : 'eń')} między maks. ${maxTargets} celów (suma musi wynosić ${total})${allowZeroTargets ? ' — możesz też nie wybrać żadnego celu (obrażenia przepadają)' : ''}:`);
   const list = choiceNode(host, 'div', 'damage-wizard-list');
   const amounts = candidateIds.map(() => 0);
   const rows = [];
@@ -1142,7 +1142,11 @@ export function renderDamageDivisionWizard(host, { view, session, candidateIds, 
   let sumEl = null;
   const sum = () => amounts.reduce((a, b) => a + b, 0);
   const chosenCount = () => amounts.filter((n) => n > 0).length;
-  const legal = () => sum() === total && chosenCount() >= 1 && chosenCount() <= maxTargets;
+  // Zgłoszenie E (2026-11-05): decyzja triggera „up to N” wolno też zamknąć
+  // bez celu (obrażenia przepadają) — tylko gdy wołający na to pozwala
+  // (rzut czaru dzielonego nadal wymaga co najmniej jednego celu).
+  const legal = () => (sum() === total && chosenCount() >= 1 && chosenCount() <= maxTargets)
+    || (allowZeroTargets && chosenCount() === 0);
   // M292: warunki legalności dokładań wyjeżdżą z handlerów przycisków do
   // predykatów pickera — ten sam warunek rządzi wtedy i akcją, i stanem `disabled`,
   // więc widełki nie rozjadą się z wizualnym stanem (był to klasyczny rozjazd

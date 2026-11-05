@@ -891,6 +891,44 @@ function bootstrapTable() {
     // („dowolna liczba legalnych celów", „Zatwierdź wybór"). Właściciel o
     // enumeracji kombinacji: „TO JEST ZABRONIONE!". Ten sam kreator co
     // proliferate (M298/A); zatwierdzenie oddaje komendę z legalCommands.
+    // Zgłoszenie E (2026-11-05): decyzja z budżetem podziału obrażeń
+    // (damage_division) MUSI wygrać z kreatorami ptaszkowymi niżej —
+    // upToTargetsPlanOf przechwytywał komendy resolve_trigger_target
+    // i modal Tytana nigdy nie otwierał kreatora kwot (zostawały tylko
+    // wyenumerowane warianty celów: przy limicie enumeracji same trójki
+    // i wariant pusty). Gałąź stoi więc przed nimi wszystkimi.
+    // M172/E (uwaga właściciela): podział obrażeń między cele (Inferno
+    // Titan) — jeden wizard z kwotami zamiast enumeracji kombinacji celów.
+    // Zatwierdzenie skleja DWIE komendy silnika: wybór celów
+    // (resolve_trigger_target) i kwoty (resolve_damage_division — announce
+    // otwiera je natychmiast, CR 601.2d/603.3d); pojedynczy cel dostaje
+    // całość bez drugiej komendy.
+    if (request.type === 'damage_division') {
+      const pt = choiceView.pendingTriggerTarget;
+      if (!pt || pt.playerId !== choiceView.playerId || !(pt.divisionTotal > 0)) {
+        hideModal('choice-request');
+        play(request.options[0]);
+        return;
+      }
+      renderDamageDivisionWizard(els.choiceRequestBody, { ...(typeof modalObjectHoverProps !== 'undefined' ? modalObjectHoverProps : {}),
+        view: choiceView, session,
+        candidateIds: pt.candidateIds, total: pt.divisionTotal,
+        maxTargets: pt.maxTargets ?? 3,
+        sourceName: pt.cardId ? session.nameOf(pt.cardId) : null,
+        allowZeroTargets: true,
+        onOpenCard: (objectId) => openCardFullscreen(objectId),
+        onComplete: ({ targetIds, amounts }) => {
+          hideModal('choice-request');
+          play({ type: 'resolve_trigger_target', playerId: pt.playerId, targetIds });
+          if (targetIds.length >= 2 && session.view().pendingDamageDivision) {
+            play({ type: 'resolve_damage_division', playerId: pt.playerId, amounts });
+          }
+        },
+        onCancel: () => hideModal('choice-request'),
+      });
+      showModal('choice-request');
+      return;
+    }
     const upToPlan = upToTargetsPlanOf(request.options ?? []);
     if (upToPlan) {
       // Nazwa źródła z decyzji triggera (widok niesie kartę źródła), jak przy
@@ -1509,37 +1547,6 @@ function bootstrapTable() {
         onComplete: (built) => {
           hideModal('choice-request');
           play(built);
-        },
-        onCancel: () => hideModal('choice-request'),
-      });
-      showModal('choice-request');
-      return;
-    }
-    // M172/E (uwaga właściciela): podział obrażeń między cele (Inferno
-    // Titan) — jeden wizard z kwotami zamiast enumeracji kombinacji celów.
-    // Zatwierdzenie skleja DWIE komendy silnika: wybór celów
-    // (resolve_trigger_target) i kwoty (resolve_damage_division — announce
-    // otwiera je natychmiast, CR 601.2d/603.3d); pojedynczy cel dostaje
-    // całość bez drugiej komendy.
-    if (request.type === 'damage_division') {
-      const pt = choiceView.pendingTriggerTarget;
-      if (!pt || pt.playerId !== choiceView.playerId || !(pt.divisionTotal > 0)) {
-        hideModal('choice-request');
-        play(request.options[0]);
-        return;
-      }
-      renderDamageDivisionWizard(els.choiceRequestBody, { ...(typeof modalObjectHoverProps !== 'undefined' ? modalObjectHoverProps : {}),
-        view: choiceView, session,
-        candidateIds: pt.candidateIds, total: pt.divisionTotal,
-        maxTargets: pt.maxTargets ?? 3,
-        sourceName: pt.cardId ? session.nameOf(pt.cardId) : null,
-        onOpenCard: (objectId) => openCardFullscreen(objectId),
-        onComplete: ({ targetIds, amounts }) => {
-          hideModal('choice-request');
-          play({ type: 'resolve_trigger_target', playerId: pt.playerId, targetIds });
-          if (targetIds.length >= 2 && session.view().pendingDamageDivision) {
-            play({ type: 'resolve_damage_division', playerId: pt.playerId, amounts });
-          }
         },
         onCancel: () => hideModal('choice-request'),
       });
