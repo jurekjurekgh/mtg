@@ -64,6 +64,12 @@ import {
  *     wyników WYBRANYCH komend. Hash i agregaty nie dowodzą jakości gry ani
  *     przyczyny dryfu. Historyczny pomiar quick: heuristic 87.5% ogółem,
  *     vs random 96.7%, vs aggro 78.3%; nie jest to pomiar obecnego drzewa.
+ *   - bf7acd6a… → a9ded3e5… (zgłoszenie D, etapy K1/7/8/9, 2026-11-05):
+ *     bramki trzymania instantów (liczniki, pump+ugryzienie, burn w twarz,
+ *     removal w podtrzymaniu). Zmierzona różnica: tylko
+ *     ravnica-wur|innistrad-wu@1001 (299→284 decyzji, scoreSum
+ *     3166.2283→3018.6759); pozostałych pięć śladów bitowo identycznych.
+ *     To świadoma zmiana polityki bota, nie refaktor ani pomiar jakości.
  *   - abc34db7… → bf7acd6a… (ADR 0032, wspólny checkpoint, etap 2): jawne
  *     wybory kolejności/modalne checkpointu zmieniają trajektorię bota.
  *     Zmierzona różnica: tylko ravnica-wur|innistrad-wu@1001 (298→299 decyzji,
