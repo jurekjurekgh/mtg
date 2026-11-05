@@ -56,3 +56,14 @@ commit `3778492`). Fast 9993/9993, `test:all` 10261/10261.
 
 Następne: K5 (kontrczary — czy bot trzyma manę i kontruje tylko to, co
 się liczy), potem K6 (dobieranie, tokeny, tutorzy, prewencje/Fog).
+
+## Etap 10–11 (commit `e111927`): K5 pomiarem, K6 tokeny naprawione
+
+K5 (kontrczary): pomiar na prawdziwych stosach — trywialne czary bot
+trzyma kontrę, groźne kontruje. Bez zmiany kodu.
+K6: bramka `tokenUpkeepHoldPenalty` (120) dla instant-tokenów we własnym
+podtrzymaniu. Testy K6/1–K6/3 3/3 + mutacja. Fast 9996/9996,
+`test:all` 10264/10264.
+
+**Roadmapa zgłoszenia D (K1–K6) jest domknięta.** Zostają wyłącznie
+decyzje właściciela: scalenie PR #179.

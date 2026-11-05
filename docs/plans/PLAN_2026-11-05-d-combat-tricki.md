@@ -248,3 +248,11 @@ tokeny nie zyskują nic przed główną fazą, a instant traci wartość
 zaskoczenia (blokujący znikąd w turze wroga). Bramka jak K4b: instant
 z `create_token` we własnym upkeep/draw traci `tokenUpkeepHoldPenalty`;
 tura wroga i walka bez zmian. Dowód: testy K6/1–K6/3, mutacja, bramki.
+
+**Etap 11 ZAMKNIĘTY (commit `e111927`).** Bramka `tokenUpkeepHoldPenalty`
+(120). Testy K6/1–K6/3 3/3, mutacja złapana. `npm test` 9996/9996, build
+77 modułów / 5713,8 kB, `npm run test:all` 10264/10264 (bez dryfu
+golden-mastera). **Roadmapa K1–K6 domknięta:** K1 liczniki, K2 untap
+i K3 pumpy/granty — trzymane (pomiar), etap 7 pump+ugryzienie, K4a burn
+w twarz, K4b timing removalu, K5 kontry (pomiar, bez luki), K6 tokeny
+naprawione, Fog/tutorzy/dobieranie (pomiar, bez luki).
