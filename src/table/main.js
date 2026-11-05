@@ -936,6 +936,7 @@ function bootstrapTable() {
         const src = session.state?.objects?.get(oneOrBothPlan.objectId);
         return src?.spell?.modes?.[modeIndex]?.name ?? `cel ${modeIndex + 1}`;
       });
+      const oneOrBothSource = session.state?.objects?.get(oneOrBothPlan.objectId) ?? null;
       renderMultiTargetWizard(els.choiceRequestBody, { ...(typeof modalObjectHoverProps !== 'undefined' ? modalObjectHoverProps : {}),
         view: choiceView,
         session,
@@ -943,6 +944,9 @@ function bootstrapTable() {
         commands: request.options,
         slotLabels: oneOrBothLabels,
         intro: `${choiceGroupTitle(request, session, choiceView)} — ${oneOrBothPlan.selectionHint ?? 'wskaż 0–1 cel na każdą pozycję (co najmniej jedną)'}:`,
+        introCard: oneOrBothSource?.cardId && session.cardDetails(oneOrBothSource.cardId)
+          ? { cardId: oneOrBothSource.cardId, name: session.cardDetails(oneOrBothSource.cardId)?.name ?? session.nameOf(oneOrBothSource.cardId) }
+          : null,
         onOpenCard: openCardFullscreen,
         onOpenCardByCardId: openCardFullscreenByCardId,
         onComplete: (cmd) => { hideModal('choice-request'); play(cmd); },
@@ -967,6 +971,9 @@ function bootstrapTable() {
         view: choiceView, session, commands: first,
         plan: { buttonsMode: true, rows: [{ id: 'opt-0', label: 'Nie rzucaj' }, { id: 'opt-1', label: 'Rzuć — wybierz tryby' }] },
         intro: `${choiceGroupTitle(request, session, choiceView)} — rzuć albo odmów:`,
+        introCard: modeSource?.cardId && session.cardDetails(modeSource.cardId)
+          ? { cardId: modeSource.cardId, name: session.cardDetails(modeSource.cardId)?.name ?? session.nameOf(modeSource.cardId) }
+          : null,
         onComplete: (cmd) => {
           if (cmd === first[0]) { hideModal('choice-request'); play(cmd); return; }
           openChoiceRequest(choiceRequest({ id: `${request.id ?? 'mode'}-wybor`, type: request.type ?? 'command', options: componentOptions }));
@@ -980,6 +987,9 @@ function bootstrapTable() {
       renderMultiTargetWizard(els.choiceRequestBody, { ...(typeof modalObjectHoverProps !== 'undefined' ? modalObjectHoverProps : {}),
         view: choiceView, session, plan: chooseModesPlan, commands: modeOptionsForSet,
         intro: `${choiceGroupTitle(request, session, choiceView)} — wybierz ${chooseModesPlan.count} tryby:`,
+        introCard: modeSource?.cardId && session.cardDetails(modeSource.cardId)
+          ? { cardId: modeSource.cardId, name: session.cardDetails(modeSource.cardId)?.name ?? session.nameOf(modeSource.cardId) }
+          : null,
         onOpenCard: openCardFullscreen, onOpenCardByCardId: openCardFullscreenByCardId,
         onComplete: (representative) => {
           const subset = modeOptionsForSet.filter(cmd => cmd.modeIndex === representative.modeIndex);
@@ -996,10 +1006,12 @@ function bootstrapTable() {
       ?? epicChoiceModePlanOf(request.options ?? []);
     if (castModePlan) {
       const modeOptions = request.options ?? [];
-      const epicModeSource = castModePlan.epicChoiceMode
-        ? session.state?.objects?.get(castModePlan.cardId) ?? null : null;
-      const epicModeCardId = epicModeSource?.cardId
-        && session.cardDetails(epicModeSource.cardId) ? epicModeSource.cardId : null;
+      // Etap 7 (2026-11-05): źródło wyboru trybu ogólnie — nagłówek modala
+      // dostaje hoverowalną nazwę czaru (introCard), nie tylko Epic.
+      const modeChoiceSource = session.state?.objects?.get(castModePlan.objectId ?? castModePlan.cardId) ?? null;
+      const modeChoiceCardId = modeChoiceSource?.cardId
+        && session.cardDetails(modeChoiceSource.cardId) ? modeChoiceSource.cardId : null;
+      const epicModeCardId = castModePlan.epicChoiceMode ? modeChoiceCardId : null;
       // M406 (uwaga z gry 2026-09-22): wiersz kroku 1 NIGDY nie niesie
       // wpiętego celu „pierwszy z brzegu” („jeden do tapa, jeden do untapa”
       // z etykiet reprezentantów) — etykieta = NAZWA TRYBU z modelu, cele
@@ -1016,9 +1028,9 @@ function bootstrapTable() {
         plan: castModePlan,
         commands: castModePlan.reps,
         intro: `${choiceGroupTitle(request, session, choiceView)} — wybierz tryb:`,
-        introCard: epicModeCardId ? {
-          cardId: epicModeCardId,
-          name: session.cardDetails(epicModeCardId)?.name ?? session.nameOf(epicModeCardId),
+        introCard: modeChoiceCardId ? {
+          cardId: modeChoiceCardId,
+          name: session.cardDetails(modeChoiceCardId)?.name ?? session.nameOf(modeChoiceCardId),
         } : null,
         onOpenCard: openCardFullscreen,
         onOpenCardByCardId: openCardFullscreenByCardId,

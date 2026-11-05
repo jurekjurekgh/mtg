@@ -14,7 +14,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 const { renderPickerRow, renderPickerChipList } = await import('../src/table/picker.js');
-const { renderPeekButton } = await import('../src/table/choice-request.js');
+const { renderPeekButton, renderMultiTargetWizard } = await import('../src/table/choice-request.js');
 
 class MiniEl {
   constructor(tag) {
@@ -144,6 +144,46 @@ test('HOVER/4: dotyk (brak callbacków hover) — klik w nazwę nadal otwiera pe
     });
     handle.label.click();
     assert.deepEqual(opened, ['obj-2'], 'na dotyku tap w nazwę otwiera kartę jak dotąd');
+  });
+});
+
+test('HOVER/6: nagłówek wyboru trybu — nazwa czaru w zdaniu nagłówka jest hoverowalna i występuje raz', () => {
+  zDocumentem((host) => {
+    const hover = hoverSpy();
+    const opened = [];
+    renderMultiTargetWizard(host, {
+      view: {
+        playerId: 'p1',
+        players: [{ id: 'p1', name: 'Ty' }, { id: 'p2', name: 'Nieprzyjaciel' }],
+        zones: { battlefield: [], hand: [], stack: [], graveyard: [], library: [] },
+      },
+      session: { nameOf: (id) => String(id), nameOfObject: (id) => String(id) },
+      plan: {
+        buttonsMode: true,
+        rows: [{ id: 'opt-0', label: 'Tryb A' }, { id: 'opt-1', label: 'Tryb B' }],
+        minTargets: 1, maxTargets: 1,
+      },
+      commands: [{ type: 'cast_spell', playerId: 'p1' }, { type: 'cast_spell', playerId: 'p1' }],
+      intro: 'Rzuć: Izzet Charm (koszt {U}{R}) — wybierz tryb:',
+      introCard: { cardId: 'izzet-charm', name: 'Izzet Charm' },
+      onOpenCardByCardId: (id) => opened.push(id),
+      onHoverCardByCardId: hover.onHoverCard,
+      onHoverCardEnd: hover.onHoverCardEnd,
+      onComplete: () => {},
+      onCancel: () => {},
+    });
+    const peeks = host.descendants().filter((el) => String(el.className).includes('choice-request-peek'));
+    assert.equal(peeks.length, 1, 'nagłówek ma dokładnie jedną nazwę-podgląd');
+    assert.equal(peeks[0].textContent, 'Izzet Charm');
+    const introEl = host.find((el) => String(el.className).includes('choice-request-intro'));
+    const occurrences = introEl.textContent.split('Izzet Charm').length - 1;
+    assert.equal(occurrences, 1, 'nazwa czaru nie dubluje się w nagłówku');
+    peeks[0].fire('mouseenter');
+    assert.deepEqual(hover.calls.start, [['izzet-charm', 10]], 'najechanie na nazwę w nagłówku pokazuje hover czaru');
+    peeks[0].click();
+    assert.deepEqual(opened, [], 'klik w nazwę w nagłówku nie otwiera pełnego ekranu');
+    peeks[0].fire('mouseleave');
+    assert.equal(hover.calls.end, 1);
   });
 });
 

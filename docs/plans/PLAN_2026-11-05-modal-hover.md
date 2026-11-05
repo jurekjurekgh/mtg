@@ -131,14 +131,14 @@ Pomiar:
   hoverowalna nazwa (`introCard`) działała tylko dla clash i Epic Experiment.
 
 Zakres etapu:
-- [ ] Test RED: nagłówek kreatora wielocelowego z `introCard` osadza
+- [x] Test RED: nagłówek kreatora wielocelowego z `introCard` osadza
   hoverowalną nazwę WEWNĄTRZ zdania nagłówka (bez dublowania nazwy),
   klik nie otwiera; bez `introCard` nagłówek bez zmian.
-- [ ] `renderMultiTargetWizard`: gdy zdanie nagłówka zawiera nazwę
+- [x] `renderMultiTargetWizard`: gdy zdanie nagłówka zawiera nazwę
   `introCard`, nazwa staje się segmentem-podglądem (hover/dotyk jak wiersze);
   w przeciwnym razie dotychczasowe zachowanie (nazwa na początku).
-- [ ] `main.js`: `introCard` dla ścieżek wyboru trybu (castMode,
+- [x] `main.js`: `introCard` dla ścieżek wyboru trybu (castMode,
   chooseModes — także krok „rzuć albo odmów", chooseOneOrBoth), z obiektu
   źródłowego decyzji; pozostałe kreatory bez zmian.
-- [ ] Bramy: `npm test` + `npm run build`, osobny commit i push; pełny
+- [x] Bramy: `npm test` + `npm run build`, osobny commit i push; pełny
   `test:all` przed końcem zadania, aktualizacja historii/handoffu/PR.

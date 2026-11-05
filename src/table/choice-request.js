@@ -1309,11 +1309,25 @@ export function renderMultiTargetWizard(host, { view, session, plan, commands, s
   if (introCard?.cardId && introCard.name && (typeof onOpenCardByCardId === 'function' || typeof onHoverCardByCardId === 'function')) {
     // A-7: także źródło clash używa wspólnej nazwy karty; podgląd daje hover
     // (mysz), a tap w nazwę otwiera pełny ekran tylko na dotyku.
-    renderPeekButton(introNode, {
+    // Zgłoszenie właściciela 2026-11-05 (etap 7): gdy zdanie nagłówka już
+    // zawiera nazwę karty („Rzuć: X (koszt…) — wybierz tryb:”), nazwa staje
+    // się segmentem-podglądem WEWNĄTRZ zdania — bez dublowania jej na
+    // początku. Dopiero gdy zdanie nazwy nie zawiera (clash, Epic), nazwa
+    // otwiera nagłówek jak dotąd.
+    const peekArgs = {
       cardId: introCard.cardId, label: introCard.name, onOpen: onOpenCardByCardId,
       onHover: onHoverCardByCardId, onHoverEnd: onHoverCardEnd,
-    });
-    choiceNode(introNode, 'span', null, ` — ${introText}`);
+    };
+    const at = introText.indexOf(introCard.name);
+    if (at >= 0) {
+      if (at > 0) choiceNode(introNode, 'span', null, introText.slice(0, at));
+      renderPeekButton(introNode, peekArgs);
+      const rest = introText.slice(at + introCard.name.length);
+      if (rest) choiceNode(introNode, 'span', null, rest);
+    } else {
+      renderPeekButton(introNode, peekArgs);
+      choiceNode(introNode, 'span', null, ` — ${introText}`);
+    }
   } else {
     introNode.textContent = introText;
   }
