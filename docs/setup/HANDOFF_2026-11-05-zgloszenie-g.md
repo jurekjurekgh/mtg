@@ -71,3 +71,17 @@ synteza zestawów celów, walidacja przy `execute` bez zmian. Commity:
 `test/zgloszenie-g2-triggery-podzial.test.js` 6/6; `npm test`
 10019/10019; `test:all` 10287/10287; golden-master bota bez dryfu.
 Został tylko etap 3 (mulligan bottom, untap, delve/escape, `{X}`/Fireball).
+
+## Etap 3 — WYKONANY (2026-11-05). ZGŁOSZENIE G DOMKNIĘTE
+
+3a: mulligan bottom, untap, escape, delve — ziarna-okna/singletony,
+deskryptory, botowa synteza zestawów, konstruktor w kreatorze
+mulligana. 3b: rzuty {X}/Fireball/dzielone — ziarna ofert,
+`commandForXSelection` (konstrukcja X z planu + korekta `cost`),
+botowa synteza pośrednich X. Commity: `4b90c31`, `de0754d`,
+`d4d4fa9`, `bd94a2d`. Bramki: `npm test` 10029/10029; build OK;
+`test:all` 10297/10297; golden-master bota bez dryfu. Testy:
+`zgloszenie-g3-decyzje-oczekujace` 5/5, `zgloszenie-g3-rzuty-x-fireball` 5/5.
+
+Całe zgłoszenie G (etapy 1–3) jest zrealizowane: żadna decyzja
+kombinatoryczna nie enumeruje wariantów w `legalCommands`.

@@ -194,3 +194,32 @@ Dwie rodziny, ten sam wzorzec (ziarna + deskryptor + walidacja):
   rzucie (ziarna podziału jak w etapie 2). Walidacje rzutu
   (`validateFireballTargets`, `validateDamageDivision`, bramka X)
   są niezależne od oferty — kompletność konstrukcyjna.
+
+## Realizacja etapu 3 — STAN (2026-11-05). ZGŁOSZENIE G DOMKNIĘTE
+
+Etap 3 jest **wykonany** (w dwóch podetapach):
+
+- 3a (`4b90c31`): decyzje oczekujące — mulligan bottom (ziarna-okna
+  z dedupem nazw + deskryptor `pendingMulliganBottom` + konstruktor
+  `commandForMulliganBottomSelection` w kreatorze), untap (ziarna
+  pusty/singletony/wszyscy zamiast 2^n), escape i delve (okna cykliczne
+  per opłacalna liczba); bot dokłada własne zestawy wartościowe
+  (`synthesizedPendingSelections`). Test: `zgloszenie-g3-decyzje-oczekujace` 5/5.
+- 3b (`de0754d`, `d4d4fa9`, `bd94a2d`): rzuty — `legalXCostCasts`
+  (ziarna X: min/max/progi zabójstwa), `legalFireballCasts` (pojedyncze
+  cele + zestawy zbiorcze), `dividedDamageDivisions` (koncentracje
+  i podziały równe); kreator konstruuje dowolne X z planu
+  (`commandForXSelection` z korektą pola `cost`), bot dokłada własne
+  warianty pośrednie X (`synthesizedXCastVariants`). Test:
+  `zgloszenie-g3-rzuty-x-fireball` 5/5.
+- Bramki końcowe: `npm test` 10029/10029; build OK;
+  `test:all` 10297/10297; golden-master bota bez dryfu.
+
+Tym samym wszystkie decyzje kombinatoryczne działają w architekturze
+„konstruuj + waliduj”: `legalCommands` niesie ziarna i deskryptory,
+kontrolerzy (gracz kreatorami, bot syntezą) konstruują jedną kombinację,
+a silnik waliduje ją przy wykonaniu. Polecenie F („żadnego ucinania”)
+jest spełnione konstrukcyjnie we wszystkich gałęziach objętych
+planem. Poza zakresem pozostały: permutacje kolejności (scry/Index —
+decyzje porządkowe, nie kombinatoryczne zestawy) oraz limity skanowania
+zdarzeń i heurystyki botów (nie są ofertami gracza).
