@@ -183,6 +183,14 @@ rzut; obrażenia w stwora w podtrzymaniu bez zmian; twarz w walce przy
 domykaniu bez zmian), mutacja, pakiet pokrewny, `npm test`, build,
 `test:all`.
 
+**Etap 8 ZAMKNIĘTY (commit `836d90d`).** Bramka `faceBurnHoldPenalty` (120):
+instant z `damage` w gracza przeciwnika, kwota mniejsza od życia wroga,
+brak trwającej walki. Testy `test/zgloszenie-d-k4-twarz.test.js` (K4/1–K4/4)
+4/4, mutacja złapana. Pięć pinów starej konwencji twarzy zaktualizowanych
+świadomie: uwaga-m (kontrola twarzy), PMSSB-32/A5, PMSSB36-C1, PMSSB-7 F-H1,
+B/7 Epic Experiment (Shock śmiertelny przy 2 życia). `npm test` 9989/9989,
+build 77 modułów / 5711,3 kB, `npm run test:all` 10257/10257.
+
 **Do następnych sesji:** K4b (timing instant-removalu), K5 (kontrczary),
 K6 (reszta: dobieranie, tokeny, tutorzy, Fog), po kolei: reprodukcja →
 test RED → naprawa po deskryptorze → bramki.

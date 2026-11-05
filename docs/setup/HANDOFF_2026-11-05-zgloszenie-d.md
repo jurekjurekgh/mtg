@@ -35,3 +35,14 @@ instantu „pump + ugryzienie z własnego stwora”. Testy
 `test/zgloszenie-d-diplomatic-okno.test.js` (DR/1–DR/4) 4/4, mutacja
 złapana, pakiet pokrewny 89/89, fast 9985/9985, `test:all` 10253/10253,
 build 77 modułów / 5709,7 kB. Pomiar K4 zapisany w planie (Shock w twarz).
+
+## Etap 8 (commit `836d90d`): K4a — obrażenia w twarz
+
+Bramka `faceBurnHoldPenalty` (120): instant-burn w twarz poza walką bez
+domknięcia gry jest trzymany. Testy `test/zgloszenie-d-k4-twarz.test.js`
+(K4/1–K4/4) 4/4 + mutacja; pięć pinów starej konwencji świadomie
+zaktualizowanych. Fast 9989/9989, `test:all` 10257/10257.
+
+Następne: K4b (timing instant-removalu na stwory), K5 (kontrczary),
+K6 (reszta). Sondy: `.arena/checkpoint/d-k4-probe.mjs`,
+`d-audit-probe.mjs`.
