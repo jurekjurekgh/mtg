@@ -14015,6 +14015,36 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             score -= P.counterInstantHoldPenalty ?? 0;
           }
         }
+        // Zgłoszenie D etap 7: ten sam kształt triku z pumpem czasowym —
+        // instant „pump własnego stwora + ugryzienie z niego”
+        // (`damage_from_target_power`) poza walką też trzymamy. Ugryzienie
+        // zabijające cel `fightExchangeValue` wycenia jak usunięcie bez
+        // względu na fazę, więc bez bramki bot rzucał w podtrzymaniu
+        // (pomiar audytu: oferta 11 > pas). Okna jak przy licznikach:
+        // dealer już walczy, blokujący-niespodzianka, domknięcie gry.
+        if (spell?.timing === 'instant') {
+          const bite = scoredEffects.find((e) => e?.type === 'damage_from_target_power');
+          if (bite) {
+            const dealer = objectOnBoard(view, cmd.targets?.[bite.sourceTargetIndex ?? 0]);
+            const buffs = fightRiderBuffs(scoredEffects, bite.sourceTargetIndex ?? 0);
+            if (dealer?.controllerId === view.playerId && dealer.kind === 'creature'
+              && buffs.power + buffs.toughness > 0) {
+              const foe = enemy(view);
+              const closesGame = Boolean(foe) && canAttackNow(dealer)
+                && (dealer.power ?? 0) + buffs.power >= (foe.life ?? 20)
+                && attackHitsFace(view, dealer);
+              const enemyDeclaredAttackers = Boolean(view.combat)
+                && view.combat.attackingPlayerId !== view.playerId
+                && (view.combat.attackers ?? []).length > 0
+                && ['declare_attackers', 'declare_blockers'].includes(view.turn.step);
+              const surpriseBlocker = enemyDeclaredAttackers
+                && (!dealer.tapped || spellUntapsFriendlyCreature);
+              if (!combatTrickWindow(view, dealer) && !surpriseBlocker && !closesGame) {
+                score -= P.pumpBiteHoldPenalty ?? 0;
+              }
+            }
+          }
+        }
         return finish(score);
       }
       case 'activate_ability': {

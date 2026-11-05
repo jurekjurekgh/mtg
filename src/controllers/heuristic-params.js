@@ -520,6 +520,12 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   // blokująca po ataku wroga, domknięcie gry) liczy bot, nie parametr.
   // ×0 = zachowanie sprzed zgłoszenia D (anty-over-fix jak w rodzinie M429).
   'counterInstantHoldPenalty',   // kara za instant-liczniki rzucone poza oknem walki
+  // Zgłoszenie D etap 7: ta sama zasada dla instantu „pump własnego stwora +
+  // ugryzienie z niego” (`damage_from_target_power`) — ugryzienie zabijające
+  // poza walką było wyceniane jak usunięcie, więc bot przepalał trik
+  // w podtrzymaniu. Osobne pokrętło, bo skala ugryzienia (usunięcie) jest
+  // inna niż licznika; ×0 = zachowanie sprzed etapu 7.
+  'pumpBiteHoldPenalty',         // kara za pump+ugryzienie rzucone poza oknem walki
   // M429 („P2 Memory's Journey"): rodzina „wtasowanie kart z grobu do
   // biblioteki". Dotąd efekt był wart płasko 4 + 2·karty (NIEZALEŻNIE od stanu
   // biblioteki — pomiar: 58 pkt przy 30 i przy 12 kartach, a wariant z ZERO
@@ -1180,6 +1186,7 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   counterLateWindowPenalty: 4,
   counterLethalClockBonus: 50,
   counterInstantHoldPenalty: 120, // zgłoszenie D: patrz uzasadnienie przy HEURISTIC_PARAM_KEYS
+  pumpBiteHoldPenalty: 120, // zgłoszenie D etap 7: patrz uzasadnienie przy HEURISTIC_PARAM_KEYS
   // M429 „wtasowanie kart z grobu do biblioteki" (P2 Memory's Journey).
   // Próg presji = `librarySafeMargin` (20, istniejąca rodzina biblioteczna).
   // Dopłata ratunkowa 8/kartę: 3 karty przy cienkiej bibliotece = 34 pkt efektu
