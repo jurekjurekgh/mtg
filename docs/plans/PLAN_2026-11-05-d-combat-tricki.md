@@ -154,6 +154,20 @@ wroga; pump domyka grę w tym ataku. Dowód: testy DR/1–DR/4 (pas w
 podtrzymaniu i głównej, rzut w walce po blokach i w obronie), mutacja,
 pakiet pokrewny, `npm test`, build, `test:all`.
 
+**Etap 7 ZAMKNIĘTY (commit `5b1ea34`).** Bramka `pumpBiteHoldPenalty` (120)
+dla instantu „pump własnego stwora + ugryzienie”: testy DR/1–DR/4 4/4
+(mutacja złapana), pakiet pokrewny 89/89, `npm test` 9985/9985, build
+77 modułów / 5709,7 kB, `npm run test:all` 10253/10253.
+
+**Pomiar K4 (sonda `.arena/checkpoint/d-k4-probe.mjs`, własne podtrzymanie,
+wolna mana, wróg ze stworem 2/2):** Shock, Bring Low, Consign to Dream
+i Douse in Gloom bot rzuca od razu w podtrzymaniu; Kill Shot, Erase
+i Summary Judgment pasują (warunki celu). Osobno: **Shock w twarz przy
+20 życia przeciwnika w podtrzymaniu — bot rzuca** (potwierdzona luka:
+burn w twarz poza walką bez domknięcia gry). Następny etap K4: polityka
+obrażeń w twarz (tylko śmiertelne albo realna presja zegara) oraz timing
+instant-removalu (trzymanie na odpowiedź vs strata tempa).
+
 **Do następnych sesji:** K4 (removal/obrażenia — okna odpowiedzi, rzuty
 w twarz), K5 (kontrczary), K6 (reszta: dobieranie, tokeny, tutorzy, Fog),
 po kolei: reprodukcja → test RED → naprawa po deskryptorze → bramki.
