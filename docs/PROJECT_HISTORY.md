@@ -20,6 +20,13 @@
 > nie trafiają do repozytorium".
 
 
+## 2026-11-05 — modale wyboru: hover zamiast klikania w nazwę karty
+
+- Właściciel: klik w nazwę karty w modalu wyboru otwierał pełny ekran; zamiast tego najechanie kursorem pokazuje hover z ilustracją (ten sam co na stole/cmentarzu), klikanie usunięte. Na dotyku tap w nazwę nadal otwiera pełny ekran; log, stos i kafle stołu bez zmian.
+- Pomiar obalił obawę o „30 funkcji": modale stoją na jednym pickerze (`picker.js`) i jednym komponencie nazwy (`renderPeekButton`) — zmiana wylądowała w trzech miejscach wspólnych plus okablowanie. Kod `ddf98bc`, plan `7534f5e`.
+- Nowe testy `test/modal-hover-nazwy.test.js`: RED 1/5 → GREEN 5/5, mutacja 2/5. Stare testy modali bez osłabiania (ścieżka dotykowa = dotychczasowy klik): pakiety pokrewne 178/178 i 192/192. Bramy: fast **9975/9975**, build **77/5702,0 kB**, pełny `test:all` **10243/10243** (605,6 s), 0 fail / 0 skip. Plan: `docs/plans/PLAN_2026-11-05-modal-hover.md`; handoff: `docs/setup/HANDOFF_2026-11-05-modal-hover.md`. Bez scalania i pełnego B0.
+
+
 ## 2026-11-04 — zgłoszenie C: Magma Pummeler nie marnuje refleksu
 
 - Bot wybierał największe ciało i zadawał nieśmiertelne obrażenia. Przyczyna: oferta `resolve_trigger_target` nie przekazywała `pending.extra` do `resolveDamageAmount`, więc `amountFromContext:'countersRemoved'` nie trafiało do `cmd.damage` i bot omijał wspólną politykę obrażeń.

@@ -88,17 +88,32 @@ Pułapki:
   podajemy wyłącznie callbacki hover, na dotyku — dotychczasowe `onOpenCard*`.
   CSS nazw: kursor/podkreślenie hovera zamiast pozoru klikalności
   (`index.html`, tylko klasy modalowe pickera).
-- [ ] Etap 5: istniejące testy przypinające stary klik w modalach
+- [x] Etap 5: istniejące testy przypinające stary klik w modalach
   (m.in. `m303-*`, `m293-*`, `m129-*`, `choice-request-ui`,
   `uwagi-2026-09-21-b-klik-w-nazwe-otwiera-obraz` w części modalowej,
   `m300/m301/m302`, `a-search-batch`, `look-wizard-contrast`) przepięte na
   nowy kontrakt BEZ osłabiania asercji o wyborze/kluczach sondy; testy panelu
   akcji i logu (poza zakresem) zostają przy kliku. Pełny `npm test`,
   `npm run build`, potem `npm run test:all`.
-- [ ] Etap 6: dokumentacja — plan odhaczony, wpis w `docs/PROJECT_HISTORY.md`,
+- [x] Etap 6: dokumentacja — plan odhaczony, wpis w `docs/PROJECT_HISTORY.md`,
   handoff `docs/setup/HANDOFF_2026-11-05-modal-hover.md`, opis PR #179;
   CI i `mergeable_state` potwierdzone po pushu.
 
 Każdy zielony etap = osobny commit i natychmiastowy push (fetch/compare
 przed pushem, nigdy force). Bez scalania, bez nowych kart, bez pełnego
 benchmarku B0.
+
+## Wykonanie (2026-11-05)
+
+- Testy RED 1/5 → GREEN 5/5 (`test/modal-hover-nazwy.test.js`); mutacja
+  (usunięcie podpięcia hovera w pickerze) 2/5 czerwonych, po przywróceniu 5/5.
+- Istniejące testy modali NIE wymagały osłabiania: kreatory wołane bez
+  callbacków hover działają w ścieżce dotykowej (klik), więc stare asercje
+  o wyborze i kluczach sondy przeszły bez zmian (pakiety pokrewne 178/178
+  i 192/192). Dwie poprawki po drodze: strzeżone wyprowadzenie callbacku
+  hover w kreatorze wielocelowym (pusty hover nie wolno tłumić kliku
+  dotykowego) oraz strażniki `typeof` przy propsach hover w `main.js`
+  (harnessy wyciągające funkcje stołu do izolowanego kontekstu, wzorzec
+  `typeof openCardFullscreenByCardId`).
+- Bramy: szybki pakiet **9975/9975**, build **77 modułów / 5702,0 kB**,
+  pełny `test:all` **10243/10243** (605,6 s), 0 fail / 0 skip.
