@@ -2275,3 +2275,23 @@ startującej z pustą pamięcią.
 **Strażnik:** `docs/setup/ENVIRONMENT.md` §3; mapa #178 ma 194 wiersze.
 
 → narracja: `docs/LESSONS_PRZYPADKI.md` (L190)
+
+## L191 (2026-11-06) — „Whenever you attack” to RAZ na deklarację (CR 508.3d), a komentarze żyją krócej niż kod
+
+**Przypadek:** audyt PR #179 znalazł trigger `attacks_you_control` odpalany
+per ATACUJĄCY — Living History („Whenever you attack") dawała +2/+0 za
+każdego zadeklarowanego atakującego. Dokumentowane w M463 jako „once per
+declared attacker" — komentarz utrwalił błąd implementacji. Ta sama fala
+znalazła nagłówki „enumeracja W PEŁNI/kompletna po usunięciu cap" sprzed
+zgłoszenia G (ziarna + deskryptor + pełna walidacja przy `execute`).
+**Reguła:** „Whenever [a player] attacks" triggeruje się raz, gdy jeden lub
+więcej stworów gracza zostaje zadeklarowanych jako atakujący (CR 508.3d —
+przy twierdzeniu regułowym pobieraj dosłowny tekst, ADR 0030). Komentarz
+opisujący ZNIESIONY model jest gorszy niż brak komentarza — przy naprawie
+u root cause poprawiaj też stale wzmianki w tym samym module, a milestony
+historyczne adnotuj poprawką, nie przepisuj.
+**Strażnik:** `test/audyt-pr179-attacks-you-control.test.js` (5 pinów: 2/1/0
+atakujących, kopia przeciwnika z własnym faktem, brak faktu); strażnik CR
+`508.3d` w `test/helpers/cr-numery-tabela.js`.
+
+→ narracja: `docs/LESSONS_PRZYPADKI.md` (L191)

@@ -20,6 +20,16 @@
 > nie trafiają do repozytorium".
 
 
+## 2026-11-06 — audyt scalonego PR #179 (sesja arena/8df1ec4d-mtg)
+
+- Zakres: pełny przegląd 223 plików scalonego PR #179 (baza `04ca8e9` → scalenie `7a18659`, = HEAD `main`): produkcja (26 src + 7 tools + README/package.json + 8 talii), 57 docs, 123 testy. Mapa `docs/audits/PR179_MAPA_PLIKOW_2026-11-06.md` zamknięta: **223/223 wierszy, 0 otwartych**. Plan: `docs/plans/PLAN_2026-11-06-audyt-pr179.md`.
+- **A-1 (błąd silnika, CR 508.3d):** `attacks_you_control` („Whenever you attack") odpalał się RAZ NA ATAKUJĄCEGO zamiast raz na deklarację — Living History dawała +2/+0 za KAŻDEGO atakującego. Kotwica audytu: Oracle Living History (`docs/cards/scryfall-living-history.json`) + reguła 508.3d pobrana i zacytowana (wydanie CR 2026-09-25, sha256 `8d860e45…`, ponowne pobranie z mirrora `nwgarne/mtg-data` 2026-11-06 — zgodne z przypięciem w `test/helpers/cr-numery-tabela.js`; dosłownie: „triggers if one or more creatures that player controls are declared as attackers"). RED `160316b` (test 1 czerwony: 2≠1; pozostałe zielone), GREEN `ecec534` (skan raz na `attackers_declared`; osobne `attacks` per atakujący nietknięte). Mutacje złapane: dopisanie pętli per atakujący (testy 1–2), pusta pula kontrolerów deklaracji (1–2), brak jawnej kary kontrolera źródła (test 4 z własnym faktem przeciwnika). Etykieta UI → „twój atak".
+- **A-2 (komentarze stale po zgłoszeniu G):** bloki twierdzące „enumeracja W PEŁNI / kompletna" i „cap usunięty z enumeracji" dociągnięte do modelu ziarna + deskryptor + pełna walidacja przy execute: `game-state.js` (legalCommands combat, pula blokerów, M241/Delve), `combat.js` (nagłówek zniesienia COMBAT_OPTION_CAP), `spells.js` (potrójny doc Fireballa, escape/delve), `choice-request.js` (E6). Dokumentowane bez przepisywania historii: ENGINE_MILESTONES M463 i `PLAN_2026-11-06c-pmssb72.md` dostały adnotację poprawki A-1; historyczne wpisy PROJECT_HISTORY nietknięte.
+- Tabela zweryfikowanych cytatów CR zregenerowana narzędziem (`--zapisz`) na tym samym zakotwiczonym wydaniu 2026-09-25 — dodaje `508.3d`; dwa odręczne komentarze adnotacyjne zachowane ręcznie; strażnik CR zielony.
+- Golden-master `bot-scoring-snapshot` bez zmian (audyt nie wymagał regeneracji); probe PMSSB-72/3 dostosowana do przepływu pojedynczego triggera (decyzja celu otwiera się wprost).
+- Bramy (po naprawkach): fast **10 065/10 065**, pełne `test:all` **10 333/10 333**, build **78 modułów / 5 759,0 kB**, 0 fail / 0 skip. Bez pełnego B0 (ADR 0018); audyt = przegląd diffu #179, nie dowód wszystkich interakcji. Wnioski przeniesione do LESSONS przy okazji A-2 (ziarna ≠ potęga zbioru w komentarzach).
+
+
 ## 2026-11-06 — batch 72: mechaniki, wycena, talie i bramy
 
 - Kolekcja 635–644 (10 kart) wdrożona wyłącznie z planów zatwierdzonych w B0 i snapshotów/rulingów Scryfall z B1; B2 inwentarz: `docs/plans/PLAN_2026-11-06b-batch72-rule-inventory.md`. B3 generyczne ścieżki: purpose-restricted mana dla enchantment/door/turn-face-up, per-player fakt wyjścia karty z grobu, warunek static/live dla Vortex Runner. B4 testy legal/illegal i cztery dowiązania; bez wyjątków po nazwie karty.
