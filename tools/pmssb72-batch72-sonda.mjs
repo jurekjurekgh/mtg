@@ -110,15 +110,21 @@ export function probeLivingHistory({ cardLeftGraveyard = true } = {}) {
   });
   if (!attack.ok) throw new Error(`attack declaration failed: ${JSON.stringify(attack)}`);
   const initialView = playerView(state, 'p1');
+  // Audyt PR #179/A-1 (CR 508.3d): „Whenever you attack" odpala się RAZ na
+  // deklarację, więc pojedynczy trigger nie potrzebuje partii
+  // resolve_trigger_order — jego decyzja celu otwiera się wprost. Kolejność
+  // rozstrzygamy tylko, gdy checkpoint ją oferuje.
   const order = initialView.legalCommands.find((command) => command.type === 'resolve_trigger_order');
-  if (!order) return { cardLeftGraveyard, triggerQueued: false, targetScores: [], chosenTarget: null };
-  const resolvedOrder = execute(state, order);
-  if (!resolvedOrder.ok) throw new Error(`trigger order failed: ${JSON.stringify(resolvedOrder)}`);
+  if (order) {
+    const resolvedOrder = execute(state, order);
+    if (!resolvedOrder.ok) throw new Error(`trigger order failed: ${JSON.stringify(resolvedOrder)}`);
+  }
   const trace = botTrace(state);
   const targetScores = trace.options.filter((option) => option.command.startsWith('resolve_trigger_target('));
+  const pending = playerView(state, 'p1').pendingTriggerTarget;
   return {
     cardLeftGraveyard,
-    triggerQueued: targetScores.length > 0,
+    triggerQueued: targetScores.length > 0 || pending != null,
     targetScores,
     chosenTarget: trace.command.targetId ?? null,
   };

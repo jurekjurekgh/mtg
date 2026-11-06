@@ -868,7 +868,7 @@ export const TRIGGER_EVENT_LABELS = Object.freeze({
   any_creature_dies: 'śmierć stworzenia',
   attacks: 'atak',
   attacks_alone: 'samotny atak',
-  attacks_you_control: 'twój stwór atakuje',
+  attacks_you_control: 'twój atak',
   // Batch 53 (Ichorclaw Myr): „Whenever this creature becomes blocked" —
   // raz na atakującego, niezależnie od liczby blokerów (ruling SOM).
   becomes_blocked: 'zablokowanie tego stwora',
