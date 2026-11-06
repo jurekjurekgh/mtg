@@ -89,6 +89,25 @@ test('M203/4 (mutacja): strażnik domyślnych talii czerwienieje po podmianie na
   assert.ok(mutatedDefaults.some((deck) => !DECKS.includes(deck)), 'po mutacji istnieje domyślna talia spoza decks/');
 });
 
+test('M203/8: domyślne talie w HELP-ie istnieją w decks/ i są zgodne z domyślnymi kodu', () => {
+  // Audyt PR #180 (2026-11-06, pętla jakości): HELP run-game.mjs miał
+  // zahardkodowane `[ravnica-wub]` po zmianie nazwy talii (batch 71/72,
+  // ravnica-wub → ravnica-wur), podczas gdy domyślne w parseArgs było
+  // poprawne — klasa L41: ta sama informacja w dwóch miejscach się rozjeżdża.
+  // Pin BEHAWIORALNY (L160): czyta WYJśCIE --help, nie kształt źródła, więc
+  // łapie dryf niezależnie od implementacji HELP-u.
+  const res = spawnSync(process.execPath, [RUNNER, '--help'], {
+    encoding: 'utf8', timeout: 60_000, cwd: path.resolve('.'),
+  });
+  assert.equal(res.status, 0, `--help powinno kończyć się sukcesem: ${res.stderr}`);
+  const fromHelp = [...`${res.stdout}`.matchAll(/--(?:human|bot) <talia>.*\[([\w-]+)\]/g)].map((m) => m[1]);
+  assert.equal(fromHelp.length, 2, `HELP pokazuje domyślne dla --human i --bot: ${JSON.stringify(fromHelp)}`);
+  const missing = fromHelp.filter((d) => !DECKS.includes(d));
+  assert.deepEqual(missing, [], `HELP ogłasza nieistniejącą talię: ${missing.join(', ')}`);
+  const defaults = [...source.matchAll(/^\s+(human|bot): '([\w-]+)',$/gm)].map((m) => m[2]);
+  assert.deepEqual([...fromHelp].sort(), [...defaults].sort(), 'HELP == domyślne parseArgs (jedno źródło, L41)');
+});
+
 test('M203/5: katalog talii nie jest pusty i wszystkie pliki są niepuste', () => {
   assert.ok(DECKS.length >= 6, `oczekiwano co najmniej 6 talii, jest ${DECKS.length}: ${DECKS.join(', ')}`);
   for (const deck of DECKS) {

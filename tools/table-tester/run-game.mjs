@@ -105,14 +105,20 @@ export function deckNames() {
   return fs.readdirSync(DECKS_DIR).filter((f) => f.endsWith('.txt')).map((f) => f.replace('.txt', ''));
 }
 
+// Audyt PR #180 (pętla jakości, klasa L41): HELP pokazuje domyślne talie
+// z parseArgs (jedno źródło), nie własną kopię — po zmianie nazwy talii
+// (ravnica-wub → ravnica-wur, batch 71/72) HELP pozostał na starej nazwie,
+// choć domyślne w kodzie było poprawne. Pin: test/m203-talie-testera-
+// -i-dokumentacji.test.js M203/8 (behawioralnie, z wyjścia --help).
+const DEFAULTS = parseArgs([]);
 const HELP = `Żywy tester stołu — automatyczny gracz na prawdziwym artefakcie (jsdom).
 
 Użycie:
   node run-game.mjs [opcje]
 
 Opcje:
-  --human <talia>        talia gracza (nazwa pliku decks/*.txt bez .txt) [dominaria-brg]
-  --bot <talia>          talia bota                                              [ravnica-wub]
+  --human <talia>        talia gracza (nazwa pliku decks/*.txt bez .txt) [${DEFAULTS.human}]
+  --bot <talia>          talia bota                                              [${DEFAULTS.bot}]
   --seed <n>             seed partii                                            [42]
   --steps <n>            limit kroków gry                                      [300]
   --out <plik>           plik transkryptu                              [transcript.txt]
