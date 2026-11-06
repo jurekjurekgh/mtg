@@ -1,0 +1,26 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Open%20the%20Gates&set=rna&format=json",
+  "print": "Open the Gates (RNA)",
+  "name": "Open the Gates",
+  "mana_cost": "{G}",
+  "cmc": 1,
+  "type_line": "Sorcery",
+  "oracle_text": "Search your library for a basic land card or Gate card, reveal it, put it into your hand, then shuffle.",
+  "power": null,
+  "toughness": null,
+  "colors": ["G"],
+  "color_identity": ["G"],
+  "keywords": [],
+  "set": "rna",
+  "set_name": "Ravnica Allegiance",
+  "collector_number": "133",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/f/f/ff326c57-accb-4b75-9bc9-b5ef1a85f38d.jpg?1783933668",
+    "normal": "https://cards.scryfall.io/normal/front/f/f/ff326c57-accb-4b75-9bc9-b5ef1a85f38d.jpg?1783933668"
+  },
+  "rulings": [],
+  "rulingsSource": "https://api.scryfall.com/cards/rna/133/rulings",
+  "rulingsPobrano": "2026-11-06",
+  "pobrano": "2026-11-06"
+}

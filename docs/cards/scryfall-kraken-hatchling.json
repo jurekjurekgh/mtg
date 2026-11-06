@@ -1,0 +1,26 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Kraken%20Hatchling&set=m13&format=json",
+  "print": "Kraken Hatchling (M13)",
+  "name": "Kraken Hatchling",
+  "mana_cost": "{U}",
+  "cmc": 1,
+  "type_line": "Creature — Kraken",
+  "oracle_text": "",
+  "power": "0",
+  "toughness": "4",
+  "colors": ["U"],
+  "color_identity": ["U"],
+  "keywords": [],
+  "set": "m13",
+  "set_name": "Magic 2013",
+  "collector_number": "58",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/5/9/59a50590-9091-4632-bf8c-792e1e0a75a8.jpg?1783940505",
+    "normal": "https://cards.scryfall.io/normal/front/5/9/59a50590-9091-4632-bf8c-792e1e0a75a8.jpg?1783940505"
+  },
+  "rulings": [],
+  "rulingsSource": "https://api.scryfall.com/cards/m13/58/rulings",
+  "rulingsPobrano": "2026-11-06",
+  "pobrano": "2026-11-06"
+}

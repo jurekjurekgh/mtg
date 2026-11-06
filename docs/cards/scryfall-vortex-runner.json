@@ -1,0 +1,26 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Vortex%20Runner&set=stx&format=json",
+  "print": "Vortex Runner (STX)",
+  "name": "Vortex Runner",
+  "mana_cost": "{2}{U}",
+  "cmc": 3,
+  "type_line": "Creature — Human Wizard",
+  "oracle_text": "As long as you control eight or more lands, this creature gets +1/+0 and can't be blocked.",
+  "power": "2",
+  "toughness": "3",
+  "colors": ["U"],
+  "color_identity": ["U"],
+  "keywords": [],
+  "set": "stx",
+  "set_name": "Strixhaven: School of Mages",
+  "collector_number": "60",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/b/a/bab4a68d-5d26-42d8-bc51-15e3c1f95ebe.jpg?1783927372",
+    "normal": "https://cards.scryfall.io/normal/front/b/a/bab4a68d-5d26-42d8-bc51-15e3c1f95ebe.jpg?1783927372"
+  },
+  "rulings": [],
+  "rulingsSource": "https://api.scryfall.com/cards/stx/60/rulings",
+  "rulingsPobrano": "2026-11-06",
+  "pobrano": "2026-11-06"
+}
