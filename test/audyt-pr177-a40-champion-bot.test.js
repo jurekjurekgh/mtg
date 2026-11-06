@@ -28,9 +28,9 @@ function makeElf(s){put(s,'oak','ambassador-oak');cast(s,'oak');until(s,()=>!s.z
 test('A40: bot nie rzuca Berserkera na pusty stół',()=>{
  const s=scene();const b=bot(), choice=b.chooseCommand(view(s));assert.notEqual(choice.type,'cast_permanent',JSON.stringify(choice));
 });
-test('A40: bot rzuca Berserkera z rzeczywistym sojusznikiem i wybiera jego wygnanie',()=>{
- const s=scene();put(s,'ally','greater-tanuki','battlefield');const b=bot(), choice=b.chooseCommand(view(s));assert.equal(choice.objectId,'champ',JSON.stringify(choice));act(s,choice);
- until(s,()=>!!s.pendingSacrifice);const selection=b.chooseCommand(view(s));assert.equal(selection.targetId,'ally',JSON.stringify(selection));act(s,selection);assert.ok(find(s,'greater-tanuki','exile'));
+test('A40: bot nie rzuca Berserkera, gdy jedynym hostem jest droższy Greater Tanuki',()=>{
+ const s=scene();put(s,'ally','greater-tanuki','battlefield');const b=bot(), choice=b.chooseCommand(view(s));
+ assert.notEqual(choice.type,'cast_permanent',JSON.stringify(choice));
 });
 test('A40: po rzeczywistym ETB Oak bot może wybrać token, który nie wraca',()=>{
  const s=scene();makeElf(s);put(s,'kill-oak','terminal-agony');

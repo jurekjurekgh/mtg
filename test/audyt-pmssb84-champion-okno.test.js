@@ -62,12 +62,36 @@ function scene({ allies = [] } = {}) {
     ...gameObjectDataOf(def), types: def.types, subtypes: def.subtypes ?? [],
     keywords: def.keywords ?? [],
   });
-  allies.forEach(([power, toughness], i) => addObject(state, {
-    id: `ally${i}`, instanceId: `i-ally${i}`, cardId: `synthetic-ally${i}`,
-    controllerId: 'p1', ownerId: 'p1', zone: 'battlefield', kind: 'creature',
-    power, toughness, manaCost: power, abilities: [], keywords: [], subtypes: [],
-    types: ['Creature'], colors: ['R'], cardName: `Ally ${i}`,
-  }));
+  allies.forEach((spec, i) => {
+    const [power, toughness] = Array.isArray(spec) ? spec : [spec.power, spec.toughness];
+    const id = `ally${i}`;
+    addObject(state, {
+      id, instanceId: `i-${id}`, cardId: `synthetic-ally${i}`,
+      controllerId: 'p1', ownerId: 'p1', zone: 'battlefield', kind: 'creature',
+      power, toughness, manaCost: Array.isArray(spec) ? power : (spec.manaCost ?? power),
+      abilities: [], keywords: [], subtypes: [],
+      types: ['Creature'], colors: ['R'], cardName: `Ally ${i}`,
+    });
+    if (!Array.isArray(spec) && spec.counters) {
+      state.objects.set(id, Object.freeze({ ...state.objects.get(id), counters: spec.counters }));
+    }
+    const attachments = Array.isArray(spec) ? [] : (spec.attachments ?? []);
+    attachments.forEach((attachment, j) => {
+      const attachmentId = `${id}-attachment-${j}`;
+      addObject(state, {
+        id: attachmentId, instanceId: `i-${attachmentId}`,
+        cardId: `synthetic-${attachment.kind}-${i}-${j}`, controllerId: 'p1', ownerId: 'p1',
+        zone: 'battlefield', kind: attachment.kind,
+        aura: attachment.kind === 'aura', equipment: attachment.kind === 'equipment',
+        types: [attachment.kind === 'aura' ? 'Enchantment' : 'Artifact'],
+        subtypes: attachment.kind === 'equipment' ? ['Equipment'] : [],
+        manaCost: attachment.manaCost,
+      });
+      state.objects.set(attachmentId, Object.freeze({
+        ...state.objects.get(attachmentId), attachedTo: id,
+      }));
+    });
+  });
   return state;
 }
 
@@ -95,9 +119,43 @@ test('PMSSB-84/2: token 1/1 wystarcza — rzut wraca nad pass', () => {
   assert.ok(cast > pass, `z kandydatem rzut się opłaca (${cast} vs ${pass})`);
 });
 
-test('PMSSB-84/3: z sojusznikiem 10/10 rzut też jest opłacalny', () => {
-  const { cast, pass } = castScore(scene({ allies: [[10, 10]] }));
-  assert.ok(cast > pass, `wygnanie dużego sojusznika jest odwracalne (${cast})`);
+test('PMSSB-84/3: z tanim sojusznikiem 1/1 rzut jest opłacalny', () => {
+  const { cast, pass } = castScore(scene({ allies: [[1, 1]] }));
+  assert.ok(cast > pass, `jest tani legalny host do wygnania (${cast} vs ${pass})`);
+});
+
+test('PMSSB-84/6: Magma Pummeler 2 + 5 liczników — bot wstrzymuje championa', () => {
+  const state = scene();
+  const def = REG.get('magma-pummeler');
+  addObject(state, {
+    id: 'pummeler', instanceId: 'i-pummeler', cardId: def.id,
+    controllerId: 'p1', ownerId: 'p1', zone: 'battlefield',
+    ...gameObjectDataOf(def), types: def.types, subtypes: def.subtypes,
+    keywords: def.keywords ?? [],
+  });
+  state.objects.set('pummeler', Object.freeze({
+    ...state.objects.get('pummeler'), power: 5, toughness: 5, counters: { '+1/+1': 5 },
+  }));
+  const { cast, pass } = castScore(state);
+  assert.ok(cast < pass, `inwestycja hosta (2 + 5 liczników) przewyższa Berserkera (${cast} vs ${pass})`);
+});
+
+test('PMSSB-84/7: drogie aury i equipment wliczają się do inwestycji hosta', () => {
+  const { cast, pass } = castScore(scene({
+    allies: [{
+      power: 2, toughness: 2, manaCost: 2,
+      attachments: [{ kind: 'aura', manaCost: 2 }, { kind: 'equipment', manaCost: 1 }],
+    }],
+  }));
+  assert.ok(cast < pass, `host 2 + aura 2 + equipment 1 jest droższy niż Berserker (${cast} vs ${pass})`);
+});
+
+test('PMSSB-84/8: drogi host nie blokuje rzutu, gdy istnieje tańszy legalny host', () => {
+  const { cast, pass } = castScore(scene({ allies: [
+    { power: 5, toughness: 5, manaCost: 2, counters: { '+1/+1': 5 } },
+    [1, 1],
+  ] }));
+  assert.ok(cast > pass, `można zachować drogi permanenta i wygnąć tanią 1/1 (${cast} vs ${pass})`);
 });
 
 // =========================================================================

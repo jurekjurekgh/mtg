@@ -12532,13 +12532,37 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           const championSpec = effs.find((e) => e?.type === 'champion');
           if (!championSpec) continue;
           const wantedTypes = championSpec.qualifier?.types ?? ['Creature'];
-          const host = (view.zones.battlefield ?? []).some((o) => o.controllerId === view.playerId
+          const hosts = (view.zones.battlefield ?? []).filter((o) => o.controllerId === view.playerId
             && o.id !== cmd.objectId
             && (o.kind === 'creature' || (o.types ?? []).includes('Creature'))
             && wantedTypes.every((t) => (o.types ?? []).includes(t)
               || (o.subtypes ?? []).includes(t)
               || (o.keywords ?? []).includes('changeling')));
-          if (!host) score -= P.championNoHostPenalty;
+          if (hosts.length === 0) {
+            score -= P.championNoHostPenalty;
+          } else {
+            // Champion nie powinien zamieniać jedynego cennego permanenta na
+            // ciało o niższej inwestycji. Ranking jest po TMC karty, a do
+            // niej doliczamy dodatnie liczniki oraz TMC aur/equipmentów
+            // przyczepionych do hosta (nawet gdy equipment po wygnaniu
+            // zostanie na stole — to zasób już zainwestowany w tę pozycję).
+            // Gdy istnieje tańszy legalny host, rzut pozostaje dostępny.
+            const investment = (object) => {
+              const base = Number(object?.manaCost ?? cardDef(object?.cardId)?.manaCost) || 0;
+              const counters = positiveCounterCount(object);
+              const attached = (view.zones.battlefield ?? []).reduce((sum, attachment) => {
+                if (attachment?.attachedTo !== object.id || attachment.bestow) return sum;
+                const isAura = attachment.kind === 'aura' || attachment.aura;
+                const isEquipment = attachment.equipment || (attachment.subtypes ?? []).includes('Equipment');
+                if (!isAura && !isEquipment) return sum;
+                return sum + (Number(attachment.manaCost ?? cardDef(attachment.cardId)?.manaCost) || 0);
+              }, 0);
+              return base + counters + attached;
+            };
+            const entrantInvestment = Number(def?.manaCost ?? card?.manaCost) || 0;
+            const cheapestHostInvestment = Math.min(...hosts.map(investment));
+            if (cheapestHostInvestment > entrantInvestment) score -= P.championNoHostPenalty;
+          }
         }
         // M169/K (uwaga właściciela, Phyrexian Rager): ETB „you lose N life"
         // poniżej progu życia to samookaleczenie — przy 2 życia bot schodził
