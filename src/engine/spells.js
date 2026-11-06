@@ -3618,9 +3618,10 @@ export function legalSpellCasts(state, playerId, ofertaUnitsPodany = null) {
       }
       continue;
     }
-    // Fireball (X-cost, any-number-of-targets): oferujemy X od 1 do dostępnej
-    // many (po pokryciu {R} + {1}/cel), dla każdego podzbioru celów (stwory +
-    // gracze). Pełna enumeracja podzbiorów ograniczona do rozsądnego limitu.
+    // Fireball (X-cost, any-number-of-targets): rzuty są ziarnowymi wariantami
+    // (zob. legalFireballCasts: pojedyncze cele / śmiertelne X / wrogie
+    // zestawy — dowolny inny zestaw/X konstruuje kreator, walidacja przyjmuje
+    // każdy legalny). Bez enumeracji potęgi zbioru celów.
     if (object.spell?.fireball) {
       const fbc = legalFireballCasts(state, playerId, id, object, manaAvailableForOffer(object, coloredPipsOf(object.cardId, 0)));
       // C1: łączny koszt wariantu = X + {R} + {1} za każdy cel ponad pierwszy
@@ -4061,10 +4062,14 @@ function castModalSpell(state, playerId, objectId, modeIndex, targets, stunTarge
 }
 
 /** Limit oferowanych podzbiorów wygnania Escape (jak CREW_OPTION_CAP). */
-// Zgłoszenie F: usunięto ESCAPE_OPTION_CAP (enumeracja kompletna).
+// Zgłoszenie F: usunięto ESCAPE_OPTION_CAP. Zgłoszenie G, etap 3: ziarnowe
+// okna cykliczne grobu + deskryptor `pendingEscapeExile`; konstrukcja
+// dowolnego zestawu + pełna walidacja przy execute — bez ucinania.
 
 /** Limit oferowanych podzbiorów wygnania Delve (jak ESCAPE_OPTION_CAP). */
-// Zgłoszenie F: usunięto DELVE_OPTION_CAP (enumeracja kompletna).
+// Zgłoszenie F: usunięto DELVE_OPTION_CAP. Zgłoszenie G, etap 3: ziarnowe
+// okna cykliczne per opłacalna liczba + deskryptor `pendingDelveExile`;
+// konstrukcja dowolnego zestawu + pełna walidacja przy execute — bez ucinania.
 
 /**
  * Delve (CR 702.66, Hooting Mandrills): „Each card you exile from your

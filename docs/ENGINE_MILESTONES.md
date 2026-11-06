@@ -9108,6 +9108,12 @@ in the engine.
   per-turn fact resets, fingerprints, and is rechecked both when an intervening-if
   trigger fires and when it resolves. `attacks_you_control` scans controlled
   permanents once per declared attacker, so enchantment triggers are supported.
+  **Poprawka audytu PR #179/A-1 (2026-11-06, CR 508.3d):** „once per declared
+  attacker" było błędne — CR 508.3d mówi, że „Whenever [a player] attacks"
+  triggeruje się, gdy jeden lub więcej stworów kontrolowanych przez tego
+  gracza zostanie zadeklarowanych jako atakujący, czyli RAZ na deklarację.
+  Engine teraz skanuje controlled permanents raz na `attackers_declared`
+  (0 atakujących → brak triggera), niezależnie od liczby atakujących.
 - **Vortex Runner:** one live static-condition predicate now guards the
   conditional `cantBeBlocked` combat restriction; attack/view valuation and
   power use the same current-state threshold. Boundary: attack score −10 at

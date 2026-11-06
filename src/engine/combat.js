@@ -1565,8 +1565,11 @@ function defendingPlayerIdOf(state) {
 // Zgłoszenie F (2026-11-05, polecenie właściciela): ŻADNEGO ucinania
 // enumeracji — dawniej `COMBAT_OPTION_CAP = 32` przycinał podzbiory przy
 // większych planszach (tryb ograniczony: puste/singletony/wszyscy/minus-jeden),
-// więc legalne deklaracje były nieodstępne. Enumeracja jest kompletna;
-// kolejność generowania bez zmian (determinizm ofert).
+// więc legalne deklaracje były nieodstępne. Ofertę niosą teraz ziarna
+// (zgłoszenie G, 2026-11-05: `attackerSeedDeclarations` /
+// `blockerSeedAssignments` — wymuszeni / wszyscy / single / minus-jeden)
+// plus deskryptor problemu `combatDeclarationView`; dowolna legalna deklaracja
+// jest osiągalna przez `execute` (pełna walidacja), bez limitu wariantów.
 
 /**
  * Zgłoszenie G, etap 1: kandydaci do ataku w kolejności pola bitwy.
