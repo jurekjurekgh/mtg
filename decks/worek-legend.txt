@@ -9,10 +9,12 @@
 1x Anticipate
 1x Curate (STX)
 1x Kaleidoscorch
+1x Living History
 1x Tah-Crop Skirmisher
 1x Cancel
 1x Lotusguard Disciple
 1x Ulna Alley Shopkeep
+1x Vortex Runner
 1x Capture Sphere
 1x Render Speechless
 1x Tackle Artist
@@ -22,6 +24,6 @@
 1x Sifter Wurm
 2x Plains
 4x Island
-1x Swamp
+2x Swamp
 1x Mountain
 2x Forest

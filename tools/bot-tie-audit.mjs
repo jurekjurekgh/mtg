@@ -51,7 +51,7 @@ export const AUDIT_PAIRS = Object.freeze([
   ['ravnica-wur', 'innistrad-wu'], ['dominaria-brg', 'mirrodin-wu'], ['tarkir-bg', 'warhammer-ubr'],
   ['wiedzmin-bg', 'tarkir-bg'], ['worek-legend', 'wiedzmin-bg'], ['srodziemie', 'theros'],
   ['kaladesh', 'zendikar-wu'], ['warhammer-wg', 'innistrad-brg'], ['dominaria-wu', 'worek-mroczny'],
-  ['forgotten-realms', 'worek-dziki'], ['tarkir-wur', 'wiedzmin-bg'], ['worek-basni', 'mirrodin-brg'],
+  ['forgotten-realms-br', 'worek-dziki'], ['tarkir-wur', 'wiedzmin-bg'], ['worek-basni', 'mirrodin-brg'],
 ].map((p) => Object.freeze(p)));
 
 const registry = createCardRegistry();

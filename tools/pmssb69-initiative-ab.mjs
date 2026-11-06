@@ -14,7 +14,7 @@ import { pathToFileURL } from 'node:url';
 const ROOT_NOW = process.cwd();
 const baseRoot = path.resolve(process.argv[2] ?? '.arena/head-tree');
 const seedsCount = Number(process.argv[3] ?? 40);
-const DECKS = ['forgotten-realms', 'srodziemie']; // srodziemie = kontrola bez take_initiative
+const DECKS = ['forgotten-realms-br', 'srodziemie']; // srodziemie = kontrola bez take_initiative
 
 async function loadTree(root) {
   const load = (rel) => import(pathToFileURL(path.join(root, rel)).href);

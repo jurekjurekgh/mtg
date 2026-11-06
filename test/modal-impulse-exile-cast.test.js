@@ -33,7 +33,7 @@ test('modal-impulse: partia z forgotten-realms nie pada na rzucie modala z exile
   const state = setupCardMatch({
     seed: 2031,
     players: [{ id: 'p1' }, { id: 'p2' }],
-    decks: new Map([['p1', deckOf('dominaria-brg')], ['p2', deckOf('forgotten-realms')]]),
+    decks: new Map([['p1', deckOf('dominaria-brg')], ['p2', deckOf('forgotten-realms-wug')]]),
     registry,
   });
   let finalState;

@@ -5,10 +5,12 @@
 1x Brave-Kin Duo
 1x Clawing Torment
 1x High Stride
+1x Open the Gates
 1x Dragon Fodder
 1x Kappa Tech-Wrecker
 1x Memory's Journey
 1x Agate Assault
+1x Banishing Light
 1x Barkform Harvester
 1x Blade-Blizzard Kitsune
 1x Kumano's Blessing
@@ -24,4 +26,4 @@
 1x Island
 2x Swamp
 1x Mountain
-3x Forest
+4x Forest
