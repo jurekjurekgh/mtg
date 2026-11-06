@@ -53,3 +53,23 @@ filename were updated.
 
 Full B0 was intentionally not run; the plan reserves it for an explicit owner
 request. Continue from the current pushed branch and do not switch branches.
+
+## Follow-up owner correction — full per-card scoring audit
+
+The previous B5 answer did not fully prove manual scoring for every mechanic.
+PMSSB-88 now audits all ten cards with a per-card crosswalk in `docs/PMSSB.md`
+and the plan `docs/plans/PLAN_2026-11-06e-pmssb88-batch72-scoring-audit.md`.
+Three gaps were measured and closed: Open the Gates nested `anyOf` land rider
+(59→64 with a 59 control), Creeping Peeper restricted mana for a legal face-up
+action (−Infinity→4 vs pass 0, executed and paid), and linked-exile return value
+on cast/activated removal (+18/−18, including both directions).
+
+PMSSB-88 probes/pins: `tools/pmssb88-batch72-scoring-sonda.mjs` and
+`test/audyt-pmssb88-batch72.test.js` (9 pins); three temporary mutations made
+the corresponding pins RED and were restored. `unlock_door` remains explicitly
+unscorable in the current repository: there are no Room definitions or unlock
+actions, so no scoring coverage is claimed for that branch.
+
+Follow-up gates: fast **10,060/10,060**, slow **268/268**, build **78 modules /
+5,757.7 kB**. No full B0 benchmark was run. The PR remains open and must not be
+merged without explicit owner instruction.

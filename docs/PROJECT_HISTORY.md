@@ -27,6 +27,7 @@
 - B6 wyłącznie przez generator: 10 kart trafiło do planowych talii; 30 kart nielandowych Forgotten Realms wywołało przewidziany podział BR/WUG. README, benchmark help, testy i narzędzia zaktualizowane na nazwy 32 wygenerowanych talii. Raport: `docs/plans/PLAN_2026-11-06d-batch72-deck-report.md`.
 - Bramy B7: fast **10,051/10,051**, slow **268/268**, build **78 modułów / 5,755.8 kB**; quick benchmark **672 mecze, 0 niedokończonych**, heuristic 80.7% vs aggro / 97.6% vs random. Próbka talii zmieniła się po podziale, więc nie przedstawiamy win-rate jako ścisłego before/after.
 - Etapy B3–B6 wypchnięte kolejno na `arena/5d931b5a-mtg`: `322cc6b`, `2ac2ff4`, `11987b1`, `29b1143`. PR pozostaje otwarty i niescalony. Plan B0–B7: `docs/plans/PLAN_2026-11-06-batch72-kolekcja-635-644.md`; handoff: `docs/setup/HANDOFF_2026-11-06-batch72.md`.
+- PMSSB-88 domknęło ręczny audit scoringu każdej z 10 kart na rzeczywistych wynikach sondy (nie zaliczano testów reguł jako dowodu). Zamknięto trzy usterki ogólne: nested `anyOf` dla Open the Gates (**59→64**), legalny obrót manifestu dzięki `{U}` Creeping Peeper (**4 vs pass 0**, wcześniej `-Infinity`), i wycena powrotu powiązanego wygnania przy removalu (**+18/-18**, również Dispeller's Capsule **27→45**). Tabela per karta, controls i mutacje: §PMSSB-88 w `docs/PMSSB.md`. `unlock_door` uczciwie pozostaje unscored: brak Room/action w repo. Post-audit: fast **10,060/10,060**, slow **268/268**, build **78 / 5,757.7 kB**; B0 benchmark nie uruchamiano.
 
 
 ## 2026-11-05 — modale wyboru: hover zamiast klikania w nazwę karty

@@ -4213,6 +4213,9 @@ function markTemporaryExile(state, exileId, sourceObject) {
     temporaryExile: Object.freeze({
       byCardId: sourceObject?.cardId ?? null,
       byName: sourceObject?.cardName ?? null,
+      // Public LKI link for decision-makers: if the source permanent is a
+      // removal target, its linked return is part of that target's value.
+      bySourceId: sourceObject?.id ?? null,
       // Powrót jest związany z odejściem ŹRÓDŁA z pola bitwy (CR 610.3 —
       // efekt połączony jednorazowy). Inne rodziny (Suspend, Plot) niosą
       // własne liczniki i nie przechodzą przez ten znacznik.

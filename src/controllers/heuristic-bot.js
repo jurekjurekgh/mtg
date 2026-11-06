@@ -772,6 +772,25 @@ function permanentMaterialValue(object) {
   return 2 * (object?.power ?? 0) + (object?.toughness ?? 0) + (object?.manaCost ?? 0);
 }
 
+/**
+ * PMSSB-88: removing a linked-exile source also resolves its LTB return.
+ * The exile-zone object carries public `temporaryExile.bySourceId` LKI; its
+ * controller is the owner who will control it on return. Positive means the
+ * returning permanent is ours, negative means it returns to the opponent.
+ */
+function linkedExileReturnValue(view, source) {
+  if (!source?.id) return 0;
+  let value = 0;
+  for (const exiled of view.zones?.exile ?? []) {
+    if (exiled?.temporaryExile?.returnsWhenSourceLeaves !== true
+      || exiled.temporaryExile.bySourceId !== source.id) continue;
+    if (!exiled.controllerId) continue;
+    const sign = exiled.controllerId === view.playerId ? 1 : -1;
+    value += sign * permanentMaterialValue(exiled);
+  }
+  return value;
+}
+
 /** Rzeczywiste 0 toughness != pozostała wytrzymałość po obrażeniach.
  * Pierwsze omija indestructible/regenerację; drugie jest zniszczeniem.
  */
@@ -9539,13 +9558,21 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     }
     return 0;
   }
-  /** Czy kwalifikator szukania trafia ląd (types/subtypes — ADR 0002). */
+  /** Czy kwalifikator szukania może znaleźć ląd (w tym alternatywy `anyOf`, ADR 0002). */
   function searchFindsLand(effect) {
-    const q = effect?.qualifier ?? {};
-    const types = q.types ?? [];
-    const subtypes = q.subtypes ?? [];
-    return types.includes('Land') || types.includes('Basic')
-      || subtypes.some((s) => ['Plains', 'Island', 'Swamp', 'Mountain', 'Forest', 'Land', 'Basic'].includes(s));
+    const qualifierFindsLand = (q) => {
+      if (!q || typeof q !== 'object') return false;
+      const types = q.types ?? [];
+      const subtypes = q.subtypes ?? [];
+      if (types.includes('Land') || types.includes('Basic')
+        || subtypes.some((s) => ['Plains', 'Island', 'Swamp', 'Mountain', 'Forest', 'Land', 'Basic'].includes(s))) {
+        return true;
+      }
+      // `anyOf` is a disjunction: one land-capable branch makes a card a
+      // possible land hit (Open the Gates: Basic Land OR Gate). PMSSB-88.
+      return Array.isArray(q.anyOf) && q.anyOf.some(qualifierFindsLand);
+    };
+    return qualifierFindsLand(effect?.qualifier);
   }
   const SEARCH_LIBRARY_EFFECT_TYPES = new Set([
     'search_library_to_hand', 'search_library_to_battlefield',
@@ -11694,9 +11721,13 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // oferta w game-state (CR 701.58b/701.40b: „paying its mana cost").
         const uncoverCost = covered.cloakTurnUpCost ?? covered.manifestTurnUpCost
           ?? coveredDef.manaCost ?? 0;
-        const turnUpUnits = manaUnitsOfView(view, { castingSpell: false, turnFaceUp: true });
-        if (uncoverCost <= 0 || turnUpUnits.length < uncoverCost
-          || !matchColorRequirements(turnUpUnits, coloredPipsOf(covered.cardId, 0))) return finish(NEVER);
+        // Oferty turn_manifest_face_up / turn_cloak_face_up są już bramkowane
+        // przez silnik według pełnego `producibleMana` i `turnFaceUp` purpose,
+        // które obejmuje zdolności many (np. Creeping Peeper). `manaUnitsOfView`
+        // widzi pule i lądy, ale nie takie zdolności; ponowne sprawdzenie tutaj
+        // fałszywie dawało -Infinity dla legalnych ofert płatnych ich maną.
+        // Wyceniamy zatem legalną komendę otrzymaną z PlayerView, a nie
+        // rekonstruujemy drugi planer płatności (PMSSB-88).
         const bodyGain = Math.max(0, (coveredDef.power ?? 0) - 2) * 2
           + Math.max(0, (coveredDef.toughness ?? 0) - 2);
         const keywordBonus = Math.min(6, (coveredDef.keywords ?? []).length * 2);
@@ -13292,6 +13323,8 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
                   bounceCastHadFoeTarget = true; // PMSSB-1/C (F1): timing raz na rzut
                 }
               }
+              // Usunięcie źródła linked-exile uruchamia również zwrot z LTB.
+              score += linkedExileReturnValue(view, victim);
             }
           }
           // M91 (uwaga A2): globalna prewencja obrażeń bojowych („fog" —
@@ -15469,6 +15502,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
                 score += bounceEffectStrengthBonus(effect.type);
                 score += bounceTargetAdjustments(view, victim);
               }
+              score += linkedExileReturnValue(view, victim);
             }
           }
           // PMSSB-59/A (F1): twarde usuwanie w ścieżce ZDOLNOŚCI nie miało
@@ -15521,6 +15555,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
                   score += gainLifeValue(view, victim.manaCost ?? 0);
                 }
               }
+              score += linkedExileReturnValue(view, victim);
             }
           }
           // PMSSB-19: rider szukania w ścieżce ZDOLNOŚCI (Dawntinder Elk —
