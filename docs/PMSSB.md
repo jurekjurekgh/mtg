@@ -4181,3 +4181,32 @@ Benchmark quick: heuristic 87,5% ogółem (vs random 96,7%, vs aggro 78,3%);
 Wrap in Flames s4009 p2 t20 (ta sama klasa co przejrzana t24 — warianty różnią
 się WYŁĄCZNIE liczbą celów, dodatkowy cel funkcjonalnie pusty) — allowlista
 przepisana z numeru tury (krucha) na KLASĘ.
+
+## PMSSB-87 — batch 72: restricted mana, attack trigger, live land threshold (2026-11-06) — DONE
+
+Plan: `docs/plans/PLAN_2026-11-06c-pmssb72.md`. Sonda:
+`node tools/pmssb72-batch72-sonda.mjs`. Pins:
+`test/audyt-pmssb72-batch72.test.js` (3), plus detailed legal/illegal and
+negative-interaction coverage in `test/real-cards-batch72.test.js`.
+
+No new bot parameter: each path uses existing purpose-aware payment or generic
+pump/evasion valuation. Probes are deterministic (seed 72, no random tie-break,
+no lookahead), measured as option scores against the pass/negative control.
+
+| Mechanic / state | Before | After | Result |
+|---|---|---|---|
+| Creeping Peeper → Living History, one free `{R}` plus Peeper `{U}` | no enchantment-purpose payment path / no cast offer | cast chosen, **78.30 vs pass 0** | reuse generic costed-source and enchantment-purpose scoring |
+| Same Peeper mana → ordinary sorcery | no legal cast offer | **no legal cast offer** | anti-over-fix: restriction is purpose-specific |
+| Vortex Runner, 7 lands, 2/2 blocker | condition ignored in combat's `cantBeBlocked` path | attack **−10**, pass **0**; bot holds | seven is below threshold; ordinary block/evasion valuation |
+| Vortex Runner, 8 / 9 lands, same blocker | condition ignored in combat's `cantBeBlocked` path | attack **+6**, pass **0** at both boundaries; bot attacks | read-time static condition; no entry/attack snapshot |
+| Living History, no qualifying graveyard departure | no generic attack event / no fact | **no trigger** | negative control |
+| Living History, card left controller's graveyard; 0/4 and 3/3 attacking | no trigger queued | target scores **64** (3/3) vs **59** (0/4); bot chooses 3/3 | existing trigger-target pump scoring reused |
+
+RED sensitivity: three temporary mutations each made the corresponding PMSSB
+pin fail — (1) reject `enchantment_spell`, (2) stop scanning
+`attacks_you_control`, (3) make static abilities ignore their condition. All
+source files were restored; the post-mutation PMSSB suite is **3/3** green.
+Legacy Powerstone/artifact-only guards and payment paths remain covered by the
+existing full suite; face-up purposes are covered for direct manifest/cloak and
+morph payment in the batch-72 engine pins. No door card or unrelated card logic
+was added.
