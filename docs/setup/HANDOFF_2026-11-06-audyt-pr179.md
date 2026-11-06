@@ -21,6 +21,12 @@
 - `npm run build`: **78 modułów / 5 759,0 kB**.
 - Szybki benchmark NIE był uruchamiany (brak decyzji właściciela; ADR 0018).
 
+## Zdarzenie CI po pushu b0d0495 — strażnik budżetu lektury
+
+- Pierwszy push `b0d0495` z dokumentacją sesji **OBLAŁ CI** (`run-tests.mjs all`): strażnik `test/dokumentacja-budzet-lektury.test.js` (AGENTS.md §0, limit 100k tokenów) — mój wpis L191 rozsadził budżet (z ~99,99k do ~100,4k). Lokalnie `npm test` tego NIE pokazał (strażnik jest w `tools/test-manifest.json` slow) — bramą PR jest `test:all`, nie `npm test`.
+- Zadanie obowiązkowe wg tekstu strażnika: kondensowanie, nie podnoszenie progu. Wykonane: L191 skrócony do kotwicy z faktami; L187 wyniesiony do archiwum rejestru (proza i tak mieszkała w `LESSONS_PRZYPADKI.md`); próg NIETKNIĘTY; suma ~**99,996k** tokenów; `docs-decisions.test.js` zielony. Strażnik CR i mapa/historia/handoff bez zmian.
+- Lekcja do zapamiętania: po zmianach w dokumentacji OBOWIĄZKOWO uruchamiać `npm run test:all` lokalnie (albo przynajmniej `test/dokumentacja-budzet-lektury.test.js`), nie polegać na samym `npm test`.
+
 ## Granice i co NIE jest dowiedzione
 
 - Audyt = przegląd diffu #179 (z kotwicami CR 508.3d / claims dokumentów / testami behaviouralnymi). Nie dowodzi poprawności całego katalogu kart ani wszystkich interakcji — w szczególności nie weryfikowała się od nowa legalność i wycena 702 kart poza diffem.
