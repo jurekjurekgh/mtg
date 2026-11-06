@@ -9090,3 +9090,41 @@ nowych gałęzi wyceny. Grzechotka remisów: allowlista Wrap in Flames przepisan
 z numeru tury (kruche) na KLASĘ — warianty różnią się wyłącznie liczbą celów,
 a dodatkowy cel jest funkcjonalnie pusty (1 obrażenie na tapniętym 5/5).
 
+
+## M463 — Batch 72: purpose mana, graveyard-departure triggers, live static threshold (2026-11-06)
+
+**Scope:** collection 635–644, ten cards. Card definitions, costs, art IDs and
+plans mirror B0/B1 snapshots; no `support.limitations` and no card-name logic
+in the engine.
+
+- **Purpose-restricted mana:** common predicate/serialized pool units for
+  `enchantment_spell`, `unlock_door`, and `turn_face_up`, retaining legacy
+  artifact-only Powerstone semantics. Source offers, cost planning, colored and
+  generic payment, direct manifest/cloak actions, morph turn-up, player view
+  and heuristic spend valuation use the same purpose boundary. Door purpose is
+  reserved generically; no door card was added.
+- **Cards leaving a graveyard:** a central zone-move fact records a card object
+  leaving its owner's graveyard for any other zone. Tokens do not count; the
+  per-turn fact resets, fingerprints, and is rechecked both when an intervening-if
+  trigger fires and when it resolves. `attacks_you_control` scans controlled
+  permanents once per declared attacker, so enchantment triggers are supported.
+- **Vortex Runner:** one live static-condition predicate now guards the
+  conditional `cantBeBlocked` combat restriction; attack/view valuation and
+  power use the same current-state threshold. Boundary: attack score −10 at
+  seven lands vs pass 0; +6 at eight and nine.
+- **PMSSB-87:** no new heuristic weights. Creeping Peeper's qualifying
+  enchantment cast scores +78.30 vs pass 0, while the same restricted unit does
+  not offer an ordinary sorcery. Living History's trigger target scores 64 for
+  the 3/3 vs 59 for the 0/4. Three temporary mutations each turned the matching
+  PMSSB pin RED.
+- **B6 decks:** generator produced 32 files; Forgotten Realms reached 30
+  nonland cards and split into BR/WUG 15-card halves. All ten owner plans are
+  represented once, and README counts agree with generated files.
+
+**Evidence:** `test/real-cards-batch72.test.js` (12),
+`test/audyt-pmssb72-batch72.test.js` (3), `test/repo-decks.test.js` plus
+related catalog/deck tests. Gates: fast **10,051/10,051**, slow **268/268**,
+build **78 modules / 5,755.8 kB**, quick benchmark **672 games / 0 unfinished**
+(heuristic 80.7% vs aggro, 97.6% vs random; changed deck sample, not a strict
+before/after comparison). Stage plan and evidence are linked from
+`docs/plans/PLAN_2026-11-06-batch72-kolekcja-635-644.md` and the B2–B6 reports.

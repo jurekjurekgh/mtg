@@ -20,6 +20,15 @@
 > nie trafiają do repozytorium".
 
 
+## 2026-11-06 — batch 72: mechaniki, wycena, talie i bramy
+
+- Kolekcja 635–644 (10 kart) wdrożona wyłącznie z planów zatwierdzonych w B0 i snapshotów/rulingów Scryfall z B1; B2 inwentarz: `docs/plans/PLAN_2026-11-06b-batch72-rule-inventory.md`. B3 generyczne ścieżki: purpose-restricted mana dla enchantment/door/turn-face-up, per-player fakt wyjścia karty z grobu, warunek static/live dla Vortex Runner. B4 testy legal/illegal i cztery dowiązania; bez wyjątków po nazwie karty.
+- B5 PMSSB-87: brak nowych wag; Peeper `{U}` → Living History **78.30 vs pass 0**, ordinary sorcery bez oferty; Vortex Runner attack **−10 / +6** przy 7/8 landach; Living History trigger: cel 3/3 **64** vs 0/4 **59**. Trzy mutacje (purpose, scan triggera, warunek static) zrobiły odpowiednie piny RED. Plan/sonda/piny: `PLAN_2026-11-06c-pmssb72.md`, `tools/pmssb72-batch72-sonda.mjs`, `test/audyt-pmssb72-batch72.test.js`.
+- B6 wyłącznie przez generator: 10 kart trafiło do planowych talii; 30 kart nielandowych Forgotten Realms wywołało przewidziany podział BR/WUG. README, benchmark help, testy i narzędzia zaktualizowane na nazwy 32 wygenerowanych talii. Raport: `docs/plans/PLAN_2026-11-06d-batch72-deck-report.md`.
+- Bramy B7: fast **10,051/10,051**, slow **268/268**, build **78 modułów / 5,755.8 kB**; quick benchmark **672 mecze, 0 niedokończonych**, heuristic 80.7% vs aggro / 97.6% vs random. Próbka talii zmieniła się po podziale, więc nie przedstawiamy win-rate jako ścisłego before/after.
+- Etapy B3–B6 wypchnięte kolejno na `arena/5d931b5a-mtg`: `322cc6b`, `2ac2ff4`, `11987b1`, `29b1143`. PR pozostaje otwarty i niescalony. Plan B0–B7: `docs/plans/PLAN_2026-11-06-batch72-kolekcja-635-644.md`; handoff: `docs/setup/HANDOFF_2026-11-06-batch72.md`.
+
+
 ## 2026-11-05 — modale wyboru: hover zamiast klikania w nazwę karty
 
 - Właściciel: klik w nazwę karty w modalu wyboru otwierał pełny ekran; zamiast tego najechanie kursorem pokazuje hover z ilustracją (ten sam co na stole/cmentarzu), klikanie usunięte. Na dotyku tap w nazwę nadal otwiera pełny ekran; log, stos i kafle stołu bez zmian.

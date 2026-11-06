@@ -4210,3 +4210,13 @@ Legacy Powerstone/artifact-only guards and payment paths remain covered by the
 existing full suite; face-up purposes are covered for direct manifest/cloak and
 morph payment in the batch-72 engine pins. No door card or unrelated card logic
 was added.
+
+### Bramy B7 — Batch 72 (2026-11-06)
+
+`node tools/run-tests.mjs fast`: **10,051/10,051**; `node tools/run-tests.mjs
+slow`: **268/268**; `npm run build`: **78 modułów / 5,755.8 kB**.
+Quick benchmark: **672 meczów / 0 niedokończonych / 199.3 s** on the current
+six-deck quick sample (includes `forgotten-realms-br` after the ADR 0024 split):
+heuristic **80.7% vs aggro** (271/336), **97.6% vs random** (328/336).
+These percentages are recorded against the current rotated deck sample, not
+compared as a strict before/after win-rate because the deck corpus changed.
