@@ -330,6 +330,7 @@ export function stateFingerprint(state) {
       ? { playerId: state.pendingUndercityRoute.playerId, fromRoom: state.pendingUndercityRoute.fromRoom }
       : null,
     descendedThisTurn: { ...(state.descendedThisTurn ?? {}) },
+    cardsLeftGraveyardThisTurn: { ...(state.cardsLeftGraveyardThisTurn ?? {}) },
     abilityActivatedThisTurn: { ...(state.abilityActivatedThisTurn ?? {}) },
     triggerFiredThisTurn: { ...(state.triggerFiredThisTurn ?? {}) },
     delayedTriggers: (state.delayedTriggers ?? []).map((entry) => ({ ...entry })),

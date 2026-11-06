@@ -413,7 +413,7 @@ export function hasEnduringStory(state, playerId) {
  * przeliczana przy każdym odczycie statystyk (Evangel of Synthesis: „as long
  * as you've drawn two or more cards this turn").
  */
-function staticConditionHolds(state, object, condition) {
+export function staticConditionHolds(state, object, condition) {
   if (!condition) return true;
   // Crew Captain: „has indestructible as long as it entered this turn".
   // Flaga enteredOnTurn (numer tury wejścia) — NIE summoning sickness:
@@ -515,6 +515,11 @@ function staticConditionHolds(state, object, condition) {
     return countGraveyardCardTypes(state, object.controllerId, CARD_TYPES) >= 4;
   }
   return false;
+}
+
+/** Czy statyczna zdolność działa w aktualnym stanie (jedno źródło warunków). */
+export function staticAbilityIsActive(state, object, ability) {
+  return ability?.type === 'static' && staticConditionHolds(state, object, ability.condition);
 }
 
 /**

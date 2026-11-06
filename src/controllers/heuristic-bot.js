@@ -33,6 +33,7 @@ import { coloredPipsOf, matchColorRequirements, unitCoversRequirement } from '..
 import { autoManaUnits as autoManaJednostki, restrictedManaUnits as ograniczoneManaJednostki, castBeyondAutoMana as castNieopłacalnyAuto, hasManaActivationOffer as castFiltersApplicable, triggerPaymentBeyondAuto } from './mana-offer-guards.js';
 import { POISON_LOSS_LIMIT } from '../engine/state-based.js';
 import { expandManaPool } from '../engine/resources.js';
+import { availablePurposeRestrictedUnits, purposeAllowsSpendOnly } from '../engine/mana-restrictions.js';
 import { TURN_STEPS } from '../engine/turn.js';
 import { COMMAND_TYPES } from '../protocol/types.js';
 import { createCardRegistry } from '../cards/card-data.js';
@@ -3727,7 +3728,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     const spent = Math.max(0, cmd?.cost ?? card?.manaCost ?? 0);
     if (spent === 0) return 0;
     const colors = new Set();
-    for (const unit of manaUnitsOfView(view, { artifactSpell: (card?.types ?? []).includes('Artifact') })) {
+    for (const unit of manaUnitsOfView(view, {
+      artifactSpell: (card?.types ?? []).includes('Artifact'),
+      enchantmentSpell: (card?.types ?? []).includes('Enchantment'),
+    })) {
       for (const color of unit ?? []) colors.add(color);
     }
     return P.convergeDamagePerColor * Math.min(spent, colors.size);
@@ -6334,17 +6338,23 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
    * generic) — DOKŁADNIE ten kształt, co `expandManaPool` i `matchColorRequirements`
    * w silniku (L41/L48: jedno rozwiązanie, nie druga arytmetyka).
    */
-  const manaUnitsOfView = (view, { artifactSpell = false, landsOnly = false } = {}) => {
+  const manaUnitsOfView = (view, {
+    artifactSpell = false, enchantmentSpell = false, turnFaceUp = false,
+    unlockDoor = false, castingSpell = true, landsOnly = false,
+  } = {}) => {
     const me = view.players?.find((p) => p.id === view.playerId) ?? {};
+    const purpose = {
+      castingSpell,
+      artifactSpell, enchantmentSpell, turnFaceUp, unlockDoor,
+    };
     // K: `landsOnly` = WYŁĄCZNIE nietapnięte lądy — mana, która przetrwa do tury
     // przeciwnika (pula wyparowuje na końcu kroku, CR 500.5, a lądy zostają
     // nietknięte, bo bot ich nie tapał). Potrzebne do decyzji „czy odroczenie rzutu
     // karty z flash jest darmowe”.
     const units = landsOnly ? [] : [
       ...expandManaPool(me.manaPool ?? {}),
-      // M201/M214: pula ograniczona drukiem jest dla celu nie-artefaktowego
-      // niewidoczna — ta sama bramka co `restrictedManaBlocked` w resources.js.
-      ...(artifactSpell ? expandManaPool(me.restrictedPool ?? {}) : []),
+      ...(purposeAllowsSpendOnly('artifact', purpose) ? expandManaPool(me.restrictedPool ?? {}) : []),
+      ...availablePurposeRestrictedUnits(me.purposeRestrictedPool ?? {}, purpose).map((entry) => entry.colors),
     ];
     for (const o of view.zones?.battlefield ?? []) {
       if (!o || o.controllerId !== view.playerId || o.tapped || o.detained || o.cantActivateAbilities) continue;
@@ -6606,8 +6616,8 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
    * Produkcja ograniczona drukiem (`spendOnly`) trafia do jednostek tylko dla
    * celu, na który wolno ją wydać. `null` = kosztu nie da się opłacić.
    */
-  const unitsAfterManaAbility = (view, effect, cost, artifactSpell, source = null) => {
-    const left = manaUnitsOfView(view, { artifactSpell });
+  const unitsAfterManaAbility = (view, effect, cost, purpose, source = null) => {
+    const left = manaUnitsOfView(view, purpose);
     // B54/s4008 (lustro `countedLand`): mana NIETAPNIĘTEGO LĄDU jest już
     // policzona w jednostkach (auto-płatność silnika tapuje lądy sama), więc
     // produkcja tej samej zdolności REPLACUJE jego jednostkę, a nie dokłada
@@ -6642,8 +6652,8 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       generic -= 1;
     }
     if (generic > 0) return null;
-    const restricted = effect?.spendOnly === 'artifact' && !artifactSpell;
-    const amount = restricted ? 0 : (effect?.amount ?? 0);
+    const amount = purposeAllowsSpendOnly(effect?.spendOnly ?? null, purpose)
+      ? (effect?.amount ?? 0) : 0;
     for (let i = 0; i < amount; i += 1) left.push([...(effect?.colors ?? [])]);
     return left;
   };
@@ -11253,7 +11263,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     if (!Number.isInteger(cost) || cost <= 0) return false;
     // Również już wytworzona mana w puli może umożliwiać rzut tu i teraz.
     // Nie wolno jej pomijać tylko dlatego, że na stole nie ma danego koloru.
-    if (canCastWithUnits(manaUnitsOfView(view, { artifactSpell: (def?.types ?? []).includes('Artifact') }), card)) return false;
+    if (canCastWithUnits(manaUnitsOfView(view, {
+      artifactSpell: (def?.types ?? []).includes('Artifact'),
+      enchantmentSpell: (def?.types ?? []).includes('Enchantment'),
+    }), card)) return false;
     const units = [];
     for (const o of view.zones?.battlefield ?? []) {
       if (o.controllerId !== view.playerId || (o.kind !== 'land' && !(o.types ?? []).includes('Land'))) continue;
@@ -11681,7 +11694,9 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // oferta w game-state (CR 701.58b/701.40b: „paying its mana cost").
         const uncoverCost = covered.cloakTurnUpCost ?? covered.manifestTurnUpCost
           ?? coveredDef.manaCost ?? 0;
-        if (uncoverCost <= 0 || ownOpenMana(view) < uncoverCost) return finish(NEVER);
+        const turnUpUnits = manaUnitsOfView(view, { castingSpell: false, turnFaceUp: true });
+        if (uncoverCost <= 0 || turnUpUnits.length < uncoverCost
+          || !matchColorRequirements(turnUpUnits, coloredPipsOf(covered.cardId, 0))) return finish(NEVER);
         const bodyGain = Math.max(0, (coveredDef.power ?? 0) - 2) * 2
           + Math.max(0, (coveredDef.toughness ?? 0) - 2);
         const keywordBonus = Math.min(6, (coveredDef.keywords ?? []).length * 2);
@@ -15796,23 +15811,26 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             // E6/A1: kandydaci po TIMINGU rzucania (manaUnlockCandidates) —
             // sorcery/stwór w cudzym kroku nadal nie „odblokowuje" (CR 500.5).
             const unlockUnitsCache = new Map();
-            const unitsBefore = (artifactSpell) => {
-              const key = artifactSpell ? 'art' : 'std';
-              if (!unlockUnitsCache.has(key)) unlockUnitsCache.set(key, manaUnitsOfView(view, { artifactSpell }));
+            const purposeForCard = (card) => ({
+              castingSpell: true,
+              artifactSpell: (card?.types ?? []).includes('Artifact'),
+              enchantmentSpell: (card?.types ?? []).includes('Enchantment'),
+            });
+            const unitsBefore = (purpose) => {
+              const key = `before:${purpose.artifactSpell}:${purpose.enchantmentSpell}`;
+              if (!unlockUnitsCache.has(key)) unlockUnitsCache.set(key, manaUnitsOfView(view, purpose));
               return unlockUnitsCache.get(key);
             };
-            const unitsAfter = (artifactSpell) => {
-              const key = artifactSpell ? 'art:after' : 'std:after';
+            const unitsAfter = (purpose) => {
+              const key = `after:${purpose.artifactSpell}:${purpose.enchantmentSpell}`;
               if (!unlockUnitsCache.has(key)) {
-                unlockUnitsCache.set(key, unitsAfterManaAbility(view, effect, ability?.cost, artifactSpell, source));
+                unlockUnitsCache.set(key, unitsAfterManaAbility(view, effect, ability?.cost, purpose, source));
               }
               return unlockUnitsCache.get(key);
             };
             const unlockedCards = manaUnlockCandidates(view).filter((o) => {
-              // Cel wydania ograniczonej many (M201): to samo kryterium co
-              // `spellManaPurpose` w silniku — typ Artifact.
-              const artifactSpell = (o.types ?? []).includes('Artifact');
-              const after = unitsAfter(artifactSpell);
+              const purpose = purposeForCard(o);
+              const after = unitsAfter(purpose);
               if (!after) return false;
               // PMSSB-32/A2 (L48 — „oferta = płatność", klasa L41): jeśli
               // silnik JUŻ oferuje rzut tej karty, to auto-płatność przy
@@ -15827,7 +15845,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
               // Dowód PRZED: sonda C2 (Latarnia + Las + karta {1}{G}) dawała
               // aktywacji +6, choć `cast_permanent` był już w ofertach (63,9).
               if (castOfferedNow(view, o)) return false;
-              if (canCastWithUnits(unitsBefore(artifactSpell), o)) return false;
+              if (canCastWithUnits(unitsBefore(purpose), o)) return false;
               return canCastWithUnits(after, o);
             });
             let unlocksSomething = unlockedCards.length > 0;

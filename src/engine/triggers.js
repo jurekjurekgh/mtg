@@ -165,6 +165,11 @@ function conditionHolds(trigger, state, sourceObject = null, eventData = {}) {
   if (condition.descendedThisTurn) {
     return Boolean((state.descendedThisTurn ?? {})[sourceObject?.controllerId]);
   }
+  // Living History (CR 603.4): intervening-if checked both when the attack
+  // trigger would fire and when it resolves. Fact is keyed by graveyard owner.
+  if (condition.cardLeftGraveyardThisTurn) {
+    return Boolean((state.cardsLeftGraveyardThisTurn ?? {})[sourceObject?.controllerId]);
+  }
   // „if you control a creature with a counter on it" (CR 603.4 — intervening
   // if; Delta Bloodflies). Warunek sprawdzany jest przy odpaleniu triggera.
   if (condition.controlsCreatureWithCounter) {
@@ -4167,6 +4172,18 @@ function processTriggersScan(state, recentEvents) {
       for (const attackerId of ev.attackerIds ?? []) {
         const attacker = state.objects.get(attackerId);
         if (!attacker || attacker.zone !== 'battlefield') continue;
+        // „Whenever you attack" may live on any controlled permanent (for
+        // example an enchantment). It fires for each declared attacker under
+        // its controller. The separate `attacks` event below remains specific
+        // to abilities on the attacking object.
+        for (const source of state.objects.values()) {
+          if (source.zone !== 'battlefield' || source.controllerId !== attacker.controllerId) continue;
+          for (const ability of effectiveAbilities(source)) {
+            if (ability?.trigger?.event === 'attacks_you_control') tryFire(state, ability, source, [], events, {
+              attackerIds: [...(ev.attackerIds ?? [])],
+            });
+          }
+        }
         for (const ability of effectiveAbilities(attacker)) {
           // Kontekst zdarzenia dla triggerów ataku: lista współdeklarowanych
           // atakujących ORAZ wynik testu „z innym atakującym o większej sile"

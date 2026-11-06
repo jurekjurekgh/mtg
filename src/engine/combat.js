@@ -1,7 +1,7 @@
 import { event } from '../protocol/types.js';
 import { addPoisonCounters, changeLife } from './players.js';
 import { addCounter } from './counters.js';
-import { blockingRequirementCount, hasCreatureType, combatDamageAmount, combatDamageByToughness, preventDamageWithShieldCounter, preventDamageByRemovingCounters, removeLoyaltyForDamage, attachmentRestrictions, creatureCantBlock, effectiveAbilities, effectiveColors, effectiveKeywords, effectivePower, effectiveSubtypes, effectiveToughness, isDamagePrevented, isDamagePreventedByProtection, isProtectedFromSource, markDamage, markDealtDamageThisTurn, preventDamageTo, tapObject } from './permanents.js';
+import { blockingRequirementCount, hasCreatureType, combatDamageAmount, combatDamageByToughness, preventDamageWithShieldCounter, preventDamageByRemovingCounters, removeLoyaltyForDamage, attachmentRestrictions, creatureCantBlock, effectiveAbilities, effectiveColors, effectiveKeywords, effectivePower, effectiveSubtypes, effectiveToughness, isDamagePrevented, isDamagePreventedByProtection, isProtectedFromSource, markDamage, markDealtDamageThisTurn, staticAbilityIsActive, preventDamageTo, tapObject } from './permanents.js';
 import { attachmentsAttachedTo } from './attachments.js';
 import { effectiveProtectionFromColors } from './attachments.js';
 
@@ -1817,7 +1817,8 @@ function blockRestrictionError(state, attacker, blocker) {
   // Batch 68 (Neurok Invisimancer): STAŁA zdolność „This creature can't be blocked.\"
   // — statyczny znacznik na permanencie (zaklęcie „can't be blocked this turn\"
   // to osobny znacznik `cantBeBlockedUntilTurn`, wyżej).
-  if (effectiveAbilities(attacker).some((ability) => ability?.type === 'static' && ability.cantBeBlocked === true)) {
+  if (effectiveAbilities(attacker).some((ability) => staticAbilityIsActive(state, attacker, ability)
+    && ability.cantBeBlocked === true)) {
     return 'Stwora, który nie może być blokowany, nie można blokować';
   }
   // Intimidate (CR 702.13, M174/D — Predator's Gambit): atakujący może być

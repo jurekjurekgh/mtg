@@ -3116,6 +3116,16 @@ export const REAL_CARDS = Object.freeze([
     imageUri: 'https://cards.scryfall.io/large/front/f/2/f22410b3-5c0b-4282-9b0b-5ba61229b6e7.jpg?1783906786',  // ttdm
     support: { status: 'token', limitations: ['token — nie można umieścić w talii; tworzony przez endure (Kin-Tree Nurturer)'] },
   }),
+  // Spirit token Living History (SOS): 2/2 czerwono-biały.
+  defineCard({
+    id: 'token_spirit_red_white', name: 'Spirit', set: null,
+    types: ['Creature', 'Token'], subtypes: ['Spirit'], colors: ['R', 'W'],
+    power: 2, toughness: 2, manaCost: 0,
+    // Scryfall Spirit token artwork reused for this red-white generated token;
+    // the Living History snapshot does not include the associated token print.
+    imageUri: 'https://cards.scryfall.io/large/front/f/2/f22410b3-5c0b-4282-9b0b-5ba61229b6e7.jpg?1783906786',
+    support: { status: 'token', limitations: ['token — nie można umieścić w talii; tworzony przez Living History'] },
+  }),
   // Token Trostani Discordant (CLU): 1/1 biały Soldier z lifelink.
   defineCard({
     id: 'token_soldier_lifelink', name: 'Soldier', set: null,
@@ -15027,6 +15037,176 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     notes: ['delirium to słowo zdolności (CR 207.2c): warunek bramkuje WYŁĄCZNIE drugie zdanie, pierwsze działa zawsze; próg liczony przy rozstrzygnięciu (CR 608.2)'],
   }),
 
+  // 635. Feral Ridgewolf (ISD) {2}{R} 1/2 — trample, pump {1}{R}.
+  defineCard({
+    id: 'feral-ridgewolf', name: 'Feral Ridgewolf', set: 'ISD',
+    types: ['Creature'], subtypes: ['Wolf'], colors: ['R'],
+    power: 1, toughness: 2, manaCost: 3, keywords: ['trample'],
+    oracleText: 'Trample\n{1}{R}: This creature gets +2/+0 until end of turn.',
+    imageUri: 'https://cards.scryfall.io/large/front/7/8/78c66cc0-cb0f-4daf-8141-0923ad46a834.jpg',
+    abilities: [createAbility({
+      type: ABILITY_TYPE.activated,
+      cost: { mana: 2, colors: ['R'] },
+      effect: { type: 'pump', power: 2, toughness: 0 },
+    })],
+    artId: 635, plan: 'Wiedźmin',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 636. Creeping Peeper (DSK) {1}{U} 2/1 — mana tylko na enchantment,
+  //      odblokowanie drzwi lub obrót permanenta face-up.
+  defineCard({
+    id: 'creeping-peeper', name: 'Creeping Peeper', set: 'DSK',
+    types: ['Creature'], subtypes: ['Eye'], colors: ['U'],
+    power: 2, toughness: 1, manaCost: 2,
+    oracleText: '{T}: Add {U}. Spend this mana only to cast an enchantment spell, unlock a door, or turn a permanent face up.',
+    imageUri: 'https://cards.scryfall.io/large/front/7/a/7ad59368-1335-4d8e-a254-ccd889933e57.jpg',
+    abilities: [createAbility({
+      type: ABILITY_TYPE.activated,
+      cost: { tap: true },
+      effect: {
+        type: 'add_mana', amount: 1, colors: ['U'],
+        spendOnly: ['enchantment_spell', 'unlock_door', 'turn_face_up'],
+      },
+    })],
+    artId: 636, plan: 'Duskmourn',
+    support: { status: 'supported', limitations: [] },
+    notes: ['mana restriction is a set of allowed payment purposes; unlock_door is represented generically for future Door actions'],
+  }),
+
+  // 637. Vortex Runner (STX) {2}{U} 2/3 — at least eight lands: +1/+0,
+  //      can't be blocked.
+  defineCard({
+    id: 'vortex-runner', name: 'Vortex Runner', set: 'STX',
+    types: ['Creature'], subtypes: ['Human', 'Wizard'], colors: ['U'],
+    power: 2, toughness: 3, manaCost: 3,
+    oracleText: "As long as you control eight or more lands, this creature gets +1/+0 and can't be blocked.",
+    imageUri: 'https://cards.scryfall.io/large/front/b/a/bab4a68d-5d26-42d8-bc51-15e3c1f95ebe.jpg',
+    abilities: [createAbility({
+      type: ABILITY_TYPE.static,
+      condition: { minLandsControlled: 8 },
+      pump: { power: 1, toughness: 0 },
+      cantBeBlocked: true,
+    })],
+    artId: 637, plan: 'Arcavios',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 638. Kraken Hatchling (M13) {U} 0/4 — vanilla.
+  defineCard({
+    id: 'kraken-hatchling', name: 'Kraken Hatchling', set: 'M13',
+    types: ['Creature'], subtypes: ['Kraken'], colors: ['U'],
+    power: 0, toughness: 4, manaCost: 1,
+    oracleText: '',
+    imageUri: 'https://cards.scryfall.io/large/front/5/9/59a50590-9091-4632-bf8c-792e1e0a75a8.jpg',
+    artId: 638, plan: 'Wiedźmin',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 639. Open the Gates (RNA) {G} — basic land OR Gate to hand.
+  defineCard({
+    id: 'open-the-gates', name: 'Open the Gates', set: 'RNA',
+    types: ['Sorcery'], colors: ['G'], manaCost: 1,
+    oracleText: 'Search your library for a basic land card or Gate card, reveal it, put it into your hand, then shuffle.',
+    imageUri: 'https://cards.scryfall.io/large/front/f/f/ff326c57-accb-4b75-9bc9-b5ef1a85f38d.jpg',
+    spell: {
+      timing: 'sorcery', targets: [],
+      effects: [{
+        type: 'search_library_to_hand',
+        qualifier: { anyOf: [{ types: ['Basic', 'Land'] }, { subtypes: ['Gate'] }] },
+      }],
+    },
+    artId: 639, plan: 'Bloomburrow',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 640. Living History (SOS) {1}{R} — Spirit ETB; qualifying attack trigger.
+  defineCard({
+    id: 'living-history', name: 'Living History', set: 'SOS',
+    types: ['Enchantment'], colors: ['R'], manaCost: 2,
+    oracleText: 'When this enchantment enters, create a 2/2 red and white Spirit creature token.\nWhenever you attack, if a card left your graveyard this turn, target attacking creature gets +2/+0 until end of turn.',
+    imageUri: 'https://cards.scryfall.io/large/front/2/0/2028792c-fd60-40d4-bff7-3b82dbe1ffb5.jpg',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield' },
+        effect: {
+          type: 'create_token', cardId: 'token_spirit_red_white', name: 'Spirit',
+          kind: 'creature', power: 2, toughness: 2, colors: ['R', 'W'],
+          types: ['Creature'], subtypes: ['Spirit'],
+        },
+      }),
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: {
+          event: 'attacks_you_control',
+          condition: { cardLeftGraveyardThisTurn: true },
+          requiresTarget: { type: 'attacking_creature' },
+        },
+        effect: { type: 'pump', power: 2, toughness: 0 },
+      }),
+    ],
+    artId: 640, plan: 'Arcavios',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 641. Banishing Light (EOE) {2}{W} — linked exile until this leaves.
+  defineCard({
+    id: 'banishing-light', name: 'Banishing Light', set: 'EOE',
+    types: ['Enchantment'], colors: ['W'], manaCost: 3,
+    oracleText: 'When this enchantment enters, exile target nonland permanent an opponent controls until this enchantment leaves the battlefield.',
+    imageUri: 'https://cards.scryfall.io/large/front/c/4/c45f11cd-a0aa-4d14-aa21-57f0969f3e2b.jpg',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield', requiresTarget: { type: 'nonland_permanent', opponentControls: true } },
+        effect: { type: 'exile_nonland_permanent_linked' },
+      }),
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'leaves_battlefield' },
+        effect: { type: 'return_exiled_to_battlefield' },
+      }),
+    ],
+    artId: 641, plan: 'Kamigawa',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 642. Pheres-Band Centaurs (THS) {4}{G} 3/7 — vanilla.
+  defineCard({
+    id: 'pheres-band-centaurs', name: 'Pheres-Band Centaurs', set: 'THS',
+    types: ['Creature'], subtypes: ['Centaur', 'Warrior'], colors: ['G'],
+    power: 3, toughness: 7, manaCost: 5,
+    oracleText: '',
+    imageUri: 'https://cards.scryfall.io/large/front/2/1/2168fcf4-cf87-4ab8-9710-6ec672750a9a.jpg',
+    artId: 642, plan: 'Theros',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 643. Shining Aerosaur (XLN) {4}{W} 3/4 — flying.
+  defineCard({
+    id: 'shining-aerosaur', name: 'Shining Aerosaur', set: 'XLN',
+    types: ['Creature'], subtypes: ['Dinosaur'], colors: ['W'],
+    power: 3, toughness: 4, manaCost: 5, keywords: ['flying'],
+    oracleText: 'Flying',
+    imageUri: 'https://cards.scryfall.io/large/front/8/e/8e900d0d-6f35-4e5d-9365-6ade227d218d.jpg',
+    artId: 643, plan: 'Ixalan',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 644. Lich's Caress (M19) {3}{B}{B} — destroy creature, then gain 3 life.
+  defineCard({
+    id: 'lichs-caress', name: "Lich's Caress", set: 'M19',
+    types: ['Sorcery'], colors: ['B'], manaCost: 5,
+    oracleText: 'Destroy target creature. You gain 3 life.',
+    imageUri: 'https://cards.scryfall.io/large/front/3/2/32bd3acd-aa62-4708-9336-e3430fd0e541.jpg',
+    spell: {
+      timing: 'sorcery', targets: [{ type: 'creature' }],
+      effects: [{ type: 'destroy_permanent' }, { type: 'gain_life', amount: 3 }],
+    },
+    artId: 644, plan: 'Forgotten Realms',
+    support: { status: 'supported', limitations: [] },
+  }),
 ]);
 
 /**

@@ -7,7 +7,7 @@ import { command, event } from '../protocol/types.js';
 import { initialTurn, jumpToStep, nextTurnStep } from './turn.js';
 import { createRng } from './rng.js';
 import { assertStateInvariants } from './invariants.js';
-import { initializeResources, beginTurn, castAuraSpell, castPermanent, convokePaymentVariants, improvisePaymentVariants, legalAuraCasts, playLand, producibleMana, tapLandForMana, canPayColoredCost, canPayColoredCostForOffer, spendMana, spellManaPurpose, legalAuraCastsForObject, treasureManaAvailable, canPayMadnessCost } from './resources.js';
+import { initializeResources, beginTurn, castAuraSpell, castPermanent, convokePaymentVariants, improvisePaymentVariants, legalAuraCasts, playLand, producibleMana, tapLandForMana, canPayColoredCost, canPayColoredCostForOffer, spendMana, spellManaPurpose, turnFaceUpManaPurpose, legalAuraCastsForObject, treasureManaAvailable, canPayMadnessCost } from './resources.js';
 import { MANA_COSTS } from '../cards/mana-costs-data.js';
 import { RIOT_MODES, riotCountOf, queueRiotEntry, applyRiotOnEntry } from './riot.js';
 import { parseManaCost, coloredPipsOf, matchColorRequirements } from './mana-cost.js';
@@ -29,7 +29,7 @@ function hasColorForCardId(state, playerId, cardId, phyrexianPay = 0, purpose = 
 import { attackerBlockPowerRestriction, blockCandidatePool, blockSlotsFor, cantBeBlockedFromEquipment, declareAttackers, declareBlockers, attackerSeedDeclarations, blockerSeedAssignments, combatDeclarationView, mandatoryAttackerIds, mandatoryBlockerIds, minimalMandatoryBlocks, rememberClosedCombat, resolveCombatDamage, buildDamageAssignmentView, buildDefaultDamageAssignments, validateDamageAssignment, validateBlockerDamageAssignment, staticAttackPreventionOf } from './combat.js';
 import { optionalSpellEffectChoices, castSpell, castCleave, legalSpellCasts, legalCleaveCasts, plotCard, suspendCard, warpCard, resolveTopOfStack, resolveRiotEntry, finishPendingSpell, resumeSuspendedSpell, castEscape, resolveEscapeExile, legalEscapeCasts, declareDelveCast, resolveDelveExile, delveExileLimit, affordableDelveCounts, castFlashback, legalFlashbackCasts, castAdventure, legalAdventureCasts, castAdventureCreature, legalAdventureCreatureCasts, effectiveSpellManaCost, legalTargetCandidates, validateTargets, castMadnessSpell, legalModeCasts, legalXCostCasts, legalFireballCasts, validateVariableTargets, validateFireballTargets, legalTargetCombos, validateDamageDivision, dividedDamageDivisions } from './spells.js';
 import { legalActivatedAbilities, legalManaAbilities, manualManaOfferUnits, activateAbility, performActivation } from './abilities.js';
-import { attachmentRestrictions, deathZoneFor, wardAmountOf, clearMarkedDamage, clearStatModifiers, creatureCantBlock, effectiveAbilities, effectiveKeywords, effectivePower, effectiveToughness, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, grantedStatBonus, hasTemporaryCantBlock, markDamage, modifyStats, transformedCharacteristics, turnFaceUp, untapObject, activatableAbilities, entersTappedNow } from './permanents.js';
+import { attachmentRestrictions, deathZoneFor, wardAmountOf, clearMarkedDamage, clearStatModifiers, creatureCantBlock, effectiveAbilities, effectiveKeywords, effectivePower, effectiveToughness, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, grantedStatBonus, hasTemporaryCantBlock, staticAbilityIsActive, markDamage, modifyStats, transformedCharacteristics, turnFaceUp, untapObject, activatableAbilities, entersTappedNow } from './permanents.js';
 import { addCounter, removeCounter, hasCounter } from './counters.js';
 import { runStateBasedActions, sacrificeFinishedSagas, stateBasedActionsOpen, tryRegenerate } from './state-based.js';
 import { applyDayNightAtTurnStart, applyDeferredTriggerEffects, resolveDelayedReanimate, graveyardCardTypeCount, processTriggers, queueTriggerToStack, flushDeferredResolutionTriggers, fireWardTriggers, triggerTargetDecisionPending, legalTriggerTargetCandidates, triggerTargetCandidates, triggerConditionHolds, triggerSourceZoneResolvable, eventIsCreatureDeath } from './triggers.js';
@@ -347,6 +347,9 @@ export function createGameState({ seed, players }) {
     // card wpadł do grobu gracza w bieżącej turze (z dowolnej strefy).
     // Zerowane przy zmianie tury, jak cardsDrawnThisTurn.
     descendedThisTurn: {},
+    // „If a card left your graveyard this turn” (Living History): per-owner
+    // fact, reset at the start of each turn and marked at the central zone mover.
+    cardsLeftGraveyardThisTurn: {},
     // Kolejka oczekujących decyzji backup (CR 702.165): źródło stwora, który
     // wszedł, kontroler i parametry. Blokuje grę do komend resolve_backup
     // (po jednej na wpis — jak pendingScry, ale decyzje mogą się kolejkować,
@@ -841,6 +844,7 @@ function beginTurnContinuation(state, events, { keepTappedIds = [] } = {}) {
   // »Descended this turn« (Canonized in Blood) — znacznik zeruje się
   // z nową turą, jak licznik dobrań.
   state.descendedThisTurn = {};
+  state.cardsLeftGraveyardThisTurn = {};
   state.creatureDiedThisTurn = false;
   state.landEnteredThisTurn = {};
   state.damageTakenByPlayerThisTurn = {};
@@ -6556,6 +6560,7 @@ export function execute(state, input) {
           // M214: pula many ograniczonej drukiem znika razem z resztą puli
           // (CR 500.4) — bez tego osierocone jednostki zalegałyby w księgowaniu.
           player.restrictedPool = {};
+          player.purposeRestrictedPool = {};
           player.treasureMana = 0;
           // M201 (znalezisko #3): licznik many ograniczonej znika razem z pulą
           // (CR 500.4) — stały licznik blokowałby płatności w kolejnych krokach.
@@ -6752,9 +6757,9 @@ export function execute(state, input) {
     if (object.controllerId !== cmd.playerId) return reject('manifest_not_your_permanent');
     const cardId = object.cardId;
     const cost = object.manifestTurnUpCost ?? 0;
-    const purpose = spellManaPurpose(object);
+    const purpose = turnFaceUpManaPurpose();
     if (producibleMana(state, cmd.playerId, null, purpose, coloredPipsOf(cardId, 0)) < cost) return reject('manifest_turn_up_insufficient_mana');
-    if (!canPayColoredCost(state, cmd.playerId, coloredPipsOf(cardId, 0))) return reject('manifest_turn_up_no_colored_source');
+    if (!canPayColoredCost(state, cmd.playerId, coloredPipsOf(cardId, 0), null, purpose)) return reject('manifest_turn_up_no_colored_source');
     const before = state.events.length;
     spendMana(state, cmd.playerId, cost, coloredPipsOf(cardId, 0), purpose);
     // M322 (audyt PR #102): znaczniki manifestu zdejmują się w `turnFaceUp`
@@ -6778,9 +6783,9 @@ export function execute(state, input) {
     if (object.controllerId !== cmd.playerId) return reject('cloak_not_your_permanent');
     const cardId = object.cardId;
     const cost = object.cloakTurnUpCost ?? 0;
-    const purpose = spellManaPurpose(object);
+    const purpose = turnFaceUpManaPurpose();
     if (producibleMana(state, cmd.playerId, null, purpose, coloredPipsOf(cardId, 0)) < cost) return reject('cloak_turn_up_insufficient_mana');
-    if (!canPayColoredCost(state, cmd.playerId, coloredPipsOf(cardId, 0))) return reject('cloak_turn_up_no_colored_source');
+    if (!canPayColoredCost(state, cmd.playerId, coloredPipsOf(cardId, 0), null, purpose)) return reject('cloak_turn_up_no_colored_source');
     const before = state.events.length;
     spendMana(state, cmd.playerId, cost, coloredPipsOf(cardId, 0), purpose);
     // M319/NA1: numer kopii zakrycia znika razem z zakryciem — face-up karta
@@ -7606,6 +7611,9 @@ export function playerView(state, playerId) {
         // M407: dar „this turn" (cantBeBlockedUntilTurn, CR 514.2) — badge
         // widoku liczony read-time z numerem tury; kontrakt widoku bez zmian.
         if (object.cantBeBlockedUntilTurn != null && state.turn.number < object.cantBeBlockedUntilTurn) entry.cantBeBlocked = true;
+        if (object.kind === 'creature' && !hiddenFromViewer
+          && effectiveAbilities(object).some((ability) => staticAbilityIsActive(state, object, ability)
+            && ability.cantBeBlocked === true)) entry.cantBeBlocked = true;
         // C (zgłoszenie właściciela 2026-09-19b, Thieves' Tools): ewazja
         // z ZAŁĄCZNIKA („Equipped creature can't be blocked as long as its
         // power is 3 or less”) to ten sam fakt publiczny co `cantBeBlocked`
@@ -7693,7 +7701,7 @@ export function playerView(state, playerId) {
         // wejdzie do katalogu (ADR 0022 §4).
         if (!hiddenFromViewer) {
           for (const a of effectiveAbilities(object)) {
-            if (a?.type !== 'static') continue;
+            if (!staticAbilityIsActive(state, object, a)) continue;
             if (Array.isArray(a.cantBeBlockedExceptByColors)) {
               entry.cantBeBlockedExceptByColors = [...a.cantBeBlockedExceptByColors];
             }
@@ -8061,8 +8069,9 @@ export function playerView(state, playerId) {
         if (!obj || obj.zone !== 'battlefield' || !obj.faceDown || !obj.manifestReady) continue;
         if (obj.controllerId !== playerId) continue;
         const cost = obj.manifestTurnUpCost ?? 0;
-        if (producibleMana(state, playerId, null, spellManaPurpose(obj), coloredPipsOf(obj.cardId, 0)) < cost) continue;
-        if (!canPayColoredCost(state, playerId, coloredPipsOf(obj.cardId, 0))) continue;
+        const purpose = turnFaceUpManaPurpose();
+        if (producibleMana(state, playerId, null, purpose, coloredPipsOf(obj.cardId, 0)) < cost) continue;
+        if (!canPayColoredCost(state, playerId, coloredPipsOf(obj.cardId, 0), null, purpose)) continue;
         legalCommands.push(command('turn_manifest_face_up', playerId, { objectId: objId }));
       }
     }
@@ -8077,8 +8086,9 @@ export function playerView(state, playerId) {
         if (!obj || obj.zone !== 'battlefield' || !obj.faceDown || !obj.cloakReady) continue;
         if (obj.controllerId !== playerId) continue;
         const cost = obj.cloakTurnUpCost ?? 0;
-        if (producibleMana(state, playerId, null, spellManaPurpose(obj), coloredPipsOf(obj.cardId, 0)) < cost) continue;
-        if (!canPayColoredCost(state, playerId, coloredPipsOf(obj.cardId, 0))) continue;
+        const purpose = turnFaceUpManaPurpose();
+        if (producibleMana(state, playerId, null, purpose, coloredPipsOf(obj.cardId, 0)) < cost) continue;
+        if (!canPayColoredCost(state, playerId, coloredPipsOf(obj.cardId, 0), null, purpose)) continue;
         legalCommands.push(command('turn_cloak_face_up', playerId, { objectId: objId }));
       }
     }
@@ -9877,7 +9887,7 @@ export function playerView(state, playerId) {
   // Batch 56 (energia, CR 122.1): licznik gracza jest JAWNY dla obu graczy
   // (jak poison i speed) — bez niego gracz nie widziałby, ile energii ma,
   // a bot nie miałby z czego wyceniać kosztu {E}.
-  const players = state.players.map(({ id, name, life, mana, landPlays, poison, manaPool, restrictedPool, speed, energy }) => ({
+  const players = state.players.map(({ id, name, life, mana, landPlays, poison, manaPool, restrictedPool, purposeRestrictedPool, speed, energy }) => ({
     id, name, life, mana: mana ?? 0, landPlays: landPlays ?? 0, poison: poison ?? 0, energy: energy ?? 0,
     // M313 (zgłoszenie właściciela, Leonin Surveyor): prędkość (DFT „Start
     // your engines!", Batch 24) jest jawna dla OBU graczy — licznik publiczny,
@@ -9887,6 +9897,7 @@ export function playerView(state, playerId) {
     // M214: jednostki many ograniczonej drukiem (Powerstone) — UI/audyt widzi
     // je osobno, żeby nie liczyć ich jako „mana na wszystko".
     restrictedPool: { ...(restrictedPool ?? {}) },
+    purposeRestrictedPool: { ...(purposeRestrictedPool ?? {}) },
   }));
   // Fog of War scry: patrzący (właściciel decyzji) widzi treść kart (jak rękę),
   // przeciwnik dowiaduje się wyłącznie, że decyzja trwa i ile kart obejrzano.
@@ -10627,6 +10638,7 @@ export function playerView(state, playerId) {
     dayNight: state.dayNight ?? null,
     undercityProgress: { ...state.undercityProgress },
     descendedThisTurn: { ...state.descendedThisTurn },
+    cardsLeftGraveyardThisTurn: { ...(state.cardsLeftGraveyardThisTurn ?? {}) },
     // M107 (ADR 0017 — kompletność widoku; zlecenie właściciela 2026-08-16):
     // PEŁNA sekcja WALKI. Do tej pory widok nie niósł jej wcale: kontroler
     // (bot, UI, tester) musiał rekonstruować walkę ze znaczników na kaflach
