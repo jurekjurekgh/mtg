@@ -2214,19 +2214,10 @@ kreaturze tylko tam, gdzie daje NOWĄ akcję (CR 502.3).
 
 ## L187 (2026-10-21) — Spread `slice(checkpoint)` w ŚRODKU funkcji nie może obejmować zdarzeń wypychanych jeszcze raz
 
-**Przypadek:** przy częściowo zapobiegniętych obrażeniach bojowych na gracza
-`dealCombatDamageToPlayer` robiła `events.push(...state.events.slice(before))`
-z checkpointem z STARTU funkcji — ciosem tarcz i `damage_dealt` — po czym
-łańcuch if/else wypychał `damage_dealt` drugi raz: podwójna linia logu stołu
-(stan gry i triggery — `state.events` — poprawne). Ścieżka blokera i renown
-mają checkpoint TUŻ przed helperem i były czyste.
-**Reguła:** kontrakt L130 ma drugą stronę: NIE dublować. Checkpoint do
-spreadu w środku funkcji stawiaj bezpośrednio przed helperem, którego
-zdarzenia przenosisz; zdarzenie wypychane jawnie po spreadzie (`damage_dealt`)
-nie może wejść w zakres `slice` — `slice(before, -1)` albo jawny push
-`damage_prevented` jak w `assignDamageToAttackers`. → Klasa: [L130].
-**Strażnik:** `test/audyt-pr170-duplikat-damage-dealt-2026-10-21.test.js`
-(rekreacja: `slice(before, -1)` → `slice(before)` czerwieni oba testy).
+**Reguła:** checkpoint do `slice` w środku funkcji stawiaj TUŻ przed
+helperem; zdarzenie wypychane jawnie po spreadzie (`damage_dealt`) nie może
+wejść w zakres — `slice(before, -1)` albo jawny push. → Klasa: [L130].
+**Strażnik:** `test/audyt-pr170-duplikat-damage-dealt-2026-10-21.test.js`.
 
 → narracja: `docs/LESSONS_PRZYPADKI.md` (L187)
 
@@ -2275,3 +2266,17 @@ startującej z pustą pamięcią.
 **Strażnik:** `docs/setup/ENVIRONMENT.md` §3; mapa #178 ma 194 wiersze.
 
 → narracja: `docs/LESSONS_PRZYPADKI.md` (L190)
+
+## L191 (2026-11-06) — „Whenever you attack” odpala się raz (CR 508.3d)
+
+**Przypadek:** audyt #179: `attacks_you_control` odpalał się per atakujący
+(Living History).
+**Reguła:** trigger „Whenever [a player] attacks" triggeruje się RAZ na
+`attackers_declared` (≥1 stwór gracza), nie per atakujący (CR 508.3d).
+Komentarz opisujący ZNIESIONY model („enumeracja kompletna po usunięciu
+cap" sprzed zgłoszenia G) jest błędem — dociągaj przy naprawie root
+cause; milestony historyczne adnotuj, nie przepisuj.
+**Strażnik:** `test/audyt-pr179-attacks-you-control.test.js`; CR 508.3d
+w `test/helpers/cr-numery-tabela.js`.
+
+→ narracja: `docs/LESSONS_PRZYPADKI.md` (L191)

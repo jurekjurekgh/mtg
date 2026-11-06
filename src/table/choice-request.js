@@ -894,8 +894,10 @@ export function renderCombatWizard(host, { kind, view, session, options, blockCa
     }
     // E6 (2026-09-20c): pula kandydatów z widoku jest liczona wprost z reguł;
     // historycznie menu było ograniczone capem i pary bez wiersza były
-    // nieosiągalne (CR 509.1a). Po zgłoszeniu F (2026-11-05) oferty są
-    // kompletne, a pula zostaje bezpośrednim źródłem wierszy wizarda.
+    // nieosiągalne (CR 509.1a). Po zgłoszeniu F/G (2026-11-05) pula jest bez
+    // limitu i zostaje bezpośrednim źródłem wierszy wizarda (wiersze dla każdej
+    // legalnej pary), a dowolny wariant składa
+    // kreator — walidacja silnika jest i tak niezależna.
     for (const [attackerId, blockerIds] of Object.entries(effectiveBlockCandidates ?? {})) {
       pushId(attackerId);
       for (const id of blockerIds ?? []) pushId(id);

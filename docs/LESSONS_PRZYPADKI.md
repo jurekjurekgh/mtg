@@ -3792,3 +3792,31 @@ surowy diff, używaj `^diff --git ` i sprawdzaj `set(klucze) == set(REST)`.
 Nie ufaj liczbie wpisów z parsera ani capped listom `gh pr view`.
 **Strażnik:** `docs/setup/ENVIRONMENT.md` §3; mapa audytu #178 ma dokładnie
 194 wiersze plików, a eksperymenty pozostają artefaktami `NIE_WDRAZAC`.
+
+## L191 (2026-11-06) — audyt #179: Living History odpalała się per atakujący, komentarz to utrwalił
+
+**Zdarzenie:** mapa audytu #179 (`docs/audits/PR179_MAPA_PLIKOW_2026-11-06.md`)
+domknęła wiersz `triggers.js`. Diff #179 dodał skan `attacks_you_control`
+WEWNĄTZ pętli po `attackerIds`, z komentarzem „It fires for each declared
+attacker under its controller". Żywa gra tego nie sygnalizuje: Living History
+z Oracle „Whenever you attack, if a card left your graveyard this turn,
+target attacking creature gets +2/+0 until end of turn" dawała +N za N
+atakujących przy JEDNYM triggerze regułowym (CR 508.3d: „triggers if one or
+more creatures that player controls are declared as attackers").
+**Przebieg naprawy:** RED na realnej karcie (2 atakujących → 2 triggery ≠ 1;
+drugi i trzeci test-negatywy zielone, więc ławka uczciwa), GREEN: skan raz
+na `attackers_declared` (zero atakujących nie odpala nic; źródła przeciwnika
+przy naszym ataku odrzucone jawą — nawet z własnym faktem odejścia karty).
+Mutacje: dopisanie pętli per atakujący / pusta pula kontrolerów / brak jawnej
+kary kontrolera źródła — wszystkie złapane przez piny. Tekst 508.3d pobrany
+ze źródeł (wydanie CR 2026-09-25, sha256 `8d860e45…`; przy twierdzeniach
+regułowych obowiązuje dosłowny cytat, ADR 0030).
+**Drugi wniosek:** ta sama fala audytu znalazła komentarze twierdzące
+„enumeracja W PEŁNI/kompletna po zniesieniu cap", podczas gdy zgłoszenie G
+przeszło na ziarna (`attackerSeedDeclarations`, `cyclicWindows`) + deskryptor
+(`combatDeclarationView`, `pendingEscapeExile`/`pendingDelveExile`) + pełną
+walidację przy `execute`. Nagłówek „Cap usunięto → enumeracja kompletna"
+opisywał model, którego już nie było. Naprawa: dociągnięcie komentarzy do
+faktyki (commit 40e0873 i 9615133); ENGINE_MILESTONES M463 i plan PMSSB-72
+dostały adnotację poprawki zamiast przepisania historii (L41: jeden powód,
+jedna miara; L5: strażnik pilnuje reguły).

@@ -3293,18 +3293,14 @@ export function suspendCard(state, playerId, objectId) {
  * Warianty rzucenia czarów dostępne graczowi (objectId × legalne cele).
  * Dla czarów bezcelowych cele to pusta tablica. Zaplotowane czary z exile
  * są castowane bez kosztu many.
- */
-/**
- * Enumeracja Fireballa: podzbiory celów (stwory na polu bitwy + gracze) × wartości
- * X, które gracz może zapłacić (koszt {X}+{R}+{1}/cel ≤ dostępna mana). Ograniczamy
- * podzbiory do rozsądnego limitu (jak COMBAT_OPTION_CAP w combat.js), żeby nie
- * eksplodować przy dużej planszy. Każda komenda niesie xValue i targets.
- */
-/**
+ *
  * Oferty rzutu Fireballa (X + „any number of targets” + {1} za każdy cel ponad
- * pierwszy): podzbiory celów do 3 i X od 1 do budżetu, limit 15 (bez tego
- * spread setek tysięcy wariantów wywalał stos). Wspólne dla ręki i okna
- * zdolności Vaana — audyt PR #93, L74: jedna implementacja.
+ * pierwszy): ziarnowe warianty zamiast iloczynu podzbiory × X (zgłoszenie G,
+ * etap 3; zgłoszenie F usunęło dawny limit 15) — pojedyncze cele (X największe/
+ * śmiertelne), zestawy wrogie, wszyscy. Dowolny inny zestaw/X konstruuje
+ * kreator (stepper), a walidacja (validateFireballTargets + bramka kosztu)
+ * przyjmuje każdy legalny — bez ucinania wariantów. Każda komenda niesie
+ * xValue i targets.
  */
 export function legalFireballCasts(state, playerId, objectId, object, manaAvailable, { withoutManaCost = false } = {}) {
   const casts = [];
@@ -3618,9 +3614,10 @@ export function legalSpellCasts(state, playerId, ofertaUnitsPodany = null) {
       }
       continue;
     }
-    // Fireball (X-cost, any-number-of-targets): oferujemy X od 1 do dostępnej
-    // many (po pokryciu {R} + {1}/cel), dla każdego podzbioru celów (stwory +
-    // gracze). Pełna enumeracja podzbiorów ograniczona do rozsądnego limitu.
+    // Fireball (X-cost, any-number-of-targets): rzuty są ziarnowymi wariantami
+    // (zob. legalFireballCasts: pojedyncze cele / śmiertelne X / wrogie
+    // zestawy — dowolny inny zestaw/X konstruuje kreator, walidacja przyjmuje
+    // każdy legalny). Bez enumeracji potęgi zbioru celów.
     if (object.spell?.fireball) {
       const fbc = legalFireballCasts(state, playerId, id, object, manaAvailableForOffer(object, coloredPipsOf(object.cardId, 0)));
       // C1: łączny koszt wariantu = X + {R} + {1} za każdy cel ponad pierwszy
@@ -4060,11 +4057,15 @@ function castModalSpell(state, playerId, objectId, modeIndex, targets, stunTarge
   return e;
 }
 
-/** Limit oferowanych podzbiorów wygnania Escape (jak CREW_OPTION_CAP). */
-// Zgłoszenie F: usunięto ESCAPE_OPTION_CAP (enumeracja kompletna).
+/** Podzbiory wygnania Escape (okna cykliczne grobu, jak dawny legalEscapeCasts — M103/D). */
+// Zgłoszenie F: usunięto ESCAPE_OPTION_CAP. Zgłoszenie G, etap 3: ziarnowe
+// okna cykliczne grobu + deskryptor `pendingEscapeExile`; konstrukcja
+// dowolnego zestawu + pełna walidacja przy execute — bez ucinania.
 
-/** Limit oferowanych podzbiorów wygnania Delve (jak ESCAPE_OPTION_CAP). */
-// Zgłoszenie F: usunięto DELVE_OPTION_CAP (enumeracja kompletna).
+/** Podzbiory wygnania Delve (okna cykliczne per opłacalna liczba — CR 702.66). */
+// Zgłoszenie F: usunięto DELVE_OPTION_CAP. Zgłoszenie G, etap 3: ziarnowe
+// okna cykliczne per opłacalna liczba + deskryptor `pendingDelveExile`;
+// konstrukcja dowolnego zestawu + pełna walidacja przy execute — bez ucinania.
 
 /**
  * Delve (CR 702.66, Hooting Mandrills): „Each card you exile from your

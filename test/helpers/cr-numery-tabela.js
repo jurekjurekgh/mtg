@@ -12,12 +12,12 @@
 // Wydanie CR: 2026-09-25
 // SHA-256 pliku CR: 8d860e451f20f38865b725b42d82feb714c725373dd8f3b32b8652b3eeb070ca
 // Źródło (ADR 0030): mirror nwgarne/mtg-data (rules/cr-raw.txt) — patrz docs/audits/AUDYT_PR135_2026-09-24b.md §0
-// Data pobrania: 2026-11-02
+// Data pobrania: 2026-11-06
 
 export const CR_WYDANIE = "2026-09-25";
 export const CR_SHA256 = "8d860e451f20f38865b725b42d82feb714c725373dd8f3b32b8652b3eeb070ca";
 export const CR_ZRODLO = "mirror nwgarne/mtg-data (rules/cr-raw.txt) — patrz docs/audits/AUDYT_PR135_2026-09-24b.md §0";
-export const CR_DATA_POBRANIA = "2026-11-02";
+export const CR_DATA_POBRANIA = "2026-11-06";
 
 export const NUMERY = [
   // 1xx
@@ -201,6 +201,7 @@ export const NUMERY = [
   '508.1k',
   '508.2',
   '508.2a',
+  '508.3d',
   '509.1',
   '509.1a',
   '509.1b',
@@ -448,11 +449,6 @@ export const NUMERY = [
   '702.62c',
   '702.66',
   '702.66a',
-  // Batch 71 (Changeling Berserker): champion — dosłownie 702.72a („Champion
-  // represents two triggered abilities. „Champion an [object]" means „When
-  // this permanent enters, sacrifice it unless you exile another [object] you
-  // control" and „When this permanent leaves the battlefield, return the
-  // exiled card to the battlefield under its owner's control."").
   '702.72a',
   '702.73a',
   '702.77a',

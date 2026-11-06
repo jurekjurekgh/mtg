@@ -4169,21 +4169,32 @@ function processTriggersScan(state, recentEvents) {
           }
         }
       }
+      // CR 508.3d (audyt PR #179): „Whenever [a player] attacks" triggers if
+      // one or more creatures that player controls are declared as attackers —
+      // RAZ na deklarację ataku, nie raz na atakującego. Żródła: dowolny
+      // permanent kontrolowany przez atakującego gracza (np. Living History);
+      // zero atakujących nic nie odpala, a źródło przeciwnika przy naszym
+      // ataku też nie. Osobne zdarzenie `attacks` (per atakujący) zostaje
+      // niżej, tylko na atakujących.
+      const declarationControllers = new Set();
       for (const attackerId of ev.attackerIds ?? []) {
         const attacker = state.objects.get(attackerId);
-        if (!attacker || attacker.zone !== 'battlefield') continue;
-        // „Whenever you attack" may live on any controlled permanent (for
-        // example an enchantment). It fires for each declared attacker under
-        // its controller. The separate `attacks` event below remains specific
-        // to abilities on the attacking object.
+        if (attacker && attacker.zone === 'battlefield') declarationControllers.add(attacker.controllerId);
+      }
+      if (declarationControllers.size > 0) {
         for (const source of state.objects.values()) {
-          if (source.zone !== 'battlefield' || source.controllerId !== attacker.controllerId) continue;
+          if (source.zone !== 'battlefield') continue;
+          if (!declarationControllers.has(source.controllerId)) continue;
           for (const ability of effectiveAbilities(source)) {
             if (ability?.trigger?.event === 'attacks_you_control') tryFire(state, ability, source, [], events, {
               attackerIds: [...(ev.attackerIds ?? [])],
             });
           }
         }
+      }
+      for (const attackerId of ev.attackerIds ?? []) {
+        const attacker = state.objects.get(attackerId);
+        if (!attacker || attacker.zone !== 'battlefield') continue;
         for (const ability of effectiveAbilities(attacker)) {
           // Kontekst zdarzenia dla triggerów ataku: lista współdeklarowanych
           // atakujących ORAZ wynik testu „z innym atakującym o większej sile"

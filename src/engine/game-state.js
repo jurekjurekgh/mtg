@@ -7240,17 +7240,19 @@ function exileAdditionalCostCandidates(state, playerId, object) {
  *
  * `legalCommands` jest kompletnym kontraktem dla kontrolera: każda oferowana
  * komenda jest akceptowana przez `execute` (pilnuje tego test własnościowy).
- * Dla deklaracji combat opcje są enumerowane W PEŁNI (zgłoszenie F
- * właściciela, 2026-11-05: żaden limit wariantów w żadnej gałęzi); pełna
- * walidacja pozostaje po stronie engine.
+ * Dla deklaracji combat oferta niesie ZIARNA (zgłoszenie G, 2026-11-05;
+ * zgłoszenie F usunęło COMBAT_OPTION_CAP) — mandatory / wszyscy / single /
+ * minus-jeden; dowolną legalną deklarację kontroler buduje z deskryptora
+ * `combatDeclaration`, a pełną poprawność rozstrzyga walidacja w `execute`.
  */
 /**
  * E6 (2026-09-20c): pula kandydatów na blokujących dla widoku BRONIĄCEGO.
  *
  * Widok niesie ją osobno od `options` decyzji: historycznie menu było
  * ograniczone capem i legalne pary bez wiersza wizarda były nieosiągalne
- * (CR 509.1a); po zgłoszeniu F (2026-11-05) enumeracja jest kompletna, a pula
- * zostaje jako bezpośrednie źródło wierszy wizarda. Pole jest wyłącznie tam, gdzie jest decyzja:
+ * (CR 509.1a); po zgłoszeniu F (2026-11-05) pula kandydatów jest bez limitu
+ * (wszyscy legalni per atakujący), a pełna legalność przypisań pozostaje po
+ * stronie walidacji — pula zostaje jako bezpośrednie źródło wierszy wizarda. Pole jest wyłącznie tam, gdzie jest decyzja:
  * krok deklaracji bloków, walka zadeklarowana, stos pusty, gracz broniący,
  * bloki jeszcze niezadeklarowane (warunki lustrzane wobec `legalCommands`).
  */
@@ -8849,10 +8851,10 @@ export function playerView(state, playerId) {
     legalCommands.push(command('resolve_library_placement', playerId, { placement: 'bottom' }));
     legalCommands.push(command('resolve_library_placement', playerId, { placement: 'top' }));
   } else if (state.status === 'active' && !blockedByOthersDecision && activeEscapeExile) {
-    // M241: decyzja kosztu Escape — enumeracja podzbiorów (cap deterministyczny
-    // po kolejności grobu, jak przy dawnym legalEscapeCasts — M103/D), dla
-    // botów i fuzzera; gracz dostaje wizard multiselect po kandydatach i
-    // komponuje komendę sam (walidacja silnika jest i tak niezależna).
+    // M241: decyzja kosztu Escape — ziarna okien cyklicznych grobu (dawniej
+    // cap deterministyczny po kolejności grobu — M103/D), dla botów i fuzzera;
+    // gracz dostaje wizard multiselect po kandydatach i komponuje komendę sam
+    // (walidacja silnika jest i tak niezależna).
     const pending = state.pendingEscapeExile;
     // G, etap 3: ziarna = okna cykliczne grobu (pierwsze = kolejność grobu,
     // jak dawna pierwsza oferta); bot/wizard konstruują własny zestaw
@@ -8867,9 +8869,9 @@ export function playerView(state, playerId) {
     }
   } else if (state.status === 'active' && !blockedByOthersDecision && activeDelveExile) {
     // CR 702.66 (Batch 57/B4): gracz wybiera DOWOLNĄ liczbę kart (0..limit),
-    // więc oferta enumeruje podzbiory o liczbie z widełek opłacalnych
+    // więc oferta niesie ziarna o liczbie z widełek opłacalnych
     // (`affordableCounts` liczy się w deklaracji — L48: oferta nie publikuje
-    // wariantu, którego płatność odrzuci), cap jak przy Escape. Dla botów
+    // wariantu, którego płatność odrzuci); dawny kap ofert zniknął. Dla botów
     // i fuzzera; gracz dostaje wizard multiselect i komponuje komendę sam.
     const pending = state.pendingDelveExile;
     // G, etap 3: ziarna per OPŁACALNA liczba (okna cykliczne grobu);
