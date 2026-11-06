@@ -14,13 +14,14 @@ test('PlayerView zawiera publiczne życie i nazwy graczy', () => {
   // i jaka"), a sam licznik `mana` nie niósł kolorów.
   // M214: pula many ograniczonej drukiem (Powerstone) jest częścią publicznej
   // puli gracza — eksponowana obok manaPool (CR 106 — gracze widzą pulę).
+  // Batch 72: pule o jawnym przeznaczeniu (enchantment/face-up/unlock) też są widoczne.
   // M313: prędkość (DFT „Start your engines!") to też jawny licznik gracza
   // (panel speed na stole czyta go z widoku, jak poison).
   // Batch 56: energia ({E}, CR 122.1) — licznik gracza jawny dla OBU graczy
   // (panel energii na stole i wycena kosztu „Pay {E}" u bota czytają widok).
   assert.deepEqual(view.players, [
-    { id: 'p1', name: 'Alice', life: 20, mana: 0, landPlays: 1, poison: 0, energy: 0, speed: 0, manaPool: {}, restrictedPool: {} },
-    { id: 'p2', name: 'Bob', life: 16, mana: 0, landPlays: 1, poison: 0, energy: 0, speed: 0, manaPool: {}, restrictedPool: {} },
+    { id: 'p1', name: 'Alice', life: 20, mana: 0, landPlays: 1, poison: 0, energy: 0, speed: 0, manaPool: {}, restrictedPool: {}, purposeRestrictedPool: {} },
+    { id: 'p2', name: 'Bob', life: 16, mana: 0, landPlays: 1, poison: 0, energy: 0, speed: 0, manaPool: {}, restrictedPool: {}, purposeRestrictedPool: {} },
   ]);
   assert.equal(JSON.stringify(view).includes('objects'), false);
   assert.equal(JSON.stringify(view).includes('commands'), false);
