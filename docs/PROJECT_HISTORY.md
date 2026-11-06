@@ -20,6 +20,59 @@
 > nie trafiają do repozytorium".
 
 
+## 2026-11-06 — audyt scalonego PR #180 i pętla jakości Żywym Testerem (PR #181, sesja arena/b2771170-mtg)
+
+- Zlecenie: „kontynuuj" wg `docs/plans/PLAN_2026-11-06-audyt-pr180.md` (ADR 0020:
+  audyt poprzedniego scalonego PR przed nową pracą). Audytowany **PR #180** — scalony
+  2026-11-06T18:30:47Z, 17 plików, +591/−65; baza sesji `d2e0d61` (= HEAD `main`).
+  Gałąź sesji `arena/b2771170-mtg`, PR #181. **Werdykt: POZYTYWNY** — pełny raport
+  `docs/audits/AUDYT_PR180_2026-11-06.md` (§1–8), mapa 17/17 wierszy zamknięta.
+- A-1 (skan „whenever you attack" raz na deklarację, CR 508.3d) potwierdzone
+  niezależnymi mutacjami (każda RED na drzewie #180, przywrócenie GREEN); A-2
+  dociągnięte komentarze — bez zmian kodu (dowód maszynowy diffu produkcji);
+  2D–2G pozytywne; regresja bota na próbce 10/10. Obserwacje z handoffu #180
+  rozstrzygnięte: Powerstone — fałszywy alarm, poprawka tylko w notach
+  katalogowych (`dc37ecf`); odcisk stanu bez wpływu; `commandForXSelection` —
+  świadoma architektura „konstruuj + waliduj" (zgłoszenie G #179). Mirror CR ma
+  nowsze wydanie („effective as of November 6, 2026") — teksty 508.3d i cytatów
+  audytu pobrane i zacytowane w raporcie; pin repo bez zmian (bump = decyzja,
+  ADR 0030).
+- **Pętla jakości 4B (Żywy Tester, dominaria-brg|ravnica-wur, seed 4242):** partia
+  wygrana przez gracza w 14. turach (krok 75/76), detektory 0 zgłoszeń, rc=0;
+  re-run po naprawie #2 identyczny wynikiem. Tarmogoyf tokenu Disy 6/7 dowiedziony
+  rekonstrukcją deterministyczną biblioteki (34/34 pozycji zużycia transkryptu;
+  6. typ = Enchantment z ukrytego mielenia E). Dwa błędy znalezione i naprawione
+  u root cause z RED→GREEN (szczegóły §8 raportu):
+  1. `8b3cbc0` — HELP `run-game.mjs` ogłaszał nieistniejącą domyślną talię
+     (stale po zmianie nazw batcha 72); fix: interpolacja z `parseArgs([])`
+     (jedno źródło) + pin M203/8 czytający wyjście `--help` (behawioralny).
+  2. `22230e5` — **kolejność stosu w kreatorze many przy komendach
+     natychmiastowych**: trigger z tapnięcia źródła podczas płatności (tu:
+     Chronic Flooding) rozstrzygał się PO komendzie (cycling dociągał kartę
+     PRZED mieleniem), wbrew CR 602.2a+b/603.3/117.5. Root cause:
+     `finishWizardPayment` drenował stos tylko przy nielegalności komendy
+     (szkic F-1 z audytu PR #171). Fix: drenaż wpisów nałożonych W TRAKCIE
+     płatności (`stackAtOpen` łapany przy otwarciu kreatora w `main.js`)
+     przed commitem — niezależnie od prędkości komendy; wpisy sprzed otwarcia
+     zostają pod komendą. Piny: `audyt-pr180-cf-cycling-kolejnosc-stosu.test.js`
+     (F-CYK/1 RED→GREEN + kontrola bez aury), 6 pinów PR #171 F-1 nietkniętych;
+     sandbox testu PR #177 deklaruje `session` (dopasowanie pinu do refaktoru,
+     L160).
+- Zdarzenie operacyjne: reset workspace w trakcie sesji — odzyskane proceduralnie
+  (fetch → `reset --hard`), zero strat (commity były wypchnięte przed resetem);
+  potwierdzenie zasady ADR 0020 C/D.
+- Bramy (drzewo końcowe): `npm test` **10 068 pass / 0 fail** (baza `d2e0d61`:
+  10 065 — przyrost = 3 nowe piny), `npm run test:all` **10 336 pass / 0 fail**,
+  `npm run build` **78 modułów / 5 761,4 kB**. Strażnik budżetu lektury zielony
+  (bez zmian w lekturach obowiązkowych; nowa wiedza mieszka w raporcie audytu
+  i komentarzach kodu, nie w LESSONS — budżet ~99,996k/100k). Szybki benchmark
+  NIE był uruchamiany (brak zmian bota/wyceny; ADR 0018).
+- Otwarte pozycje po sesji: (a) bump CR do wydania 2026-11-06 — decyzja
+  właściciela (ADR 0030), (b) kosmetyka prezentacji: linie „Mielisz …" z triggerów
+  rozstrzyganych w trakcie płatności kreatora nie trafiają do strumienia modala
+  „Rozgrywka" (ogon LOG-u tnie starsze wpisy) — warstwa ogłoszeń, nie reguły
+  (dowód zgodności stanu: rekonstrukcja biblioteki + re-run partii).
+
 ## 2026-11-06 — audyt scalonego PR #179 (sesja arena/8df1ec4d-mtg)
 
 - Zakres: pełny przegląd 223 plików scalonego PR #179 (baza `04ca8e9` → scalenie `7a18659`, = HEAD `main`): produkcja (26 src + 7 tools + README/package.json + 8 talii), 57 docs, 123 testy. Mapa `docs/audits/PR179_MAPA_PLIKOW_2026-11-06.md` zamknięta: **223/223 wierszy, 0 otwartych**. Plan: `docs/plans/PLAN_2026-11-06-audyt-pr179.md`.
