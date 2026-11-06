@@ -8090,12 +8090,16 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     ],
     artId: 497, plan: 'Dominaria',
     support: { status: 'supported', limitations: [] },
-    notes: ['exile linked: id wygnanego zapisane na źródle (exiledCardIds), LTB przywraca (jak Faceless Butcher); Powerstone produkuje {C} z restrykcją „only to cast artifact spells\" (M214 — restrictedPool)'],
+    notes: ['exile linked: id wygnanego zapisane na źródle (exiledCardIds), LTB przywraca (jak Faceless Butcher); Powerstone produkuje {C} z restrykcją druku tokenu „can\'t be spent to cast a nonartifact spell\" (M214 — restrictedPool; zdolności i czary-artefakty płacą nią legalnie)'],
   }),
 
-  // Token Powerstone (BRO): artefakt „{T}: Add {C} — spend only to cast
-  // artifact spells\" (CR 106.3 — restrykcja many). Produkcja bezbarwna w
-  // MANA_SOURCE_MAP; restrykcja artefaktowa nieimplementowana (notes).
+  // Token Powerstone (BRO): artefakt „{T}: Add {C}. This mana can't be
+  // spent to cast nonartifact spells" (CR 106.3 — restrykcja many w formie
+  // NEGATYWNEJ: zdolności aktywowane, czary-artefakty i koszty niebędące
+  // rzutem czaru płacą nią normalnie). Produkcja bezbarwna w MANA_SOURCE_MAP;
+  // restrykcja wdrożona od M214 (PR #78): spendOnly 'artifact' →
+  // player.restrictedPool; blokada oferty i płatności w resources.js
+  // (restrictedManaBlocked), piny: test/m201-bug3-powerstone.test.js.
   defineCard({
     id: 'token_powerstone', name: 'Powerstone', set: null,
     imageUri: 'https://cards.scryfall.io/large/front/d/4/d45fe4b6-aeaf-4f84-b660-c7b482ed8512.jpg?1783919908', // M157/B: token ze Scryfall
@@ -8116,7 +8120,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
       }),
     ],
     support: { status: 'token', limitations: ['token — nie można umieścić w talii; tworzony przez Static Net'] },
-    notes: ['{T}: Add {C}; restrykcja „only to cast artifact spells\" (M214 — restrictedPool)'],
+    notes: ['{T}: Add {C}; restrykcja druku „can\'t be spent to cast a nonartifact spell\" — mana niedostępna wyłącznie przy rzucie czaru nie-artefaktowego (M214 — restrictedPool; zdolności aktywowane płacą nią legalnie)'],
   }),
 
   // 4. Satyr Wayfinder (M15) {1}{G} 1/1 Satyr —
