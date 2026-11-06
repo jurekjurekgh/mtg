@@ -327,6 +327,8 @@ test('Gurmag Drowner: exploit — patrzy na top 4, jedną do ręki, resztę do g
   while ((state.zones.stack.length > 0 || state.pendingExploits.length > 0 || state.pendingLookTopN) && guard++ < 60) {
     const holder = state.turn.priorityPlayerId;
     const view = playerView(state, holder);
+    const order = view.legalCommands.find((c) => c.type === 'resolve_trigger_order');
+    if (order) { assert.ok(execute(state, order).ok, 'kolejność checkpointu'); continue; }
     const expTarget = view.legalCommands.find((c) => c.type === 'resolve_exploit_choice' && !c.skip);
     if (expTarget) { assert.ok(execute(state, expTarget).ok, 'exploit (poświęć sac)'); }
     else {

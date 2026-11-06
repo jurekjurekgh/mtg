@@ -1,0 +1,26 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Living%20History&set=sos&format=json",
+  "print": "Living History (SOS)",
+  "name": "Living History",
+  "mana_cost": "{1}{R}",
+  "cmc": 2,
+  "type_line": "Enchantment",
+  "oracle_text": "When this enchantment enters, create a 2/2 red and white Spirit creature token.\nWhenever you attack, if a card left your graveyard this turn, target attacking creature gets +2/+0 until end of turn.",
+  "power": null,
+  "toughness": null,
+  "colors": ["R"],
+  "color_identity": ["R"],
+  "keywords": [],
+  "set": "sos",
+  "set_name": "Secrets of Strixhaven",
+  "collector_number": "121",
+  "rarity": "uncommon",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/2/0/2028792c-fd60-40d4-bff7-3b82dbe1ffb5.jpg?1783903667",
+    "normal": "https://cards.scryfall.io/normal/front/2/0/2028792c-fd60-40d4-bff7-3b82dbe1ffb5.jpg?1783903667"
+  },
+  "rulings": [],
+  "rulingsSource": "https://api.scryfall.com/cards/sos/121/rulings",
+  "rulingsPobrano": "2026-11-06",
+  "pobrano": "2026-11-06"
+}

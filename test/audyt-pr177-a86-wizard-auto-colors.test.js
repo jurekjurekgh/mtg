@@ -16,5 +16,5 @@ test('A86: liczba bez koloru nie zamyka kreatora dla ręcznie osiągalnego {R}',
 test('A86: gdy automat potrafi pokryć kolor i jest tylko jeden wariant, kreator pozostaje zamknięty',()=>{const args=input();assert.equal(shouldOpenManaWizard({...args,autoPayableColors:true}),false);});
 test('A86: bez źródła pokrywającego kolor bramka nie otwiera pustego kreatora',()=>{const args=input();assert.equal(shouldOpenManaWizard({...args,sources:[]}),false);});
 
-// Prawdziwy router main.js, źródło podane jawnie, gdyż A85 nadal otwarte.
+// Prawdziwy router main.js; źródło podane jawnie, aby izolować bramkę od routera źródeł.
 test('A86: router stołu przekazuje kolorową zdolność automatu do bramki',()=>{const {s,cmd}=scene(),args=input(),source=args.sources[0];const main=readFileSync(new URL('../src/table/main.js',import.meta.url),'utf8');const start=main.indexOf('  function manaWizardFor('),end=main.indexOf('\n  }',start);assert.ok(start>=0&&end>start);const ctx=createContext({session:{state:s,view:()=>playerView(s,'p1')},HUMAN_ID:'p1',paymentDescriptorOf,shouldOpenManaWizard,expandManaPool,producibleMana,canPayColoredCost,restrictedSpellBlockedFor:()=>false,selfTapExclusionFor:()=>null,manaSourcesForPlayer:()=>[source]});runInContext(main.slice(start,end+4),ctx);assert.ok(ctx.manaWizardFor(cmd),'router musi otworzyć kreator przy osiągalnym ręcznym kolorze');});

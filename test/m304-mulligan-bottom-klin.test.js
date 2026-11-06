@@ -46,7 +46,7 @@ test('M304/1: wybór drugiej kopii tej samej karty mapuje się na reprezentanta 
   assert.equal(commandForMulliganSelection(commands, ['b2', 'e'], defOf), null);
 });
 
-test('M304/2: oferta mulligan-bottom pokrywa PEŁNĄ przestrzeń decyzji (CAP ≥ 35)', async () => {
+test('M304/2 (po G, etap 3): pełna przestrzeń mulligan-bottom jest KONSTRUOWALNA, oferta to ziarna', async () => {
   const { setupCardMatch } = await import('../src/cards/materialize.js');
   const { createCardRegistry } = await import('../src/cards/card-data.js');
   const { parseDeckText } = await import('../src/cards/deck-text.js');
@@ -77,12 +77,23 @@ test('M304/2: oferta mulligan-bottom pokrywa PEŁNĄ przestrzeń decyzji (CAP �
   state.pendingMulliganBottom = { playerId: 'p1', count: 4, handIds: [...distinct], restorePriorityTo: 'p1' };
   const offers = playerView(state, 'p1').legalCommands
     .filter((c) => c.type === 'resolve_mulligan_bottom_choice');
-  assert.equal(offers.length, 35,
-    `CAP musi pokrywać pełną przestrzeń C(7,4)=35 — jest ${offers.length}; `
-    + 'dziurawa oferta = legalne wybory bez komendy = klin w kreatorze');
-  // Każda 4-podzbiór-różnych-definicji ma komendę (reprezentanta).
+  // G, etap 3: oferta niesie 7 ziaren-okien (nie C(7,4)=35), a PEŁNA
+  // przestrzeń jest osiągalna konstrukcyjnie — kreator buduje komendę
+  // dla każdego legalnego 4-zestawu z planu, silnik waliduje (klin
+  // rozwiązany architekturą, nie rozmiarem oferty).
+  assert.equal(offers.length, 7, `ziarna-okna zamiast pełnej przestrzeni: ${offers.length}`);
   const keys = new Set(offers.map((c) => [...c.cardIds].sort().join('|')));
-  assert.equal(keys.size, 35, 'bez duplikatów w ofercie');
+  assert.equal(keys.size, 7, 'bez duplikatów w ziarnach');
+  const { mulliganBottomPlanOf, commandForMulliganBottomSelection } = await import('../src/table/multi-target.js');
+  const plan = mulliganBottomPlanOf(offers);
+  assert.ok(plan, 'plan kreatora powstaje z ziaren');
+  assert.equal(plan.targets.length, 7, 'plan widzi wszystkich kandydatów');
+  let konstruowalnych = 0;
+  const combos = (arr, k) => (k === 0 ? [[]] : arr.flatMap((x, i) => combos(arr.slice(i + 1), k - 1).map((r) => [x, ...r])));
+  for (const zestaw of combos(distinct, 4)) {
+    if (commandForMulliganBottomSelection(plan, offers, zestaw)) konstruowalnych += 1;
+  }
+  assert.equal(konstruowalnych, 35, 'każdy z 35 legalnych zestawów ma komendę (reprezentant albo konstrukcja)');
 });
 
 test('M304/3: kreator — Zatwierdź oddaje komendę dla wyboru drugiej kopii (integracja)', async () => {

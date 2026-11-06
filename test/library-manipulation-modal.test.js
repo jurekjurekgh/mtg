@@ -112,8 +112,8 @@ function makeSession(seed) {
   // M178 (talie per plan): surveil siedzi w Forgotten Realms (Curate) —
   // lustro FR vs FR daje surveil OBU stron (FoW: własny z nazwami, bota bez).
   const decks = new Map([
-    [HUMAN_ID, parseDeckText(fs.readFileSync('decks/forgotten-realms.txt', 'utf8'), registry).cardIds],
-    [BOT_ID, parseDeckText(fs.readFileSync('decks/forgotten-realms.txt', 'utf8'), registry).cardIds],
+    [HUMAN_ID, parseDeckText(fs.readFileSync('decks/forgotten-realms-wug.txt', 'utf8'), registry).cardIds],
+    [BOT_ID, parseDeckText(fs.readFileSync('decks/forgotten-realms-wug.txt', 'utf8'), registry).cardIds],
   ]);
   return createSession({ registry, decks, seed, pauseOnBotMoves: true });
 }

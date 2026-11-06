@@ -1,5 +1,5 @@
 import { event } from '../protocol/types.js';
-import { assertZone, exiledByEnchantedDamage } from './zones.js';
+import { assertZone, exiledByEnchantedDamage, isCardObject } from './zones.js';
 import { assertStateInvariants } from './invariants.js';
 import { detachAttachmentsFromHost } from './attachments.js';
 import { syncStationKind } from './counters.js';
@@ -115,6 +115,18 @@ export function moveObjectDirectly(state, objectId, toZone, newObjectId, opts = 
   // idzie do exile (kontrczar, bounce ze stosu, rozstrzygnięcie).
   if (object.zone === 'stack' && object.flashedBack && toZone !== 'exile') {
     toZone = 'exile';
+  }
+  // Living History: „a card left your graveyard this turn" counts any card
+  // leaving its owner's graveyard for any other zone, not merely permanent
+  // cards or battlefield returns. This choke point covers every movement path;
+  // tokens are excluded by CR 108.2b / isCardObject.
+  if (object.zone === 'graveyard' && toZone !== 'graveyard' && isCardObject(object)) {
+    const ownerId = object.ownerId ?? object.controllerId;
+    if (ownerId != null && !state.cardsLeftGraveyardThisTurn?.[ownerId]) {
+      state.cardsLeftGraveyardThisTurn = {
+        ...(state.cardsLeftGraveyardThisTurn ?? {}), [ownerId]: true,
+      };
+    }
   }
   // Audyt PR #162/F-6 (CR 400.7): opóźniony grant wskazujący „this creature"
   // należy do konkretnego obiektu pola bitwy. Po każdej zmianie strefy stary
@@ -335,8 +347,14 @@ export function moveObjectDirectly(state, objectId, toZone, newObjectId, opts = 
   const bestowReset = (leavingBattlefield || object.zone === 'stack') && object.bestowOriginalTypes ? {
     types: [...object.bestowOriginalTypes],
     subtypes: [...(object.bestowOriginalSubtypes ?? [])],
+    // CR 400.7 / 702.103b: the Aura-spell descriptor belongs to the bestowed
+    // spell, not to the printed permanent card. Restore the pre-cast spell
+    // descriptor (normally null for a bestow creature) so a later normal cast
+    // does not resolve through the Aura path or look like a noncreature spell.
+    spell: object.bestowOriginalSpell ?? null,
     bestowOriginalTypes: null,
     bestowOriginalSubtypes: null,
+    bestowOriginalSpell: null,
   } : {};
   const rawMoved = {
     ...object, ...untilEndOfTurnReset, ...bestowReset, ...dfcFaceReset, ...exilePermissionReset, ...copyDisplayReset, ...faceDownRevealReset,

@@ -642,7 +642,7 @@ test('B61/157: Infectious Bloodlust — +2/+1, haste i wymóg ataku na gospodarz
 });
 
 test('B61/157: Infectious Bloodlust — deklaracja bez gospodarza jest nielegalna, z nim legalna', async () => {
-  const { declareAttackers, legalAttackerOptions } = await import('../src/engine/combat.js');
+  const { declareAttackers, attackerSeedDeclarations } = await import('../src/engine/combat.js');
   const state = game();
   state.turn = jumpToStep(state.turn, 'declare_attackers', 'p1');
   state.turn.activePlayerId = state.turn.priorityPlayerId = 'p1';
@@ -650,7 +650,7 @@ test('B61/157: Infectious Bloodlust — deklaracja bez gospodarza jest nielegaln
   put(state, 'aura', 'infectious-bloodlust', 'p1', 'battlefield', { kind: 'aura', attachedTo: 'host' });
   // Oferta deklaracji ZAWSZE zawiera wymuszonego (inaczej gracz nie ma
   // legalnego ruchu — klasa M270).
-  const options = legalAttackerOptions(state, 'p1');
+  const options = attackerSeedDeclarations(state, 'p1');
   assert.ok(options.length > 0, 'silnik oferuje deklaracje');
   assert.ok(options.every((ids) => ids.includes('host')), `każda oferta zawiera wymuszonego: ${JSON.stringify(options)}`);
   assert.throws(() => declareAttackers(state, 'p1', []), /musi atakować/,

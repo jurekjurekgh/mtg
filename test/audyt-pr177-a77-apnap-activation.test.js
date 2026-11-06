@@ -48,12 +48,16 @@ for(const card of ['dawntreader-elk','kheru-dreadmaw'])test(`A77: bot i replay w
  const replay=replayFromState(s),verified=verifyReplay({...replay,commands:replay.commands.slice(-count)},()=>scene('p1','p2',card).s,execute);
  assert.ok(verified.deterministic);assert.ok(verified.results.every(r=>r.ok));assert.equal(stateFingerprint(verified.state),stateFingerprint(s));
 });
-test('A77 granica: Plague Reaver z kosztem odrzucenia nie uruchamia batcha',()=>{
+test('A77 granica: Plague Reaver z kosztem odrzucenia uruchamia checkpoint po aktywacji (ADR 0032)',()=>{
  const s=createGameState({seed:17777,players:[{id:'p1'},{id:'p2'}]});s.turn=jumpToStep(s.turn,'main1','p1');s.turn.activePlayerId=s.turn.priorityPlayerId='p1';
  for(const p of ['p2','p1']){put(s,`${p}-crow`,'murder-of-crows','battlefield',p);put(s,`${p}-occult`,'selhoff-occultist','battlefield',p);}
  put(s,'source','plague-reaver','battlefield','p1');put(s,'one','basic-forest','hand','p1');put(s,'two','basic-forest','hand','p1');
  const c=view(s).legalCommands.find(c=>c.type==='activate_ability'&&c.objectId==='source'&&c.targets?.includes('p2'));act(s,c);
- assert.equal([...s.objects.values()].find(o=>o.instanceId==='i-source')?.zone,'graveyard');assert.ok(s.zones.stack.some(id=>s.objects.get(id)?.cardId==='plague-reaver'));assert.equal(s.pendingDeathTriggerBatch,null);assert.equal(s.turn.priorityPlayerId,'p2');
+ assert.equal([...s.objects.values()].find(o=>o.instanceId==='i-source')?.zone,'graveyard');assert.ok(s.zones.stack.some(id=>s.objects.get(id)?.cardId==='plague-reaver'));
+ // CR 603.3b: śmierć będąca kosztem tworzy wyzwalacze ogłoszone po aktywacji.
+ assert.ok(s.pendingDeathTriggerBatch,'checkpoint obejmuje triggery śmierci z kosztu');
+ assert.equal(s.turn.priorityPlayerId,'p1');
+ assert.ok(view(s).legalCommands.some(c=>c.type==='resolve_trigger_order'));
 });
 test('A78: prawdziwa zdolność many Sciona przy priorytecie otwiera batch',()=>{
  const s=createGameState({seed:17777,players:[{id:'p1'},{id:'p2'}]});s.turn=jumpToStep(s.turn,'main1','p1');s.turn.activePlayerId=s.turn.priorityPlayerId='p1';

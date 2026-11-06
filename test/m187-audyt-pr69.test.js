@@ -7,7 +7,7 @@ import { createCardRegistry } from '../src/cards/card-data.js';
 import { gameObjectDataOf } from '../src/cards/materialize.js';
 import { createBattlefieldToken } from '../src/engine/tokens.js';
 import { clearStatModifiers } from '../src/engine/permanents.js';
-import { legalBlockerOptions } from '../src/engine/combat.js';
+import { blockerSeedAssignments } from '../src/engine/combat.js';
 import { jumpToStep } from '../src/engine/turn.js';
 import { applyEffect } from '../src/engine/effects.js';
 import { addMana } from '../src/engine/resources.js';
@@ -75,7 +75,7 @@ test('M187/N1c: token Mite nie jest oferowany jako bloker w NASTĘPNEJ turze', (
   state.objects.set(token.id, Object.freeze({ ...state.objects.get(token.id), summoningSickness: false }));
   putCard(state, 'atk', 'highland-game', 'p2', 'battlefield', { summoningSickness: false });
   state.combat = { attackers: ['atk'], assignments: {}, defendingPlayerId: 'p1' };
-  const options = legalBlockerOptions(state, 'p1');
+  const options = blockerSeedAssignments(state, 'p1');
   const blocks = options.filter((assignment) => (assignment.atk ?? []).includes(token.id));
   assert.equal(blocks.length, 0,
     'token z „can\'t block\" nie może zostać zaoferowany jako bloker po przełomie tury');

@@ -5,7 +5,7 @@ import { createCardRegistry } from '../src/cards/card-data.js';
 import { createCardDeck } from '../src/cards/materialize.js';
 import { jumpToStep } from '../src/engine/turn.js';
 import { addMana } from '../src/engine/resources.js';
-import { legalBlockerOptions, blockCandidatePool, mandatoryBlockerIds, minimalMandatoryBlocks } from '../src/engine/combat.js';
+import { blockerSeedAssignments, blockCandidatePool, mandatoryBlockerIds, minimalMandatoryBlocks } from '../src/engine/combat.js';
 import { renderCombatWizard } from '../src/table/choice-request.js';
 import { clearStatModifiers } from '../src/engine/permanents.js';
 
@@ -93,7 +93,7 @@ const key = (a) => JSON.stringify(Object.entries(a).filter(([, ids]) => ids.leng
 test('PR140/F6: dwa kickery, maksimum częściowe — żaden cap nie dopuszcza pustego bloku', () => {
   const s = partialGame();
   for (const cap of [1, 2, 32, 1024]) {
-    const options = legalBlockerOptions(s, 'p2', cap);
+    const options = blockerSeedAssignments(s, 'p2', cap);
     assert.ok(options.length > 0 && options.length <= cap);
     assert.ok(options.every((a) => key(a) === key({ aG: ['bG'] })), `cap=${cap}`);
   }
@@ -119,7 +119,7 @@ test('PR140/F6: nieosiągalny wymóg nie tworzy obowiązku nielegalnego bloku', 
   creature(s, 'a', 'p1', { keywords: ['menace'] });
   creature(s, 'b', 'p2', { required: 1 });
   combat(s, ['a']);
-  assert.deepEqual(legalBlockerOptions(s, 'p2'), [{}]);
+  assert.deepEqual(blockerSeedAssignments(s, 'p2'), [{}]);
   assert.equal(blocks(s, {}).ok, true);
 });
 
@@ -135,7 +135,7 @@ test('PR140/F6: powtórzone Timely liczy wymogi, nie tylko liczbę stworów', ()
   assert.equal(playerView(s, 'p2').zones.battlefield.find((o) => o.id === 'bR').blockRequirementCount, 2);
   combat(s, ['aR', 'aG']);
   assert.equal(blocks(structuredClone(s), { aG: ['bG', 'help'] }).ok, false, '1 < osiągalne 2');
-  for (const cap of [1, 32, 1024]) assert.ok(legalBlockerOptions(s, 'p2', cap).every((a) => key(a) === key({ aR: ['bR', 'help'] })));
+  for (const cap of [1, 32, 1024]) assert.ok(blockerSeedAssignments(s, 'p2', cap).every((a) => key(a) === key({ aR: ['bR', 'help'] })));
   assert.equal(blocks(s, { aR: ['bR', 'help'] }).ok, true);
 });
 
@@ -147,7 +147,7 @@ test('PR140/F6: realny Ember Beast może mieć partnera pod INNYM atakującym', 
   combat(s, ['aR', 'aG']);
   const expected = { aR: ['beast'], aG: ['green'] };
   assert.ok(blockCandidatePool(s, 'p2').aR.includes('beast'), 'kreator nie gubi legalnego kandydata');
-  assert.ok(legalBlockerOptions(s, 'p2').some((a) => key(a) === key(expected)));
+  assert.ok(blockerSeedAssignments(s, 'p2').some((a) => key(a) === key(expected)));
   assert.equal(blocks(s, expected).ok, true);
 });
 
@@ -157,7 +157,7 @@ test('PR140/F6: samotny multibloker nadal blokuje alone (liczba stworów, nie pa
   creature(s, 'alone', 'p2', { slots: 2, alone: true, required: 1 });
   combat(s, ['a1', 'a2']);
   assert.equal(blocks(structuredClone(s), { a1: ['alone'], a2: ['alone'] }).ok, false);
-  assert.deepEqual(legalBlockerOptions(s, 'p2'), [{}]);
+  assert.deepEqual(blockerSeedAssignments(s, 'p2'), [{}]);
 });
 
 test('PR140/F6: jeden bloker nie liczy się dwa razy przeciw menace mimo dwóch slotów', () => {
@@ -175,7 +175,10 @@ test('PR140/F6: legalna ręczna deklaracja spoza cap nadal akceptowana', () => {
   for (let i = 0; i < 5; i++) creature(s, `b${i}`, 'p2', { required: 1 });
   combat(s, ids);
   const expected = Object.fromEntries(ids.map((id, i) => [id, [`b${4 - i}`]]));
-  assert.equal(legalBlockerOptions(s, 'p2', 1).length, 1);
+  const seeds = blockerSeedAssignments(s, 'p2');
+  assert.ok(seeds.length > 0, 'ziarna istnieją także przy pięciu wymuszonych blokerach');
+  for (const seed of seeds) assert.equal(blocks(structuredClone(s), seed).ok, true,
+    `ziarno odrzucone przez walidację: ${key(seed)}`);
   assert.equal(blocks(s, expected).ok, true);
 });
 
@@ -253,13 +256,12 @@ test('PR140/F6: 36 małych układów — maksimum/oferta/walidacja zgodne z niez
     const expected = oracle(att, def);
     const optimal = expected.legal.filter((a) => a.count === expected.best);
     const keys = new Set(optimal.map((a) => key(a.assignment)));
-    for (const cap of [1, 3, 32, 4096]) {
-      const menu = legalBlockerOptions(s, 'p2', cap);
-      assert.ok(menu.length > 0 && menu.length <= cap, `seed=${seed} cap=${cap}`);
-      assert.equal(new Set(menu.map(key)).size, menu.length, 'bez duplikatów');
-      for (const a of menu) assert.ok(keys.has(key(a)), `seed=${seed} cap=${cap}: ${key(a)} nie osiąga legalnego maksimum=${expected.best}`);
-      if (cap === 4096) assert.deepEqual(new Set(menu.map(key)), keys, `pełna mała przestrzeń seed=${seed}`);
-    }
+    const menu = blockerSeedAssignments(s, 'p2');
+    assert.ok(menu.length > 0, `seed=${seed}: brak ziaren`);
+    assert.ok(menu.length <= 3 + att.length * def.length + att.length + def.length,
+      `seed=${seed}: ziarna rosną wielomianowo, nie jak pełna przestrzeń (${menu.length})`);
+    assert.equal(new Set(menu.map(key)).size, menu.length, 'bez duplikatów');
+    for (const a of menu) assert.ok(keys.has(key(a)), `seed=${seed}: ${key(a)} nie osiąga legalnego maksimum=${expected.best}`);
     for (const sample of [optimal[0], optimal.at(-1)]) assert.equal(blocks(structuredClone(s), sample.assignment).ok, true, `manual seed=${seed}`);
     const suboptimal = expected.legal.find((a) => a.count < expected.best);
     if (suboptimal) assert.equal(blocks(structuredClone(s), suboptimal.assignment).ok, false, `zbyt mało wymogów seed=${seed}`);
@@ -278,7 +280,7 @@ test('PR140/F6: większy split 18 menace + wspólny partner — maksimum jeden, 
   }
   creature(s, 'help', 'p2', { subtypes: ['Spirit'] });
   combat(s, attackers);
-  const options = legalBlockerOptions(s, 'p2');
+  const options = blockerSeedAssignments(s, 'p2');
   assert.ok(options.length > 0);
   for (const a of options) {
     assert.equal(Object.values(a).flat().filter((id) => id !== 'help').length, 1);
@@ -364,7 +366,7 @@ test('PR140/F6: elastyczny partner musi ustąpić wąskiemu (dopasowanie, nie gr
   combat(s, ['aR', 'aG']);
   const expected = { aR: ['bR', 'narrow'], aG: ['bG', 'flex'] };
   assert.equal(key(minimalMandatoryBlocks(s, 'p2', ['bR', 'bG'])), key(expected));
-  for (const cap of [1, 32, 1024]) assert.ok(legalBlockerOptions(s, 'p2', cap).every((a) => key(a) === key(expected)));
+  for (const cap of [1, 32, 1024]) assert.ok(blockerSeedAssignments(s, 'p2', cap).every((a) => key(a) === key(expected)));
   assert.equal(blocks(s, expected).ok, true);
 });
 
@@ -376,7 +378,7 @@ test('PR140/F6: cap przestrzeni uwzględnia sloty, fallback nie zabiera ich blok
   combat(s, attackers);
   // 1 + C(6,1) + C(6,2) + C(6,3) = 42 > 32, choć stary szacunek
   // (6+1)^1 = 7 błędnie dopuszczał pełną (zduplikowaną) enumerację rund.
-  const offers = legalBlockerOptions(s, 'p2', 32);
+  const offers = blockerSeedAssignments(s, 'p2', 32);
   assert.ok(offers.length <= 32);
   assert.ok(offers.some((a) => Object.values(a).flat().length === 3), 'wariant używający trzech legalnych slotów');
   for (const a of offers) assert.equal(blocks(structuredClone(s), a).ok, true);
@@ -408,7 +410,7 @@ test('PR140/F6: cap jest budżetem pracy enumeratora także przy pięciu slotach
     assert.ok(++reads <= 10000, 'małe menu nie może enumerować kombinatorycznie wszystkich slotów');
     return originalGet.call(this, id);
   };
-  try { offers = legalBlockerOptions(s, 'p2', 32); }
+  try { offers = blockerSeedAssignments(s, 'p2', 32); }
   finally { delete s.objects.get; }
   assert.ok(offers.length <= 32);
   assert.ok(offers.some((a) => Object.values(a).flat().length === 5));

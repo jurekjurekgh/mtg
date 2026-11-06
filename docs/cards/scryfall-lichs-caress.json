@@ -1,0 +1,32 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Lich%27s%20Caress&set=m19&format=json",
+  "print": "Lich's Caress (M19)",
+  "name": "Lich's Caress",
+  "mana_cost": "{3}{B}{B}",
+  "cmc": 5,
+  "type_line": "Sorcery",
+  "oracle_text": "Destroy target creature. You gain 3 life.",
+  "power": null,
+  "toughness": null,
+  "colors": ["B"],
+  "color_identity": ["B"],
+  "keywords": [],
+  "set": "m19",
+  "set_name": "Core Set 2019",
+  "collector_number": "105",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/3/2/32bd3acd-aa62-4708-9336-e3430fd0e541.jpg?1783934569",
+    "normal": "https://cards.scryfall.io/normal/front/3/2/32bd3acd-aa62-4708-9336-e3430fd0e541.jpg?1783934569"
+  },
+  "rulings": [
+    {
+      "source": "wotc",
+      "published_at": "2018-07-13",
+      "comment": "If the target creature is an illegal target by the time Lich’s Caress tries to resolve, the spell doesn’t resolve. You won’t gain any life."
+    }
+  ],
+  "rulingsSource": "https://api.scryfall.com/cards/m19/105/rulings",
+  "rulingsPobrano": "2026-11-06",
+  "pobrano": "2026-11-06"
+}

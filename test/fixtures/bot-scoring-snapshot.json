@@ -1,52 +1,55 @@
 {
   "version": 1,
-  "overallHash": "abc34db7bf9655d57159ffaaf0246dac29686538fcf135102153996774def11d",
+  "overallHash": "abc4017e799119659dee1c43289666463ad22fa7023261164688e0af00506dad",
   "matches": [
     {
       "pair": "ravnica-wur|innistrad-wu",
       "seed": 1000,
-      "hash": "f48be1d350d491dd3e411808c38894ee7af390417492419558aefebd88281b43",
-      "decisions": 263,
-      "scoreSum": 2971.65,
+      "hash": "3bd378779b3a9333ec5981525d23835ba96733975b1f6580ae7dee3bd95fe5ee",
+      "decisions": 235,
+      "scoreSum": 2825.82,
       "chosenKinds": {
-        "activate_ability": 1,
-        "attack": 8,
-        "block": 8,
-        "cast_permanent": 6,
+        "activate_ability": 2,
+        "attack": 7,
+        "block": 7,
+        "cast_permanent": 5,
         "cast_spell": 1,
-        "pass_priority": 213,
+        "pass_priority": 190,
         "play_land": 5,
-        "resolve_combat": 10,
+        "resolve_combat": 9,
         "resolve_counter_pay_choice": 1,
         "resolve_discard_choice": 1,
         "resolve_mulligan_choice": 1,
-        "resolve_optional_trigger_choice": 5,
-        "resolve_trigger_target": 3
+        "resolve_optional_trigger_choice": 4,
+        "resolve_trigger_target": 2
       }
     },
     {
       "pair": "ravnica-wur|innistrad-wu",
       "seed": 1001,
-      "hash": "ad66bed1be274e05df20b29387d05c4cdcca93d8563150b7be95abdad77c19a2",
-      "decisions": 298,
-      "scoreSum": 3186.9495,
+      "hash": "96ca9d744309a72d9f00feca2fdfd35d555bc5560855345437e5605b7f7a819a",
+      "decisions": 256,
+      "scoreSum": 1860.8982,
       "chosenKinds": {
-        "attack": 8,
-        "block": 10,
-        "cast_permanent": 6,
-        "cast_spell": 4,
-        "pass_priority": 243,
+        "activate_ability": 2,
+        "attack": 6,
+        "block": 7,
+        "cast_permanent": 4,
+        "cast_spell": 3,
+        "pass_priority": 209,
         "play_land": 7,
-        "resolve_combat": 12,
+        "resolve_combat": 10,
+        "resolve_damage_assignment": 1,
+        "resolve_mentor_target": 1,
         "resolve_mulligan_choice": 1,
-        "resolve_optional_trigger_choice": 5,
-        "resolve_trigger_target": 2
+        "resolve_optional_trigger_choice": 4,
+        "resolve_trigger_target": 1
       }
     },
     {
       "pair": "dominaria-brg|mirrodin-wu",
       "seed": 1000,
-      "hash": "f8a7cc5b1232fd9ce7dc4d7401e1ffc4c541282400fa6943d9806e7751603520",
+      "hash": "de161760bbe36138ab4ad802236d9053128d12d0f626bf0aa4101e10c640f834",
       "decisions": 203,
       "scoreSum": 3048.1072,
       "chosenKinds": {
@@ -67,22 +70,21 @@
     {
       "pair": "dominaria-brg|mirrodin-wu",
       "seed": 1001,
-      "hash": "405481c24591aef8e532e7230544c94875604478ce778abe8a1c74bfdf6fd356",
-      "decisions": 313,
-      "scoreSum": 3591.2971,
+      "hash": "676601673f7ca2fb0d7dc3fc277326d7ac0f6def0445c8996b76415a288ab9b8",
+      "decisions": 285,
+      "scoreSum": 3307.1953,
       "chosenKinds": {
         "activate_ability": 1,
         "attack": 8,
-        "block": 11,
+        "block": 10,
         "cast_flashback": 1,
-        "cast_permanent": 6,
-        "cast_spell": 6,
-        "pass_priority": 256,
+        "cast_permanent": 5,
+        "cast_spell": 5,
+        "pass_priority": 233,
         "play_land": 8,
-        "resolve_combat": 13,
+        "resolve_combat": 12,
         "resolve_mulligan_choice": 1,
-        "resolve_reveal_exile_hand": 1,
-        "resolve_trigger_target": 1
+        "resolve_reveal_exile_hand": 1
       }
     },
     {

@@ -681,4 +681,15 @@ export const MANA_COSTS = {
   "anticipate": "{1}{U}",
   "trumpet-blast": "{2}{R}",
   "violent-urge": "{R}",
+  // Batch 72 (kolekcja 635–644) — pełne koszty kolorowe z Oracle.
+  "feral-ridgewolf": "{2}{R}",
+  "creeping-peeper": "{1}{U}",
+  "vortex-runner": "{2}{U}",
+  "kraken-hatchling": "{U}",
+  "open-the-gates": "{G}",
+  "living-history": "{1}{R}",
+  "banishing-light": "{2}{W}",
+  "pheres-band-centaurs": "{4}{G}",
+  "shining-aerosaur": "{4}{W}",
+  "lichs-caress": "{3}{B}{B}",
 };

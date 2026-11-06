@@ -7,16 +7,13 @@ import { createCardDeck } from '../src/cards/materialize.js';
 import { jumpToStep } from '../src/engine/turn.js';
 import { addMana } from '../src/engine/resources.js';
 import { addCounter } from '../src/engine/counters.js';
+import { replayFromState, verifyReplay } from '../src/engine/replay.js';
+import { stateFingerprint } from '../src/engine/fingerprint.js';
 
-// Otwarty reproduktor: wymuszaj AUDIT_A112_ENFORCE=1.
-const audit = (name, fn) =>
-  test(
-    name,
-    {
-      skip: process.env.AUDIT_A112_ENFORCE === '1' ? false : 'otwarte A112 (AUDIT_A112_ENFORCE=1)',
-    },
-    fn,
-  );
+// A112 zamknięte w PR #179 (ADR 0031): wszystkie przypadki są aktywne.
+// Podstawa: CR 603.3b (APNAP i wybór kolejności przed priorytetem), 603.10a
+// (odejście patrzy wstecz). CR SHA-256:
+// 8d860e451f20f38865b725b42d82feb714c725373dd8f3b32b8652b3eeb070ca.
 const registry = createCardRegistry();
 const other = (p) => (p === 'p1' ? 'p2' : 'p1');
 function put(state, id, cardId, ownerId, zone) {
@@ -64,6 +61,29 @@ function scene(
   addMana(state, shooter, 1, { colors: ['R'] });
   return state;
 }
+function assertReplay(state, base, factory) {
+  const replay = replayFromState(state);
+  const result = verifyReplay(
+    { ...replay, commands: replay.commands.slice(base) },
+    factory,
+    execute,
+  );
+  assert.ok(result.deterministic);
+  assert.ok(result.results.every((r) => r.ok));
+  assert.equal(stateFingerprint(result.state), stateFingerprint(state));
+}
+function selhoffScene(controller, active) {
+  const state = scene(controller);
+  state.turn.activePlayerId = active;
+  put(state, 'selhoff', 'selhoff-occultist', other(controller), 'battlefield');
+  return state;
+}
+function crowScene(controller, active) {
+  const state = scene(controller);
+  state.turn.activePlayerId = active;
+  put(state, 'crow', 'murder-of-crows', controller, 'battlefield');
+  return state;
+}
 function castAndResolve(state) {
   act(
     state,
@@ -79,12 +99,11 @@ function impEvents(state) {
 }
 for (const controller of ['p1', 'p2'])
   for (const active of [controller, other(controller)]) {
-    audit(
+    test(
       `A112: Imp i Selhoff po Shock w kolejności APNAP (Imp ${controller}, aktywny ${active})`,
       () => {
-        const state = scene(controller);
-        state.turn.activePlayerId = active;
-        put(state, 'selhoff', 'selhoff-occultist', other(controller), 'battlefield');
+        const state = selhoffScene(controller, active),
+          base = state.commands.length;
         castAndResolve(state);
         const choose = view(state).legalCommands.find(
           (c) => c.type === 'resolve_trigger_target' && c.targetId === controller,
@@ -99,6 +118,7 @@ for (const controller of ['p1', 'p2'])
             ? ['nefarious-imp', 'selhoff-occultist']
             : ['selhoff-occultist', 'nefarious-imp'];
         assert.deepEqual(actual, expected, 'trigger aktywnego pod triggerem nieaktywnego');
+        assertReplay(state, base, () => selhoffScene(controller, active));
       },
     );
   }
@@ -106,12 +126,11 @@ for (const controller of ['p1', 'p2'])
 // Oba własne triggery niecelowane: kontroler wybiera ich względny porządek.
 for (const controller of ['p1', 'p2'])
   for (const active of [controller, other(controller)]) {
-    audit(
+    test(
       `A112: kontroler wybiera porządek Imp i Murder of Crows (${controller}, aktywny ${active})`,
       () => {
-        const state = scene(controller);
-        state.turn.activePlayerId = active;
-        put(state, 'crow', 'murder-of-crows', controller, 'battlefield');
+        const state = crowScene(controller, active),
+          base = state.commands.length;
         castAndResolve(state);
         assert.equal(state.turn.priorityPlayerId, controller);
         const choices = view(state).legalCommands.filter((c) => c.type === 'resolve_trigger_order');
@@ -127,13 +146,15 @@ for (const controller of ['p1', 'p2'])
             .map((o) => o.cardId),
           ['nefarious-imp', 'murder-of-crows'],
         );
+        assertReplay(state, base, () => crowScene(controller, active));
       },
     );
   }
 
 for (const controller of ['p1', 'p2'])
-  audit(`A112: kontroler rozróżnia triggery dwóch Impów (${controller})`, () => {
-    const state = scene(controller, { second: true });
+  test(`A112: kontroler rozróżnia triggery dwóch Impów (${controller})`, () => {
+    const state = scene(controller, { second: true }),
+      base = state.commands.length;
     castAndResolve(state);
     assert.equal(state.turn.priorityPlayerId, controller);
     const choices = view(state).legalCommands.filter(
@@ -153,4 +174,5 @@ for (const controller of ['p1', 'p2'])
         .map((o) => o.triggerEntry.sourceId),
       ['second', 'imp'],
     );
+    assertReplay(state, base, () => scene(controller, { second: true }));
   });

@@ -36,7 +36,10 @@ const REGISTRY = createCardRegistry();
 // Fala C dokłada trzy dopłaty okien (ewazja / Główna 1 / zegar śmiertelny).
 // Piny fal A i B mierzą przy wyłączonych oknach, żeby każda fala miała własną
 // kotwicę anty-over-fix (M429): waga ×0 przywraca wartość z poprzedniej fali.
-const OKNA_OFF = { counterEvasionBonus: 0, counterLateWindowPenalty: 0, counterLethalClockBonus: 0 };
+// Zgłoszenie D (2026-11-05): bramka trzymania instant-liczników to kolejne
+// „okno” — kotwice M429 mierzą wymiary `counterHostValue` przy oknach
+// wyłączonych, więc zestaw OFF wyłącza także ją (×0 = dawne zachowanie).
+const OKNA_OFF = { counterEvasionBonus: 0, counterLateWindowPenalty: 0, counterLethalClockBonus: 0, counterInstantHoldPenalty: 0 };
 
 function putCard(state, id, cardId, controllerId, zone = 'hand') {
   const def = REGISTRY.get(cardId);
@@ -290,28 +293,30 @@ test('PMSSB-23/C1: licznik na gospodarzu poza zasięgiem blokujących jest droż
   // Dwóch blokujących 2/2: latacz nie do zatrzymania, a Menace można
   // zablokować dopiero dwoma stworami (CR 702.111) — wanilię jednym, więc
   // przy dwóch blokerach dopłatę dostaje tylko latacz.
+  // Zgłoszenie D: Dragonscale to instant — poza walką bramka trzymania
+  // odejmuje 120 (dawne 73/68 → −47/−52); wymiar ewazji (+5) bez zmian.
   const dwoch = (kw) => scoreOf(dragonscaleNaGospodarza(kw, 2), 'cast_spell(db->mine)');
-  assert.equal(dwoch(['flying']), 73);
-  assert.equal(dwoch(['menace']), 68);
-  assert.equal(dwoch([]), 68);
+  assert.equal(dwoch(['flying']), -47);
+  assert.equal(dwoch(['menace']), -52);
+  assert.equal(dwoch([]), -52);
   // Jeden blokujący: Menace też nie do zablokowania (wymaga dwóch).
   const jeden = (kw) => scoreOf(dragonscaleNaGospodarza(kw, 1), 'cast_spell(db->mine)');
-  assert.equal(jeden(['flying']), 73);
-  assert.equal(jeden(['menace']), 73);
-  assert.equal(jeden([]), 68, 'wanilia 2/2: bez dopłaty — bloker ją zatrzyma');
+  assert.equal(jeden(['flying']), -47);
+  assert.equal(jeden(['menace']), -47);
+  assert.equal(jeden([]), -52, 'wanilia 2/2: bez dopłaty — bloker ją zatrzyma');
   assert.ok(jeden(['flying']) > jeden([]), 'ewazja musi rozstrzygać wybór celu');
 });
 
 test('PMSSB-23/C2: dopłata za ewazję ×0 przywraca remis 68/68/68 (kotwica)', () => {
   for (const kw of [['flying'], ['menace'], []]) {
     assert.equal(
-      scoreOf(dragonscaleNaGospodarza(kw, 2), 'cast_spell(db->mine)', { counterEvasionBonus: 0 }),
+      scoreOf(dragonscaleNaGospodarza(kw, 2), 'cast_spell(db->mine)', { counterEvasionBonus: 0, counterInstantHoldPenalty: 0 }),
       68, `dla ${kw.join('+') || 'wanilii'}`,
     );
   }
   // Pusty stół przeciwnika: dopłata NIE gra (każdy stwór byłby nieblokowalny,
   // więc nic by nie rozstrzygała) — wycena zostaje dawna (kotwice PMSSB-2/16/18).
-  assert.equal(scoreOf(dragonscaleNaGospodarza([], 0), 'cast_spell(db->mine)'), 68);
+  assert.equal(scoreOf(dragonscaleNaGospodarza([], 0), 'cast_spell(db->mine)', { counterInstantHoldPenalty: 0 }), 68);
 });
 
 // ---------------------------------------------------------------------------
@@ -360,8 +365,10 @@ test('PMSSB-23/C4: licznik, po którym moc ≥ życie przeciwnika, domyka grę (
 test('PMSSB-23/C5: zegar nie zapala się, gdy atak da się zatrzymać albo gra nie jest domykana', () => {
   // Wróg też 3 życia, ale gospodarz to wanilia i stoi blokujący 2/2 — licznik
   // nie gwarantuje obrażeń w twarz, więc premia za domknięcie gry się nie należy.
-  assert.equal(scoreOf(zegar({ keywords: [], blokerzy: 1 }), 'cast_spell(db->mine)'), 68);
+  // Zgłoszenie D: w obu scenach zegar nadal się nie zapala (brak +50),
+  // a instant rzucony poza walką traci bramkę trzymania (68 → −52).
+  assert.equal(scoreOf(zegar({ keywords: [], blokerzy: 1 }), 'cast_spell(db->mine)'), -52);
   // Zdrowy przeciwnik (20 życia): ten sam latacz, bez blokujących — 4/4 to
   // tylko większy stwór, nie wygrana.
-  assert.equal(scoreOf(zegar({ life: 20 }), 'cast_spell(db->mine)'), 68);
+  assert.equal(scoreOf(zegar({ life: 20 }), 'cast_spell(db->mine)'), -52);
 });

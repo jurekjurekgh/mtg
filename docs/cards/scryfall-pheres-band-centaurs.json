@@ -1,0 +1,26 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Pheres-Band%20Centaurs&set=ths&format=json",
+  "print": "Pheres-Band Centaurs (THS)",
+  "name": "Pheres-Band Centaurs",
+  "mana_cost": "{4}{G}",
+  "cmc": 5,
+  "type_line": "Creature — Centaur Warrior",
+  "oracle_text": "",
+  "power": "3",
+  "toughness": "7",
+  "colors": ["G"],
+  "color_identity": ["G"],
+  "keywords": [],
+  "set": "ths",
+  "set_name": "Theros",
+  "collector_number": "171",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/2/1/2168fcf4-cf87-4ab8-9710-6ec672750a9a.jpg?1783939739",
+    "normal": "https://cards.scryfall.io/normal/front/2/1/2168fcf4-cf87-4ab8-9710-6ec672750a9a.jpg?1783939739"
+  },
+  "rulings": [],
+  "rulingsSource": "https://api.scryfall.com/cards/ths/171/rulings",
+  "rulingsPobrano": "2026-11-06",
+  "pobrano": "2026-11-06"
+}

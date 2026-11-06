@@ -1,0 +1,47 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Banishing%20Light&set=eoe&format=json",
+  "print": "Banishing Light (EOE)",
+  "name": "Banishing Light",
+  "mana_cost": "{2}{W}",
+  "cmc": 3,
+  "type_line": "Enchantment",
+  "oracle_text": "When this enchantment enters, exile target nonland permanent an opponent controls until this enchantment leaves the battlefield.",
+  "power": null,
+  "toughness": null,
+  "colors": ["W"],
+  "color_identity": ["W"],
+  "keywords": [],
+  "set": "eoe",
+  "set_name": "Edge of Eternities",
+  "collector_number": "6",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/c/4/c45f11cd-a0aa-4d14-aa21-57f0969f3e2b.jpg?1783905999",
+    "normal": "https://cards.scryfall.io/normal/front/c/4/c45f11cd-a0aa-4d14-aa21-57f0969f3e2b.jpg?1783905999"
+  },
+  "rulings": [
+    {
+      "source": "wotc",
+      "published_at": "2025-07-25",
+      "comment": "If an Aura is exiled this way, its owner chooses what it will enchant as it returns to the battlefield. An Aura put onto the battlefield this way doesn’t target anything (so it could be attached to a permanent an opponent controls with hexproof, for example), but the Aura’s enchant ability restricts what it can be attached to. If the Aura can’t legally be attached to anything, it remains in exile for the rest of the game."
+    },
+    {
+      "source": "wotc",
+      "published_at": "2025-07-25",
+      "comment": "Auras attached to the exiled permanent will be put into their owners’ graveyards. Any Equipment will become unattached and remain on the battlefield. Any counters on the exiled permanent will cease to exist. When the card returns to the battlefield, it will be a new object with no connection to the card that was exiled."
+    },
+    {
+      "source": "wotc",
+      "published_at": "2025-07-25",
+      "comment": "If Banishing Light leaves the battlefield before its triggered ability resolves, the target permanent won’t be exiled."
+    },
+    {
+      "source": "wotc",
+      "published_at": "2025-07-25",
+      "comment": "If a token is exiled this way, it will cease to exist and won’t return to the battlefield."
+    }
+  ],
+  "rulingsSource": "https://api.scryfall.com/cards/eoe/6/rulings",
+  "rulingsPobrano": "2026-11-06",
+  "pobrano": "2026-11-06"
+}

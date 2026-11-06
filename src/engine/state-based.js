@@ -44,9 +44,18 @@ export function addRegenerationShield(state, objectId) {
  * M343/F5, CR 704.4: decyzja wewnątrz czaru nie otwiera okna na SBA.
  * pendingSpell z pustym ogonem też oznacza trwające rozstrzyganie.
  * Wspólna bramka dla tej funkcji i końcowego usuwania tokenów w accepted.
+ *
+ * A108/A109 / ADR 0031: dopłata Ward (pendingWardPay) jest WCIĄŻ rozstrzyganiem
+ * zdolności wyzwalanej Ward (CR 702.21). Gracz może w jej trakcie aktywować
+ * zdolności many (CR 605.3a/608.2g), ale akcje stanowe nie sprawdzają stanu
+ * w środku rozstrzygania (CR 704.4). Osierocona aura (704.5m), token poza
+ * polem bitwy (704.5d) i przegrana z 0 życia (704.5a) czekają do checkpointu
+ * PO zakończeniu Ward. Bez tego aura znikała w środku płatności, a jej
+ * trigger `enchanted_creature_dies` odpalał się za wcześnie względem
+ * zdarzeń kosztu many.
  */
 export function stateBasedActionsOpen(state) {
-  return !state.pendingSpell && !state.pendingReplacementChoice;
+  return !state.pendingSpell && !state.pendingReplacementChoice && !state.pendingWardPay;
 }
 
 /**

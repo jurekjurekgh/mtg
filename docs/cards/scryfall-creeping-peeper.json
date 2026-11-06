@@ -1,0 +1,32 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Creeping%20Peeper&set=dsk&format=json",
+  "print": "Creeping Peeper (DSK)",
+  "name": "Creeping Peeper",
+  "mana_cost": "{1}{U}",
+  "cmc": 2,
+  "type_line": "Creature — Eye",
+  "oracle_text": "{T}: Add {U}. Spend this mana only to cast an enchantment spell, unlock a door, or turn a permanent face up.",
+  "power": "2",
+  "toughness": "1",
+  "colors": ["U"],
+  "color_identity": ["U"],
+  "keywords": [],
+  "set": "dsk",
+  "set_name": "Duskmourn: House of Horror",
+  "collector_number": "46",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/7/a/7ad59368-1335-4d8e-a254-ccd889933e57.jpg?1783909498",
+    "normal": "https://cards.scryfall.io/normal/front/7/a/7ad59368-1335-4d8e-a254-ccd889933e57.jpg?1783909498"
+  },
+  "rulings": [
+    {
+      "source": "wotc",
+      "published_at": "2024-09-20",
+      "comment": "Mana produced by Creeping Peeper's activated ability can be used to pay morph or disguise costs when turning a face-down permanent face up or to pay costs associated with turning a manifested or cloaked permanent face up."
+    }
+  ],
+  "rulingsSource": "https://api.scryfall.com/cards/dsk/46/rulings",
+  "rulingsPobrano": "2026-11-06",
+  "pobrano": "2026-11-06"
+}

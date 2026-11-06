@@ -7,7 +7,7 @@ import { createCardRegistry } from '../src/cards/card-data.js';
 import { gameObjectDataOf } from '../src/cards/materialize.js';
 import { jumpToStep } from '../src/engine/turn.js';
 import { addMana } from '../src/engine/resources.js';
-import { legalAttackerOptions } from '../src/engine/combat.js';
+import { attackCandidateIds } from '../src/engine/combat.js';
 
 const REGISTRY = createCardRegistry();
 
@@ -88,8 +88,8 @@ test('A3: Krotiq Nestguard — defender blokuje atak; po {2}{G} atakuje; cleanup
   const attackStep = () => {
     state.turn = { ...state.turn, phase: 'combat', step: 'declare_attackers', activePlayerId: 'p1', priorityPlayerId: 'p1' };
   };
-  // legalAttackerOptions zwraca podzbiory (tablice id atakujących).
-  const nestAttacks = () => legalAttackerOptions(state, 'p1').some((opt) => opt.includes('nest'));
+  // attackCandidateIds zwraca zdolnych do ataku w kolejności pola bitwy.
+  const nestAttacks = () => attackCandidateIds(state, 'p1').includes('nest');
   attackStep();
   assert.ok(!nestAttacks(), 'z defenderem nie może atakować');
 
@@ -115,7 +115,7 @@ test('A3: Krotiq Nestguard — defender blokuje atak; po {2}{G} atakuje; cleanup
   const nest = [...state.objects.values()].find((o) => o.cardId === 'krotiq-nestguard' && o.zone === 'battlefield');
   assert.ok(nest, 'Nestguard żyje');
   attackStep();
-  assert.ok(!legalAttackerOptions(state, 'p1').some((opt) => opt.includes(nest.id)),
+  assert.ok(!attackCandidateIds(state, 'p1').includes(nest.id),
     'w następnej turze znowu nie atakuje (defender przywrócony)');
 });
 

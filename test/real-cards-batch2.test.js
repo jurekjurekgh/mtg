@@ -96,6 +96,8 @@ function passRound(state) {
   let rounds = 0;
   for (;;) {
     const holder = state.turn.priorityPlayerId;
+    const order = playerView(state, holder).legalCommands.find((c) => c.type === 'resolve_trigger_order');
+    if (order) { if (!execute(state, order).ok) break; continue; }
     const r1 = execute(state, { type: 'pass_priority', playerId: holder });
     if (!r1.ok) break;
     if (state.zones.stack.length === 0 && rounds >= 1) break;

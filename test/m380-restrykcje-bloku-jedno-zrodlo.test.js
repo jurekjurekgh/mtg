@@ -3,7 +3,7 @@
 // predykat parowy. Przed M380 walidacja miała ręczną kopię listy restrykcji
 // i nie zawierała progu mocy (Rust-Shield Rampager): komenda
 // `declare_blockers { ram: ['b2'] }` z blokerem o mocy 2 była PRZYJMOWANA,
-// mimo że panel/`legalBlockerOptions` takiego bloku nie oferował.
+// mimo że panel/`blockerSeedAssignments` takiego bloku nie oferował.
 //
 // Źródła online (dostęp 2026-09-18):
 //  • CR 509.1 (https://media.wizards.com/2026/downloads/MagicCompRules%2020260819.txt,
@@ -44,7 +44,7 @@ import { createCardRegistry } from '../src/cards/card-data.js';
 import { gameObjectDataOf } from '../src/cards/materialize.js';
 import { addObject, createGameState, execute, playerView } from '../src/engine/game-state.js';
 import { jumpToStep } from '../src/engine/turn.js';
-import { legalBlockerOptions } from '../src/engine/combat.js';
+import { blockerSeedAssignments } from '../src/engine/combat.js';
 import { effectivePower } from '../src/engine/permanents.js';
 import { detainUntilYourNextTurn } from '../src/engine/permanents.js';
 

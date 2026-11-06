@@ -4,7 +4,7 @@
 // CR 121.1: "A player draws a card by putting the top card of their library
 // into their hand" as a draw action/instruction; looking and putting is not
 // an instruction to draw. CR 401.2: library is a face-down hidden zone.
-// https://github.com/nwgarre/mtg-data/blob/main/rules/cr-raw.txt
+// https://github.com/nwgarne/mtg-data/blob/main/rules/cr-raw.txt
 // 2026-09-25 SHA-256 8d860e451f20f38865b725b42d82feb714c725373dd8f3b32b8652b3eeb070ca.
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
@@ -29,7 +29,7 @@ function scene(n,player='p1',spell='anticipate'){
 }
 const view=s=>playerView(s,s.turn.priorityPlayerId);
 function act(s,cmd){assert.ok(cmd,'legalna komenda');const r=execute(s,cmd);assert.ok(r.ok,JSON.stringify(r));return r;}
-function pass(s){act(s,view(s).legalCommands.find(c=>c.type==='pass_priority'));}
+function pass(s){const order=view(s).legalCommands.find(c=>c.type==='resolve_trigger_order');if(order){act(s,order);return;}act(s,view(s).legalCommands.find(c=>c.type==='pass_priority'));}
 function cast(s,target=null){act(s,view(s).legalCommands.find(c=>c.type==='cast_spell'&&c.objectId==='spell'&&(!target||c.targets?.includes(target))));}
 function resolve(s){for(let i=0;i<12&&s.zones.stack.length&&!s.pendingLookTopN;i++)pass(s);}
 function byInstance(s,id){return [...s.objects.values()].find(o=>o.instanceId===`i-${id}`);}

@@ -1,4 +1,4 @@
-// Rzeczywisty Scion z Summonera, a Rupture Spire jest rzeczywiście zagrywany.
+// Rzeczywisty Scion z Summonera i echo {2}{B} Bone Shreddera.
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {createGameState,addObject,execute,playerView} from '../src/engine/game-state.js';

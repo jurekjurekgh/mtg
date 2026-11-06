@@ -20,6 +20,204 @@
 > nie trafiają do repozytorium".
 
 
+## 2026-11-06 — batch 72: mechaniki, wycena, talie i bramy
+
+- Kolekcja 635–644 (10 kart) wdrożona wyłącznie z planów zatwierdzonych w B0 i snapshotów/rulingów Scryfall z B1; B2 inwentarz: `docs/plans/PLAN_2026-11-06b-batch72-rule-inventory.md`. B3 generyczne ścieżki: purpose-restricted mana dla enchantment/door/turn-face-up, per-player fakt wyjścia karty z grobu, warunek static/live dla Vortex Runner. B4 testy legal/illegal i cztery dowiązania; bez wyjątków po nazwie karty.
+- B5 PMSSB-87: brak nowych wag; Peeper `{U}` → Living History **78.30 vs pass 0**, ordinary sorcery bez oferty; Vortex Runner attack **−10 / +6** przy 7/8 landach; Living History trigger: cel 3/3 **64** vs 0/4 **59**. Trzy mutacje (purpose, scan triggera, warunek static) zrobiły odpowiednie piny RED. Plan/sonda/piny: `PLAN_2026-11-06c-pmssb72.md`, `tools/pmssb72-batch72-sonda.mjs`, `test/audyt-pmssb72-batch72.test.js`.
+- B6 wyłącznie przez generator: 10 kart trafiło do planowych talii; 30 kart nielandowych Forgotten Realms wywołało przewidziany podział BR/WUG. README, benchmark help, testy i narzędzia zaktualizowane na nazwy 32 wygenerowanych talii. Raport: `docs/plans/PLAN_2026-11-06d-batch72-deck-report.md`.
+- Bramy B7: fast **10,051/10,051**, slow **268/268**, build **78 modułów / 5,755.8 kB**; quick benchmark **672 mecze, 0 niedokończonych**, heuristic 80.7% vs aggro / 97.6% vs random. Próbka talii zmieniła się po podziale, więc nie przedstawiamy win-rate jako ścisłego before/after.
+- Etapy B3–B6 wypchnięte kolejno na `arena/5d931b5a-mtg`: `322cc6b`, `2ac2ff4`, `11987b1`, `29b1143`. PR pozostaje otwarty i niescalony. Plan B0–B7: `docs/plans/PLAN_2026-11-06-batch72-kolekcja-635-644.md`; handoff: `docs/setup/HANDOFF_2026-11-06-batch72.md`.
+- PMSSB-88 domknęło ręczny audit scoringu każdej z 10 kart na rzeczywistych wynikach sondy (nie zaliczano testów reguł jako dowodu). Zamknięto trzy usterki ogólne: nested `anyOf` dla Open the Gates (**59→64**), legalny obrót manifestu dzięki `{U}` Creeping Peeper (**4 vs pass 0**, wcześniej `-Infinity`), i wycena powrotu powiązanego wygnania przy removalu (**+18/-18**, również Dispeller's Capsule **27→45**). Tabela per karta, controls i mutacje: §PMSSB-88 w `docs/PMSSB.md`. `unlock_door` uczciwie pozostaje unscored: brak Room/action w repo. Post-audit: fast **10,060/10,060**, slow **268/268**, build **78 / 5,757.7 kB**; B0 benchmark nie uruchamiano.
+
+
+## 2026-11-05 — modale wyboru: hover zamiast klikania w nazwę karty
+
+- Właściciel: klik w nazwę karty w modalu wyboru otwierał pełny ekran; zamiast tego najechanie kursorem pokazuje hover z ilustracją (ten sam co na stole/cmentarzu), klikanie usunięte. Na dotyku tap w nazwę nadal otwiera pełny ekran; log, stos i kafle stołu bez zmian.
+- Pomiar obalił obawę o „30 funkcji": modale stoją na jednym pickerze (`picker.js`) i jednym komponencie nazwy (`renderPeekButton`) — zmiana wylądowała w trzech miejscach wspólnych plus okablowanie. Kod `ddf98bc`, plan `7534f5e`.
+- Nowe testy `test/modal-hover-nazwy.test.js`: RED 1/5 → GREEN 5/5, mutacja 2/5. Stare testy modali bez osłabiania (ścieżka dotykowa = dotychczasowy klik): pakiety pokrewne 178/178 i 192/192. Bramy: fast **9975/9975**, build **77/5702,0 kB**, pełny `test:all` **10243/10243** (605,6 s), 0 fail / 0 skip. Plan: `docs/plans/PLAN_2026-11-05-modal-hover.md`; handoff: `docs/setup/HANDOFF_2026-11-05-modal-hover.md`. Bez scalania i pełnego B0.
+
+
+## 2026-11-05 — etap 7: hover nazwy czaru na szczycie modala wyboru trybu
+
+- Dopytanie właściciela: czy hover objął nazwę czaru na szczycie modala wyboru trybu i listę kart u góry kreatorów biblioteki. Pomiar: kreatory biblioteki (chipy) miały hover od etapów 2–4; nagłówek wyboru trybu był zwykłym tekstem (hoverowalna nazwa tylko dla clash i Epic Experiment).
+- `afa6d99`: `renderMultiTargetWizard` osadza nazwę `introCard` jako segment-podgląd wewnątrz zdania nagłówka bez dublowania; `main.js` podaje `introCard` dla castMode, chooseModes (też krok „rzuć albo odmów") i chooseOneOrBoth. RED 5/6 → GREEN 6/6, mutacja segmentacji złapana, pokrewne modalne 100/100.
+- Bramy: fast **9976/9976**, build **77/5703,7 kB**, pełny `test:all` **10244/10244**, 0 fail / 0 skip. Plan: `docs/plans/PLAN_2026-11-05-modal-hover.md`; handoff: `docs/setup/HANDOFF_2026-11-05-modal-hover.md`. Bez scalania.
+
+
+## 2026-11-04 — zgłoszenie C: Magma Pummeler nie marnuje refleksu
+
+- Bot wybierał największe ciało i zadawał nieśmiertelne obrażenia. Przyczyna: oferta `resolve_trigger_target` nie przekazywała `pending.extra` do `resolveDamageAmount`, więc `amountFromContext:'countersRemoved'` nie trafiało do `cmd.damage` i bot omijał wspólną politykę obrażeń.
+- Naprawa `2964407`: kontekst zdarzenia + LKI źródła w ofercie (CR 603.3d/608.2h/704.5g). Bez zmiany `damageTargetValue` i bez nazw kart. RED 0/6 → GREEN 6/6 (`test/zgloszenie-c-magma-lethal.test.js`), mutacja 0/6; pokrewne 95/95, golden-master bez dryfu.
+- Bramy: fast **9970/9970**, build **77/5691,7 kB**, pełny `test:all` **10238/10238** (585,4 s), 0 fail / 0 skip. Benchmark ukierunkowany `kaldheim` 16 meczów: bez regresji (75,0 % heuristic przed i po). Plan: `docs/plans/PLAN_2026-11-04-c-magma-lethal.md`; handoff: `docs/setup/HANDOFF_2026-11-04-c-magma-lethal.md`. Bez scalania i pełnego B0.
+
+
+## 2026-11-04 — wspólny checkpoint, etap 3c: pełna brama i dokumentacja końcowa
+
+- Domknięto dokumentację planu/ADR/handoff po korekcie migracji madness. Wspólny checkpoint obejmuje zwykłe wyzwalacze okna, modalność, cele/podziały, Ward jako drugi przebieg, kontynuację SBA oraz madness/refleksy w jednej partii; historyczne pole partii pozostaje do migracji nazw.
+- Pełne bramy na kodzie `5d0f343`: dokumenty **25/25**, `test:audit` **724/724**, fast **9964/9964**, `test:all` **10232/10232** (563,0 s), build **77 modułów / 5691,2 kB**; 0 fail / 0 skip. PR #179 pozostaje draftem, bez scalania.
+
+
+## 2026-11-04 — wspólny checkpoint, etap 3b: kontrole SBA i komentarz APNAP
+
+- Dodano kontrole na realnych kartach: token wrócony Man-o'-War znika, a Serra's Embrace trafia do grobu przed priorytetem; poświęcona Rediscover the Way nie zostawia Feedbacku na polu bitwy. Istniejący choke point stref/SBA domyka te przypadki — bez dodatkowej zmiany produkcji, dodano straży.
+- Poprawiono komentarz `placeTriggerBatchInApnapOrder` (helper stabilizuje APNAP, wybór wewnątrz kontrolera oferuje checkpoint) i literówkę w tytule B63. Fast **9964/9964**, build **77 modułów / 5691,2 kB**; 0 fail / 0 skip.
+
+
+## 2026-11-04 — wspólny checkpoint, etap 3a: madness w jednej partii
+
+- Audyt kodu wykazał przedwczesne zamknięcie etapu 3: kolejka madness była blokowana przez oczekujący cel refleksu, a osobny `startMadnessTriggerOrder` nie obejmował celów. Plan skorygowano przed kodowaniem (`c2e02c4`).
+- RED na Talion's Messenger + Revolutionist: cel refleksu wyprzedzał wybór kolejności (0/2). Po migracji: kolejka madness domyka się przy decyzjach celu/trybu, identyfikatory `madnessBatchTriggerIds` trafiają do wspólnego checkpointu, a cel jest ogłaszany dopiero po wyborze kolejności. Usunięto równoległy start kolejności madness.
+- Mutacja przywracająca dawną blokadę oblewa 0/2; A28 + nowy test **15/15**, `test:audit` **724/724**, fast **9962/9962**, build **77 modułów / 5691,1 kB**; 0 fail / 0 skip. Skorygowano A28 do CR 603.3b–d (kolejność przed celem).
+
+
+## 2026-11-04 — wspólny checkpoint, etap 3: domknięcie dokumentacji i bram
+
+- Plan/ADR/handoff opisują wdrożony zakres: wszystkie zwykłe wyzwalacze okna, modalność, cele/podziały, Ward jako drugi przebieg i kontynuacja SBA. Historyczne pole partii pozostaje do osobnej migracji nazw; madness/devour/Saga zachowane bez dubli.
+- Pełne bramy na kodzie `3fcf1b6`: dokumenty **25/25**, `test:audit` **724/724**, fast **9960/9960**, `test:all` **10228/10228** (593,2 s), build **77 modułów / 5691,2 kB**; 0 fail / 0 skip.
+
+
+## 2026-11-04 — wspólny checkpoint, etap 2: modalność i kontynuacja SBA
+
+- Partia checkpointu obejmuje modalne triggery; cele/tryby/podziały są ogłaszane pojedynczo w kolejności umieszczania na stosie, bez priorytetu pomiędzy. Kontynuacja po SBA łapie wyłącznie nowe wpisy spoza stosu sprzed SBA.
+- RED/mutacja na Etched Host Doombringer + Impact Tremors; poprawiono B63 (dwa modalne ETB), A77 (koszt odrzucenia uruchamia checkpoint) i helpery exploit. Madness/devour/Saga zachowane bez dubli; istniejąca kolejność madness A28 pozostała.
+- Bramy: `test:audit` **724/724**, fast **9960/9960**, build; 0 fail / 0 skip. Golden-master bota zregenerowany świadomie: tylko ravnica-wur|innistrad-wu@1001 (298→299 decyzji, scoreSum 3186.9495→3166.2283), pozostałe pięć śladów bez zmian.
+
+
+## 2026-11-04 — wspólny checkpoint, etap 1: zwykłe wyzwalacze wszystkich typów
+
+- ADR 0032 i plan wdrożenia; partia checkpointu nie jest już ograniczona do śmierci/odejścia/obrażeń ani wąskich celów. Obejmuje zwykłe wyzwalacze okna, cele wielokrotne i podział obrażeń; Ward czeka na drugi przebieg.
+- RED na realnych kartach: Impact Tremors + Loporrit Scout / Weftblade Enhancer / Inferno Titan. Mutacja przywraca wąski filtr i oblewa 3 nowe testy. Skorygowano M382/D (wybór kontrolera zamiast kolejności wykrycia) i A75 (Ward nie wyklucza partii).
+- Bramy: `test:audit` **724/724**, fast **9959/9959**, build; 0 fail / 0 skip. Budżet lektury utrzymany przez kondensację ADR 0031/0032 (bez podnoszenia progu).
+
+
+## 2026-11-04 — końcowa kontrola spójności mapy PR #178
+
+- Wyłącznie dokumentacja: poprawiono bieżące nagłówki i checkbox zakończonego przeglądu, uporządkowano trzynaście partii oraz oddzielono zamknięte rodziny od niewdrożonego pełnego checkpointu zdarzeń.
+- Pełna paginacja REST, kotwicowany diff i mapa potwierdzają ten sam zbiór **194 unikalnych ścieżek**, bez braków i duplikatów. Skorygowano bilans kategorii: **26 produkcyjnych + 23 dokumenty i zapisane eksperymenty + 145 testów i helperów**; pięć patchy należy do dokumentacji.
+- Doprecyzowano granicę dowodu źródłowego w partiach 5–13: pełne pliki, diff i cytowania w testach, bez nowego odczytu Oracle/CR dla każdego pliku. Historyczne pomiary pozostały przy swoich commitach.
+- Bramy na kodzie identycznym z `6ca064e`: strażnicy **27/27**, `test:audit` **724/724** (23,4 s), fast **9956/9956** (189,7 s), build **77 modułów / 5689,3 kB**, pełny `test:all` **10224/10224** (602,8 s); wszędzie **0 fail / 0 skip**. Bez zmiany produkcji; PR #179 pozostaje draftem.
+
+## 2026-11-04 — zamknięcie mapy PR #178: M200/real-cards-batch7
+
+- Semantyczny przegląd dwóch ostatnich otwartych plików: M200 uwagi właściciela i real-cards-batch7. Bez zmiany produkcji.
+- **Mapa #178: 2 → 0 otwartych wierszy.** Przegląd semantyczny mapy zakończony; pełny wspólny checkpoint wszystkich typów zdarzeń pozostaje osobnym, niewdrożonym zakresem.
+
+
+## 2026-11-04 — przegląd mapy PR #178: M161/M277
+
+- Semantyczny przegląd dwóch otwartych plików: ścieżka madness czarów M161 i kontrakt widok/render M277. Bez zmiany produkcji.
+- Mapa #178: **4 → 2 otwarte wiersze**.
+
+
+## 2026-11-04 — przegląd mapy PR #178: batch39/41
+
+- Semantyczny przegląd dwóch otwartych plików mechanik batchy 39 i 41. **37/37 pass / 0 fail / 0 skip**; poprawiony komentarz regeneracji (tapuje permanent).
+- Mapa #178: **6 → 4 otwarte wiersze**.
+
+
+## 2026-11-04 — przegląd mapy PR #178: M359/PR66/uwagi właściciela
+
+- Semantyczny przegląd dziewięciu otwartych plików: cleanup M359, madness PR66, minimalne X, Austere modal, Man-o’-War, Imp, Fireball, Bloodlust, Magma X. Bez zmiany produkcji.
+- Mapa #178: **15 → 6 otwartych wierszy**.
+
+
+## 2026-11-04 — przegląd mapy PR #178: bestow/champion/converge/klątwa/Morbid
+
+- Semantyczny przegląd pięciu otwartych plików rodzin: typy bestow, champion na stosie, dobór many converge, upkeep klątwy, Morbid a bestow. Bez zmiany produkcji.
+- Mapa #178: **20 → 15 otwartych wierszy**.
+
+
+## 2026-11-04 — przegląd mapy PR #178, A59–A73
+
+- Semantyczny przegląd 13 otwartych wierszy: Force Away, Delusion, Oak/Ivy, batch 71, Edifice/protection, Hounds, token/Morbid, Spider, Scorn/aury, Kaleidoscorch, inwestycje, kwalifikatory i strefy wyszukiwania. **79/79 pass / 0 fail / 0 skip**; bez zmiany produkcji.
+- Mapa #178: **33 → 20 otwartych wierszy**.
+
+
+## 2026-11-04 — przegląd mapy PR #178, A47–A58
+
+- Semantyczny przegląd 12 otwartych wierszy: README/talie, Spire, proliferate, Final Parting, Edifice, kontry, Rockslide, Hounds, etykieta Gila, Violent Urge, źródło ofiary, Elk. **51/51 pass / 0 fail / 0 skip**; bez zmiany produkcji.
+- Mapa #178: **45 → 33 otwarte wiersze**.
+
+
+## 2026-11-04 — przegląd mapy PR #178, A35–A46
+
+- Semantyczny przegląd 12 otwartych wierszy: Banquet, Reaver/finality, Anticipate, Trumpet Blast, Tail Slash, champion-bot, blok, klątwa, Cutthroat, Cuombajj, Tail-bot, Benevolent Blessing. **73/73 pass / 0 fail / 0 skip**; bez zmiany produkcji, literówka URL w A37 poprawiona.
+- Mapa #178: **57 → 45 otwartych wierszy**.
+
+
+## 2026-11-04 — przegląd mapy PR #178, A7–A9 i A25–A34
+
+- Semantyczny przegląd 11 otwartych wierszy: ostrzeżenia animacji, zagnieżdżona mana, opłata nielądowa, delirium, champion, Magma Pummeler, dane/talie, transformacje, wycena bounce i poświęcenia. **47/47 pass / 0 fail / 0 skip**; bez zmiany produkcji.
+- Mapa #178: **68 → 57 otwartych wierszy**. Sandbox wcześniej cofnął lokalny wskaźnik gałęzi; przed pracą odtworzono zgodność z `origin/arena/5d931b5a-mtg` (5447296) i przywrócono `.arena/cr-raw.txt` z przypiętym SHA-256.
+
+
+## 2026-11-04 — przegląd mapy PR #178, dokumentacja historyczna
+
+- Przejrzano pięć otwartych wierszy dokumentacji z diffu #178: PROJECT_HISTORY oraz raport/mapa/plan/handoff PR #177. Cztery dokumenty #177 otrzymały banner stanu historycznego i odesłanie do bieżącego audytu #178/#179; bez zmian runtime.
+- Mapa #178: **73 → 68 otwartych wierszy**. Pozostałe wiersze dotyczą testów/helperów; dokumentacja historyczna nie jest dowodem obecnego stanu silnika.
+
+
+## 2026-11-04 — przegląd mapy PR #178, rodziny A94–A108
+
+- Pełny przegląd 14 wierszy mapy dla rodzin naprawionych/skorygowanych w #179: **82/82 pass / 0 fail / 0 skip**. Bez zmiany produkcji; komentarze A96/A97 odświeżone, nieużywany alias w A94 usunięty.
+- Mapa #178: **87 → 73 otwarte wiersze**. A94/A101 mają korekty asercji do CR, A98/A100–A108 osobne poprawki i mutacje; wiersze mapy domknięte z notą zakresu.
+
+
+## 2026-11-04 — przegląd mapy PR #178, partia A75–A93
+
+- Semantyczny przegląd 19 otwartych wierszy mapy (A75–A93): APNAP, ręczne płatności Ward/echo/optional, kreatory many, rezerwacje kosztu i atomowość. Łącznie **165/165 pass / 0 fail / 0 skip**; bez zmiany produkcji, odświeżono dwa komentarze w A86/A87.
+- Mapa #178: **106 → 87 otwartych wierszy**. A84 domknięty jako wcześniej naprawiony; A75–A93 dostały noty zakresu, w tym jawne granice setupu syntetycznego.
+
+
+## 2026-11-04 — przegląd mapy PR #178, partia A10–A17
+
+- Kontynuacja po zamknięciu wymuszonych RED: semantyczny przegląd ośmiu otwartych wierszy mapy (A10–A17), pełne pliki i diff z #178, Oracle/CR. Łącznie **30/30 pass / 0 fail / 0 skip**; bez zmiany produkcji.
+- Mapa #178: **114 → 106 otwartych wierszy**. Zielony przebieg nie był jedynym dowodem; każdy wiersz dostał notę zakresu (bestow, kreator many, koszt kwalifikowany, cel, convoke, rezerwacje, improvise, rozstrzyganie celów).
+- Plan kontynuacji: `docs/plans/PLAN_2026-11-04-przeglad-mapy-pr178.md`. Następne partie: A75–A93 oraz dokumentacja historyczna.
+
+
+## 2026-11-04 — A104–A107 bez kwarantanny i końcowa korekta A101 (PR #179)
+
+- Polecenie właściciela: rozstrzygnąć A104/A105 oraz konflikt z A94 samodzielnie, usunąć wszystkie „wymuszone RED” i doprowadzić zakres do zgodności z Comprehensive Rules (CR). Nie chodziło o zielony wynik przez pominięcia.
+- `c52efb2`: plan rozstrzygnięcia według CR. `20b6fd5`: zdarzenia/znaczniki wyzwalaczy powstają od razu, cele i wpisy stosu czekają do końca płatności; partia po płatności obejmuje tapnięcie, dobór i śmierć. A94 skorygowano: w trakcie płatności publicznej decyzji celu nie ma, jest bufor; zdolności many pozostają legalne. A104 **4/6 → 6/6**, A105 **2/6 → 6/6**, mutacje złapane, kontrole **96/96**.
+- `1384600`: Ward z wyboru celu czeka na koniec partii źródłowej; `pendingWardAnnouncements` w stanie/fingerprint, wiele Ward jednego kontrolera ma wybór kolejności. A106 **4/8 → 8/8**, A107 **0/2 → 2/2**, replay/fingerprint w trakcie partii, mutacje złapane, kontrole **127/127**. Usunięto ostatnie flagi `AUDIT_A*_ENFORCE`; `test:audit` stał się zieloną bramką regresji **112 plików / 718 testów**, bez wstrzykiwania flag i bez skipów.
+- `408bd19` + `8e3c759`: końcowe ponowne odczytanie CR ujawniło błędną interpretację A101. Refleks „When you do…” (CR 603.12) reaguje na zapłatę, więc należy do **pierwszej** partii aktywny–nieaktywny (CR 603.3b), a nie do osobnej późniejszej partii. Usunięto `followupTargets`; A101 **0/8 RED → 8/8 GREEN**, mutacja **0/8**, kontrole **708/708**, replay/fingerprint.
+- Bramy końcowe po `8e3c759`: fast **9956/9956 pass / 0 skip / 0 fail**, build **77 modułów / 5689,3 kB**, `test:audit` **724/724 pass / 0 fail / 0 skip**, pełny `test:all` **10 224/10 224 pass / 0 fail / 0 skip** (537,8 s). CI kodu `41841974626` success.
+- Stan zakresu: **0 wymuszonych RED** rodzin A84–A113. Nie oznacza to zamknięcia całego audytu: mapa #178 nadal ma **114 otwartych wierszy** przeglądu semantycznego, a pełny wspólny checkpoint wszystkich typów zdarzeń nie jest wdrożony. Nie dodano kart, nie uruchamiano pełnego B0, nie wdrożono `NIE_WDRAZAC`, nie scalono PR.
+- Dokumenty: plan `docs/plans/PLAN_2026-11-03-bezpieczne-kroki-zdarzen.md`, raport `docs/audits/AUDYT_PR178_2026-11-03.md`, ADR 0031 (skondensowany bez podnoszenia budżetu lektury), handoff `docs/setup/HANDOFF_2026-11-04-a104-a107.md`.
+
+
+## 2026-11-03 — bezpieczna kontynuacja automatycznych kroków (PR #179)
+
+- 2026-11-04 — inwentarz emiterów/kolejkowania: `docs/audits/INWENTARZ_ZDARZEN_I_TRIGGEROW_2026-11-04.md`. ADR 0031 (tożsamość zdarzenia i partia wyzwalaczy) przyjęty jako kierunek; właściciel wybrał najpierw A110.
+- 2026-11-04 — A110: `departureGroupId` rozdziela osobne aktywacje many Skarbu i scala partię jednoczesnego zniszczenia; skan grupuje po kontrolerze i zdarzeniu, z fallbackiem komendy. RED 6/16 → GREEN 16/16, mutacja ignorująca identyfikator przywraca 6/16. A110 usunięte z kwarantanny; fast **9866 pass / 84 skip / 0 fail**, build **77 modułów / 5677,1 kB**; pełny `test:all` **10 134 pass / 84 skip / 0 fail**; pozostałe wymuszone RED **82**.
+- 2026-11-04 — A112: istniejąca partia śmierci obejmuje `permanents_you_control_leave_battlefield`, więc grupowe odejście i celowana śmierć mają wspólną kolejność APNAP oraz jawny wybór kolejności jednego gracza. RED 2/10 → GREEN 10/10, mutacja wąskiej listy przywraca 2/10; dodano replay/fingerprint. A112 usunięte z kwarantanny; fast **9876 pass / 74 skip / 0 fail**, build **77 modułów / 5677,3 kB**; pełny `test:all` **10 144 pass / 74 skip / 0 fail**; pozostałe wymuszone RED **74**.
+- 2026-11-04 — A113: istniejąca partia obejmuje `combat_damage_to_player`, więc mieszany checkpoint obrażeń bojowych i śmierci ma wspólną kolejność APNAP, wybór kontrolera i cele. RED 0/4 → GREEN 4/4, mutacja usuwająca typ zdarzenia z partii przywraca 0/4; dodano replay/fingerprint. A113 usunięte z kwarantanny; fast **9880 pass / 70 skip / 0 fail**, build **77 modułów / 5677,4 kB**; pełny `test:all` **10 148 pass / 70 skip / 0 fail**; pozostałe wymuszone RED **70**.
+- 2026-11-04 — A108/A109: czysta aura osierocona w trakcie Ward czeka na checkpoint SBA po zakończeniu płatności; trigger śmierci gospodarza powstaje z LKI w chwili odłączenia, a późniejsze odejście aury jest osobnym zdarzeniem dla Imp. `pendingWardPay` obejmuje auto-zapłatę i kontrę przy odmowie. RED 0/28 → GREEN 28/28, cztery mutacje złapane, kontrole 138/138, replay/fingerprint aktywne. A108/A109 zdjęte z kwarantanny; fast **9908 pass / 42 skip / 0 fail**, build **77 modułów / 5680,4 kB**; pełny `test:all` **10 176 pass / 42 skip / 0 fail**; pozostałe wymuszone RED **42**. Commit `08c3673`, CI `41815709292` success.
+- 2026-11-04 — A100: wpisy stosu wyzwolone kosztami many w trakcie Ward czekają w `pendingWardPay.deferredTriggers` do `ward_pay_resolved`; flush ogłasza je APNAP i dopiero wtedy wyzwala Ward dla celów. RED 0/6 → GREEN 6/6, mutacja bez odroczenia 0/6, mutacja bez flush 26/28 w A108/A109; A84 pierwsze 4/8. A100 zdjęte z kwarantanny; fast **9914 pass / 36 skip / 0 fail**, build **77 modułów / 5682,6 kB**; pełny `test:all` **10 182 pass / 36 skip / 0 fail**; pozostałe wymuszone RED **32**. Commit `70ac4c1`.
+- 2026-11-04 — A84: odroczone wpisy Ward i czekające cele śmierci wchodzą po `ward_pay_resolved` do istniejącej partii APNAP (`wardClosure`), zamiast zostawiać priorytet przy pierwszych celach. RED 4/8 → GREEN 8/8, mutacja bez partii 4/8; kontrole 92/92. A84 zdjęte z kwarantanny, A95/A96 tracą nieużywany wrapper A84; fast **9922 pass / 28 skip / 0 fail**, build **77 modułów / 5683,4 kB**; pełny `test:all` **10 190 pass / 28 skip / 0 fail**; pozostałe wymuszone RED **28**. Commit `33f67d4`.
+- 2026-11-04 — A101 (wersja historyczna, błędna interpretacja CR skorygowana w `8e3c759`): po zapłacie opcjonalnej zwykłe triggery śmierci tworzą partię APNAP, a refleks Zoraline (`reflexive_pay`) czeka jako druga część ogłoszenia i nie wchodzi do wyboru kolejności zwykłych triggerów. Odmowa płatności zachowuje ścieżkę A94. RED 0/2 → GREEN 2/2, mutacja 0/2; kontrole 129/129. A101 zdjęte z kwarantanny; A98 końcówka 4/8; fast **9924 pass / 26 skip / 0 fail**, build **77 modułów / 5685,1 kB**; pełny `test:all` **10 192 pass / 26 skip / 0 fail**; pozostałe wymuszone RED **22**. Commit `5a671d9`.
+- 2026-11-04 — A98: wpisy stosu wyzwolone w trakcie płatności opcjonalnej czekają w `pendingOptionalPay.deferredTriggers` do `optional_pay_resolved`; flush ogłasza je APNAP przed checkpointem SBA, analogicznie do A100. Wybory celów pozostają na ścieżce A94. RED 4/8 → GREEN 8/8, mutacja bez odroczenia 4/8; kontrole 129/129. A98 zdjęte z kwarantanny; A104 pierwsza połowa 4/6; fast **9932 pass / 18 skip / 0 fail**, build **77 modułów / 5685,6 kB**; pełny `test:all` **10 200 pass / 18 skip / 0 fail**; pozostałe wymuszone RED **16**. Commit `b019e7e`.
+- 2026-11-04 — A102/A103: partia po domknięciu płatności opcjonalnej obejmuje także bezcelowe triggery doboru (`you_draw_card`, `you_draw_second_card_each_turn`) obok śmierci Sciona; inne okna bez zmian. RED 0/2+0/2 → GREEN 2/2+2/2, mutacje 0/2; kontrole 137/137. A102/A103 zdjęte z kwarantanny; fast **9936 pass / 14 skip / 0 fail**, build **77 modułów / 5686,0 kB**; pełny `test:all` **10 204 pass / 14 skip / 0 fail**; pozostałe wymuszone RED **12**. Commit `eccc774`.
+- Po wyjaśnieniu właścicielowi kolejności automatycznych kroków przyjęto zlecenie dalszej pracy bez regresji działających kart. Przed zmianami zamrożono `ad4bf3b`: `npm run test:all` **10 097 pass / 114 skip / 0 fail** (489,2 s), build **77 modułów / 5673,7 kB**.
+- Roadmapa `docs/plans/PLAN_2026-11-03-bezpieczne-kroki-zdarzen.md` rozdziela testy chroniące, lokalny potwierdzony fix, granice zdarzeń i wspólną kolejność. Każdy krok wymaga RED→GREEN tam, gdzie naprawia błąd, mutacji, pełnego fast + build oraz osobnego push. Zmiana trwałego modelu stanu wymaga ADR przed kodowaniem.
+- Audyt pozostawał wtedy częściowy: 114 otwartych wierszy mapy i osobno 114 otwartych wymuszonych RED (stan przed naprawami opisanymi wyżej). Nie wdrożono eksperymentów `NIE_WDRAZAC`, nie dodano kart, nie uruchomiono B0.
+- Etap 1: `test/audyt-pr179-zbiorowe-opuszczenie-regresje.test.js` dodaje 7 aktywnych testów chroniących (jednoczesne odejścia, przeciwnik, tokeny, dwie kopie, przejęta kontrola, priorytet, replay). Bez zmiany produkcji; fast **9836 pass / 114 skip / 0 fail**, build 77 modułów / 5673,7 kB.
+- Etap 2 / A111: `processTriggersScan` czyta odchodzącego obserwatora z LKI, nie kończy skanu przy wygnaniu zamiast śmierci i nie ustawia descended dla poświęcenia z finality. A111 RED 4/24 → GREEN 24/24, mutacja usunięcia naprawy złapana; A111 usunięte z kwarantanny. Fast **9856 pass / 94 skip / 0 fail**, build 77 modułów / 5675,9 kB; pozostałe wymuszone RED **92**. Pełny `test:all` po A111: **10 124 pass / 94 skip / 0 fail**; CI `41740013563` success.
+- Podczas zapisu A111 sandbox ponownie cofnął wskaźnik gałęzi do `04ca8e9`. Kopie w `/home/user/mtg-recovery-2026-11-04/`, `reset --mixed` do zdalnej gałęzi odtworzył historię bez utraty zmian; A111 wypchnięte jako `2de4715` na właściwej historii.
+
+
+## 2026-11-03 — audyt PR #178, B1 bestow i jawny tryb RED (PR #179)
+
+- Rozpoczęto audyt scalonego #178: 194 pliki / 308 commitów; mapa `docs/audits/PR178_MAPA_PLIKOW_2026-11-03.md`, raport `docs/audits/AUDYT_PR178_2026-11-03.md`, plan `docs/plans/PLAN_2026-11-03-audyt-pr178.md`. Przejrzano diff 26 plików produkcyjnych, 13 dokumentów i 41 testów/helperów/patchy (APNAP, madness, A99/A107/A109/A110/A111); **114 wierszy mapy pozostaje otwartych**.
+- Baza `04ca8e9`: `npm test` 9819 pass / 114 skip / 0 fail; build 77 modułów / 5673,2 kB. Wymuszone A84–A113: 114 RED / 18 kontroli GREEN.
+- B1 (`aba111e`): odbita karta z bestow nie przenosi deskryptora aury do ponownego zwykłego rzutu; Negate czyta aktualne cechy stosu. RED→GREEN, mutacje A/B złapane; po fixie fast 9824/114 skip/0 fail, build 5673,7 kB.
+- `f934bef`: `npm run test:audit` uruchamia wszystkie pliki z flagami `AUDIT_A*_ENFORCE`; obecnie 148 testów / 34 pass / 114 fail. To reproduktor, nie bramka na zielono. Po dodaniu fast 9826/114 skip/0 fail, build 5673,7 kB.
+- B2: dodatkowa regresja B1 na ścieżce odłączenia bestow (śmierć gospodarza → Man-o'-War → ponowny zwykły rzut / bestow). Test-only, RED na bazie przed B1, GREEN obecnie; po dodaniu fast 9829/114 skip/0 fail, slow 268/268, build 5673,7 kB.
+- `4b78fb2`: wyniki slow 268/268 i przegląd 13 dokumentów w mapie. Kolejny przyrost dokumentacyjny: korekta parsera diffu (kotwica `^diff --git ` + porównanie z REST, L190), przegląd testów APNAP/madness i izolacji patchy A99/A107/A109/A110/A111; bez zmiany produkcji.
+- Nie dodano kart, nie uruchamiano B0, nie wdrożono eksperymentów `NIE_WDRAZAC`. Otwarte 114 RED APNAP/SBA/LKI czeka na decyzję architektoniczną checkpointów.
+
+
 ## 2026-11-01 — kontynuacja audytu PR #177 (PR #178, w toku)
 
 - A1: champion po odejściu źródła zachowuje wybór, a zmiana kontroli nie zmienia kontrolera triggera (`2812aa6`).
@@ -18804,3 +19002,15 @@ Audyt #177 A79: Ward i ręczna mana Sciona, atomowość błędnej płatności; h
 - 2026-11-03 — A111–A113: 34 kwarantannowe RED / 4 kontrole, utrata LKI Imp/finality i mieszane APNAP po Shock oraz realnej walce. Baza/#177 identyczny wynik; izolowana próba 34/38, 4 RED w A113, NIE WDRAŻAĆ. Produkcja bez zmian; B0 nie uruchamiano.
 
 - 2026-11-03 — po A111–A113 fast produkcji **9819 pass / 114 skip / 0 fail**; powiązane **405 pass / 98 skip**, wymuszone **114 RED / 18 GREEN**. Slow **268 pass / 0 skip / 0 fail**.
+
+- 2026-11-05 — Zgłoszenie D/K1: bot trzyma instantowe combat triki z trwałymi licznikami statystyk na okno walki (bramka `counterInstantHoldPenalty`, wyjątki: walka w toku, blokujący-niespodzianka po ataku wroga, domknięcie gry); testy D/1–D/5 5/5 z mutacją, fast 9981/9981, test:all 10249/10249, build 77/5707,4 kB. Audyt pomiarowy K2/K3: 23/24 instantów-trików trzymanych poza walką; potwierdzona luka Diplomatic Relations (pump+ugryzienie w podtrzymaniu) — następny etap roadmapy K1–K6 w planie `docs/plans/PLAN_2026-11-05-d-combat-tricki.md`.
+
+- 2026-11-05 — Zgłoszenie D/7: bramka `pumpBiteHoldPenalty` — instant „pump własnego stwora + ugryzienie” (Diplomatic Relations) trzymany na walkę; DR/1–DR/4 4/4 z mutacją, fast 9985/9985, test:all 10253/10253, build 77/5709,7 kB. Pomiar K4: Shock rzucany w twarz przy 20 życia w podtrzymaniu (luka następnego etapu), część instant-removalu palona w podtrzymaniu.
+
+- 2026-11-05 — Zgłoszenie D/8 (K4a): instant-burn w twarz poza walką trzymany na moment śmiertelny (`faceBurnHoldPenalty`); K4/1–K4/4 4/4 z mutacją, pięć pinów starej konwencji twarzy świadomie zaktualizowanych, fast 9989/9989, test:all 10257/10257, build 77/5711,3 kB. Dalej w roadmapie: K4b timing removalu, K5 kontrczary, K6 reszta.
+
+- 2026-11-05 — Zgłoszenie D/9 (K4b): instant-removal we własnym podtrzymaniu/kroku dobrania czeka na główną (`removalUpkeepHoldPenalty`); K4b/1–K4b/4 4/4 z mutacją, fast 9993/9993, test:all 10261/10261; golden-master scoringu zregenerowany świadomie (dryf tylko 1/6 partii). Zostają K5 (kontrczary) i K6 (reszta instantów).
+
+- 2026-11-05 — Zgłoszenie D/10–11: K5 (kontrczary) zamknięte pomiarem bez luki; K6 — instant-tokeny we własnym podtrzymaniu trzymane (`tokenUpkeepHoldPenalty`), K6/1–K6/3 3/3 z mutacją, fast 9996/9996, test:all 10264/10264. Roadmapa audytu instantów K1–K6 domknięta.
+
+- 2026-11-05 — Zgłoszenie E (Inferno Titan): modal podziału obrażeń otwierał ptaszkowy kreator „do N celów” zamiast kreatora kwot (kolejność gałęzi w openChoiceRequest) — gracz mógł wybrać tylko 0 albo 3 cele, a podział był wymuszony 1/1/1. Gałąź damage_division przesunięta przed kreatory ptaszkowe; kreator podziału pozwala potwierdzić zero celów (trigger „up to”). Testy E/1–E/4 5/5 z mutacją, fast 10001/10001, test:all 10269/10269, build 77/5714,6 kB.

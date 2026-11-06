@@ -33,6 +33,7 @@ import { createGameState, addObject, playerView } from '../src/engine/game-state
 import { createCardRegistry } from '../src/cards/card-data.js';
 import { gameObjectDataOf } from '../src/cards/materialize.js';
 import { jumpToStep } from '../src/engine/turn.js';
+import { createAggroBot } from '../src/controllers/aggro-bot.js';
 
 const REGISTRY = createCardRegistry();
 
@@ -105,4 +106,20 @@ test('F1/4: ta sama reguła przy dopłacie ward — 1 Skarb: {2} brak, {1} jest'
   put(one, 'treasure', 'token_treasure');
   one.pendingWardPay = wardPay(1);
   assert.ok(wardOffer(one), 'kwota 1 przy jednym skarbie pozostaje oferowana');
+});
+
+
+test('F1/5: aggro nie wybiera counter-pay bez auto-many mimo osiągalności przez Scion', () => {
+  const state = fresh();
+  put(state, 'scion-a', 'token_eldrazi_scion');
+  put(state, 'scion-b', 'token_eldrazi_scion');
+  state.pendingCounterPay = counterPay(1);
+  const view = playerView(state, 'p1');
+  assert.ok(view.legalCommands.some((c) => c.type === 'resolve_counter_pay_choice' && c.pay),
+    'silnik oferuje płatność, ponieważ ręczna aktywacja many jest legalna');
+  const bot = createAggroBot({ seed: 5 });
+  const chosen = bot.chooseCommand(view, {});
+  assert.equal(chosen.type, 'resolve_counter_pay_choice');
+  assert.equal(chosen.pay, false,
+    'aggro nie próbuje płacić przed wykonaniem ręcznej aktywacji (wykonawca wymaga many w puli)');
 });

@@ -13,7 +13,7 @@ function put(s,id,card,zone='hand',player='p1') {const d=reg.get(card);assert.ok
 function setup(){const s=createGameState({seed:17761,players:[{id:'p1'},{id:'p2'}]});s.turn=jumpToStep(s.turn,'main','p1');s.turn.activePlayerId=s.turn.priorityPlayerId='p1';put(s,'oak','ambassador-oak');addMana(s,'p1',4,{colors:['G']});return s;}
 const view=s=>playerView(s,s.turn.priorityPlayerId);
 function act(s,c){assert.ok(c,JSON.stringify({turn:s.turn,legal:view(s).legalCommands}));let r=execute(s,c);assert.ok(r.ok,JSON.stringify(r));}
-function pass(s){act(s,view(s).legalCommands.find(c=>c.type==='pass_priority'));}
+function pass(s){const order=view(s).legalCommands.find(c=>c.type==='resolve_trigger_order');if(order){act(s,order);return;}act(s,view(s).legalCommands.find(c=>c.type==='pass_priority'));}
 function until(s,p){for(let i=0;i<40&&!p();i++)pass(s);assert.ok(p(),JSON.stringify({stack:s.zones.stack,legal:view(s).legalCommands}));}
 function cast(s){act(s,view(s).legalCommands.find(c=>c.type==='cast_permanent'&&c.objectId==='oak'));}
 function token(s){return [...s.objects.values()].find(o=>o.cardId==='token_elf_warrior'&&o.zone==='battlefield');}

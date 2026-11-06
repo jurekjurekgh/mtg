@@ -1,13 +1,8 @@
 # Rejestr decyzji architektonicznych (ADR)
 
-ADR zapisują decyzje, których nie powinno się odtwarzać z historii czatu. Każdy
-dokument opisuje kontekst, wybór i jego konsekwencje.
+ADR zapisują decyzje, których nie powinno się odtwarzać z historii czatu.
 
-## Statusy
-
-**Proponowana** (do dyskusji) · **Zaakceptowana** (obowiązuje) · **Odrzucona**
-(rozważona, nieprzyjęta) · **Zastąpiona** (nowszy ADR wskazuje aktualną) ·
-**Wycofana** (bez zastosowania).
+**Statusy:** Proponowana · Zaakceptowana · Odrzucona · Zastąpiona · Wycofana.
 
 ## Decyzje
 
@@ -40,75 +35,21 @@ dokument opisuje kontekst, wybór i jego konsekwencje.
 | [0026](0026-zones-on-table-exiledby-contract.md) | Strefy dodatkowe na stole (boksy cmentarzy i wygnania) zamiast inspektora i poczekalni; kontrakt `meta.exiledBy` — źródło wygnania stemplowane w choke poincie zmian stref | Zaakceptowana |
 | [0027](0027-platinum-badge-static-analyzer.md) | Odznaka platynowa: klasę błędów L107 tępi ANALIZATOR statyczny wpięty w `npm test` (choke pointy + kontrakty zdarzeń), a nie audyt wzrokowy; wymagane 5 błędów wskazanych przez narzędzie i jawna lista wyjątków | Zaakceptowana |
 | [0028](0028-rulings-on-touch-not-bulk.md) | Rulingi WotC: zasada „przy kartce" (snapshot niesie `rulings`, choćby puste) i kolejka priorytetu zamiast hurtowego przejścia po katalogu; próg pokrycia tylko na podstawie stanu faktycznego | Zaakceptowana |
-
 | [0029](0029-catalog-grows-only-from-owner-collection.md) | Katalog kart to kolekcja właściciela: agent nie dodaje kart (też jako „nośników mechaniki") — brak nośnika rozwiązuje karta synteretyczna w teście; strażnik `proweniencja-katalogu.test.js` | Zaakceptowana |
 | [0030](0030-fetch-cr-rulings-before-engine-changes.md) | Zmiany regułowe (fix istniejącego kodu albo nowa mechanika) wymagają pobrania dosłownego tekstu CR i rulingów ze źródeł online; pamięć treningowa nie jest źródłem (po F3 i B4 w PR #105) | Zaakceptowana |
-## Gdzie zapisać regułę (ADR vs LESSONS vs handoff)
+| [0031](0031-event-identity-and-trigger-batches.md) | Tożsamość zdarzenia i partia wyzwalaczy | Zaakceptowana |
+| [0032](0032-shared-trigger-checkpoint.md) | Wspólny checkpoint ogłoszeń wyzwalaczy | Zaakceptowana |
 
-Podział miejsc (decyzja właściciela 2026-08-14: reguły trwałe nie mieszkają
-w jednorazowym handoffie) opisuje `AGENTS.md` §„Gdzie zapisać regułę" — rejestr
-ADR jest tam jednym z wierszy tabeli, więc tutaj nie powtarzamy jej lustra.
-Spójności rejestru ADR i formatu lekcji pilnuje `test/docs-decisions.test.js`.
+## Zasady tworzenia
 
-## Kiedy utworzyć ADR
-
-Gdy wybór: trudno będzie go odwrócić; wpływa na kilka modułów lub sposób
-dodawania kart; dotyczy modelu stanu, protokołu, bezpieczeństwa informacji,
-persistence albo deploymentu; rozstrzyga spór między istotnymi alternatywami.
-Nie potrzeba ADR dla zwykłej implementacji lokalnej, nazwy prywatnej funkcji czy
-naprawy błędu.
-
-## Szablon
-
-```md
-# ADR NNNN: Tytuł
-
-- **Status:** Proponowana
-- **Data:** YYYY-MM-DD
-- **Decydenci:** ...
-
-## Kontekst
-
-...
-
-## Decyzja
-
-...
-
-## Konsekwencje
-
-### Pozytywne
-
-- ...
-
-### Koszty i ryzyka
-
-- ...
-
-## Rozważone alternatywy
-
-- ...
-
-## Powiązania
-
-- ...
-```
-
-Po zaakceptowaniu nie zmieniamy znaczenia historycznej decyzji. Jeżeli kierunek
-się zmieni, nowy ADR zastępuje poprzedni.
+ADR zakładamy dla decyzji trudno odwracalnych, wpływających na kilka modułów, model stanu, protokół, bezpieczeństwo informacji lub persistence. Spójność pilnuje `test/docs-decisions.test.js`. Po zaakceptowaniu nie zmieniamy znaczenia; nowy kierunek wymaga nowego ADR.
 
 ## Archiwum
 
-Decyzje, które **przestały obowiązywać**, i których żywe zasady zostały
-przeniesione do nowszych ADR. Nie są lekturą startową — zostają jako zapis,
-dlaczego projekt wyglądał kiedyś inaczej.
+Decyzje nieobowiązujące, po przeniesieniu żywych zasad do następcy. Nie są lekturą startową.
 
 | ADR | Tytuł | Zastąpiona przez | Gdzie żyją jej zasady |
 |---|---|---|---|
 | [0008](archive/0008-plain-javascript-esm-no-build.md) | Czysty JavaScript (ESM) bez kroku budowania | [0011](0011-modular-sources-single-file-artifact.md) | ADR 0011 pkt 6 + „Czego świadomie nie dostajemy" |
 
-**Zasada archiwizacji:** do archiwum trafia wyłącznie dokument o statusie
-„Zastąpiona"/„Wycofana", i to dopiero PO przeniesieniu wszystkich jego wciąż
-obowiązujących ustaleń do dokumentu następcy. Archiwum nie jest wysypiskiem:
-jeśli po przeniesieniu nie zostaje nic poza historią — to jest właśnie sygnał,
-że plik należy tu przenieść.
+**Zasada archiwizacji:** do archiwum trafia wyłącznie dokument o statusie „Zastąpiona"/„Wycofana", po przeniesieniu wszystkich wciąż obowiązujących ustaleń do następcy.

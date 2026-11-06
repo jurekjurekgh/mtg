@@ -311,6 +311,60 @@ export function commandForSelection(commands, {
   }) ?? null;
 }
 
+/**
+ * G, etap 3 (wzorzec kreatora walki): komenda dla wyboru ze stepperem X.
+ * Najpierw dokładny wariant z oferty (dawne zachowanie), a gdy X/celów
+ * nie ma wśród ZIAREN oferty — konstrukcja z planu (cele z puli planu,
+ * liczba celów w widełkach, X w [xMin, xMax]) na szablonie oferty tego
+ * samego czaru. Silnik waliduje rzut przy wykonaniu, więc kreator nie
+ * klinuje się na wartości X spoza ziaren. Poza zakresem X (brak hasX)
+ * albo przy wyborze spoza reguł planu zwraca null jak dawniej.
+ */
+export function commandForXSelection(plan, commands, {
+  targets = [], xValue = null, stunTargetId = undefined,
+  gifted = undefined, giftRecipientId = undefined,
+} = {}) {
+  const offered = commandForSelection(commands, {
+    targets, xValue, stunTargetId, gifted, giftRecipientId,
+  });
+  if (offered) return offered;
+  if (!plan?.hasX || !Number.isInteger(xValue)) return null;
+  if (xValue < plan.xMin || xValue > plan.xMax) return null;
+  const chosen = (targets ?? []).filter((id) => id != null);
+  if (chosen.some((id) => !(plan.targets ?? []).includes(id))) return null;
+  if (!plan.xOnly && (chosen.length < plan.minTargets || chosen.length > plan.maxTargets)) return null;
+  const template = (commands ?? []).find((cmd) => cmd
+    && (Array.isArray(cmd.targets) || isPlainPermanentXCommand(cmd)));
+  if (!template) return null;
+  const constructed = { ...template, xValue };
+  if (Array.isArray(template.targets)) constructed.targets = [...targets];
+  // Pole `cost` ofert jest łącznym kosztem wariantu: konstrukcja koryguje
+  // je o deltę X oraz dopłatę za dodatkowe cele, ESTYMOWANĄ z ofert tej
+  // samej grupy (dwa warianty o tym samym X i liczbie celów +-1) — bez
+  // niej etykiety i deskryptor płatności pokazywałyby koszt szablonu.
+  if (Number.isFinite(template.cost) && Number.isInteger(template.xValue)) {
+    let surcharge = 0;
+    const excessByLength = new Map();
+    for (const cmd of commands ?? []) {
+      if (Number.isInteger(cmd?.xValue) && Array.isArray(cmd.targets) && Number.isFinite(cmd.cost)
+        && !excessByLength.has(cmd.targets.length)) {
+        excessByLength.set(cmd.targets.length, cmd.cost - cmd.xValue);
+      }
+    }
+    for (const [len, excess] of excessByLength) {
+      if (excessByLength.has(len + 1)) {
+        surcharge = Math.max(0, excessByLength.get(len + 1) - excess);
+        break;
+      }
+    }
+    constructed.cost = template.cost + (xValue - template.xValue)
+      + surcharge * (chosen.length - (template.targets?.length ?? chosen.length));
+  }
+  if (stunTargetId !== undefined) constructed.stunTargetId = stunTargetId;
+  if (gifted !== undefined) constructed.gifted = gifted;
+  if (giftRecipientId !== undefined) constructed.giftRecipientId = giftRecipientId;
+  return constructed;
+}
 // ===========================================================================
 // M257-r5/C (uwaga z testów): koszt dodatkowy „poświęć stwora” — OSOBNE
 // wybory zamiast iloczynu.
@@ -1401,6 +1455,30 @@ export function commandForMulliganSelection(commands, cardIds, defOf = null) {
     && entry.cardIds.length === list.length
     && keyOf(entry.cardIds) === selection);
   return cmd ?? null;
+}
+
+/**
+ * G, etap 3 (wzorzec kreatora walki z etapu 1): komenda dla wyboru
+ * mulligan-bottom. Najpierw reprezentant z oferty (dawne zachowanie,
+ * M304), a gdy wyboru nie ma wśród ZIAREN oferty — konstrukcja z planu
+ * (kandydaci + wymagana liczba), bo silnik waliduje każdy legalny zestaw
+ * przy execute; kreator nie może klinować się na nieobecności wariantu.
+ * Wybór spoza puli albo o złej liczbie nadal daje null (brak komendy).
+ */
+export function commandForMulliganBottomSelection(plan, commands, cardIds, defOf = null) {
+  const offered = commandForMulliganSelection(commands, cardIds, defOf);
+  if (offered) return offered;
+  const list = [...(cardIds ?? [])];
+  const pool = plan?.cardIds ?? plan?.targets ?? [];
+  if (!plan || plan.type !== 'resolve_mulligan_bottom_choice') return null;
+  if (list.length !== (plan.count ?? -1)) return null;
+  if (new Set(list).size !== list.length) return null;
+  if (list.some((id) => !pool.includes(id))) return null;
+  return {
+    type: 'resolve_mulligan_bottom_choice',
+    playerId: plan.playerId ?? commands?.[0]?.playerId ?? null,
+    cardIds: list,
+  };
 }
 
 

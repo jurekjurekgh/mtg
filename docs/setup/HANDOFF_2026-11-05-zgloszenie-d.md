@@ -1,0 +1,69 @@
+# Handoff 2026-11-05 — zgłoszenie D: combat triki z instantów (K1 zamknięte)
+
+## Stan
+
+- Zgłoszenie D (Dragonscale Boon rzucany „jak tylko jest mana”) naprawione
+  dla klasy K1 (trwałe liczniki statystyk z instantu). Bramka trzymania:
+  `counterInstantHoldPenalty` (120) w `src/controllers/heuristic-params.js`,
+  logika okien w gałęzi `cast_spell` w `src/controllers/heuristic-bot.js`.
+- Dozwolone okna rzutu: cel już walczy; wróg zadeklarował atakujących,
+  a cel może blokować (tapnięty tylko z odkręceniem z tego samego czaru);
+  licznik domyka grę w tym ataku. Sorcery i zdolności aktywowane bez zmian.
+- Roadmapa audytu K1–K6 i wyniki pomiarów: `docs/plans/PLAN_2026-11-05-d-combat-tricki.md`.
+
+## Dowody
+
+- `test/zgloszenie-d-dragonscale-okno.test.js` — D/1–D/5, 5/5; mutacja
+  (kara 120→0) przywraca błąd.
+- Pakiet pokrewny 103/103; `npm test` 9981/9981; build 77 modułów / 5707,4 kB;
+  `npm run test:all` 10249/10249.
+- Commity: plan `660146b`, naprawa K1 `fcb8a83` (gałąź `arena/5d931b5a-mtg`, PR #179).
+
+## Następne kroki (kolejne sesje, po kolei)
+
+1. K4: obrażenia w twarz poza walką (Shock przy 20 życia w podtrzymaniu —
+   zmierzona luka) i timing instant-removalu.
+2. K5: kontrczary. K6: dobieranie, tokeny, tutorzy, prewencje (Fog).
+
+Sonda audytowa: `.arena/checkpoint/d-audit-probe.mjs` (podtrzymanie, wolna
+mana — rzut = luka). Bez scalania PR bez decyzji właściciela.
+
+## Etap 7 (ta sama sesja, commit `5b1ea34`)
+
+Diplomatic Relations naprawiony: bramka `pumpBiteHoldPenalty` (120) dla
+instantu „pump + ugryzienie z własnego stwora”. Testy
+`test/zgloszenie-d-diplomatic-okno.test.js` (DR/1–DR/4) 4/4, mutacja
+złapana, pakiet pokrewny 89/89, fast 9985/9985, `test:all` 10253/10253,
+build 77 modułów / 5709,7 kB. Pomiar K4 zapisany w planie (Shock w twarz).
+
+## Etap 8 (commit `836d90d`): K4a — obrażenia w twarz
+
+Bramka `faceBurnHoldPenalty` (120): instant-burn w twarz poza walką bez
+domknięcia gry jest trzymany. Testy `test/zgloszenie-d-k4-twarz.test.js`
+(K4/1–K4/4) 4/4 + mutacja; pięć pinów starej konwencji świadomie
+zaktualizowanych. Fast 9989/9989, `test:all` 10257/10257.
+
+Następne: K4b (timing instant-removalu na stwory), K5 (kontrczary),
+K6 (reszta). Sondy: `.arena/checkpoint/d-k4-probe.mjs`,
+`d-audit-probe.mjs`.
+
+## Etap 9 (commit `dd0c1cb`): K4b — timing instant-removalu
+
+Bramka `removalUpkeepHoldPenalty` (120): instant-removal we własnym
+podtrzymaniu/kroku dobrania czeka na główną. Testy K4b/1–K4b/4 4/4 +
+mutacja; golden-master zregenerowany świadomie (dryf 1/6 partii,
+commit `3778492`). Fast 9993/9993, `test:all` 10261/10261.
+
+Następne: K5 (kontrczary — czy bot trzyma manę i kontruje tylko to, co
+się liczy), potem K6 (dobieranie, tokeny, tutorzy, prewencje/Fog).
+
+## Etap 10–11 (commit `e111927`): K5 pomiarem, K6 tokeny naprawione
+
+K5 (kontrczary): pomiar na prawdziwych stosach — trywialne czary bot
+trzyma kontrę, groźne kontruje. Bez zmiany kodu.
+K6: bramka `tokenUpkeepHoldPenalty` (120) dla instant-tokenów we własnym
+podtrzymaniu. Testy K6/1–K6/3 3/3 + mutacja. Fast 9996/9996,
+`test:all` 10264/10264.
+
+**Roadmapa zgłoszenia D (K1–K6) jest domknięta.** Zostają wyłącznie
+decyzje właściciela: scalenie PR #179.

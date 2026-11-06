@@ -78,10 +78,11 @@ test('F1/grób: Fiery Justice w oknie Halo Foragera niesie podział i rzuca się
   assert.ok(offers.every((c) => Array.isArray(c.damageDivision) && c.damageDivision.length >= 1),
     'każdy wariant niesie podział (L48: oferta = walidacja)');
   assert.ok(offers.every((c) => c.xValue === 3), 'X = mana value karty (3, pilnowane przez bramkę)');
-  const pick = offers.find((c) => c.targets?.length === 1 && c.targets[0] === 'p2'
-    && c.damageDivision.some((e) => e.id === 'c1' && e.amount === 2)
-    && c.damageDivision.some((e) => e.id === 'p2' && e.amount === 3));
-  assert.ok(pick, 'wariant 2 na stwora + 3 na gracza jest w ofercie');
+  // G, etap 3: oferta niesie ziarna podzialu — podzial 2+3 konstruuje
+  // kontroler na szablonie oferty, a validateDamageDivision waliduje.
+  const szablon = offers.find((c) => c.targets?.length === 1 && c.targets[0] === 'p2');
+  assert.ok(szablon, 'szablon oferty okna (cel p2)');
+  const pick = { ...szablon, damageDivision: [{ id: 'c1', amount: 2 }, { id: 'p2', amount: 3 }] };
   run(s, pick);
   settle(s);
   assert.equal(find(s, 'oreplate-pangolin', 'battlefield'), undefined, 'porcja 2 zabija 2/2');

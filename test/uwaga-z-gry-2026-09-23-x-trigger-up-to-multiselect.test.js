@@ -107,12 +107,14 @@ test('B1/1: trigger „up to two" to JEDEN wpis panelu, nie 11 wariantów kombin
   const s = stol();
   const { view, session } = otworzDecyzjeTriggera(s);
   const warianty = view.legalCommands.filter((c) => c.type === 'resolve_trigger_target');
-  assert.equal(warianty.length, 11, `silnik enumeruje podzbiory (2 z 4 + 1 z 4 + pusty): ${warianty.length}`);
+  // G, etap 2: silnik niesie ZIARNA (pełna para + 4 singletony + pusty),
+  // nie wszystkie podzbiory (dawniej 11) — zestawy konstruuje kreator.
+  assert.equal(warianty.length, 6, `ziarna silnika (para + singletony + pusty): ${warianty.length}`);
   const wpisy = buildActionEntries(view.legalCommands.filter((c) => c.type !== 'concede'), session, view);
   const trigger = wpisy.filter((e) => e.request
     && (e.request.options ?? []).some((c) => c.type === 'resolve_trigger_target'));
   assert.equal(trigger.length, 1, `jedna oferta decyzji (jest ${trigger.length})`);
-  assert.equal(trigger[0].request.options.length, 11, 'wszystkie legalne warianty trafiają do modala (L48)');
+  assert.equal(trigger[0].request.options.length, 6, 'ziarna trafiają do modala; kreator konstruuje z nich dowolny legalny zestaw (L48)');
 });
 
 test('B1/2: kreator pokazuje KANDYDATÓW z walidacją liczby (0–2)', () => {

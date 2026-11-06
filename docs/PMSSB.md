@@ -67,6 +67,7 @@ teraz obowiązkowy, a nie zalecany.
 | warunkowa redukcja kosztu (Gnoll War Band, CR 601.2f: „za każdego przeciwnika, któremu zadano obrażenia w tej turze”) | 1 | ZAMKNIĘTE BEZ ZMIANY KODU (2026-10-20) | §PMSSB-76 niżej; `test/audyt-pmssb76-warunkowa-redukcja.test.js` (3 piny, nie RED); silnik i bot czytają ten sam stan |
 | **batch 70 — osiem rodzin nowych mechanik**: X w koszcie permanentu, prewencja zdejmująca liczniki, Improvise, `cantBeBlockedByTypes`, `manifest_dread_resolved`, `amountFromGraveyardCardType`, Converge damage, kicked + drugi cel | 10 | **PĘTLA DOMKNIĘTA (2026-10-27)** — 4 DONE (ewazja po typie, trigger manifest dread, licznik z cmentarza, Converge damage), X w koszcie DONE w v2 (próg minimalnego X + dowiązanie zdarzenia/logu/śladu), 3 ZAMKNIĘTE BEZ ZMIANY (prewencja licznikowa, Improvise, drugi cel kickera) | §PMSSB-79 wyżej; plan `docs/plans/PLAN_2026-10-27b-pmssb79-batch70.md`; sonda `tools/pmssb79-batch70-sonda.mjs`; `test/audyt-pmssb79-batch70.test.js` (24 piny + 9 mutacji); lustro `tools/pmssb79-mirror.mjs`; pokrętła `convergeDamagePerColor`, `manifestDreadTriggerValue`, `graveyardCounterWeight`, `graveyardCounterCap`, `xMinimumValue`, `xMinimumValueLooseAtLethal`; golden bez regeneracji |
 | convoke (`convoke`, Kavu Primarch z batcha 69) | 1 | **DONE (2026-10-20)** | §PMSSB-72 niżej; `test/audyt-pmssb72-convoke.test.js` (9). Warianty convoke w `legalCommands` (od A-12 także dobrowolne przy dostępnej manie, limit 64; także kicked), kreator płaci tylko resztę many, wycena bota: kara `convokeTapPenalty` × wartość ciała tapowanego stwora, UI grupuje warianty. Golden: hash `7510…` → `9017…` (regeneracja fixture po przeglądzie: 1437 decyzji, 0 zmienionych wyborów/wyników). |
+| Batch 72 — manual score audit for ten new cards, nested tutor qualification, face-up payment, linked-exile return | 10 | **DONE (2026-11-06)** | §PMSSB-88; `tools/pmssb88-batch72-scoring-sonda.mjs`; `test/audyt-pmssb88-batch72.test.js` (9); plus PMSSB-87 evidence; `unlock_door` explicitly unsupported (no Room/action) |
 | bounce (`bounce_*`, `owner_library_top_or_bottom`) | 8+3 trig | DONE (2026-09-25) | §PMSSB-1 niżej; `test/audyt-pmssb1-bounce.test.js` (29); `bounce*` (10) |
 | tokeny (`create_token`) | 46 | DONE (2026-09-26) | §PMSSB-2 niżej; `test/audyt-pmssb2-tokeny.test.js` (28); `token*` (3) |
 | dobieranie (`draw_cards*`, `draw_then_discard`) | 45 | DONE (2026-09-26) | §PMSSB-3 niżej; `test/pmssb3-draw-wave-a+b.test.js` (15); `instantDrawFoeEndBonus`, `ferociousLootExpected` (2) |
@@ -4181,3 +4182,78 @@ Benchmark quick: heuristic 87,5% ogółem (vs random 96,7%, vs aggro 78,3%);
 Wrap in Flames s4009 p2 t20 (ta sama klasa co przejrzana t24 — warianty różnią
 się WYŁĄCZNIE liczbą celów, dodatkowy cel funkcjonalnie pusty) — allowlista
 przepisana z numeru tury (krucha) na KLASĘ.
+
+## PMSSB-87 — batch 72: restricted mana, attack trigger, live land threshold (2026-11-06) — DONE
+
+Plan: `docs/plans/PLAN_2026-11-06c-pmssb72.md`. Sonda:
+`node tools/pmssb72-batch72-sonda.mjs`. Pins:
+`test/audyt-pmssb72-batch72.test.js` (3), plus detailed legal/illegal and
+negative-interaction coverage in `test/real-cards-batch72.test.js`.
+
+No new bot parameter: each path uses existing purpose-aware payment or generic
+pump/evasion valuation. Probes are deterministic (seed 72, no random tie-break,
+no lookahead), measured as option scores against the pass/negative control.
+
+| Mechanic / state | Before | After | Result |
+|---|---|---|---|
+| Creeping Peeper → Living History, one free `{R}` plus Peeper `{U}` | no enchantment-purpose payment path / no cast offer | cast chosen, **78.30 vs pass 0** | reuse generic costed-source and enchantment-purpose scoring |
+| Same Peeper mana → ordinary sorcery | no legal cast offer | **no legal cast offer** | anti-over-fix: restriction is purpose-specific |
+| Vortex Runner, 7 lands, 2/2 blocker | condition ignored in combat's `cantBeBlocked` path | attack **−10**, pass **0**; bot holds | seven is below threshold; ordinary block/evasion valuation |
+| Vortex Runner, 8 / 9 lands, same blocker | condition ignored in combat's `cantBeBlocked` path | attack **+6**, pass **0** at both boundaries; bot attacks | read-time static condition; no entry/attack snapshot |
+| Living History, no qualifying graveyard departure | no generic attack event / no fact | **no trigger** | negative control |
+| Living History, card left controller's graveyard; 0/4 and 3/3 attacking | no trigger queued | target scores **64** (3/3) vs **59** (0/4); bot chooses 3/3 | existing trigger-target pump scoring reused |
+
+RED sensitivity: three temporary mutations each made the corresponding PMSSB
+pin fail — (1) reject `enchantment_spell`, (2) stop scanning
+`attacks_you_control`, (3) make static abilities ignore their condition. All
+source files were restored; the post-mutation PMSSB suite is **3/3** green.
+Legacy Powerstone/artifact-only guards and payment paths remain covered by the
+existing full suite; face-up purposes are covered for direct manifest/cloak and
+morph payment in the batch-72 engine pins. No door card or unrelated card logic
+was added.
+
+### Bramy B7 — Batch 72 (2026-11-06)
+
+`node tools/run-tests.mjs fast`: **10,051/10,051**; `node tools/run-tests.mjs
+slow`: **268/268**; `npm run build`: **78 modułów / 5,755.8 kB**.
+Quick benchmark: **672 meczów / 0 niedokończonych / 199.3 s** on the current
+six-deck quick sample (includes `forgotten-realms-br` after the ADR 0024 split):
+heuristic **80.7% vs aggro** (271/336), **97.6% vs random** (328/336).
+These percentages are recorded against the current rotated deck sample, not
+compared as a strict before/after win-rate because the deck corpus changed.
+
+## PMSSB-88 — Batch 72 per-card manual bot-score audit (2026-11-06) — DONE
+
+This follow-up measures the bot's actual option scores and choices; rules and
+integration tests are not counted as score proof. The deterministic card
+crosswalk is `tools/pmssb88-batch72-scoring-sonda.mjs`, with nine score pins in
+`test/audyt-pmssb88-batch72.test.js`.
+
+| Card | Manual bot-score evidence |
+|---|---|
+| Feral Ridgewolf | Cast **63.3**; pump **+6** when it changes a useful combat outcome, **−24** when idle. |
+| Creeping Peeper | Enchantment spell **78.30 vs pass 0**; ordinary sorcery has no legal offer. Face-up action using Peeper mana **4 vs pass 0**, chosen and executed; without Peeper, no face-up offer. |
+| Vortex Runner | Attack **−10** at 7 lands; **+6** at 8 and 9 lands against the same 2/2 blocker. |
+| Kraken Hatchling | Cast **64.8018**. |
+| Open the Gates | Nested `anyOf` land-screw score **59→64**; `searchLandScrewBonus: 0` control remains **59**. |
+| Living History | Cast **78.2973**; attack trigger target choice **64** for 3/3 vs **59** for 0/4 after a qualifying graveyard departure; no qualifying departure produces no trigger. |
+| Banishing Light | Target choice **43 vs 34**; Naturalize linked-return score **78→96 (+18)** when our 4/5 returns, and **−130→−148 (−18)** when the opponent's 4/5 returns from our Light. |
+| Pheres-Band Centaurs | Cast **69.3063**. |
+| Shining Aerosaur | Cast **73.8036**. |
+| Lich's Caress | Large target **102**, small target **84**; same-cost destroy-only control **100** on the large target, isolating **+2** from the three-life rider. |
+
+Generic linked-return valuation is also measured on Dispeller's Capsule:
+activated removal **27** without linked return and **45** with the linked 4/5 returning (+18), demonstrating the activation path rather than assuming cast coverage implies it.
+
+Gap closure is mutation-sensitive: disabling recursive `anyOf` recognition made
+Open the Gates pin RED (**59 ≠ 64**); rejecting legal face-up actions made the
+Peeper pin RED (**−Infinity vs 0**); zeroing linked-return value made the linked
+return pin RED (**78 ≠ 96**). Each temporary mutation was restored.
+
+Boundary: Peeper's printed `unlock_door` spend restriction remains **unsupported
+and unscored** in this repository because no Room card or unlock action exists.
+No score-coverage claim is made for it.
+
+Post-audit gates: `node tools/run-tests.mjs fast` **10,060/10,060**;
+`node tools/run-tests.mjs slow` **268/268**; `npm run build` **78 modules /
+5,757.7 kB**. No full B0 benchmark was run.

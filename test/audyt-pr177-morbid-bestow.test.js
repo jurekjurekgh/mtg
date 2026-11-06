@@ -30,7 +30,11 @@ function run(s, command) {
   return result;
 }
 function drain(s) {
-  for (let i = 0; i < 20 && s.zones.stack.length && !s.pendingSearchChoice && !s.pendingOptionalPay && !s.pendingTriggerTargets?.length; i++) run(s, { type: 'pass_priority', playerId: s.turn.priorityPlayerId });
+  for (let i = 0; i < 40 && s.zones.stack.length && !s.pendingSearchChoice && !s.pendingOptionalPay && !s.pendingTriggerTargets?.length; i++) {
+    const order = playerView(s, s.turn.priorityPlayerId).legalCommands.find(c => c.type === 'resolve_trigger_order');
+    if (order) { run(s, order); continue; }
+    run(s, { type: 'pass_priority', playerId: s.turn.priorityPlayerId });
+  }
   assert.ok(s.zones.stack.length === 0 || s.pendingSearchChoice || s.pendingOptionalPay || s.pendingTriggerTargets?.length, 'stos rozstrzygnięty lub czeka decyzja');
 }
 function scene(bestow, observers = false) {

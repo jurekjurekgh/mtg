@@ -3777,3 +3777,18 @@ ETB było płaskie 3 (L50/L131 + L48).
   (7 pinów), bramki sesji po M2+O: `npm test` 8809/8809,
   `test:slow` 268/268, build 76 modułów / 5417,2 kB, benchmark quick
   heuristic 87,8%.
+
+
+## L190 (2026-11-03) — zagnieżdżone patche i limity list GitHuba
+
+**Przypadek:** audyt #178 miał 194 pliki REST, ale lokalny podział `gh pr diff`
+dał 197 wpisów: trzy fałszywe testy z wnętrza `A99/A107_NIE_WDRAZAC.patch`.
+Powód: wyszukiwanie `diff --git` bez kotwicy początku linii łapało także
+`+diff --git` dodawanej treści patcha; przez to ucięto też rzeczywisty diff
+plików `.patch`. Dodatkowo `gh pr view --json commits` i REST commits mają
+limity 100/250, a obiekt PR podaje pełną liczbę commitów.
+**Reguła:** inwentarz plików bierz z paginacji `pulls/<nr>/files`; dzieląc
+surowy diff, używaj `^diff --git ` i sprawdzaj `set(klucze) == set(REST)`.
+Nie ufaj liczbie wpisów z parsera ani capped listom `gh pr view`.
+**Strażnik:** `docs/setup/ENVIRONMENT.md` §3; mapa audytu #178 ma dokładnie
+194 wiersze plików, a eksperymenty pozostają artefaktami `NIE_WDRAZAC`.

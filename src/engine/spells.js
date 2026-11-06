@@ -164,21 +164,19 @@ export function hasHexproofAgainst(state, object, casterId) {
 /** Waliduje cele zgodnie ze specyfikacją deskryptora; zwraca obiekty celów. */
 
 /**
- * M360/B1 (CR 702.103b): czy obiekt na stosie jest czarem NIE-będącym stworem
- * (cel Negate — „Counter target noncreature spell”). Czar aury rzucony za
- * bestow ma kind 'aura' na stosie; historyczne stany mogły zachować
- * kind 'creature', mimo że jest czarem AURY (CR 702.103b: „it becomes an Aura enchantment”; ruling THS:
- * „either a creature spell or an Aura spell. It's never both”) — deskryptor
- * `spell.aura` rozstrzyga (mtg.wiki/Bestow + Scryfall THS/161, 2026-09-16).
- * Jeden helper dla oferty i walidacji (L48).
+ * M360/B1 + audyt PR #178 B1 (CR 702.103b): czy obiekt na stosie jest czarem
+ * NIE-będącym stworem (cel Negate — „Counter target noncreature spell”).
+ * Rozstrzygają AKTUALNE cechy obiektu na stosie: bestow jest Aurą (kind 'aura',
+ * bez typu Creature), zwykły rzut karty z bestow pozostaje czarem stwora.
+ * Nie wolno ufać samemu `spell.aura`: po odbiciu bestowed Aury stary
+ * deskryptor mógł przetrwać w ręce i skleić się ze zwykłym rzutem stwora
+ * (CR 400.7). Jeden helper dla oferty i walidacji (L48).
  */
 export function isNoncreatureSpellOnStack(object) {
   if (!object || object.zone !== 'stack') return false;
   // Zdolności (kind 'trigger'/'activated') to nie czary (CR 113.9).
   if (object.kind === 'trigger' || object.kind === 'activated') return false;
-  // Zgodność ze starszymi stanami: spell.aura jest nie-stworowy nawet,
-  // jeśli historyczny zapis zachował pierwotne kind 'creature'.
-  if (object.kind === 'creature' && object.spell?.aura !== true) return false;
+  if (object.kind === 'creature' || (object.types ?? []).includes('Creature')) return false;
   return true;
 }
 export function validateTargets(state, targetSpec, chosen, casterId, sourceColors = null, sourceObject = null,
@@ -2606,7 +2604,8 @@ export function validateDamageDivision(state, playerId, object, damageDivision) 
  * planeswalkerzy, na końcu własne stwory — to one wypadają przy dużej planszy.
  * Walidacja przyjmuje KAŻDY legalny podział (oferta ⊆ walidacja, L48).
  */
-export const DIVIDED_POOL_CAP = 8;
+// Zgłoszenie F: pula kandydatów BEZ przycinania (dawniej DIVIDED_POOL_CAP = 8
+// odcinał kandydatów rankingiem). Kolejność ranków zostaje (pierwsze oferty).
 export function dividedDamageDivisions(state, playerId, object) {
   const divided = object.spell?.divided;
   if (!divided) return [];
@@ -2619,60 +2618,28 @@ export function dividedDamageDivisions(state, playerId, object) {
     if (target?.kind === 'creature') return target.controllerId === playerId ? 4 : 0;
     return 2; // planeswalker
   };
-  // PMSSB-46 (2026-10-03g, O1 z audytu PR #150; korekta w audycie PR #153,
-  // F2): `sort + slice(0, CAP)` odcinało gracza-wroga (rank=1) przy 8+
-  // wrogich stworach (rank=0), więc Fiery Justice nie mogła dobić przeciwnika
-  // przy szerokim stole. Rezerwacja reprezentanta każdej nie-pustej klasy
-  // celów (poza najniższą — stwory wroga) obowiązuje jednak TYLKO wtedy, gdy
-  // pula jest faktycznie przycinana: bez cięcia zmiana kolejności psuła
-  // kontrakt docblocka („najpierw stwory przeciwników, potem gracze…”), a
-  // pierwsza oferta przestawiała się z celu-stwora na gracza. Przy cięciu
-  // odpada najniżej uprzywilejowany kandydat od KOŃCA listy ranków, z
-  // pominięciem reprezentantów — gracz-wróg wchodzi na swoją pozycję ranku,
-  // a stwory wroga zachowują przód puli. Kształt generyczny (bez nazw kart,
-  // ADR 0002); self (rank=3) bez rezerwacji — samouszkodzenie marginalne
-  // (ADR 0022 §4).
-  const byRank = [...candidates].sort((a, b) => rank(a) - rank(b));
-  let pool = byRank;
-  if (byRank.length > DIVIDED_POOL_CAP) {
-    const reservedClasses = [1, 2]; // gracz-wróg, planeswalker
-    const reserved = new Set();
-    for (const cls of reservedClasses) {
-      const rep = byRank.find((id) => rank(id) === cls);
-      if (rep) reserved.add(rep);
-    }
-    let toDrop = byRank.length - DIVIDED_POOL_CAP;
-    const kept = [];
-    for (let i = byRank.length - 1; i >= 0; i -= 1) {
-      const id = byRank[i];
-      if (toDrop > 0 && !reserved.has(id)) { toDrop -= 1; continue; }
-      kept.push(id);
-    }
-    pool = kept.reverse();
-  }
+  const pool = [...candidates].sort((a, b) => rank(a) - rank(b));
   const total = divided.total;
   const out = [];
-  const compositions = (parts, left) => {
-    if (parts === 1) return [[left]];
-    const result = [];
-    for (let first = 1; first <= left - (parts - 1); first += 1) {
-      for (const rest of compositions(parts - 1, left - first)) result.push([first, ...rest]);
-    }
-    return result;
+  // G, etap 3: ziarna zamiast iloczynu podzbiory x kompozycje (F): koncentracja
+  // na kazdym kandydacie solo + dla rosnacych zestawow czolowki rankingu
+  // koncentracja na pierwszym i podzial mozliwie rowny. Kreator konstruuje
+  // wlasne zestawy/kwoty, a validateDamageDivision waliduje przy rzucie --
+  // kompletnosc konstrukcyjna bez listy do uciacia.
+  const seenDiv = new Set();
+  const pushDiv = (entries) => {
+    const key = entries.map((e) => `${e.id}:${e.amount}`).join('|');
+    if (seenDiv.has(key)) return;
+    seenDiv.add(key);
+    out.push(entries);
   };
-  const subsets = (start, k) => {
-    if (k === 0) return [[]];
-    const result = [];
-    for (let i = start; i <= pool.length - k; i += 1) {
-      for (const rest of subsets(i + 1, k - 1)) result.push([pool[i], ...rest]);
-    }
-    return result;
-  };
-  for (let k = 1; k <= Math.min(total, pool.length); k += 1) {
-    const parts = compositions(k, total);
-    for (const set of subsets(0, k)) {
-      for (const amounts of parts) out.push(set.map((id, i) => ({ id, amount: amounts[i] })));
-    }
+  for (const id of pool) pushDiv([{ id, amount: total }]);
+  for (let k = 2; k <= Math.min(total, pool.length); k += 1) {
+    const set = pool.slice(0, k);
+    pushDiv(set.map((id, i) => ({ id, amount: i === 0 ? total - (k - 1) : 1 })));
+    const base = Math.floor(total / k);
+    const rest = total - base * k;
+    pushDiv(set.map((id, i) => ({ id, amount: base + (i < rest ? 1 : 0) })));
   }
   return out;
 }
@@ -3352,33 +3319,54 @@ export function legalFireballCasts(state, playerId, objectId, object, manaAvaila
   const players = state.players.map((p) => p.id);
   const allTargets = [...creatures, ...players];
   if (allTargets.length === 0) return casts;
-  // Podzbiory rozmiaru 1..min(allTargets.length, 3) — limit kombinacji,
-  // żeby oferta nie eksplodowała przy dużej planszy (Fireball „any number").
-  const maxTargets = Math.min(allTargets.length, 3);
-  const subsets = (arr, k) => {
-    if (k === 0) return [[]];
-    if (arr.length < k) return [];
-    const [head, ...rest] = arr;
-    const withHead = subsets(rest, k - 1).map((x) => [head, ...x]);
-    return [...withHead, ...subsets(rest, k)];
-  };
   const base = object.manaCost ?? 0; // {R}
-  // X ograniczamy do 15 — pokrywa praktyczne użycia (lethal), bez setek
-  // tysięcy wariantów przy dużej puli many (stack overflow przy spreadzie).
-  for (let n = 1; n <= maxTargets; n += 1) {
-    const extra = Math.max(0, n - 1);
-    for (const combo of subsets(allTargets, n)) {
-      // Etap F/4: rzut „without paying its mana cost" — X = 0 (CR 107.3b),
-      // koszt {X}{R} zniesiony, ale dopłata {1} za każdy cel ponad pierwszy
-      // to zwiększenie kosztu, które płaci się nadal (CR 601.2f).
-      if (withoutManaCost) {
-        if (extra <= manaAvailable) casts.push({ objectId, targets: combo, xValue: 0 });
-        continue;
-      }
-      const maxX = Math.min(manaAvailable - base - extra, 15);
-      for (let X = 1; X <= maxX; X += 1) {
-        casts.push({ objectId, targets: combo, xValue: X });
-      }
+  // G, etap 3: ziarna zamiast iloczynu podzbiory celow x zakres X (F):
+  // pojedyncze cele (X smiertelne i maksymalne), zestaw wrogich stworow,
+  // wszyscy oraz wrogie stwory + gracz — kazdy z maksymalnym oplacalnym X.
+  // Dowolny inny zestaw/X konstruuje kreator (stepper), a walidacja rzutu
+  // (validateFireballTargets + bramka kosztu) przyjmuje kazdy legalny —
+  // kompletnosc konstrukcyjna bez listy do uciacia.
+  const seenCast = new Set();
+  const pushCast = (targets, xValue) => {
+    const key = `${[...targets].sort().join('|')}#${xValue}`;
+    if (seenCast.has(key)) return;
+    seenCast.add(key);
+    casts.push({ objectId, targets: [...targets], xValue });
+  };
+  const maxXFor = (n) => manaAvailable - base - Math.max(0, n - 1);
+  const lethalX = (id) => {
+    const target = state.objects.get(id);
+    if (target && target.toughness != null) return Math.max(1, target.toughness - (target.damage ?? 0));
+    const player = state.players.find((entry) => entry.id === id);
+    return player ? Math.max(1, player.life) : null;
+  };
+  // Etap F/4: rzut „without paying its mana cost" — X = 0 (CR 107.3b),
+  // koszt {X}{R} zniesiony, ale dopłata {1} za każdy cel ponad pierwszy
+  // to zwiększenie kosztu, które płaci się nadal (CR 601.2f).
+  if (withoutManaCost) {
+    for (const targetId of allTargets) pushCast([targetId], 0);
+  } else {
+    for (const targetId of allTargets) {
+      const maxX = maxXFor(1);
+      if (maxX < 1) continue;
+      const xs = new Set([1, maxX]);
+      const lethal = lethalX(targetId);
+      if (lethal != null && lethal >= 1 && lethal <= maxX) xs.add(lethal);
+      for (const X of [...xs].sort((a, b) => a - b)) pushCast([targetId], X);
+    }
+  }
+  const enemyCreatures = creatures.filter((id) => state.objects.get(id)?.controllerId !== playerId);
+  const enemyPlayerId = players.find((id) => id !== playerId) ?? null;
+  const seedSets = [];
+  if (enemyCreatures.length >= 2) seedSets.push(enemyCreatures);
+  if (allTargets.length >= 2) seedSets.push(allTargets);
+  if (enemyCreatures.length >= 1 && enemyPlayerId) seedSets.push([...enemyCreatures, enemyPlayerId]);
+  for (const set of seedSets) {
+    if (withoutManaCost) {
+      if (Math.max(0, set.length - 1) <= manaAvailable) pushCast(set, 0);
+    } else {
+      const maxX = maxXFor(set.length);
+      if (maxX >= 1) pushCast(set, maxX);
     }
   }
   return casts;
@@ -3811,7 +3799,7 @@ export function legalXCostCasts(state, playerId, objectId, object, manaAvailable
   const casts = [];
   const baseCost = effectiveSpellManaCost(state, object);
   const maxX = Math.max(0, manaAvailable - baseCost);
-  const cap = object.spell.xCost.cap ?? 15;
+  // Zgłoszenie F: bez sufitu X (dawniej deskryptorowe `cap ?? 15`).
   const targetSpec = object.spell.targets ?? [];
   // „up to one target" (pozycja opcjonalna) też przechodzi przez wspólny
   // enumerator — oferta = walidacja (L48), z zależnościami pozycji włącznie.
@@ -3826,15 +3814,39 @@ export function legalXCostCasts(state, playerId, objectId, object, manaAvailable
   // zależy od combo. Parametr manaAvailable to górne ograniczenie.
   const purpose = spellManaPurpose(object);
   const feasibleX = [];
-  for (let X = 0; X <= Math.min(maxX, cap); X += 1) {
+  for (let X = 0; X <= maxX; X += 1) {
     const reqs = [...basePips];
     if (blackX) for (let i = 0; i < X; i += 1) reqs.push(['B']);
     if (X > producibleMana(state, playerId, null, purpose, reqs) - baseCost) break;
     if (blackX && X > 0 && !canPayColoredCost(state, playerId, reqs)) continue;
     feasibleX.push(X);
   }
+  // G, etap 3: ziarna X per zestaw celow zamiast pelnego zakresu --
+  // minimum (0), maksimum oplacalne oraz progi: X rowne pozostalej
+  // wytrzymalosci celu-stwora albo zyciu celu-gracza (zabojstwo / burn
+  // smiertelny). Inne wartosci konstruuje kreator (stepper X), a bramka
+  // rzutu waliduje -- kompletnosc konstrukcyjna.
+  const feasibleSet = new Set(feasibleX);
+  const seedXsFor = (combo) => {
+    const xs = new Set();
+    if (feasibleX.length > 0) {
+      xs.add(feasibleX[0]);
+      xs.add(feasibleX[feasibleX.length - 1]);
+    }
+    for (const id of combo ?? []) {
+      const target = state.objects.get(id);
+      if (target && target.toughness != null) {
+        const need = Math.max(0, target.toughness - (target.damage ?? 0));
+        if (feasibleSet.has(need)) xs.add(need);
+      } else {
+        const player = state.players.find((entry) => entry.id === id);
+        if (player && feasibleSet.has(player.life)) xs.add(player.life);
+      }
+    }
+    return [...xs].sort((a, b) => a - b);
+  };
   for (const combo of pools) {
-    for (const X of feasibleX) {
+    for (const X of seedXsFor(combo)) {
       casts.push({ objectId, targets: combo, xValue: X });
     }
   }
@@ -4049,10 +4061,10 @@ function castModalSpell(state, playerId, objectId, modeIndex, targets, stunTarge
 }
 
 /** Limit oferowanych podzbiorów wygnania Escape (jak CREW_OPTION_CAP). */
-export const ESCAPE_OPTION_CAP = 32;
+// Zgłoszenie F: usunięto ESCAPE_OPTION_CAP (enumeracja kompletna).
 
 /** Limit oferowanych podzbiorów wygnania Delve (jak ESCAPE_OPTION_CAP). */
-export const DELVE_OPTION_CAP = 32;
+// Zgłoszenie F: usunięto DELVE_OPTION_CAP (enumeracja kompletna).
 
 /**
  * Delve (CR 702.66, Hooting Mandrills): „Each card you exile from your
@@ -4261,7 +4273,6 @@ export function legalEscapeCasts(state, playerId) {
     // oferta dla botów/enumeracje w legalCommands, gracz dostaje
     // multiselect z kandydatów.
     void subsets;
-    void ESCAPE_OPTION_CAP;
   }
   return casts;
 }

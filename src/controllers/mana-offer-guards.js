@@ -1,6 +1,7 @@
 import { expandManaPool } from '../engine/resources.js';
 import { coloredPipsOf, matchColorRequirements } from '../engine/mana-cost.js';
 import { isActivatedManaAbility, manaAbilityHasManualCost } from '../engine/mana-sources.js';
+import { availablePurposeRestrictedUnits, purposeAllowsSpendOnly } from '../engine/mana-restrictions.js';
 
 /**
  * N (korekta właściciela): oferta rzutu w silniku obejmuje czary osiągalne
@@ -104,9 +105,12 @@ export function autoManaUnits(view) {
  * się wydać wyłącznie na dozwolony cel"). Do porównania z castem dokładane
  * WYŁĄCZNIE, gdy karta jest artefaktem (`castBeyondAutoMana`).
  */
-export function restrictedManaUnits(view) {
+export function restrictedManaUnits(view, purpose = {}) {
   const me = view?.players?.find((player) => player.id === view.playerId) ?? {};
-  const units = [...expandManaPool(me.restrictedPool ?? {})];
+  const units = [
+    ...(purposeAllowsSpendOnly('artifact', purpose) ? expandManaPool(me.restrictedPool ?? {}) : []),
+    ...availablePurposeRestrictedUnits(me.purposeRestrictedPool ?? {}, purpose).map((entry) => entry.colors),
+  ];
   const board = new Map((view?.zones?.battlefield ?? []).map((object) => [object.id, object]));
   const seen = new Set();
   for (const cmd of view?.legalCommands ?? []) {
@@ -119,9 +123,10 @@ export function restrictedManaUnits(view) {
     const ability = object.activatableAbilities?.[cmd.abilityIndex] ?? object.abilities?.[cmd.abilityIndex];
     if (!ability || !isActivatedManaAbility(ability)) continue;
     const effects = Array.isArray(ability.effect) ? ability.effect : [ability.effect];
-    if (!effects.some((effect) => effect?.type === 'add_mana' && effect?.spendOnly != null)) continue;
+    if (!effects.some((effect) => effect?.type === 'add_mana' && effect?.spendOnly != null
+      && purposeAllowsSpendOnly(effect.spendOnly, purpose))) continue;
     for (const effect of effects) {
-      if (effect?.type !== 'add_mana') continue;
+      if (effect?.type !== 'add_mana' || !purposeAllowsSpendOnly(effect.spendOnly ?? null, purpose)) continue;
       const colors = Array.isArray(effect.colors) ? effect.colors : [];
       for (let i = 0; i < (effect.amount ?? 1); i += 1) units.push([...colors]);
     }
@@ -169,7 +174,8 @@ export function castCostOf(view, cmd) {
   // F-2: cel wydania jak w `spellManaPurpose` — artefakt widzi manę
   // ograniczoną (restrictedPool + źródła spendOnly), reszta nie.
   const artifact = (object.types ?? []).includes('Artifact');
-  return { amount, requirements, artifact };
+  const enchantment = (object.types ?? []).includes('Enchantment');
+  return { amount, requirements, artifact, enchantment };
 }
 
 /**
@@ -181,11 +187,13 @@ export function castBeyondAutoMana(view, cmd, units = autoManaUnits(view)) {
   if (!CAST_TYPES.has(cmd.type)) return false;
   const cost = castCostOf(view, cmd);
   if (cost == null) return false;
-  // F-2: jednostki ZALEŻNE od celu wydania (jak `restrictedManaBlocked`)
-  // dołożone wyłącznie dla artefaktu; nie-artefakt nie widzi many
-  // Powerstone — inaczej filtr przepuszczałby cast, którego executor
-  // nie zapłaci (audyt PR #173, znalezisko F-2, sonda probe-f2).
-  const effective = cost.artifact ? [...units, ...restrictedManaUnits(view)] : units;
+  // Match the engine's declared payment purpose: artifact-only mana follows
+  // Powerstone rules, while purpose-restricted units may fund enchantment
+  // spells only when that purpose is allowed.
+  const purpose = {
+    castingSpell: true, artifactSpell: cost.artifact, enchantmentSpell: cost.enchantment,
+  };
+  const effective = [...units, ...restrictedManaUnits(view, purpose)];
   if (cost.amount > effective.length) return true;
   if (cost.requirements.length > 0 && !matchColorRequirements(effective, cost.requirements)) return true;
   return false;
@@ -195,8 +203,8 @@ export function castBeyondAutoMana(view, cmd, units = autoManaUnits(view)) {
  * Bot musi najpierw wykonać taką aktywację, bo executor nie poświęca nic sam.
  * Mana Powerstone może opłacić zdolność (nie chodzi o rzut czaru). */
 export function triggerPaymentBeyondAuto(view, cmd, units = autoManaUnits(view)) {
-  if (!['resolve_pay_or_sacrifice', 'resolve_optional_pay_choice'].includes(cmd?.type) || cmd.pay !== true) return false;
-  const available = [...units, ...restrictedManaUnits(view)];
+  if (!['resolve_pay_or_sacrifice', 'resolve_optional_pay_choice', 'resolve_counter_pay_choice', 'resolve_ward_pay_choice'].includes(cmd?.type) || cmd.pay !== true) return false;
+  const available = [...units, ...restrictedManaUnits(view, { castingSpell: false })];
   const pips = (cmd.costColors ?? []).map((color) => [color]);
   return (cmd.cost ?? 0) > available.length || (pips.length > 0 && !matchColorRequirements(available, pips));
 }

@@ -53,7 +53,7 @@ function cialo(state, id, power, toughness, controllerId) {
 }
 
 const etykieta = (cmd) => (cmd.type === 'declare_blockers'
-  ? `block[${Object.entries(cmd.assignments ?? {}).map(([a, b]) => `${a}<${b.join('+')}`).join(' ')}]`
+  ? `block[${Object.entries(cmd.assignments ?? {}).sort(([a], [b]) => a.localeCompare(b)).map(([a, b]) => `${a}<${[...b].sort().join('+')}`).join(' ')}]`
   : cmd.type);
 
 /** Decyzja ATAKUJĄCEGO (p1) w declare_attackers. */
@@ -133,14 +133,14 @@ test('PMSSB-33/A5 (anty-over-fix): otwarty stół to NIE remis — 1/1 bez bloke
 
 test('PMSSB-33/B1 (znany remis): permutacja przypisań blokerów o tym samym wyniku', () => {
   const o = opcje(blok([['a1', 1, 1], ['a2', 1, 1]], [['b1', 1, 1], ['b2', 1, 1]]), 'p2');
-  assert.equal(o.wynik('block[a1<b1 a2<b2]'), o.wynik('block[a2<b1 a1<b2]'),
+  assert.equal(o.wynik('block[a1<b1 a2<b2]'), o.wynik('block[a1<b2 a2<b1]'),
     'oba ataki zablokowane, te same zgony — przypisania są zamienne');
   assert.equal(o.wynik('block[a1<b1 a2<b2]'), 2, 'wartość bloku (kotwica)');
 });
 
 test('PMSSB-33/B2 (anty-remis): przy RÓŻNYCH ciałach wycena bloku rozróżnia przypisania', () => {
   const o = opcje(blok([['a1', 2, 2], ['a2', 1, 1]], [['b1', 1, 1], ['b2', 2, 2]]), 'p2');
-  const dobrze = o.wynik('block[a2<b1 a1<b2]');
+  const dobrze = o.wynik('block[a1<b2 a2<b1]');
   const slabo = o.wynik('block[a1<b1 a2<b2]');
   assert.ok(dobrze > slabo,
     `dobry podział blokerów wygrywa (${dobrze} > ${slabo}) — remis z B1 nie jest ślepotą modelu`);

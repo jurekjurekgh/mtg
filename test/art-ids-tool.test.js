@@ -108,7 +108,8 @@ test('lokalny słownik zawiera wszystkie karty z ID setu, bez ucieczek i z duble
   // Batch 68 (400–411) → 603; Batch 69 (412–425, 10 pozycji) → 613.
   // Batch 70 (2026-10-27, kolekcja 426–624, 10 pozycji) → 623.
   // Batch 71 (2026-11-01, kolekcja 625–634, 10 pozycji) → 633.
-  assert.equal(data.length, 633, 'pełna lista kolekcji po Batchu 71 (633 pozycje, bez STO)');
+  // Batch 72 (2026-11-06, kolekcja 635–644, 10 pozycji) → 643.
+  assert.equal(data.length, 643, 'pełna lista kolekcji po Batchu 72 (643 pozycje, bez STO)');
   for (const [art, name] of data) {
     assert.match(art, /^\d+[A-Za-z0-9_]*$/, `ID ilustracji bez znaków specjalnych: ${art}`);
     assert.ok(name.trim(), `nazwa nie może być pusta (ID ${art})`);
@@ -182,7 +183,8 @@ test('lokalny słownik (tools/collection-art-ids.csv) pokrywa karty z artId', ()
   // Batch 69: +10 nazw (412OGW…425MH2) → 610.
   // Batch 70: +10 nowych nazw (426DSK…624WAR) → 620.
   // Batch 71: +10 nazw (625EXO…634DSK) → 630.
-  assert.equal(dict.size, 630, 'słownik kolekcji po Batchu 71: 630 unikalnych nazw');
+  // Batch 72: +10 nazw (635ISD…644M19) → 640.
+  assert.equal(dict.size, 640, 'słownik kolekcji po Batchu 72: 640 unikalnych nazw');
 
   // Każda karta z artId w katalogu ma zgodny wpis w słowniku — gdy nowy batch
   // doda kartę bez odświeżenia słownika, ten test od razu to wskaże.
@@ -230,7 +232,7 @@ test('lokalny słownik (tools/collection-art-ids.csv) pokrywa karty z artId', ()
   // Batch 67 fala A +5 (371, 380, 394, 397, 398) → 588; fala B +1 (369) → 589.
   // Batch 69 (412–425): +10 → 613.
   // Batch 70 (426–624): +10 → 623; Batch 71 (625–634): +10 → 633.
-  assert.equal(withArt.length, 633, 'wszystkie realne karty i tyły DFC mają artId (Batch 71)');
+  assert.equal(withArt.length, 643, 'wszystkie realne karty i tyły DFC mają artId (Batch 72)');
   const byName = artIdsBySetFromRows(parseCSV(fs.readFileSync('tools/collection-art-ids.csv', 'utf8')));
   for (const card of withArt) {
     const entries = byName.get(card.name.toLowerCase()) ?? [];

@@ -43,6 +43,14 @@ function setField(state, id, patch) {
   state.objects.set(id, Object.freeze({ ...o, ...patch }));
 }
 
+function settleTriggerOrder(state) {
+  for (let i = 0; i < 8; i += 1) {
+    const order = playerView(state, state.turn.priorityPlayerId).legalCommands.find((c) => c.type === 'resolve_trigger_order');
+    if (!order) return;
+    assert.ok(execute(state, order).ok, 'kolejność triggerów');
+  }
+}
+
 function attackAlone(state) {
   state.turn = jumpToStep(state.turn, 'declare_attackers', 'p1');
   state.turn.activePlayerId = 'p1';
@@ -52,6 +60,7 @@ function attackAlone(state) {
   setField(state, 'atk', { summoningSickness: false });
   const r = execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['atk'] });
   assert.ok(r.ok, 'atak: ' + (r.reason ?? ''));
+  settleTriggerOrder(state);
   return state;
 }
 
@@ -66,7 +75,7 @@ function tapTriggersOnStack(state) {
 
 function drain(state, guard = 250) {
   let n = 0;
-  while ((state.zones.stack.length > 0 || state.pendingTriggerTargets.length > 0) && n++ < guard) {
+  while ((state.zones.stack.length > 0 || state.pendingTriggerTargets.length > 0 || state.pendingOptionalTrigger) && n++ < guard) {
     const holder = state.turn.priorityPlayerId;
     const view = playerView(state, holder);
     const may = view.legalCommands.find((c) => c.type === 'resolve_optional_trigger_choice');
@@ -97,6 +106,7 @@ test('E1: Angelic Benediction — decline w modalu celu, brak triggera na stosie
   setField(state, 'atk', { summoningSickness: false });
   const r = execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['atk'] });
   assert.ok(r.ok, 'atak: ' + (r.reason ?? ''));
+  settleTriggerOrder(state);
   const view = playerView(state, 'p1');
   const offers = view.legalCommands.filter((c) => c.type === 'resolve_trigger_target');
   assert.ok(offers.length >= 3, `2 cele + decline w modalu: ${offers.length}`);
@@ -124,6 +134,7 @@ test('E2: Angelic Benediction — wybór celu, may-tak przy rozstrzygnięciu tap
   setField(state, 'atk', { summoningSickness: false });
   const r = execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['atk'] });
   assert.ok(r.ok, 'atak: ' + (r.reason ?? ''));
+  settleTriggerOrder(state);
   const view = playerView(state, 'p1');
   const pick = view.legalCommands.find((c) => c.type === 'resolve_trigger_target' && c.targetId === 'foe');
   assert.ok(pick, 'cel foe w modalu');

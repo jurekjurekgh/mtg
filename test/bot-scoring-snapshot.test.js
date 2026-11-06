@@ -64,6 +64,46 @@ import {
  *     wyników WYBRANYCH komend. Hash i agregaty nie dowodzą jakości gry ani
  *     przyczyny dryfu. Historyczny pomiar quick: heuristic 87.5% ogółem,
  *     vs random 96.7%, vs aggro 78.3%; nie jest to pomiar obecnego drzewa.
+ *   - bf7acd6a… → a9ded3e5… (zgłoszenie D, etapy K1/7/8/9, 2026-11-05):
+ *     bramki trzymania instantów (liczniki, pump+ugryzienie, burn w twarz,
+ *     removal w podtrzymaniu). Zmierzona różnica: tylko
+ *     ravnica-wur|innistrad-wu@1001 (299→284 decyzji, scoreSum
+ *     3166.2283→3018.6759); pozostałych pięć śladów bitowo identycznych.
+ *     To świadoma zmiana polityki bota, nie refaktor ani pomiar jakości.
+ *   - abc34db7… → bf7acd6a… (ADR 0032, wspólny checkpoint, etap 2): jawne
+ *     wybory kolejności/modalne checkpointu zmieniają trajektorię bota.
+ *     Zmierzona różnica: tylko ravnica-wur|innistrad-wu@1001 (298→299 decyzji,
+ *     scoreSum 3186.9495→3166.2283); pozostałe pięć śladów bitowo identycznych.
+ *     To nie jest pomiar jakości gry ani tuning parametrów.
+ *   - 37a41eab… → abc4017e… (zgłoszenie G, etap 1 — poprawki bramkowe,
+ *     2026-11-05): bot dokłada własne syntezowane deklaracje bloków
+ *     z deskryptora (gangi prefiksowe i pokrycia w permutowanych
+ *     porządkach blokerów), żeby widzieć krzyżowe przypisania bez
+ *     powrotu silnika do enumeracji. Zmierzona różnica: TYLKO
+ *     ravnica-wur|innistrad-wu@1001 (256 decyzji bez zmian liczby,
+ *     scoreSum 1963.8357→1860.8982; block 8→7, cast_spell 5→3,
+ *     pass_priority 207→209); pozostałe pięć śladów bitowo identycznych.
+ *     Kontrola jakości: test/bot-benchmark.test.js 10/10 (progi regresji),
+ *     co nie dowodzi równej siły gry. Świadoma regeneracja.
+ *   - b8c7f8cc… → 37a41eab… (zgłoszenie G, etap 1, 2026-11-05): walka
+ *     przechodzi z enumeracji kombinacji na ziarna + deskryptor problemu;
+ *     bot heurystyczny dokłada własne prefiksowe deklaracje ataku. Zmierzona
+ *     różnica: hashe 4 z 6 partii; dominaria-brg|mirrodin-wu@1000 ma ten sam
+ *     przebieg wybranych decyzji i scoreSum (inny jest tylko zbiór ofert),
+ *     natomiast trzy partie zmieniają trajektorię: ravnica-wur|innistrad-wu
+ *     @1000 263→235 decyzji, scoreSum 2971.65→2825.82; @1001 284→256,
+ *     3018.6759→1963.8357; dominaria-brg|mirrodin-wu@1001 313→285,
+ *     3591.2971→3307.1953. Obie partie tarkir-bg|warhammer-ubr bez zmian.
+ *     Kontrola jakości: test/bot-benchmark.test.js 10/10 (progi regresji),
+ *     co nie dowodzi równej siły gry — tylko brak załamania poniżej progów.
+ *     Świadoma regeneracja.
+ *   - a9ded3e5… → b8c7f8cc… (zgłoszenie F, 2026-11-05): usunięcie limitów
+ *     enumeracji wariantów (cap 32 itd.) na polecenie właściciela. Zmierzona
+ *     różnica: TYLKO hashe 2 z 6 partii (ravnica-wur|innistrad-wu@1000 i
+ *     dominaria-brg|mirrodin-wu@1001) — liczba decyzji, scoreSum i
+ *     chosenKinds WYBRANYCH komend są bitowo identyczne we wszystkich
+ *     partiach; zmienił się wyłącznie zbiór OFEROWANYCH (niewybranych)
+ *     wariantów, które bot teraz widzi w komplecie. Świadoma regeneracja.
  *   - 0e1c042c… → abc34db7… (audyt #177 A74, APNAP): w @1000 po
  *     Summary Judgment w turze 15 gracz random dostał nowy wybór kolejności
  *     Elgaud Inquisitor / Selhoff Occultist. Wybrał Occultist jako pierwszy,

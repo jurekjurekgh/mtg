@@ -26,7 +26,7 @@ function makeSession(seed) {
   const decks = new Map([
     // M178 (talie per plan): Forgotten Realms ma i czar modalny (Your Temple
     // Is Under Attack), i dobranie z efektu (Curate) — obie osie tego pliku.
-    [HUMAN_ID, parseDeckText(fs.readFileSync('decks/forgotten-realms.txt', 'utf8'), registry).cardIds],
+    [HUMAN_ID, parseDeckText(fs.readFileSync('decks/forgotten-realms-wug.txt', 'utf8'), registry).cardIds],
     [BOT_ID, parseDeckText(fs.readFileSync('decks/dominaria-brg.txt', 'utf8'), registry).cardIds],
   ]);
   return createSession({ registry, decks, seed, pauseOnBotMoves: true });

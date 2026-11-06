@@ -5,7 +5,7 @@ import { installPressActivation } from './gestures.js';
 import { renderPickerCancel, renderPickerChipList, renderPickerRow, renderPickerSection } from './picker.js';
 import { OPTION_IGNORABLE_TYPES, polishPluralCount } from './render.js';
 import { commandOptionKey, faceDownLabel } from './session.js';
-import { commandForCrewSelection, crewSelectionPower, commandForDiscardSelection, commandForEpicDiscardSelection, commandForSelection, commandForMulliganSelection, commandForSacrificeSelection, commandForTargetIdsSelection, commandForSingleTargetSelection, commandForCastWindowSelection, commandForButtonsSelection, commandForTapXSelection, commandForChooseOneOrBoth, commandForChooseModes, stunCandidatesFor } from './multi-target.js';
+import { commandForCrewSelection, crewSelectionPower, commandForDiscardSelection, commandForEpicDiscardSelection, commandForSelection, commandForMulliganSelection, commandForMulliganBottomSelection, commandForXSelection, commandForSacrificeSelection, commandForTargetIdsSelection, commandForSingleTargetSelection, commandForCastWindowSelection, commandForButtonsSelection, commandForTapXSelection, commandForChooseOneOrBoth, commandForChooseModes, stunCandidatesFor } from './multi-target.js';
 
 function clearChoiceElement(element) {
   if (element) element.textContent = '';
@@ -121,23 +121,36 @@ export function clashSourceCardIdOf(request, view) {
  * `stopPropagation`: podgląd to podgląd — klik nie zatwierdza wyboru
  * (rodzic może mieć własny `click` na wierszu przyciskowym).
  */
-export function renderPeekButton(parent, { cardId, onOpen, label = null }) {
+export function renderPeekButton(parent, { cardId, onOpen, onHover = null, onHoverEnd = null, label = null }) {
   // O2 (uwaga właściciela 2026-10-18): żadnych ikonek w modalach. Podgląd to
-  // KLIKALNA NAZWA karty — ten sam wzorzec co `picker-name` w kreatorach
-  // (podkreślona nazwa, klik = pełny ekran, bez zaznaczania wiersza).
-  // Natywny button jest fokusowalny i działa przez Enter/Space; sam span
-  // reagował wyłącznie na mysz. CSS usuwa wygląd przycisku, nie semantykę.
-  const peek = choiceNode(parent, 'button', 'choice-request-peek picker-name is-openable log-card', label ?? 'Podgląd karty');
+  // NAZWA karty — ten sam wzorzec co `picker-name` w kreatorach.
+  // Zgłoszenie właściciela 2026-11-05: podgląd daje HOVER nad nazwą, nie klik.
+  // Gdy wywołujący poda `onHover`, nazwa nie niesie klasy `log-card` ani
+  // `dataset.cardId` (delegacja pełnego ekranu) i klik w nią nic nie otwiera;
+  // `onOpen` zostaje wyłącznie ścieżką dotykową (brak kursora).
+  // Natywny button jest fokusowalny; CSS usuwa wygląd przycisku, nie semantykę.
+  const hoverable = typeof onHover === 'function';
+  const peek = choiceNode(parent, 'button', hoverable
+    ? 'choice-request-peek picker-name is-openable'
+    : 'choice-request-peek picker-name is-openable log-card', label ?? 'Podgląd karty');
   peek.type = 'button';
   if (peek.dataset) {
     peek.dataset.previewCardId = String(cardId ?? '');
-    peek.dataset.cardId = String(cardId ?? '');
+    if (!hoverable) peek.dataset.cardId = String(cardId ?? '');
   }
-  peek.addEventListener('click', (event) => {
-    event?.preventDefault?.();
-    event?.stopPropagation?.();
-    onOpen?.(cardId);
-  });
+  if (hoverable) {
+    peek.addEventListener('mouseenter', (event) => onHover(cardId, event));
+    peek.addEventListener('mousemove', (event) => onHover(cardId, event));
+    if (typeof onHoverEnd === 'function') {
+      peek.addEventListener('mouseleave', () => onHoverEnd());
+    }
+  } else {
+    peek.addEventListener('click', (event) => {
+      event?.preventDefault?.();
+      event?.stopPropagation?.();
+      onOpen?.(cardId);
+    });
+  }
   return peek;
 }
 
@@ -148,7 +161,7 @@ export function renderPeekButton(parent, { cardId, onOpen, label = null }) {
  * (np. wybór celu na pusty stos — jedyna legalna komenda, brak listy) oraz
  * wszystko, co przyszłe typy zgłoszeń przyniosą, zanim dostaną własny tryb.
  */
-export function renderChoiceRequest(host, request, { labelForOption, onResponse, introLabel, ignoredOptionKeys = null, onToggleIgnoredOption = null, onOpenCard = null, cardIdOfOption = null, cardNameOfOption = null }) {
+export function renderChoiceRequest(host, request, { labelForOption, onResponse, introLabel, ignoredOptionKeys = null, onToggleIgnoredOption = null, onOpenCard = null, onHoverCard = null, onHoverCardEnd = null, cardIdOfOption = null, cardNameOfOption = null }) {
   assertNoCombinationRows(request.options);
   clearChoiceElement(host);
   // introLabel (choiceGroupTitle) — opis wyboru jak w panelu akcji (uwaga A);
@@ -222,9 +235,13 @@ export function renderChoiceRequest(host, request, { labelForOption, onResponse,
     });
     // M201/C2: podgląd karty przy opcji (osobny przycisk — klik w samą opcję
     // ma nadal ZATWIERDZAĆ wybór, a nie otwierać obrazek).
-    const previewCardId = onOpenCard && cardIdOfOption ? cardIdOfOption(option) : null;
+    const previewCardId = (onOpenCard || onHoverCard) && cardIdOfOption ? cardIdOfOption(option) : null;
     if (previewCardId) {
-      renderPeekButton(options, { cardId: previewCardId, onOpen: onOpenCard, label: cardNameOfOption?.(option) ?? null });
+      renderPeekButton(options, {
+        cardId: previewCardId, onOpen: onOpenCard,
+        onHover: onHoverCard, onHoverEnd: onHoverCardEnd,
+        label: cardNameOfOption?.(option) ?? null,
+      });
     }
   }
   if (request.options.length === 0) {
@@ -366,10 +383,17 @@ function renderPeekWizard(host, spec) {
     })),
     listClassName: 'look-wizard-cards',
     rowClassName: 'look-wizard-card',
-    // `log-card` + `dataset.cardId` to delegacja pełnego ekranu karty (main.js,
-    // M167/C) — klasy wolno dać tylko nazwie, która naprawdę coś otwiera.
-    nameClassName: typeof spec.onOpenCard === 'function' ? 'look-wizard-card-name log-card' : '',
+    // Tryb hover (mysz): nazwa bez haka `log-card` — podgląd daje najechanie.
+    // Tryb dotykowy: `log-card` + `dataset.cardId` to delegacja pełnego ekranu
+    // karty (main.js, M167/C) — klasy wolno dać tylko nazwie, która coś otwiera.
+    nameClassName: (() => {
+      const base = 'look-wizard-card-name';
+      if (typeof spec.onHoverCard === 'function') return base;
+      return typeof spec.onOpenCard === 'function' ? `${base} log-card` : '';
+    })(),
     onOpenCard: typeof spec.onOpenCard === 'function' ? (cardId) => spec.onOpenCard(cardId) : null,
+    onHoverCard: typeof spec.onHoverCard === 'function' ? (cardId, e) => spec.onHoverCard(cardId, e) : null,
+    onHoverCardEnd: typeof spec.onHoverCardEnd === 'function' ? () => spec.onHoverCardEnd() : null,
   });
 
   /** Opcja kroku = jedno tapnięcie w całym wierszu (picker `kind:'button'`). */
@@ -561,7 +585,7 @@ const LOOK_WIZARD_LABELS = {
  * surveil → { millIds, topOrder }, scry → { bottomIds, topOrder },
  * index → { order }.
  */
-export function renderLookWizard(host, { kind, cards, onComplete, onCancel, probeKeyFor = null, onOpenCard = null }) {
+export function renderLookWizard(host, { kind, cards, onComplete, onCancel, probeKeyFor = null, onOpenCard = null, onHoverCard = null, onHoverCardEnd = null }) {
   const labels = LOOK_WIZARD_LABELS[kind] ?? LOOK_WIZARD_LABELS.scry;
   const list = Array.isArray(cards) ? cards.slice() : [];
   return renderPeekWizard(host, {
@@ -599,6 +623,8 @@ export function renderLookWizard(host, { kind, cards, onComplete, onCancel, prob
       return { bottomIds: [...v.off], topOrder };
     },
     onOpenCard,
+    onHoverCard,
+    onHoverCardEnd,
     onCancel,
     onComplete,
     probeKeyFor,
@@ -627,7 +653,7 @@ export function renderLookWizard(host, { kind, cards, onComplete, onCancel, prob
  * może być null („bez landa"), wtedy `bottomOrder` to cała obejrzana lista.
  */
 export function renderPeekPickOrderWizard(host, {
-  cards, basicLandIds = [], sourceName = null, onComplete, onCancel, onOpenCard = null, probeKeyFor = null,
+  cards, basicLandIds = [], sourceName = null, onComplete, onCancel, onOpenCard = null, onHoverCard = null, onHoverCardEnd = null, probeKeyFor = null,
 } = {}) {
   const list = Array.isArray(cards) ? cards.slice() : [];
   const basic = new Set(basicLandIds);
@@ -666,6 +692,8 @@ export function renderPeekPickOrderWizard(host, {
       : { chosenCardId: v.chosenId ?? null, bottomOrder: [...v.ordered] }),
     header: null,
     onOpenCard,
+    onHoverCard,
+    onHoverCardEnd,
     onCancel,
     onComplete,
     probeKeyFor,
@@ -686,7 +714,7 @@ export function renderPeekPickOrderWizard(host, {
  */
 export function renderPickOneRestBottomWizard(host, {
   cards, pickTo = 'hand', sourceName = null, onComplete, onCancel,
-  onOpenCard = null, probeKeyFor = null,
+  onOpenCard = null, onHoverCard = null, onHoverCardEnd = null, probeKeyFor = null,
 } = {}) {
   const list = Array.isArray(cards) ? cards.slice() : [];
   const allIds = new Set(list.map((card) => card.id));
@@ -727,6 +755,8 @@ export function renderPickOneRestBottomWizard(host, {
     }),
     header: null,
     onOpenCard,
+    onHoverCard,
+    onHoverCardEnd,
     onCancel,
     onComplete,
     probeKeyFor,
@@ -839,15 +869,22 @@ function viewCreatureHasStatic(view, id, field) {
  * (2^n atakujących, iloczyn przy blokach) — przełącznik tak/nie przy każdym
  * zdolnym stworze + „Zatwierdź". Finalną komendę buduje się z zaznaczonych.
  */
-export function renderCombatWizard(host, { kind, view, session, options, blockCandidates = null, onComplete, onCancel, onOpenCard }) {
+export function renderCombatWizard(host, { kind, view, session, options, blockCandidates = null, combatDeclaration = null, onComplete, onCancel, onOpenCard, onHoverCard = null, onHoverCardEnd = null }) {
   clearChoiceElement(host);
   const isAttackers = kind === 'attackers';
-  // Unikalni kandydaci: suma id ze wszystkich oferowanych wariantów.
+  // G, etap 1: deskryptor problemu z widoku (kandydaci/wymuszeni/pula) jest
+  // źródłem wierszy kreatora; `options` niesie już tylko ziarna startowe.
+  // Bez deskryptora (stare wywołania/testy) wraca wywodzenie z sumy ofert.
+  const declaration = combatDeclaration?.role === (isAttackers ? 'attackers' : 'blockers')
+    ? combatDeclaration : null;
+  const effectiveBlockCandidates = declaration?.pool ?? blockCandidates;
+  // Unikalni kandydaci: deskryptor, a w fallbacku suma id z oferowanych wariantów.
   const candidateIds = [];
   const seenIds = new Set();
   const pushId = (id) => { if (!seenIds.has(id)) { seenIds.add(id); candidateIds.push(id); } };
   if (isAttackers) {
-    for (const cmd of options) for (const id of cmd.attackerIds ?? []) pushId(id);
+    if (declaration) for (const id of declaration.candidateIds ?? []) pushId(id);
+    else for (const cmd of options) for (const id of cmd.attackerIds ?? []) pushId(id);
   } else {
     for (const cmd of options) {
       for (const [attackerId, blockerIds] of Object.entries(cmd.assignments ?? {})) {
@@ -855,11 +892,11 @@ export function renderCombatWizard(host, { kind, view, session, options, blockCa
         for (const id of blockerIds) pushId(id);
       }
     }
-    // E6 (2026-09-20c): `options` to MENU ograniczone `COMBAT_OPTION_CAP`, a
-    // pula kandydatów z widoku jest liczona wprost z reguł — bez niej pary
-    // wycięte przez cap nie miałyby wiersza i legalny blok (CR 509.1a) byłby
-    // dla człowieka nieosiągalny (pomiar: 6×6 → 5 par, 10×10 → 69 par).
-    for (const [attackerId, blockerIds] of Object.entries(blockCandidates ?? {})) {
+    // E6 (2026-09-20c): pula kandydatów z widoku jest liczona wprost z reguł;
+    // historycznie menu było ograniczone capem i pary bez wiersza były
+    // nieosiągalne (CR 509.1a). Po zgłoszeniu F (2026-11-05) oferty są
+    // kompletne, a pula zostaje bezpośrednim źródłem wierszy wizarda.
+    for (const [attackerId, blockerIds] of Object.entries(effectiveBlockCandidates ?? {})) {
       pushId(attackerId);
       for (const id of blockerIds ?? []) pushId(id);
     }
@@ -868,7 +905,9 @@ export function renderCombatWizard(host, { kind, view, session, options, blockCa
   const inEvery = (id) => options.every((cmd) => (isAttackers
     ? (cmd.attackerIds ?? []).includes(id)
     : Object.keys(cmd.assignments ?? {}).includes(id)));
-  const mandatory = new Set(candidateIds.filter(inEvery));
+  const mandatory = declaration && isAttackers
+    ? new Set(declaration.mandatoryIds ?? [])
+    : new Set(candidateIds.filter(inEvery));
 
   const selected = new Set(mandatory);
   const blockedBy = new Map(); // atakujący → wybrani blokerzy (dla bloków)
@@ -912,8 +951,10 @@ export function renderCombatWizard(host, { kind, view, session, options, blockCa
       // M112: po zmianie zaznaczenia klucz sondy musi opisywać NOWY wybór.
       if (typeof host.__refreshCombatProbeKey === 'function') host.__refreshCombatProbeKey();
     },
-    // Uwaga C: nazwa stwora klikalna (fullscreen karty) + P/T w nawiasie.
+    // Podgląd nazwy stwora: hover (mysz) / tap = pełny ekran (dotyk) + P/T.
     onOpenCard: onOpenCard ?? undefined,
+    onHoverCard: onHoverCard ?? undefined,
+    onHoverCardEnd: onHoverCardEnd ?? undefined,
   }).row;
 
   const renderAttackerBlockers = (attackerId) => {
@@ -928,7 +969,7 @@ export function renderCombatWizard(host, { kind, view, session, options, blockCa
       }
     }
     // E6: pula z widoku domyka kandydatów, których menu (cap) nie pokazało.
-    for (const id of blockCandidates?.[attackerId] ?? []) {
+    for (const id of effectiveBlockCandidates?.[attackerId] ?? []) {
       if (!seen.has(id)) { seen.add(id); cand.push(id); }
     }
     const current = blockedBy.get(attackerId) ?? [];
@@ -958,7 +999,7 @@ export function renderCombatWizard(host, { kind, view, session, options, blockCa
     }
     // E6: atakujący, dla którego cap wyciął WSZYSTKIE oferty bloku, i tak musi
     // mieć sekcję (pula może dla niego mieć kandydatów).
-    for (const id of Object.keys(blockCandidates ?? {})) {
+    for (const id of Object.keys(effectiveBlockCandidates ?? {})) {
       if (!seen.has(id)) { seen.add(id); attackerIds.push(id); }
     }
     for (const attackerId of attackerIds) renderAttackerBlockers(attackerId);
@@ -1061,7 +1102,7 @@ export function renderCombatWizard(host, { kind, view, session, options, blockCa
       if (mandatory.size > 0) {
         const hint = choiceNode(host, 'div', 'zone-empty', 'Stwory z przymusem ataku muszą atakować — odznaczono pozostałe.');
         hint.className = 'zone-empty combat-wizard-error';
-        renderCombatWizard(host, { kind, view, session, options, blockCandidates, onComplete, onCancel });
+        renderCombatWizard(host, { kind, view, session, options, blockCandidates, combatDeclaration, onComplete, onCancel });
         return;
       }
       const wanted = [...mandatory];
@@ -1099,10 +1140,10 @@ export function renderCombatWizard(host, { kind, view, session, options, blockCa
  * realizuje „among one, two, or three"), maksymalnie `maxTargets`.
  * onComplete dostaje { targetIds, amounts } w kolejności kandydatów.
  */
-export function renderDamageDivisionWizard(host, { view, session, candidateIds, total, maxTargets = 3, sourceName = null, onComplete, onCancel, onOpenCard = null }) {
+export function renderDamageDivisionWizard(host, { view, session, candidateIds, total, maxTargets = 3, sourceName = null, allowZeroTargets = false, onComplete, onCancel, onOpenCard = null, onHoverCard = null, onHoverCardEnd = null }) {
   clearChoiceElement(host);
   choiceNode(host, 'div', 'choice-request-intro',
-    `${sourceName ? `${sourceName} — ` : ''}podziel ${total} obraż${total === 1 ? 'enie' : (total >= 2 && total <= 4 ? 'enia' : 'eń')} między maks. ${maxTargets} celów (suma musi wynosić ${total}):`);
+    `${sourceName ? `${sourceName} — ` : ''}podziel ${total} obraż${total === 1 ? 'enie' : (total >= 2 && total <= 4 ? 'enia' : 'eń')} między maks. ${maxTargets} celów (suma musi wynosić ${total})${allowZeroTargets ? ' — możesz też nie wybrać żadnego celu (obrażenia przepadają)' : ''}:`);
   const list = choiceNode(host, 'div', 'damage-wizard-list');
   const amounts = candidateIds.map(() => 0);
   const rows = [];
@@ -1110,7 +1151,11 @@ export function renderDamageDivisionWizard(host, { view, session, candidateIds, 
   let sumEl = null;
   const sum = () => amounts.reduce((a, b) => a + b, 0);
   const chosenCount = () => amounts.filter((n) => n > 0).length;
-  const legal = () => sum() === total && chosenCount() >= 1 && chosenCount() <= maxTargets;
+  // Zgłoszenie E (2026-11-05): decyzja triggera „up to N” wolno też zamknąć
+  // bez celu (obrażenia przepadają) — tylko gdy wołający na to pozwala
+  // (rzut czaru dzielonego nadal wymaga co najmniej jednego celu).
+  const legal = () => (sum() === total && chosenCount() >= 1 && chosenCount() <= maxTargets)
+    || (allowZeroTargets && chosenCount() === 0);
   // M292: warunki legalności dokładań wyjeżdżą z handlerów przycisków do
   // predykatów pickera — ten sam warunek rządzi wtedy i akcją, i stanem `disabled`,
   // więc widełki nie rozjadą się z wizualnym stanem (był to klasyczny rozjazd
@@ -1159,6 +1204,8 @@ export function renderDamageDivisionWizard(host, { view, session, candidateIds, 
         refresh();
       },
       onOpenCard: isPlayer || typeof onOpenCard !== 'function' ? null : (oid) => onOpenCard(oid),
+      onHoverCard: isPlayer || typeof onHoverCard !== 'function' ? null : (oid, e) => onHoverCard(oid, e),
+      onHoverCardEnd: typeof onHoverCardEnd === 'function' ? onHoverCardEnd : null,
     });
     if (!isPlayer && handle.label?.dataset) handle.label.dataset.objectId = id;
     rows[idx] = handle;
@@ -1217,7 +1264,7 @@ function labelLooksLikeHtml(label) {
   return label.includes('<') || /&(#x?[0-9a-fA-F]+|[a-zA-Z]+);/.test(label);
 }
 
-export function renderMultiTargetWizard(host, { view, session, plan, commands, sourceName = null, intro = null, introCard = null, slotLabels: slotLabels_ = null, onComplete, onCancel, onOpenCard = null, onOpenCardByCardId = null }) {
+export function renderMultiTargetWizard(host, { view, session, plan, commands, sourceName = null, intro = null, introCard = null, slotLabels: slotLabels_ = null, onComplete, onCancel, onOpenCard = null, onOpenCardByCardId = null, onHoverCard = null, onHoverCardByCardId = null, onHoverCardEnd = null }) {
   if (plan.buttonsMode || plan.castWindowMode) assertNoCombinationRows(commands, session);
   clearChoiceElement(host);
   // M257-r5/C: druga sekcja kreatora — stwór do poświęcenia (koszt dodatkowy).
@@ -1272,13 +1319,28 @@ export function renderMultiTargetWizard(host, { view, session, plan, commands, s
   // zaczyna się KLIKALNĄ nazwą tej karty — ten sam klik co nazwy wierszy
   // (pełny ekran po cardId). Bez `introCard` tekst jak dotąd.
   const introNode = choiceNode(host, 'div', 'choice-request-intro');
-  if (introCard?.cardId && introCard.name && typeof onOpenCardByCardId === 'function') {
-    // A-7: także źródło clash używa wspólnej, klawiaturowej nazwy karty;
-    // oddzielny span z click handlerem ponownie gubił Tab/Enter/Spację.
-    renderPeekButton(introNode, {
+  if (introCard?.cardId && introCard.name && (typeof onOpenCardByCardId === 'function' || typeof onHoverCardByCardId === 'function')) {
+    // A-7: także źródło clash używa wspólnej nazwy karty; podgląd daje hover
+    // (mysz), a tap w nazwę otwiera pełny ekran tylko na dotyku.
+    // Zgłoszenie właściciela 2026-11-05 (etap 7): gdy zdanie nagłówka już
+    // zawiera nazwę karty („Rzuć: X (koszt…) — wybierz tryb:”), nazwa staje
+    // się segmentem-podglądem WEWNĄTRZ zdania — bez dublowania jej na
+    // początku. Dopiero gdy zdanie nazwy nie zawiera (clash, Epic), nazwa
+    // otwiera nagłówek jak dotąd.
+    const peekArgs = {
       cardId: introCard.cardId, label: introCard.name, onOpen: onOpenCardByCardId,
-    });
-    choiceNode(introNode, 'span', null, ` — ${introText}`);
+      onHover: onHoverCardByCardId, onHoverEnd: onHoverCardEnd,
+    };
+    const at = introText.indexOf(introCard.name);
+    if (at >= 0) {
+      if (at > 0) choiceNode(introNode, 'span', null, introText.slice(0, at));
+      renderPeekButton(introNode, peekArgs);
+      const rest = introText.slice(at + introCard.name.length);
+      if (rest) choiceNode(introNode, 'span', null, rest);
+    } else {
+      renderPeekButton(introNode, peekArgs);
+      choiceNode(introNode, 'span', null, ` — ${introText}`);
+    }
   } else {
     introNode.textContent = introText;
   }
@@ -1381,7 +1443,7 @@ export function renderMultiTargetWizard(host, { view, session, plan, commands, s
     if (costKey && costChoice == null) return null;
     const giftArgs = giftSelectionArgs();
     if (giftArgs == null) return null;
-    return commandForSelection((commands ?? []).filter(costMatches), {
+    return commandForXSelection(plan, (commands ?? []).filter(costMatches), {
       targets: [...chosen],
       xValue: plan.hasX ? xValue : null,
       // H: bez wybranego celu nie podajemy stuna (wariant pusty);
@@ -1414,7 +1476,7 @@ export function renderMultiTargetWizard(host, { view, session, plan, commands, s
     : plan.discardMode
     ? commandForDiscardSelection(plan, [...chosen])
     : plan.cardIdsMode
-    ? commandForMulliganSelection(commands, [...chosen], defOfMulliganCard)
+    ? commandForMulliganBottomSelection(plan, commands, [...chosen], defOfMulliganCard)
     : keepMode
       ? commandForMulliganKeepSelection(commands, [...chosen][0] ?? null)
       : buttonsMode
@@ -1603,6 +1665,10 @@ export function renderMultiTargetWizard(host, { view, session, plan, commands, s
       onOpenCard: previewCardId != null
         ? (cid) => onOpenCardByCardId?.(cid)
         : ((isPlayer(id) || id === NONE_PICK || labelOverride != null) ? null : onOpenCard),
+      onHoverCard: previewCardId != null
+        ? (typeof onHoverCardByCardId === 'function' ? (cid, e) => onHoverCardByCardId(cid, e) : null)
+        : ((isPlayer(id) || id === NONE_PICK || labelOverride != null) ? null : onHoverCard),
+      onHoverCardEnd: onHoverCardEnd ?? null,
       openCardId: previewCardId ?? null,
     });
     rows.push({ id, slot, handle });
@@ -1867,7 +1933,7 @@ function controllerTag(view, id) {
   return ` (${controller?.name ?? object.controllerId})`;
 }
 
-export function renderDamageWizard(host, { view, session, pending, defaultCommand, onComplete, onCancel, probeKeyFor = null, onOpenCard = null }) {
+export function renderDamageWizard(host, { view, session, pending, defaultCommand, onComplete, onCancel, probeKeyFor = null, onOpenCard = null, onHoverCard = null, onHoverCardEnd = null }) {
   clearChoiceElement(host);
   // W3 (CR 510.1d): ten sam wizard obsługuje podział po stronie BLOKERA (moc
   // dzielona między atakujących, których blokuje) — role odwrócone, więc wpis
@@ -2034,6 +2100,8 @@ export function renderDamageWizard(host, { view, session, pending, defaultComman
             render();
           },
           onOpenCard: typeof onOpenCard === 'function' ? (oid) => onOpenCard(oid) : null,
+          onHoverCard: typeof onHoverCard === 'function' ? (oid, e) => onHoverCard(oid, e) : null,
+          onHoverCardEnd: typeof onHoverCardEnd === 'function' ? onHoverCardEnd : null,
         });
         if (handle.label?.dataset && b.cardId) handle.label.dataset.objectId = b.id;
         rowHandles[idx] = handle;
@@ -2127,7 +2195,7 @@ export function renderDamageWizard(host, { view, session, pending, defaultComman
  * Ptaszek = „wygnij tę kartę” (koszt), odznaczenie cofa — wiersze
  * klikalne całą nazwą; lupa (onOpenCard) jak w innych wizardach.
  */
-export function renderEscapeExileWizard(host, { candidates, exileCount, sourceName, manaCost, onComplete, onCancel, onOpenCard, playerId = null }) {
+export function renderEscapeExileWizard(host, { candidates, exileCount, sourceName, manaCost, onComplete, onCancel, onOpenCard, onHoverCard = null, onHoverCardEnd = null, playerId = null }) {
   clearChoiceElement(host);
   const picked = new Set();
   const intro = choiceNode(host, 'div', 'choice-request-intro');
@@ -2172,6 +2240,8 @@ export function renderEscapeExileWizard(host, { candidates, exileCount, sourceNa
         refresh();
       },
       onOpenCard: typeof onOpenCard === 'function' ? (cardId) => onOpenCard(cardId) : undefined,
+      onHoverCard: typeof onHoverCard === 'function' ? (cardId, e) => onHoverCard(cardId, e) : undefined,
+      onHoverCardEnd: typeof onHoverCardEnd === 'function' ? onHoverCardEnd : undefined,
     });
   }
   refresh();
@@ -2190,7 +2260,7 @@ export function renderEscapeExileWizard(host, { candidates, exileCount, sourceNa
  * Ptaszek = „wygnij tę kartę” (koszt), odznaczenie cofa — wiersze klikalne
  * całą nazwą; lupa (onOpenCard) jak w innych wizardach.
  */
-export function renderDelveExileWizard(host, { candidates, maxExile, affordableCounts = null, sourceName, manaCost, onComplete, onCancel, onOpenCard, playerId = null }) {
+export function renderDelveExileWizard(host, { candidates, maxExile, affordableCounts = null, sourceName, manaCost, onComplete, onCancel, onOpenCard, onHoverCard = null, onHoverCardEnd = null, playerId = null }) {
   clearChoiceElement(host);
   const picked = new Set();
   const affordable = new Set(Array.isArray(affordableCounts) && affordableCounts.length > 0
@@ -2239,6 +2309,8 @@ export function renderDelveExileWizard(host, { candidates, maxExile, affordableC
         refresh();
       },
       onOpenCard: typeof onOpenCard === 'function' ? (cardId) => onOpenCard(cardId) : undefined,
+      onHoverCard: typeof onHoverCard === 'function' ? (cardId, e) => onHoverCard(cardId, e) : undefined,
+      onHoverCardEnd: typeof onHoverCardEnd === 'function' ? onHoverCardEnd : undefined,
     });
   }
   refresh();
@@ -2260,7 +2332,7 @@ export function renderDelveExileWizard(host, { candidates, maxExile, affordableC
  * Wiersze buduje wywołujący (plan.rows: [{cardId, count}]) — ten sam wzorzec
  * co mulliganKeep/castWindow. Nazwa wiersza otwiera pełny ekran po cardId (M201/C2).
  */
-export function renderSearchBatchWizard(host, { view, session, plan, commands, sourceName = null, intro = null, onComplete, onCancel, onOpenCardByCardId = null }) {
+export function renderSearchBatchWizard(host, { view, session, plan, commands, sourceName = null, intro = null, onComplete, onCancel, onOpenCardByCardId = null, onHoverCardByCardId = null, onHoverCardEnd = null }) {
   clearChoiceElement(host);
   const rows = plan.rows ?? [];
   const maxPicks = plan.maxPicks;
@@ -2320,6 +2392,8 @@ export function renderSearchBatchWizard(host, { view, session, plan, commands, s
         refresh();
       },
       onOpenCard: typeof onOpenCardByCardId === 'function' ? (cid) => onOpenCardByCardId(cid) : null,
+      onHoverCard: typeof onHoverCardByCardId === 'function' ? (cid, e) => onHoverCardByCardId(cid, e) : null,
+      onHoverCardEnd: typeof onHoverCardEnd === 'function' ? onHoverCardEnd : null,
       openCardId: row.cardId,
     });
     handles[idx] = handle;

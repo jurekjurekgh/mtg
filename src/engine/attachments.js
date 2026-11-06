@@ -389,12 +389,30 @@ function detachOrphanedAttachment(state, attachment, hostId, events) {
   // wykonuje teraz sam choke point — nie duplikujemy go tutaj.
   // `kind` też ustawia choke point: bestow wraca do bycia stworem
   // (CR 702.103f), czysta aura zostaje enchantmentem.
+  //
+  // A108/A109 / ADR 0031 (CR 704.4): gdy akcje stanowe są ZAMKNIĘTE
+  // (trwa rozstrzyganie Ward), czysta aura NIE idzie do grobu od razu.
+  // Zostaje na polu bitwy odłączona (attachedTo=null) i czeka na
+  // `removeIllegalAttachments` w następnym checkpoincie SBA. Trigger
+  // „enchanted_creature_dies" odpala się od zdarzenia `object_detached`
+  // (gospodarz umarł w tej samej partii), nie od późniejszego odejścia aury.
+  if (state.pendingWardPay) {
+    const e = event('object_detached', {
+      objectId: attachment.id, fromHostId: hostId, cardId: attachment.cardId,
+      controllerId: attachment.controllerId, becameKind: attachment.kind,
+      deferredAuraSba: true,
+    });
+    state.events.push(e); events.push(e);
+    return;
+  }
   const toZone = deathZoneFor(state, attachment);
   const newId = `${toZone === 'exile' ? 'exile' : 'grave'}-${state.objectSequence++}`;
   const moved = moveObject(state, attachment.id, toZone, newId);
   const e = event('permanent_put_into_graveyard', {
     fromId: attachment.id, toId: newId, cardId: moved.cardId,
-    controllerId: moved.controllerId, reason: 'aura_without_legal_host',
+    // CR 603.10a: „you control" przy odejściu czyta kontrolera z chwili
+    // opuszczenia pola, nie właściciela nowego obiektu w grobie (400.3).
+    controllerId: attachment.controllerId, reason: 'aura_without_legal_host',
     toZone,
     // Griffin Guide (DMR #8, Batch 61/162): trigger „When enchanted creature
     // dies" musi widzieć aurę, która odeszła RAZEM z gospodarzem (ruling

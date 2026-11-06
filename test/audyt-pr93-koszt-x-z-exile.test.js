@@ -134,8 +134,11 @@ test('A93/D: Vaan — X wybrany w ofercie jest rozliczony: mana, efekt i życie'
 test('A93/D: Vaan — sorcery z X w oknie zdolności ignoruje timing (ruling WotC 2025-02-10)', () => {
   const state = exileState(X_BLACK);
   state.turn.phase = 'combat';   // poza main phase: zwykły sorcery zostałby odrzucony
-  const cast = exileCasts(state).find((c) => c.xValue === 1);
-  assert.ok(cast, 'oferta istnieje także poza main phase');
+  // G, etap 3: oferta niesie ziarna X — X=1 konstruuje kontroler na
+  // szablonie oferty okna, walidacja rzutu przyjmuje (timing okna jak dawniej).
+  const szablon = exileCasts(state)[0];
+  assert.ok(szablon, 'oferta (ziarno) istnieje także poza main phase');
+  const cast = { ...szablon, xValue: 1 };
   assert.ok(execute(state, cast).ok, 'rzut w oknie zdolności nie pyta o fazę');
 });
 
@@ -153,8 +156,10 @@ test('A93/D: Vaan — Fireball: X i liczba celów w ofercie, koszt {1} za cel po
   const manaOf = (st) => st.players.find((p) => p.id === 'p1').mana;
   // (a) jeden cel: całe X idzie w stwora (2/2 ginie), koszt = {R} + X.
   const one = exileState(FIREBALL, { mana: 10, colors: ['R'] });
-  const single = exileCasts(one).find((c) => (c.targets ?? []).length === 1 && c.xValue === 3);
-  assert.ok(single, 'wariant z jednym celem i X=3');
+  // G, etap 3: warianty X=3 konstruowane na ziarnach oferty okna.
+  const szablonOne = exileCasts(one).find((c) => (c.targets ?? []).length === 1);
+  assert.ok(szablonOne, 'ziarno z jednym celem');
+  const single = { ...szablonOne, targets: ['foe'], xValue: 3 };
   const beforeOne = manaOf(one);
   assert.ok(execute(one, single).ok, 'rzut przyjęty');
   assert.equal(beforeOne - manaOf(one), 4, 'koszt = {R} (1) + X (3)');
@@ -163,8 +168,9 @@ test('A93/D: Vaan — Fireball: X i liczba celów w ofercie, koszt {1} za cel po
 
   // (b) dwa cele: X dzieli się po równo w dół, a drugi cel kosztuje {1} więcej.
   const two = exileState(FIREBALL, { mana: 10, colors: ['R'] });
-  const pair = exileCasts(two).find((c) => (c.targets ?? []).length === 2 && c.xValue === 3);
-  assert.ok(pair, 'wariant z dwoma celami i X=3');
+  const szablonTwo = exileCasts(two).find((c) => (c.targets ?? []).length === 1);
+  assert.ok(szablonTwo, 'ziarno oferty okna');
+  const pair = { ...szablonTwo, targets: ['foe', 'p2'], xValue: 3 };
   const beforeTwo = manaOf(two);
   const lifeBefore = two.players.find((p) => p.id === 'p1').life;
   const lifeFoe = two.players.find((p) => p.id === 'p2').life;

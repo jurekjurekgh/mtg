@@ -17,7 +17,7 @@ import { addMana } from '../src/engine/resources.js';
 import { effectiveKeywords, effectivePower } from '../src/engine/permanents.js';
 import { clearStatModifiers } from '../src/engine/permanents.js';
 import { applyEffect } from '../src/engine/effects.js';
-import { legalAttackerOptions } from '../src/engine/combat.js';
+import { attackCandidateIds } from '../src/engine/combat.js';
 import { effectiveSpellManaCost } from '../src/engine/spells.js';
 
 const REGISTRY = createCardRegistry();
@@ -167,7 +167,7 @@ test('B1: Magmarch {1}{B}: Regenerate — tarcza chroni przed zniszczeniem, zuż
   // stwór ODTAPANY i żyje.
   applyEffect(state, { type: 'destroy_permanent' }, state.objects.get('mag'), ['mag']);
   assert.ok(state.objects.has('mag') && state.objects.get('mag').zone === 'battlefield', 'regeneracja zamiast grobu');
-  assert.equal(state.objects.get('mag').tapped, true, 'regeneracja odtapowuje... (CR 701.19: tapped)');
+  assert.equal(state.objects.get('mag').tapped, true, 'regeneracja tapuje permanent (CR 701.19)');
   assert.ok(!(state.regenerationShields ?? []).includes('mag'), 'tarcza zużyta');
 });
 
@@ -186,7 +186,7 @@ test('B3: Wishful Merfolk — traci defender i staje się Humanem do końca tury
   const merf = putCard(state, 'wish', 'wishful-merfolk', 'p1');
   assert.ok(merf.keywords.includes('defender'));
   // Defender blokuje atak (CR 702.3).
-  assert.ok(!legalAttackerOptions(state, 'p1').some((opt) => opt.includes('wish')), 'z defenderem nie atakuje');
+  assert.ok(!attackCandidateIds(state, 'p1').includes('wish'), 'z defenderem nie atakuje');
 
   addMana(state, 'p1', 4, { colors: ['U', 'U'] });
   const offer = playerView(state, 'p1').legalCommands.find((c) => c.type === 'activate_ability' && c.objectId === 'wish');
@@ -198,13 +198,13 @@ test('B3: Wishful Merfolk — traci defender i staje się Humanem do końca tury
   const after = state.objects.get('wish');
   assert.deepEqual([...after.subtypes], ['Human'], 'staje się Humanem (nadpisanie podtypów)');
   assert.ok(!effectiveKeywords(after, state).includes('defender'), 'bez defendera');
-  assert.ok(legalAttackerOptions(state, 'p1').some((opt) => opt.includes('wish')), 'może atakować');
+  assert.ok(attackCandidateIds(state, 'p1').includes('wish'), 'może atakować');
 
   clearStatModifiers(state);
   const restored = state.objects.get('wish');
   assert.deepEqual([...restored.subtypes], ['Merfolk'], 'cleanup przywraca Merfolka');
   assert.ok(effectiveKeywords(restored, state).includes('defender'), 'cleanup przywraca defendera');
-  assert.ok(!legalAttackerOptions(state, 'p1').some((opt) => opt.includes('wish')), 'znów nie atakuje');
+  assert.ok(!attackCandidateIds(state, 'p1').includes('wish'), 'znów nie atakuje');
 });
 
 

@@ -3,7 +3,7 @@
 // (`blockRestrictionError`) wyłącznie restrykcje PAROWE, a reguły zbioru
 // (menace, „can't block alone", własne zakazy blokowania blokera) nadal żyły
 // w DWÓCH równoległych kopiach: walidacja `declareBlockers` i oferta
-// `legalBlockerOptions`. To ta sama klasa ryzyka, która dała defekt M380
+// `blockerSeedAssignments`. To ta sama klasa ryzyka, która dała defekt M380
 // (oferta bez pary, walidacja ją przyjmowała) — więc warstwa zbioru dostała
 // wspólny predykat `blockAssignmentViolation`, wołany przez OBA wejścia.
 //
@@ -42,7 +42,7 @@ import { createCardRegistry } from '../src/cards/card-data.js';
 import { gameObjectDataOf } from '../src/cards/materialize.js';
 import { addObject, createGameState, execute, playerView } from '../src/engine/game-state.js';
 import { jumpToStep } from '../src/engine/turn.js';
-import { legalBlockerOptions } from '../src/engine/combat.js';
+import { blockerSeedAssignments } from '../src/engine/combat.js';
 
 const REGISTRY = createCardRegistry();
 
@@ -160,7 +160,13 @@ test('M387/D: strażnik rodziny — walidacja i oferta wołają TEN SAM predykat
   const source = readFileSync(new URL('../src/engine/combat.js', import.meta.url), 'utf8')
     .replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
   const calls = [...source.matchAll(/blockAssignmentViolation\(/g)].length;
-  assert.ok(calls >= 3, `predykat musi być wołany przez walidację, filtr oferty i fallback (jest ${calls} wywołań)`);
+  assert.ok(calls >= 2, `predykat ma definicję i wywołanie we wspólnej walidacji deklaracji (jest ${calls} wywołań)`);
+  assert.ok(source.includes('const violation = blockAssignmentViolation(state, attacker, ids, allIds);'),
+    'blockerDeclarationViolation nie woła wspólnego predykatu przypisania');
+  assert.ok(source.includes('const violation = blockerDeclarationViolation(state, playerId, assignments);'),
+    'declareBlockers nie woła wspólnej walidacji deklaracji');
+  assert.ok(source.includes('blockerDeclarationViolation(state, playerId, assignment, problem.slots) === null'),
+    'ziarna bloków nie filtrują się wspólną walidacją deklaracji');
   assert.ok(!/function satisfiesMenace/.test(source),
     'ręczna kopia reguły menace wróciła do kodu (ma być w blockAssignmentViolation)');
   // Zakazy zbioru nie mogą wrócić jako inline w declareBlockers.
@@ -183,7 +189,7 @@ test('M387/E: macierz spójności — każde OFEROWANE przypisanie jest przyjmow
   enterBlockStep(state, ['menacer', 'plain']);
 
   // Puła ofert: enumeracja (cap) + fallback + warianty „wszystkie minus jeden".
-  const offers = legalBlockerOptions(state, 'p2');
+  const offers = blockerSeedAssignments(state, 'p2');
   assert.ok(offers.length > 1, 'oferta bloków pusta — scena pinu jest bez sensu');
   const rejected = [];
   for (const assignment of offers) {

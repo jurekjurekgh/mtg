@@ -3,6 +3,7 @@
 1x Curiosity
 1x Fleeting Distraction
 1x Floodhound
+1x Kraken Hatchling
 1x Twiddle
 1x Candlegrove Witch
 1x Keep Out
@@ -12,11 +13,12 @@
 1x Wishful Merfolk
 1x Apprentice Wizard
 1x Containment Membrane
+1x Feral Ridgewolf
 1x Ironclad Slayer
 1x Scroll Thief
 1x Ballista Watcher
 1x Inspiration
 1x Bedhead Beastie
-1x Plains
+2x Plains
 6x Island
 2x Mountain

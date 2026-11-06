@@ -54,9 +54,12 @@ function fireballState() {
 
 test('F-1/1: rzut Fireballa niesie X w zdarzeniu spell_cast (log + Rozgrywka)', () => {
   const state = fireballState();
-  const cast = playerView(state, 'p1').legalCommands
-    .find((c) => c.type === 'cast_spell' && c.xValue === 3 && c.targets.length === 1);
-  assert.ok(cast, 'setup: oferta rzutu Fireballa za X=3');
+  // G, etap 3: oferta niesie ziarna X (1/smiertelne/max) — X=3 konstruuje
+  // kontroler na szablonie oferty, a bramka rzutu waliduje przy execute.
+  const szablon = playerView(state, 'p1').legalCommands
+    .find((c) => c.type === 'cast_spell' && c.targets.length === 1);
+  assert.ok(szablon, 'setup: ziarno rzutu Fireballa (1 cel)');
+  const cast = { ...szablon, xValue: 3 };
   const wynik = execute(state, cast);
   assert.ok(wynik?.ok !== false, `rzut przyjęty: ${JSON.stringify(wynik?.error ?? null)}`);
 
@@ -71,9 +74,10 @@ test('F-1/1: rzut Fireballa niesie X w zdarzeniu spell_cast (log + Rozgrywka)', 
 
 test('F-1/2: X na obiekcie stosu nadal steruje rozstrzygnięciem (bez regresji)', () => {
   const state = fireballState();
-  const cast = playerView(state, 'p1').legalCommands
-    .find((c) => c.type === 'cast_spell' && c.xValue === 2 && c.targets.length === 1);
-  assert.ok(cast, 'setup: oferta rzutu za X=2');
+  const szablon = playerView(state, 'p1').legalCommands
+    .find((c) => c.type === 'cast_spell' && c.targets.length === 1);
+  assert.ok(szablon, 'setup: ziarno rzutu Fireballa (1 cel)');
+  const cast = { ...szablon, xValue: 2 };
   assert.ok(execute(state, cast)?.ok !== false, 'rzut przyjęty');
   const naStosie = state.objects.get(state.zones.stack[0]);
   assert.equal(naStosie.fireballX, 2, 'resolution czyta fireballX (CR 601.2b)');

@@ -6,8 +6,6 @@ import {createCardRegistry} from '../src/cards/card-data.js';
 import {createCardDeck} from '../src/cards/materialize.js';
 import {jumpToStep} from '../src/engine/turn.js';
 import {addMana} from '../src/engine/resources.js';
-// Otwarte: wykonywalny RED na żądanie, bez blokowania całej szybkiej paczki.
-const audit=(name,fn)=>test(name,{skip:process.env.AUDIT_A84_ENFORCE==='1'?false:'otwarte A84 (AUDIT_A84_ENFORCE=1)'},fn);
 const reg=createCardRegistry();
 function put(s,id,card,zone,p){const [{objectId,...data}]=createCardDeck({cardIds:[card],ownerId:p,registry:reg});addObject(s,{...data,id,instanceId:`i-${id}`,zone,controllerId:p});}
 const view=s=>playerView(s,s.turn.priorityPlayerId);
@@ -20,9 +18,9 @@ function scene(active,payer){
  for(const p of ['p2','p1']){put(s,`${p}-crow`,'murder-of-crows','battlefield',p);put(s,`${p}-occult`,'selhoff-occultist','battlefield',p);for(let i=0;i<4;i++)put(s,`${p}-lib${i}`,'basic-forest','library',p);}
  turn(s,active);s.turn.priorityPlayerId=payer;put(s,'shock','shock','hand',payer);addMana(s,payer,3,{colors:['R']});act(s,view(s).legalCommands.find(c=>c.type==='cast_spell'&&c.objectId==='shock'&&c.targets?.includes(hidden.id)));pass(s);pass(s);assert.ok(s.pendingWardPay);return {s,token,payer,active,other:active==='p1'?'p2':'p1'};
 }
-for(const active of ['p1','p2'])for(const payer of ['p1','p2'])audit(`A84: triggery Sciona czekają do końca dopłaty Ward (aktywny ${active}, płaci ${payer})`,()=>{
+for(const active of ['p1','p2'])for(const payer of ['p1','p2'])test(`A84: triggery Sciona czekają do końca dopłaty Ward (aktywny ${active}, płaci ${payer})`,()=>{
  const {s,token}=scene(active,payer);act(s,view(s).legalCommands.find(c=>c.type==='activate_ability'&&c.objectId===token.id));assert.ok(s.pendingWardPay);assert.equal(s.turn.priorityPlayerId,payer);assert.ok(!view(s).legalCommands.some(c=>c.type==='resolve_trigger_target'||c.type==='resolve_trigger_order'),'gracz nie wybiera triggerów w środku Ward');assert.deepEqual(s.zones.stack.map(id=>s.objects.get(id).cardId),['shock'],'triggery nie trafiają na stos przed zakończeniem Ward');
 });
-for(const active of ['p1','p2'])for(const payer of ['p1','p2'])audit(`A84: po dopłacie Ward wybory triggerów są APNAP (aktywny ${active}, płaci ${payer})`,()=>{
+for(const active of ['p1','p2'])for(const payer of ['p1','p2'])test(`A84: po dopłacie Ward wybory triggerów są APNAP (aktywny ${active}, płaci ${payer})`,()=>{
  const {s,token,other}=scene(active,payer);act(s,view(s).legalCommands.find(c=>c.type==='activate_ability'&&c.objectId===token.id));act(s,view(s).legalCommands.find(c=>c.type==='resolve_ward_pay_choice'&&c.pay));assert.equal(s.turn.priorityPlayerId,active);const first=view(s).legalCommands.filter(c=>c.type==='resolve_trigger_order');assert.equal(first.length,2);act(s,first.find(c=>c.cardId==='murder-of-crows'));act(s,view(s).legalCommands.find(c=>c.type==='resolve_trigger_target'&&c.targetId===other));assert.equal(s.turn.priorityPlayerId,other);act(s,view(s).legalCommands.find(c=>c.type==='resolve_trigger_order'&&c.cardId==='selhoff-occultist'));act(s,view(s).legalCommands.find(c=>c.type==='resolve_trigger_target'&&c.targetId===active));assert.deepEqual(s.zones.stack.map(id=>s.objects.get(id).controllerId),[payer,active,active,other,other]);
 });

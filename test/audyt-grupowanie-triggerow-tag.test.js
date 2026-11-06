@@ -18,7 +18,7 @@
  */
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createGameState, addObject, execute } from '../src/engine/game-state.js';
+import { createGameState, addObject, execute, playerView } from '../src/engine/game-state.js';
 import { createCardRegistry } from '../src/cards/card-data.js';
 import { gameObjectDataOf } from '../src/cards/materialize.js';
 import { jumpToStep } from '../src/engine/turn.js';
@@ -81,10 +81,12 @@ const addCreature = (state, id, { controllerId = 'p1', subtypes = [], abilities 
  * co w grze). Przechodzimy dopóki coś jest na stosie; blokująca decyzja
  * (np. `pendingExileCast`) przerywa drenaż — to jej stan badają asercje.
  */
-function drain(state, limit = 12) {
+function drain(state, limit = 40) {
   for (let i = 0; i < limit; i += 1) {
     if (state.zones.stack.length === 0) break;
     const holder = state.turn.priorityPlayerId ?? 'p1';
+    const order = playerView(state, holder).legalCommands.find((c) => c.type === 'resolve_trigger_order');
+    if (order) { assert.ok(execute(state, order).ok); continue; }
     if (!execute(state, { type: 'pass_priority', playerId: holder }).ok) break;
   }
 }

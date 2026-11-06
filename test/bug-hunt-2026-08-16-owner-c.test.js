@@ -14,7 +14,7 @@ import { createCardRegistry } from '../src/cards/card-data.js';
 import { gameObjectDataOf } from '../src/cards/materialize.js';
 import { choiceGroupTitle, choiceGroupLabel } from '../src/table/render.js';
 import { removeCounter } from '../src/engine/counters.js';
-import { legalAttackerOptions, legalBlockerOptions } from '../src/engine/combat.js';
+import { attackCandidateIds, blockerSeedAssignments } from '../src/engine/combat.js';
 
 const REGISTRY = createCardRegistry();
 
@@ -128,8 +128,7 @@ test('C1: gunship przy 7 licznikach jest na liście atakujących', () => {
   state.turn.activePlayerId = 'p1';
   state.turn.priorityPlayerId = 'p1';
   state.combat = { attackingPlayerId: 'p1', attackers: [], blockers: new Map(), blockedAttackers: [] };
-  const options = legalAttackerOptions(state, 'p1');
-  const ids = new Set(options.flat());
+  const ids = new Set(attackCandidateIds(state, 'p1'));
   assert.ok(ids.has('ship'), 'gunship-stwór oferowany jako atakujący');
 });
 
@@ -147,7 +146,7 @@ test('C1: gunship przy 7 licznikach jest na liście blokujących (nawet z chorob
   state.turn.activePlayerId = 'p2';
   state.turn.priorityPlayerId = 'p1';
   state.combat = { attackingPlayerId: 'p2', attackers: ['e1'], blockers: new Map(), blockedAttackers: [] };
-  const options = legalBlockerOptions(state, 'p1');
+  const options = blockerSeedAssignments(state, 'p1');
   const ids = new Set(options.flatMap((o) => Object.values(o).flat()));
   assert.ok(ids.has('ship'), 'blokowanie nie zależy od choroby przywołania (CR 302.6)');
 });

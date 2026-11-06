@@ -2,7 +2,7 @@
 // pay" / „unless" idą na stos ZAWSZE, a wybór zapada przy ich rozstrzyganiu.
 // Testy, które dotąd oczekiwały decyzji w chwili odpalenia, najpierw
 // rozstrzygają stos aż do pojawienia się tej decyzji.
-import { execute } from '../../src/engine/game-state.js';
+import { execute, playerView } from '../../src/engine/game-state.js';
 
 /**
  * Passuje priorytet (rundy passów rozstrzygają wierzch stosu), aż `until(state)`
@@ -14,6 +14,8 @@ export function resolveUntilDecision(state, until, max = 16) {
   for (let i = 0; i < max; i += 1) {
     if (until(state)) return true;
     if (state.zones.stack.length === 0) break;
+    const order = playerView(state, state.turn.priorityPlayerId).legalCommands.find((c) => c.type === 'resolve_trigger_order');
+    if (order) { if (!execute(state, order).ok) break; continue; }
     const r = execute(state, { type: 'pass_priority', playerId: state.turn.priorityPlayerId });
     if (!r.ok) break;
   }

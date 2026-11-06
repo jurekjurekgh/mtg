@@ -13,7 +13,8 @@
     "serve": "python3 -m http.server --directory dist 8000",
     "test:slow": "node tools/run-tests.mjs slow",
     "test:all": "node tools/run-tests.mjs all",
-    "test:ci": "node tools/run-tests.mjs all"
+    "test:ci": "node tools/run-tests.mjs all",
+    "test:audit": "node tools/run-tests.mjs audit"
   },
   "engines": {
     "node": ">=22"

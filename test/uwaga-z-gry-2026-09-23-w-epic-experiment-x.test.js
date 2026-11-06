@@ -93,8 +93,11 @@ test('J/3: modal wybiera tylko X — plan „xOnly" ze stepperem 0–8', () => {
 
 test('J/4: wybrany wariant X ma koszt płatności (X w części bezbarwnej)', () => {
   const s = stol();
-  const cmd = s.view.legalCommands.find((c) => c.type === 'cast_spell' && c.xValue === 3);
-  assert.ok(cmd, 'setup: wariant X=3');
+  // G, etap 3: oferta niesie ziarna X (0 i max) — X=3 konstruujemy na
+  // szablonie, a deskryptor płatności liczy koszt z wybranego X.
+  const szablon = s.view.legalCommands.find((c) => c.type === 'cast_spell');
+  assert.ok(szablon, 'setup: ziarno rzutu X');
+  const cmd = { ...szablon, xValue: 3 };
   const d = paymentDescriptorOf(cmd, s.view, {});
   assert.ok(d, 'deskryptor płatności istnieje (kreator many ma co pokazać)');
   assert.equal(d.totalNeeded, 5, 'X=3 + {U}{R} = 5 many');

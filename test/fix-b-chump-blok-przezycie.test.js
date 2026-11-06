@@ -3,7 +3,7 @@
 // 2/2 i 1/1. Musiał zablokować 4/5 siódemką i podstawić 1/1 pod 3/3".
 //
 // Root cause (engine, nie punktacja): (atakujący+1)^blokerzy = 4^4 = 256 >
-// COMBAT_OPTION_CAP (32), więc legalBlockerOptions szedł gałęzią nad-cap,
+// COMBAT_OPTION_CAP (32), więc blockerSeedAssignments szedł gałęzią nad-cap,
 // która oferuje dokładnie JEDNO przypisanie wieloatakujące (greedy). Pętla
 // greedy miała `break` przy pierwszym nieblokowalnym atakującym — a latające
 // 7/5 zadeklarowano jako PIERWSZE, więc greedy umierało w całości i bot
@@ -17,7 +17,7 @@ import assert from 'node:assert/strict';
 import { createCardRegistry } from '../src/cards/card-data.js';
 import { createGameState, execute, playerView, addObject } from '../src/engine/game-state.js';
 import { jumpToStep } from '../src/engine/turn.js';
-import { legalBlockerOptions } from '../src/engine/combat.js';
+import { blockerSeedAssignments } from '../src/engine/combat.js';
 import { createHeuristicBot } from '../src/controllers/heuristic-bot.js';
 
 const REGISTRY = createCardRegistry();
@@ -68,7 +68,7 @@ function reportScenario() {
 
 test('FixB/T1: nieblokowalny atakujący jako pierwszy nie ubija oferty multi-bloku', () => {
   const state = reportScenario();
-  const offers = legalBlockerOptions(state, 'p2');
+  const offers = blockerSeedAssignments(state, 'p2');
   assert.ok(offers.length > 1, 'gałąź nad-cap daje ofertę');
   const multi = offers.filter((o) => Object.keys(o).length > 1);
   assert.ok(multi.length > 0, 'istnieje przypisanie wieloatakujące mimo fly-na-pierwszym');
@@ -85,7 +85,7 @@ test('FixB/T2: greedy pokrywa największe zagrożenie pierwsze (niedobór ciał)
   addBody(state, 'd1', 'p2', 'highland-game', { power: 2, toughness: 2 });
   addBody(state, 'd2', 'p2', 'highland-game', { power: 2, toughness: 2 });
   toBlockersStep(state, ['s1', 's2', 's3', 's4', 'big']); // największy celowo OSTATNI
-  const offers = legalBlockerOptions(state, 'p2');
+  const offers = blockerSeedAssignments(state, 'p2');
   const multi = offers.filter((o) => Object.keys(o).length > 1);
   assert.ok(multi.length > 0, 'istnieje przypisanie wieloatakujące');
   assert.ok(multi.some((o) => 'big' in o), `greedy pokrywa 7/7 mimo deklaracji na końcu, jest: ${JSON.stringify(multi)}`);
@@ -113,7 +113,7 @@ test('FixB/T4: menace-nie-do-pokrycia nie przerywa greedy dla reszty', () => {
   addBody(state, 'g22', 'p1', 'highland-game', { power: 2, toughness: 2 });
   for (const id of ['w1', 'w2', 'w3', 'w4']) addBody(state, id, 'p2', 'highland-game', { power: 2, toughness: 2 });
   toBlockersStep(state, ['men', 'g33', 'g22']);
-  const offers = legalBlockerOptions(state, 'p2');
+  const offers = blockerSeedAssignments(state, 'p2');
   const multi = offers.filter((o) => Object.keys(o).length > 1);
   assert.ok(
     multi.some((o) => 'g33' in o && 'g22' in o),

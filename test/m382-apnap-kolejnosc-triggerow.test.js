@@ -152,19 +152,23 @@ test('M382/C: kontrola — gdy obiekty gracza aktywnego są wstawione pierwsze, 
     `kolejność APNAP nie zależy od kolejności wstawienia obiektów: ${JSON.stringify(order)}`);
 });
 
-test('M382/D: stabilność wewnątrz kontrolera (kolejność wykrycia zachowana)', () => {
-  // Wstawienie PRZEPLATANE (nap-a, ap-a, nap-b, ap-b) — kolejność wykrycia
-  // zdolności nie jest wtedy podzielona na bloki, więc niestabilny sort
-  // mógłby odwrócić zdolności jednego kontrolera.
+test('M382/D: kontroler wybiera kolejność własnych zdolności (CR 603.3b, ADR 0032)', () => {
+  // Wstawienie PRZEPLATANE (nap-a, ap-a, nap-b, ap-b). CR 603.3b nie pinuje
+  // kolejności wykrycia wewnątrz kontrolera — każe spytać gracza. Wybieramy
+  // pierwszą ofertę jako rozstrzygającą pierwszą i sprawdzamy finalny stos.
   const state = scenario({ order: 'interleaved' });
   trade(state);
-  // Mapowanie „pole bitwy → grób" z zdarzeń zgonów (kolejność = kolejność
-  // wykrycia, bo zgony są jednym przebiegiem SBA).
   const graveOf = new Map(state.events
     .filter((e) => e.type === 'creature_destroyed')
     .map((e) => [e.fromId, e.objectId]));
+  for (const playerId of ['p1', 'p2']) {
+    const choices = playerView(state, state.turn.priorityPlayerId).legalCommands
+      .filter((c) => c.type === 'resolve_trigger_order');
+    assert.equal(choices.length, 2, `dwie zdolności kontrolera ${playerId} do wyboru`);
+    assert.ok(execute(state, choices[0]).ok);
+  }
   const sources = stackSources(state);
   assert.deepEqual(sources, [
-    graveOf.get('ap-a'), graveOf.get('ap-b'), graveOf.get('nap-a'), graveOf.get('nap-b'),
-  ], `zdolności AP (ap-a, ap-b) w kolejności wykrycia, potem NAP: ${JSON.stringify(sources)}`);
+    graveOf.get('ap-b'), graveOf.get('ap-a'), graveOf.get('nap-b'), graveOf.get('nap-a'),
+  ], `wybór kontrolera odwraca kolejność wykrycia wewnątrz gracza: ${JSON.stringify(sources)}`);
 });

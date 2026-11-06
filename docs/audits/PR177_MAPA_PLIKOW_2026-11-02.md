@@ -1,5 +1,8 @@
 # Mapa audytu diffu scalonego PR #177
 
+> **Stan historyczny.** Dokument opisuje audyt PR #177 prowadzony w PR #178. Bieżący przegląd diffu PR #178 i poprawki są w `docs/audits/AUDYT_PR178_2026-11-03.md`, mapie `PR178_MAPA_PLIKOW_2026-11-03.md` i PR #179; poniższe pomiary nie są pomiarami obecnego drzewa.
+
+
 Źródło: GitHub `pulls/177/files` (111 plików, 10 123 dodania, 361 usunięć). Stan: **audyt otwarty**. Oznaczenia dotyczą wyłącznie rzeczywistego zakresu opisanych ustaleń; „częściowo” NIE oznacza, że reszta pliku jest poprawna, a „otwarte” nie oznacza wykrycia błędu. Pełne dowody w `AUDYT_PR177_2026-11-01.md`.
 
 Zakres: zmiany PR #177 i ich realne interakcje z kartami z katalogu. Bez nowych kart oraz implementacji hipotetycznych konfiguracji na przyszłość; w razie konieczności zostaje komentarz w kodzie. Osobne A24 Heap Gate z wcześniejszej fazy nie jest teraz kolejką.

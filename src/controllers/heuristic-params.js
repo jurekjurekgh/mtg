@@ -512,6 +512,34 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   'counterEvasionBonus',         // gospodarz, którego ataku przeciwnik nie zatrzyma
   'counterLateWindowPenalty',    // kara, gdy walka tej tury już za nami (Główna 2 / faza końcowa)
   'counterLethalClockBonus',     // licznik domyka grę: moc ≥ życie przeciwnika, atak nie do zatrzymania
+  // Zgłoszenie D (2026-11-05): instant z trwałym licznikiem statystyk to
+  // combat trick — poza oknem walki bot ma go TRZYMAĆ, a nie rzucać „bo ma
+  // manę”. Kara jest na poziomie rzutu (nie efektu) i świadomie większa niż
+  // typowa suma baza czaru + płaska wartość licznika, żeby decyzja zapadła
+  // też dla dużego gospodarza; okna-wyjątki (walka, która trwa, niespodzianka
+  // blokująca po ataku wroga, domknięcie gry) liczy bot, nie parametr.
+  // ×0 = zachowanie sprzed zgłoszenia D (anty-over-fix jak w rodzinie M429).
+  'counterInstantHoldPenalty',   // kara za instant-liczniki rzucone poza oknem walki
+  // Zgłoszenie D etap 7: ta sama zasada dla instantu „pump własnego stwora +
+  // ugryzienie z niego” (`damage_from_target_power`) — ugryzienie zabijające
+  // poza walką było wyceniane jak usunięcie, więc bot przepalał trik
+  // w podtrzymaniu. Osobne pokrętło, bo skala ugryzienia (usunięcie) jest
+  // inna niż licznika; ×0 = zachowanie sprzed etapu 7.
+  'pumpBiteHoldPenalty',         // kara za pump+ugryzienie rzucone poza oknem walki
+  // Zgłoszenie D etap 8 (K4a): instantowe obrażenia w twarz przeciwnika
+  // poza walką i bez domknięcia gry to spalona karta — burn czeka na moment
+  // śmiertelny albo odpowiedź w walce. `damageTargetValue` daje twarzy
+  // dodatnią proporcję życia (6 + 40·udział), co przy bazie czaru przebijało
+  // pas już przy 20 życia. ×0 = zachowanie sprzed etapu 8.
+  'faceBurnHoldPenalty',         // kara za instant-burn w twarz poza walką bez lethal
+  // Zgłoszenie D etap 9 (K4b): instant-removal we własnym podtrzymaniu lub
+  // kroku dobrania — decyzja zapada przed główną fazą bez żadnej pilności,
+  // więc bot ma poczekać (ta sama karta, lepsza informacja). ×0 = dawne.
+  'removalUpkeepHoldPenalty',    // kara za instant-removal we własnym upkeep/draw
+  // Zgłoszenie D etap 11 (K6): ta sama rodzina timingu — tokeny z instantu
+  // przed główną fazą nic nie zyskują, a tracą wartość zaskoczenia w turze
+  // wroga. ×0 = zachowanie sprzed etapu 11.
+  'tokenUpkeepHoldPenalty',      // kara za instant-tokeny we własnym upkeep/draw
   // M429 („P2 Memory's Journey"): rodzina „wtasowanie kart z grobu do
   // biblioteki". Dotąd efekt był wart płasko 4 + 2·karty (NIEZALEŻNIE od stanu
   // biblioteki — pomiar: 58 pkt przy 30 i przy 12 kartach, a wariant z ZERO
@@ -1171,6 +1199,11 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   counterEvasionBonus: 5,
   counterLateWindowPenalty: 4,
   counterLethalClockBonus: 50,
+  counterInstantHoldPenalty: 120, // zgłoszenie D: patrz uzasadnienie przy HEURISTIC_PARAM_KEYS
+  pumpBiteHoldPenalty: 120, // zgłoszenie D etap 7: patrz uzasadnienie przy HEURISTIC_PARAM_KEYS
+  faceBurnHoldPenalty: 120, // zgłoszenie D etap 8 (K4a): patrz uzasadnienie przy HEURISTIC_PARAM_KEYS
+  removalUpkeepHoldPenalty: 120, // zgłoszenie D etap 9 (K4b): patrz uzasadnienie przy HEURISTIC_PARAM_KEYS
+  tokenUpkeepHoldPenalty: 120, // zgłoszenie D etap 11 (K6): patrz uzasadnienie przy HEURISTIC_PARAM_KEYS
   // M429 „wtasowanie kart z grobu do biblioteki" (P2 Memory's Journey).
   // Próg presji = `librarySafeMargin` (20, istniejąca rodzina biblioteczna).
   // Dopłata ratunkowa 8/kartę: 3 karty przy cienkiej bibliotece = 34 pkt efektu

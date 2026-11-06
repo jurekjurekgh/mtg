@@ -33,6 +33,7 @@ import { coloredPipsOf, matchColorRequirements, unitCoversRequirement } from '..
 import { autoManaUnits as autoManaJednostki, restrictedManaUnits as ograniczoneManaJednostki, castBeyondAutoMana as castNieopłacalnyAuto, hasManaActivationOffer as castFiltersApplicable, triggerPaymentBeyondAuto } from './mana-offer-guards.js';
 import { POISON_LOSS_LIMIT } from '../engine/state-based.js';
 import { expandManaPool } from '../engine/resources.js';
+import { availablePurposeRestrictedUnits, purposeAllowsSpendOnly } from '../engine/mana-restrictions.js';
 import { TURN_STEPS } from '../engine/turn.js';
 import { COMMAND_TYPES } from '../protocol/types.js';
 import { createCardRegistry } from '../cards/card-data.js';
@@ -769,6 +770,25 @@ function landsControlledInView(view, controllerId) {
 
 function permanentMaterialValue(object) {
   return 2 * (object?.power ?? 0) + (object?.toughness ?? 0) + (object?.manaCost ?? 0);
+}
+
+/**
+ * PMSSB-88: removing a linked-exile source also resolves its LTB return.
+ * The exile-zone object carries public `temporaryExile.bySourceId` LKI; its
+ * controller is the owner who will control it on return. Positive means the
+ * returning permanent is ours, negative means it returns to the opponent.
+ */
+function linkedExileReturnValue(view, source) {
+  if (!source?.id) return 0;
+  let value = 0;
+  for (const exiled of view.zones?.exile ?? []) {
+    if (exiled?.temporaryExile?.returnsWhenSourceLeaves !== true
+      || exiled.temporaryExile.bySourceId !== source.id) continue;
+    if (!exiled.controllerId) continue;
+    const sign = exiled.controllerId === view.playerId ? 1 : -1;
+    value += sign * permanentMaterialValue(exiled);
+  }
+  return value;
 }
 
 /** Rzeczywiste 0 toughness != pozostała wytrzymałość po obrażeniach.
@@ -1987,12 +2007,328 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
    * wybór główny, lookahead i polityki symulacji — losowość nie może przywrócić
    * usuniętego wariantu.
    */
+  /**
+   * Zgłoszenie G, etap 1: silnik wystawia deklaracje ataku jako ziarna, a bot
+   * dokłada własne prefiksowe kandydatury z deskryptora walki. Ranking jest
+   * prostą strategią kontrolera (siła bojowa), natomiast ostateczną kolejność
+   * deklaracji kanonizuje kolejność kandydatów z widoku. Pomijamy jedyny
+   * nielegalny kształt wynikający wprost z deskryptora: samotnego stwora
+   * z „can't attack alone”.
+   */
+  function synthesizedAttackDeclarations(view, existing) {
+    const declaration = view?.combatDeclaration;
+    if (!declaration || declaration.role !== 'attackers') return [];
+    const candidateIds = [...(declaration.candidateIds ?? [])];
+    if (candidateIds.length === 0) return [];
+    const mandatoryIds = new Set(declaration.mandatoryIds ?? []);
+    const aloneIds = new Set(declaration.aloneIds ?? []);
+    const byId = new Map((view.zones?.battlefield ?? []).map((object) => [object.id, object]));
+    const strength = (id) => {
+      const object = byId.get(id);
+      return 2 * Math.max(0, combatPower(object)) + Math.max(0, object?.toughness ?? 0);
+    };
+    const optionalIds = candidateIds
+      .filter((id) => !mandatoryIds.has(id))
+      .map((id, index) => ({ id, index }))
+      .sort((a, b) => strength(b.id) - strength(a.id) || a.index - b.index)
+      .map(({ id }) => id);
+    const existingKeys = new Set(existing
+      .filter((cmd) => cmd.type === 'declare_attackers')
+      .map((cmd) => [...(cmd.attackerIds ?? [])].sort().join('\u0000')));
+    const synthesized = [];
+    for (let count = 1; count <= optionalIds.length; count += 1) {
+      const chosen = new Set([...mandatoryIds, ...optionalIds.slice(0, count)]);
+      const attackerIds = candidateIds.filter((id) => chosen.has(id));
+      if (attackerIds.length === 1 && aloneIds.has(attackerIds[0])) continue;
+      const key = [...attackerIds].sort().join('\u0000');
+      if (existingKeys.has(key)) continue;
+      existingKeys.add(key);
+      synthesized.push({ type: 'declare_attackers', playerId: view.playerId, attackerIds });
+    }
+    return synthesized;
+  }
+
+  /**
+   * Zgłoszenie G, etap 1: bot dokłada własne kandydatury bloków z deskryptora
+   * (pula par), nie z enumeracji silnika: prefiksowe gangi na jednego
+   * atakującego (żeby wybrać najmniejszy gang zabijający) oraz pokrycia
+   * wieloatakujące w kilku porządkach blokerów (permutacje przypisań).
+   * Synteza działa tylko bez wymogów bloku (`mandatoryIds`) — przy wymogach
+   * kandydatami są solverowe ziarna silnika. Kształty są legalne z budowy:
+   * bloker używany co najwyżej raz, menace dostaje 0 albo >=2 blokerów,
+   * a samotny „can't block alone” nie jest całą deklaracją.
+   */
+  function synthesizedBlockDeclarations(view, existing) {
+    const declaration = view?.combatDeclaration;
+    if (!declaration || declaration.role !== 'blockers') return [];
+    if ((declaration.mandatoryIds ?? []).length > 0) return [];
+    const pool = declaration.pool ?? {};
+    const attackerIds = [...(declaration.attackerIds ?? Object.keys(pool))];
+    if (attackerIds.length === 0) return [];
+    const byId = new Map((view.zones?.battlefield ?? []).map((object) => [object.id, object]));
+    const keyOf = (assignments) => Object.keys(assignments ?? {}).sort()
+      .map((attackerId) => `${attackerId}:${[...(assignments[attackerId] ?? [])].sort().join(',')}`)
+      .join('|');
+    const existingKeys = new Set(existing
+      .filter((cmd) => cmd.type === 'declare_blockers')
+      .map((cmd) => keyOf(cmd.assignments)));
+    const synthesized = [];
+    const add = (assignments) => {
+      const cleaned = Object.fromEntries(Object.entries(assignments ?? {})
+        .filter(([, ids]) => Array.isArray(ids) && ids.length > 0)
+        .map(([attackerId, ids]) => [attackerId, [...ids]]));
+      const usedBlockers = [...new Set(Object.values(cleaned).flat())];
+      if (usedBlockers.length === 0) return;
+      if (usedBlockers.length === 1 && byId.get(usedBlockers[0])?.cantBlockAlone === true) return;
+      const key = keyOf(cleaned);
+      if (existingKeys.has(key)) return;
+      existingKeys.add(key);
+      synthesized.push({ type: 'declare_blockers', playerId: view.playerId, assignments: cleaned });
+    };
+    // Gangi prefiksowe: bot sam wybiera, ilu blokerów poświęcić na atakującego.
+    for (const attackerId of attackerIds) {
+      const blockers = [...(pool[attackerId] ?? [])];
+      for (let count = 2; count <= blockers.length; count += 1) {
+        add({ [attackerId]: blockers.slice(0, count) });
+      }
+    }
+    // Pokrycia: kolejność atakujących (deklarowana albo od największego
+    // zagrożenia) x kolejność blokerów (puli albo odwrotna) daje permutacje
+    // przypisań bez enumerowania iloczynu kartezjańskiego.
+    const strength = (id) => {
+      const object = byId.get(id);
+      return 2 * Math.max(0, combatPower(object)) + Math.max(0, object?.toughness ?? 0);
+    };
+    const allBlockers = [];
+    for (const attackerId of attackerIds) {
+      for (const blockerId of pool[attackerId] ?? []) {
+        if (!allBlockers.includes(blockerId)) allBlockers.push(blockerId);
+      }
+    }
+    const byThreat = [...attackerIds]
+      .map((id, index) => ({ id, index }))
+      .sort((a, b) => strength(b.id) - strength(a.id) || a.index - b.index)
+      .map(({ id }) => id);
+    const cover = (orderedAttackers, blockerOrder) => {
+      const rank = new Map(blockerOrder.map((id, index) => [id, index]));
+      const used = new Set();
+      const assignments = {};
+      for (const attackerId of orderedAttackers) {
+        const attacker = byId.get(attackerId);
+        const needed = (attacker?.keywords ?? []).includes('menace') ? 2 : 1;
+        const available = [...(pool[attackerId] ?? [])]
+          .filter((blockerId) => !used.has(blockerId))
+          .sort((a, b) => (rank.get(a) ?? 0) - (rank.get(b) ?? 0));
+        if (available.length < needed) continue;
+        const chosen = available.slice(0, needed);
+        assignments[attackerId] = chosen;
+        for (const blockerId of chosen) used.add(blockerId);
+      }
+      add(assignments);
+    };
+    const reversed = [...allBlockers].reverse();
+    cover(attackerIds, allBlockers);
+    cover(attackerIds, reversed);
+    cover(byThreat, allBlockers);
+    cover(byThreat, reversed);
+    return synthesized;
+  }
+
+  /**
+   * Zgłoszenie G, etap 2: bot dokłada własne zestawy celów triggera
+   * wielocelowego z deskryptora `pendingTriggerTarget` (ziarna silnika to
+   * tylko zestaw zachłanny + singletony): prefiksy kandydatów uszeregowanych
+   * własną wyceną singletonu zgodną z intencją komendy (friendly = własne
+   * ciała rosnąco, wrogie efekty = cudze ciała rosnąco). Zestawy są legalne
+   * z budowy (podzbiór kandydatów o rozmiarze <= maxTargets), a silnik
+   * waliduje je przy execute jak każdą wybraną kombinację.
+   */
+  function synthesizedTriggerTargetSets(view, existing) {
+    const targetProblem = view?.pendingTriggerTarget;
+    if (!targetProblem || (targetProblem.maxTargets ?? 1) <= 1) return [];
+    const seeds = existing.filter((cmd) => cmd.type === 'resolve_trigger_target' && Array.isArray(cmd.targetIds));
+    if (seeds.length === 0) return [];
+    const template = seeds[0];
+    const candidateIds = [...(targetProblem.candidateIds ?? [])];
+    if (candidateIds.length <= 1) return [];
+    const enemyId = (view.players ?? []).find((pl) => pl.id !== view.playerId)?.id ?? null;
+    const rankValue = (id) => {
+      const target = objectOnBoard(view, id);
+      if (!target) {
+        if (id === view.playerId) return template.friendly ? 25 : -40;
+        if (id === enemyId) return template.friendly ? -40 : 25;
+        return 0;
+      }
+      const body = 2 * Math.max(0, target.power ?? 0) + Math.max(0, target.toughness ?? 0);
+      const mine = target.controllerId === view.playerId;
+      return template.friendly ? (mine ? body : -body) : (mine ? -body : body);
+    };
+    const ranked = candidateIds
+      .map((id, index) => ({ id, index, value: rankValue(id) }))
+      .sort((a, b) => b.value - a.value || a.index - b.index)
+      .map(({ id }) => id);
+    const keyOf = (ids) => [...ids].sort().join('|');
+    const existingKeys = new Set(seeds.map((cmd) => keyOf(cmd.targetIds)));
+    const synthesized = [];
+    const maxSize = Math.min(targetProblem.maxTargets, ranked.length);
+    for (let size = 2; size <= maxSize; size += 1) {
+      const ids = ranked.slice(0, size);
+      const key = keyOf(ids);
+      if (existingKeys.has(key)) continue;
+      existingKeys.add(key);
+      synthesized.push({ ...template, targetIds: ids });
+    }
+    return synthesized;
+  }
+
+  /**
+   * Zgłoszenie G, etap 3a: bot dokłada własne wybory decyzji oczekujących
+   * z ich deskryptorów (ziarna silnika są porządkowe, nie wartościowe):
+   *   - mulligan bottom: zestaw kart o najmniejszej stracie trzymania
+   *     (ta sama miara co wycena `resolve_mulligan_bottom_choice`);
+   *   - escape: najtańszy zestaw grobu wg `escapeExileCostOf`;
+   *   - delve: najtańszy zestaw dla KAŻDEJ opłacalnej liczby kart;
+   *   - untap: prefiksy źródeł uszeregowane wartością trzymanych bytów
+   *     (lustro wyceny `resolve_untap_choice` z `lockedByCandidate`).
+   * Zestawy są legalne z budowy (podzbiory kandydatów deskryptora we
+   * właściwej liczbie), a silnik waliduje je przy execute.
+   */
+  function synthesizedPendingSelections(view, existing) {
+    const synthesized = [];
+    const ma = (type) => existing.some((cmd) => cmd.type === type);
+    const bottom = view?.pendingMulliganBottom;
+    if (bottom && ma('resolve_mulligan_bottom_choice')) {
+      const handById = new Map((view.zones?.hand ?? []).map((o) => [o.id, o]));
+      const ids = (bottom.handIds ?? []).filter((id) => handById.has(id));
+      const count = Math.min(bottom.count ?? 0, ids.length);
+      if (count > 0 && ids.length > count) {
+        const loss = (id) => {
+          const card = handById.get(id);
+          const isLand = (card.kind ?? '') === 'land' || (card.types ?? []).includes('Land');
+          if (isLand) return 100;
+          const body = 2 * (card.power ?? 0) + (card.toughness ?? 0);
+          return 60 - (card.manaCost ?? 0) * 5 + Math.min(body, 10);
+        };
+        const chosen = new Set([...ids]
+          .map((id, index) => ({ id, index, loss: loss(id) }))
+          .sort((a, b) => a.loss - b.loss || a.index - b.index)
+          .slice(0, count)
+          .map(({ id }) => id));
+        const cardIds = ids.filter((id) => chosen.has(id));
+        if (!existing.some((cmd) => cmd.type === 'resolve_mulligan_bottom_choice'
+          && [...(cmd.cardIds ?? [])].sort().join('|') === [...cardIds].sort().join('|'))) {
+          synthesized.push({ type: 'resolve_mulligan_bottom_choice', playerId: view.playerId, cardIds });
+        }
+      }
+    }
+    const escape = view?.pendingEscapeExile;
+    if (escape && ma('resolve_escape_exile') && escape.exileCount > 0) {
+      const graveById = new Map((view.zones?.graveyard ?? []).map((o) => [o.id, o]));
+      const ranked = [...(escape.candidateIds ?? [])]
+        .filter((id) => graveById.has(id))
+        .map((id, index) => ({ id, index, cost: escapeExileCostOf(view, graveById.get(id)) }))
+        .sort((a, b) => a.cost - b.cost || a.index - b.index);
+      if (ranked.length >= escape.exileCount) {
+        const exileIds = ranked.slice(0, escape.exileCount).map(({ id }) => id);
+        if (!existing.some((cmd) => cmd.type === 'resolve_escape_exile'
+          && [...(cmd.exileIds ?? [])].sort().join('|') === [...exileIds].sort().join('|'))) {
+          synthesized.push({ type: 'resolve_escape_exile', playerId: view.playerId, exileIds });
+        }
+      }
+    }
+    const delve = view?.pendingDelveExile;
+    if (delve && ma('resolve_delve_exile')) {
+      const graveById = new Map((view.zones?.graveyard ?? []).map((o) => [o.id, o]));
+      const ranked = [...(delve.candidateIds ?? [])]
+        .filter((id) => graveById.has(id))
+        .map((id, index) => ({ id, index, cost: escapeExileCostOf(view, graveById.get(id)) }))
+        .sort((a, b) => a.cost - b.cost || a.index - b.index)
+        .map(({ id }) => id);
+      for (const count of delve.affordableCounts ?? []) {
+        if (count <= 0 || count > ranked.length) continue;
+        const exileIds = ranked.slice(0, count);
+        if (!existing.some((cmd) => cmd.type === 'resolve_delve_exile'
+          && [...(cmd.exileIds ?? [])].sort().join('|') === [...exileIds].sort().join('|'))) {
+          synthesized.push({ type: 'resolve_delve_exile', playerId: view.playerId, exileIds });
+        }
+      }
+    }
+    const untap = view?.pendingUntapChoice;
+    if (untap && ma('resolve_untap_choice')) {
+      const wartosci = untap.lockedByCandidate ?? {};
+      const value = (sourceId) => (wartosci[sourceId] ?? []).reduce((sum, lockedId) => {
+        const byt = objectOnBoard(view, lockedId);
+        if (!byt) return sum;
+        const worth = (byt.power ?? 0) + (byt.toughness ?? 0);
+        return sum + (byt.controllerId === view.playerId
+          ? -P.untapChoiceOwnLockPenalty - worth
+          : P.untapChoiceLockValue + 2 * worth);
+      }, 0);
+      const ranked = [...(untap.candidateIds ?? [])]
+        .map((id, index) => ({ id, index, value: value(id) }))
+        .sort((a, b) => b.value - a.value || a.index - b.index)
+        .map(({ id }) => id);
+      const seenUntap = new Set(existing
+        .filter((cmd) => cmd.type === 'resolve_untap_choice')
+        .map((cmd) => [...(cmd.keepTappedIds ?? [])].sort().join('|')));
+      for (let size = 1; size <= ranked.length; size += 1) {
+        const keepTappedIds = ranked.slice(0, size);
+        const key = [...keepTappedIds].sort().join('|');
+        if (seenUntap.has(key)) continue;
+        seenUntap.add(key);
+        synthesized.push({ type: 'resolve_untap_choice', playerId: view.playerId, keepTappedIds });
+      }
+    }
+    return synthesized;
+  }
+
+  /**
+   * Zgłoszenie G, etap 3b: silnik niesie ziarna X (min / progi / max),
+   * a bot dokłada własne warianty pośrednie dla każdej grupy rzutu
+   * (ten sam czar, te same cele): każdy całkowity X między najmniejszym
+   * a największym ziarnem, z kosztem skorygowanym o deltę X (pole `cost`
+   * ofert jest liniowe w X). Legalność z budowy pilnuje bramka rzutu
+   * przy wykonaniu wyboru przez bota (bot zwraca tylko warianty z tego
+   * samego przedziału, który silnik uznał za opłacalny).
+   */
+  function synthesizedXCastVariants(view, existing) {
+    const groups = new Map();
+    for (const cmd of existing) {
+      if (!Number.isInteger(cmd?.xValue)) continue;
+      if (cmd.type !== 'cast_spell' && cmd.type !== 'cast_permanent') continue;
+      const key = [cmd.type, cmd.objectId, [...(cmd.targets ?? [])].sort().join('|'), cmd.modeIndex ?? ''].join('#');
+      const group = groups.get(key) ?? { template: cmd, min: cmd.xValue, max: cmd.xValue, seen: new Set() };
+      group.min = Math.min(group.min, cmd.xValue);
+      group.max = Math.max(group.max, cmd.xValue);
+      group.seen.add(cmd.xValue);
+      if (cmd.xValue >= group.template.xValue) group.template = cmd;
+      groups.set(key, group);
+    }
+    const synthesized = [];
+    for (const group of groups.values()) {
+      for (let X = group.min; X <= group.max; X += 1) {
+        if (group.seen.has(X)) continue;
+        const variant = { ...group.template, xValue: X };
+        if (Number.isFinite(group.template.cost) && Number.isInteger(group.template.xValue)) {
+          variant.cost = group.template.cost + (X - group.template.xValue);
+        }
+        synthesized.push(variant);
+      }
+    }
+    return synthesized;
+  }
+
   function botCommandCandidates(view) {
     const legal = view?.legalCommands ?? [];
     // N: jednostki automatu liczymy raz per decyzja (filtr castów poniżej).
     const unitsAuto = castFiltersApplicable(view) ? autoManaJednostki(view) : null;
     const candidates = legal.filter((cmd) => botMayPayCreatureSacrificeCost(view, cmd)
       && !(unitsAuto != null && (castNieopłacalnyAuto(view, cmd, unitsAuto) || triggerPaymentBeyondAuto(view, cmd, unitsAuto))));
+    candidates.push(...synthesizedAttackDeclarations(view, candidates));
+    candidates.push(...synthesizedBlockDeclarations(view, candidates));
+    candidates.push(...synthesizedTriggerTargetSets(view, candidates));
+    candidates.push(...synthesizedPendingSelections(view, candidates));
+    candidates.push(...synthesizedXCastVariants(view, candidates));
     // Aktywny protokół zawsze wystawia bezpieczne wyjście (pass/decline/done,
     // a co najmniej concede). Gdyby ten inwariant kiedyś pękł, jawny błąd jest
     // bezpieczniejszy niż ciche złamanie twardego zakazu właściciela.
@@ -3411,7 +3747,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     const spent = Math.max(0, cmd?.cost ?? card?.manaCost ?? 0);
     if (spent === 0) return 0;
     const colors = new Set();
-    for (const unit of manaUnitsOfView(view, { artifactSpell: (card?.types ?? []).includes('Artifact') })) {
+    for (const unit of manaUnitsOfView(view, {
+      artifactSpell: (card?.types ?? []).includes('Artifact'),
+      enchantmentSpell: (card?.types ?? []).includes('Enchantment'),
+    })) {
       for (const color of unit ?? []) colors.add(color);
     }
     return P.convergeDamagePerColor * Math.min(spent, colors.size);
@@ -6018,17 +6357,23 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
    * generic) — DOKŁADNIE ten kształt, co `expandManaPool` i `matchColorRequirements`
    * w silniku (L41/L48: jedno rozwiązanie, nie druga arytmetyka).
    */
-  const manaUnitsOfView = (view, { artifactSpell = false, landsOnly = false } = {}) => {
+  const manaUnitsOfView = (view, {
+    artifactSpell = false, enchantmentSpell = false, turnFaceUp = false,
+    unlockDoor = false, castingSpell = true, landsOnly = false,
+  } = {}) => {
     const me = view.players?.find((p) => p.id === view.playerId) ?? {};
+    const purpose = {
+      castingSpell,
+      artifactSpell, enchantmentSpell, turnFaceUp, unlockDoor,
+    };
     // K: `landsOnly` = WYŁĄCZNIE nietapnięte lądy — mana, która przetrwa do tury
     // przeciwnika (pula wyparowuje na końcu kroku, CR 500.5, a lądy zostają
     // nietknięte, bo bot ich nie tapał). Potrzebne do decyzji „czy odroczenie rzutu
     // karty z flash jest darmowe”.
     const units = landsOnly ? [] : [
       ...expandManaPool(me.manaPool ?? {}),
-      // M201/M214: pula ograniczona drukiem jest dla celu nie-artefaktowego
-      // niewidoczna — ta sama bramka co `restrictedManaBlocked` w resources.js.
-      ...(artifactSpell ? expandManaPool(me.restrictedPool ?? {}) : []),
+      ...(purposeAllowsSpendOnly('artifact', purpose) ? expandManaPool(me.restrictedPool ?? {}) : []),
+      ...availablePurposeRestrictedUnits(me.purposeRestrictedPool ?? {}, purpose).map((entry) => entry.colors),
     ];
     for (const o of view.zones?.battlefield ?? []) {
       if (!o || o.controllerId !== view.playerId || o.tapped || o.detained || o.cantActivateAbilities) continue;
@@ -6290,8 +6635,8 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
    * Produkcja ograniczona drukiem (`spendOnly`) trafia do jednostek tylko dla
    * celu, na który wolno ją wydać. `null` = kosztu nie da się opłacić.
    */
-  const unitsAfterManaAbility = (view, effect, cost, artifactSpell, source = null) => {
-    const left = manaUnitsOfView(view, { artifactSpell });
+  const unitsAfterManaAbility = (view, effect, cost, purpose, source = null) => {
+    const left = manaUnitsOfView(view, purpose);
     // B54/s4008 (lustro `countedLand`): mana NIETAPNIĘTEGO LĄDU jest już
     // policzona w jednostkach (auto-płatność silnika tapuje lądy sama), więc
     // produkcja tej samej zdolności REPLACUJE jego jednostkę, a nie dokłada
@@ -6326,8 +6671,8 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       generic -= 1;
     }
     if (generic > 0) return null;
-    const restricted = effect?.spendOnly === 'artifact' && !artifactSpell;
-    const amount = restricted ? 0 : (effect?.amount ?? 0);
+    const amount = purposeAllowsSpendOnly(effect?.spendOnly ?? null, purpose)
+      ? (effect?.amount ?? 0) : 0;
     for (let i = 0; i < amount; i += 1) left.push([...(effect?.colors ?? [])]);
     return left;
   };
@@ -9213,13 +9558,21 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     }
     return 0;
   }
-  /** Czy kwalifikator szukania trafia ląd (types/subtypes — ADR 0002). */
+  /** Czy kwalifikator szukania może znaleźć ląd (w tym alternatywy `anyOf`, ADR 0002). */
   function searchFindsLand(effect) {
-    const q = effect?.qualifier ?? {};
-    const types = q.types ?? [];
-    const subtypes = q.subtypes ?? [];
-    return types.includes('Land') || types.includes('Basic')
-      || subtypes.some((s) => ['Plains', 'Island', 'Swamp', 'Mountain', 'Forest', 'Land', 'Basic'].includes(s));
+    const qualifierFindsLand = (q) => {
+      if (!q || typeof q !== 'object') return false;
+      const types = q.types ?? [];
+      const subtypes = q.subtypes ?? [];
+      if (types.includes('Land') || types.includes('Basic')
+        || subtypes.some((s) => ['Plains', 'Island', 'Swamp', 'Mountain', 'Forest', 'Land', 'Basic'].includes(s))) {
+        return true;
+      }
+      // `anyOf` is a disjunction: one land-capable branch makes a card a
+      // possible land hit (Open the Gates: Basic Land OR Gate). PMSSB-88.
+      return Array.isArray(q.anyOf) && q.anyOf.some(qualifierFindsLand);
+    };
+    return qualifierFindsLand(effect?.qualifier);
   }
   const SEARCH_LIBRARY_EFFECT_TYPES = new Set([
     'search_library_to_hand', 'search_library_to_battlefield',
@@ -10790,9 +11143,9 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
    *
    * Semantyka: „zamierza" = istnieje legalny zestaw atakujących zawierający
    * ten stwór, którego wycena jest DODATNIA (lepsza niż pass = 0). Zestawy
-   * enumerujemy jak silnik (`boundedSubsets`: wszystkie podzbiory przy małej
-   * liczbie atakujących, inaczej pojedyncze / wszystkie-bez-jednego /
-   * wszystkie) — bot wybiera jeden z nich w kroku deklaracji.
+   * przegląda strategia bota (przy małej liczbie atakujących wszystkie
+   * podzbiory, inaczej pojedyncze / wszystkie-bez-jednego / wszystkie) —
+   * bot wybiera jeden z nich w kroku deklaracji.
    *
    * Reentrancja: wycena ataku nie woła tej bramki (bramka siedzi wyłącznie
    * w gałęzi `activate_ability`), ale flaga `attackIntentEval` jest
@@ -10937,7 +11290,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     if (!Number.isInteger(cost) || cost <= 0) return false;
     // Również już wytworzona mana w puli może umożliwiać rzut tu i teraz.
     // Nie wolno jej pomijać tylko dlatego, że na stole nie ma danego koloru.
-    if (canCastWithUnits(manaUnitsOfView(view, { artifactSpell: (def?.types ?? []).includes('Artifact') }), card)) return false;
+    if (canCastWithUnits(manaUnitsOfView(view, {
+      artifactSpell: (def?.types ?? []).includes('Artifact'),
+      enchantmentSpell: (def?.types ?? []).includes('Enchantment'),
+    }), card)) return false;
     const units = [];
     for (const o of view.zones?.battlefield ?? []) {
       if (o.controllerId !== view.playerId || (o.kind !== 'land' && !(o.types ?? []).includes('Land'))) continue;
@@ -11365,7 +11721,13 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // oferta w game-state (CR 701.58b/701.40b: „paying its mana cost").
         const uncoverCost = covered.cloakTurnUpCost ?? covered.manifestTurnUpCost
           ?? coveredDef.manaCost ?? 0;
-        if (uncoverCost <= 0 || ownOpenMana(view) < uncoverCost) return finish(NEVER);
+        // Oferty turn_manifest_face_up / turn_cloak_face_up są już bramkowane
+        // przez silnik według pełnego `producibleMana` i `turnFaceUp` purpose,
+        // które obejmuje zdolności many (np. Creeping Peeper). `manaUnitsOfView`
+        // widzi pule i lądy, ale nie takie zdolności; ponowne sprawdzenie tutaj
+        // fałszywie dawało -Infinity dla legalnych ofert płatnych ich maną.
+        // Wyceniamy zatem legalną komendę otrzymaną z PlayerView, a nie
+        // rekonstruujemy drugi planer płatności (PMSSB-88).
         const bodyGain = Math.max(0, (coveredDef.power ?? 0) - 2) * 2
           + Math.max(0, (coveredDef.toughness ?? 0) - 2);
         const keywordBonus = Math.min(6, (coveredDef.keywords ?? []).length * 2);
@@ -12216,13 +12578,37 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           const championSpec = effs.find((e) => e?.type === 'champion');
           if (!championSpec) continue;
           const wantedTypes = championSpec.qualifier?.types ?? ['Creature'];
-          const host = (view.zones.battlefield ?? []).some((o) => o.controllerId === view.playerId
+          const hosts = (view.zones.battlefield ?? []).filter((o) => o.controllerId === view.playerId
             && o.id !== cmd.objectId
             && (o.kind === 'creature' || (o.types ?? []).includes('Creature'))
             && wantedTypes.every((t) => (o.types ?? []).includes(t)
               || (o.subtypes ?? []).includes(t)
               || (o.keywords ?? []).includes('changeling')));
-          if (!host) score -= P.championNoHostPenalty;
+          if (hosts.length === 0) {
+            score -= P.championNoHostPenalty;
+          } else {
+            // Champion nie powinien zamieniać jedynego cennego permanenta na
+            // ciało o niższej inwestycji. Ranking jest po TMC karty, a do
+            // niej doliczamy dodatnie liczniki oraz TMC aur/equipmentów
+            // przyczepionych do hosta (nawet gdy equipment po wygnaniu
+            // zostanie na stole — to zasób już zainwestowany w tę pozycję).
+            // Gdy istnieje tańszy legalny host, rzut pozostaje dostępny.
+            const investment = (object) => {
+              const base = Number(object?.manaCost ?? cardDef(object?.cardId)?.manaCost) || 0;
+              const counters = positiveCounterCount(object);
+              const attached = (view.zones.battlefield ?? []).reduce((sum, attachment) => {
+                if (attachment?.attachedTo !== object.id || attachment.bestow) return sum;
+                const isAura = attachment.kind === 'aura' || attachment.aura;
+                const isEquipment = attachment.equipment || (attachment.subtypes ?? []).includes('Equipment');
+                if (!isAura && !isEquipment) return sum;
+                return sum + (Number(attachment.manaCost ?? cardDef(attachment.cardId)?.manaCost) || 0);
+              }, 0);
+              return base + counters + attached;
+            };
+            const entrantInvestment = Number(def?.manaCost ?? card?.manaCost) || 0;
+            const cheapestHostInvestment = Math.min(...hosts.map(investment));
+            if (cheapestHostInvestment > entrantInvestment) score -= P.championNoHostPenalty;
+          }
         }
         // M169/K (uwaga właściciela, Phyrexian Rager): ETB „you lose N life"
         // poniżej progu życia to samookaleczenie — przy 2 życia bot schodził
@@ -12850,6 +13236,9 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // flaga mówi, czy ten czar odbił ≥1 cel wroga.
         let bounceCastHadFoeTarget = false;
         let tokenCastHadCreatureEffect = false; // PMSSB-2/B (F1): timing raz na rzut
+        let friendlyStatCounterTarget = null; // zgłoszenie D: cel trwałego licznika statystyk na własnym stworze
+        let friendlyStatCounterAmount = 0;    // zgłoszenie D: suma takich liczników na tym celu
+        let spellUntapsFriendlyCreature = false; // zgłoszenie D: odkręcenie własnego stwora (blokujący-niespodzianka)
         let spellMakesTokens = false; // PMSSB-2/C (F7): tie-break kosztem (dowolny token)
         for (const effect of scoredEffects) {
           // M91 (uwaga C właściciela): efekty USUWAJĄCE permanent (destroy,
@@ -12934,6 +13323,8 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
                   bounceCastHadFoeTarget = true; // PMSSB-1/C (F1): timing raz na rzut
                 }
               }
+              // Usunięcie źródła linked-exile uruchamia również zwrot z LTB.
+              score += linkedExileReturnValue(view, victim);
             }
           }
           // M91 (uwaga A2): globalna prewencja obrażeń bojowych („fog" —
@@ -13314,6 +13705,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           // istniała, bot rzucał Twiddle-Odkręcenie na górę przeciwnika
           // w swoim upkeepie (audyt Żywym Testerem M146).
           if (effect.type === 'untap_permanent') {
+            const untapRecipient = objectOnBoard(view, cmd.targets?.[effect.targetIndex ?? 0]) ?? target;
+            if (untapRecipient?.controllerId === view.playerId && untapRecipient.kind === 'creature') {
+              spellUntapsFriendlyCreature = true;
+            }
             // Savage-like: wartość odkręcenia wliczona w blok pump (A) — nie dublujemy
             if (isSavageLikeSpell(spell)) {
               // Brak dodatkowej punktacji — cały efekt savage wyceniony razem
@@ -13912,6 +14307,15 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             // {T}-zdolności (pomiar PRZED: 0 pkt i cel wybierany z enumeracji).
             score += counterEffectValue(view, target, effect.counter ?? '+1/+1',
               Math.max(1, effect.amount ?? 1));
+            // Zgłoszenie D: znacznik bramki trzymania (ocena niżej, raz na rzut).
+            const counterRecipient = objectOnBoard(view, cmd.targets?.[effect.targetIndex ?? 0]) ?? target;
+            const counterDelta = counterStatDelta(effect.counter ?? '+1/+1', Math.max(1, effect.amount ?? 1));
+            if (counterDelta && (counterDelta.power > 0 || counterDelta.toughness > 0)
+              && counterRecipient?.controllerId === view.playerId && counterRecipient.kind === 'creature'
+              && (friendlyStatCounterTarget == null || friendlyStatCounterTarget.id === counterRecipient.id)) {
+              friendlyStatCounterTarget = counterRecipient;
+              friendlyStatCounterAmount += Math.max(1, effect.amount ?? 1);
+            }
           }
           // PMSSB-23/F3: rider rozlania liczników (wcześniej 0 pkt).
           if (effect.type === 'add_counter_to_creatures_you_control') {
@@ -13972,6 +14376,108 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // bota widziałby sam zysk z „if the gift was promised” i obiecywał
         // dar zawsze — także wtedy, gdy indestructible nic nie zmienia.
         if (cmd.gifted === true) score -= P.drawCardValue * 0.5;
+        // Zgłoszenie D (2026-11-05): instant z trwałym licznikiem statystyk na
+        // własnego stwora to combat trick — poza oknem walki bot TRZYMA kartę.
+        // Płaska wartość licznika (`counterHostValue`) nie zależy od fazy (poza
+        // skromną karą po walce), więc bez bramki bot rzucał „jak tylko miał
+        // manę” (pomiar sondy: podtrzymanie 64 do 0 dla pasu). Dozwolone okna:
+        // (1) cel już walczy (atakujący/blokujący) — licznik wycenia wyżej
+        // model walki; (2) wróg zadeklarował atakujących, a cel może blokować
+        // (tapnięty tylko, gdy ten sam czar go odkręca) — blokujący, o którym
+        // przeciwnik nie wiedział; (3) licznik domyka grę w tym ataku (zegar
+        // jak `counterLethalClockBonus`). Sorcery nie wchodzi (`spell.timing`),
+        // zdolności aktywowane zostają przy wycenie M429.
+        if (spell?.timing === 'instant' && friendlyStatCounterTarget) {
+          const trickTarget = friendlyStatCounterTarget;
+          const foe = enemy(view);
+          const closesGame = Boolean(foe) && canAttackNow(trickTarget)
+            && (trickTarget.power ?? 0) + friendlyStatCounterAmount >= (foe.life ?? 20)
+            && attackHitsFace(view, trickTarget);
+          const enemyDeclaredAttackers = Boolean(view.combat)
+            && view.combat.attackingPlayerId !== view.playerId
+            && (view.combat.attackers ?? []).length > 0
+            && ['declare_attackers', 'declare_blockers'].includes(view.turn.step);
+          const surpriseBlocker = enemyDeclaredAttackers
+            && (!trickTarget.tapped || spellUntapsFriendlyCreature);
+          if (!combatTrickWindow(view, trickTarget) && !surpriseBlocker && !closesGame) {
+            score -= P.counterInstantHoldPenalty ?? 0;
+          }
+        }
+        // Zgłoszenie D etap 7: ten sam kształt triku z pumpem czasowym —
+        // instant „pump własnego stwora + ugryzienie z niego”
+        // (`damage_from_target_power`) poza walką też trzymamy. Ugryzienie
+        // zabijające cel `fightExchangeValue` wycenia jak usunięcie bez
+        // względu na fazę, więc bez bramki bot rzucał w podtrzymaniu
+        // (pomiar audytu: oferta 11 > pas). Okna jak przy licznikach:
+        // dealer już walczy, blokujący-niespodzianka, domknięcie gry.
+        if (spell?.timing === 'instant') {
+          const bite = scoredEffects.find((e) => e?.type === 'damage_from_target_power');
+          if (bite) {
+            const dealer = objectOnBoard(view, cmd.targets?.[bite.sourceTargetIndex ?? 0]);
+            const buffs = fightRiderBuffs(scoredEffects, bite.sourceTargetIndex ?? 0);
+            if (dealer?.controllerId === view.playerId && dealer.kind === 'creature'
+              && buffs.power + buffs.toughness > 0) {
+              const foe = enemy(view);
+              const closesGame = Boolean(foe) && canAttackNow(dealer)
+                && (dealer.power ?? 0) + buffs.power >= (foe.life ?? 20)
+                && attackHitsFace(view, dealer);
+              const enemyDeclaredAttackers = Boolean(view.combat)
+                && view.combat.attackingPlayerId !== view.playerId
+                && (view.combat.attackers ?? []).length > 0
+                && ['declare_attackers', 'declare_blockers'].includes(view.turn.step);
+              const surpriseBlocker = enemyDeclaredAttackers
+                && (!dealer.tapped || spellUntapsFriendlyCreature);
+              if (!combatTrickWindow(view, dealer) && !surpriseBlocker && !closesGame) {
+                score -= P.pumpBiteHoldPenalty ?? 0;
+              }
+            }
+          }
+        }
+        // Zgłoszenie D etap 8 (K4a): instantowe obrażenia w TWARZ przeciwnika
+        // poza walką trzymamy na moment śmiertelny albo odpowiedź w walce.
+        // `damageTargetValue` płaci twarzy proporcję życia niezależnie od
+        // fazy (Shock przy 20 życia: dodatni wynik), więc bot palił burn
+        // w podtrzymaniu. Bramka po deskryptorze (ADR 0002): efekt `damage`,
+        // cel = gracz przeciwnika (nie stwór — usunięcie bez zmian), kwota
+        // mniejsza od życia wroga (nie domyka gry), brak trwającej walki.
+        if (spell?.timing === 'instant' && !view.combat) {
+          const foe = enemy(view);
+          const faceBurn = foe && scoredEffects.some((e) => {
+            if (e?.type !== 'damage') return false;
+            const amt = Number.isInteger(e.amount) ? e.amount : 0;
+            return amt > 0 && amt < (foe.life ?? 20)
+              && cmd.targets?.[e.targetIndex ?? 0] === foe.id;
+          });
+          if (faceBurn) score -= P.faceBurnHoldPenalty ?? 0;
+        }
+        // Zgłoszenie D etap 9 (K4b): instant-removal we WŁASNYM podtrzymaniu
+        // lub kroku dobrania. Karta robi swoje, ale decyzja zapada przed
+        // dobraniem i główną fazą, bez pilności — bot ma poczekać na główną
+        // albo odpowiedź. Po deskryptorze: śmiertelne obrażenia w stwora,
+        // destroy, exile albo bounce permanenta przeciwnika. Tura wroga,
+        // walka i główne fazy bez zmian (tam timing jest treścią instanta).
+        if (spell?.timing === 'instant' && myTurn(view) && ['upkeep', 'draw'].includes(view.turn.step)) {
+          const earlyRemoval = scoredEffects.some((e) => {
+            const tid = cmd.targets?.[e?.targetIndex ?? 0];
+            const t = tid ? objectOnBoard(view, tid) : null;
+            if (!t || t.controllerId === view.playerId) return false;
+            if (e.type === 'damage') {
+              const amt = Number.isInteger(e.amount) ? e.amount : 0;
+              return amt > 0 && damageIsLethal(view, tid, amt);
+            }
+            return ['destroy_permanent', 'exile_permanent', 'bounce_permanent',
+              'bounce_to_library_top', 'bounce_to_library_bottom'].includes(e.type);
+          });
+          if (earlyRemoval) score -= P.removalUpkeepHoldPenalty ?? 0;
+        }
+        // Zgłoszenie D etap 11 (K6): instant z tokenami we własnym
+        // podtrzymaniu/kroku dobrania — tokeny nie zaatakują (choroba
+        // przyzwania), nie blokują (nie ma walki), a czar traci wartość
+        // zaskoczenia w turze wroga. Jak K4b: poczekać na główną.
+        if (spell?.timing === 'instant' && myTurn(view) && ['upkeep', 'draw'].includes(view.turn.step)
+          && scoredEffects.some((e) => e?.type === 'create_token' || e?.type === 'create_copy_token')) {
+          score -= P.tokenUpkeepHoldPenalty ?? 0;
+        }
         return finish(score);
       }
       case 'activate_ability': {
@@ -14996,6 +15502,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
                 score += bounceEffectStrengthBonus(effect.type);
                 score += bounceTargetAdjustments(view, victim);
               }
+              score += linkedExileReturnValue(view, victim);
             }
           }
           // PMSSB-59/A (F1): twarde usuwanie w ścieżce ZDOLNOŚCI nie miało
@@ -15048,6 +15555,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
                   score += gainLifeValue(view, victim.manaCost ?? 0);
                 }
               }
+              score += linkedExileReturnValue(view, victim);
             }
           }
           // PMSSB-19: rider szukania w ścieżce ZDOLNOŚCI (Dawntinder Elk —
@@ -15338,23 +15846,26 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             // E6/A1: kandydaci po TIMINGU rzucania (manaUnlockCandidates) —
             // sorcery/stwór w cudzym kroku nadal nie „odblokowuje" (CR 500.5).
             const unlockUnitsCache = new Map();
-            const unitsBefore = (artifactSpell) => {
-              const key = artifactSpell ? 'art' : 'std';
-              if (!unlockUnitsCache.has(key)) unlockUnitsCache.set(key, manaUnitsOfView(view, { artifactSpell }));
+            const purposeForCard = (card) => ({
+              castingSpell: true,
+              artifactSpell: (card?.types ?? []).includes('Artifact'),
+              enchantmentSpell: (card?.types ?? []).includes('Enchantment'),
+            });
+            const unitsBefore = (purpose) => {
+              const key = `before:${purpose.artifactSpell}:${purpose.enchantmentSpell}`;
+              if (!unlockUnitsCache.has(key)) unlockUnitsCache.set(key, manaUnitsOfView(view, purpose));
               return unlockUnitsCache.get(key);
             };
-            const unitsAfter = (artifactSpell) => {
-              const key = artifactSpell ? 'art:after' : 'std:after';
+            const unitsAfter = (purpose) => {
+              const key = `after:${purpose.artifactSpell}:${purpose.enchantmentSpell}`;
               if (!unlockUnitsCache.has(key)) {
-                unlockUnitsCache.set(key, unitsAfterManaAbility(view, effect, ability?.cost, artifactSpell, source));
+                unlockUnitsCache.set(key, unitsAfterManaAbility(view, effect, ability?.cost, purpose, source));
               }
               return unlockUnitsCache.get(key);
             };
             const unlockedCards = manaUnlockCandidates(view).filter((o) => {
-              // Cel wydania ograniczonej many (M201): to samo kryterium co
-              // `spellManaPurpose` w silniku — typ Artifact.
-              const artifactSpell = (o.types ?? []).includes('Artifact');
-              const after = unitsAfter(artifactSpell);
+              const purpose = purposeForCard(o);
+              const after = unitsAfter(purpose);
               if (!after) return false;
               // PMSSB-32/A2 (L48 — „oferta = płatność", klasa L41): jeśli
               // silnik JUŻ oferuje rzut tej karty, to auto-płatność przy
@@ -15369,7 +15880,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
               // Dowód PRZED: sonda C2 (Latarnia + Las + karta {1}{G}) dawała
               // aktywacji +6, choć `cast_permanent` był już w ofertach (63,9).
               if (castOfferedNow(view, o)) return false;
-              if (canCastWithUnits(unitsBefore(artifactSpell), o)) return false;
+              if (canCastWithUnits(unitsBefore(purpose), o)) return false;
               return canCastWithUnits(after, o);
             });
             let unlocksSomething = unlockedCards.length > 0;

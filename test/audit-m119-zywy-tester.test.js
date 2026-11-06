@@ -102,7 +102,7 @@ test('M119/Z3: warianty mulligana o tym samym składzie NIE dublują się', () =
   assert.equal(options[0].cardIds.length, 3);
 });
 
-test('M119/Z3: enumeracja mulligana ma cap pokrywający pełną przestrzeń (L19 + M304)', () => {
+test('M119/Z3 (po G, etap 3): mulligan bottom — ziarna-okna + walidacja każdego zestawu (klin M304 konstrukcyjnie)', () => {
   // Ręka z samych RÓŻNYCH kart nie daje się zdeduplikować — wtedy broni cap.
   // M304 (klin z Żywego Testera): cap musi pokrywać CAŁĄ przestrzeń decyzji,
   // inaczej legalne wybory nie mają komendy i kreator milczy. Dla ręki ≤7
@@ -134,8 +134,16 @@ test('M119/Z3: enumeracja mulligana ma cap pokrywający pełną przestrzeń (L19
 
   const options = playerView(state, 'p1').legalCommands
     .filter((cmd) => cmd.type === 'resolve_mulligan_bottom_choice');
-  assert.ok(options.length <= 35, `cap 35 = pełna przestrzeń C(7,3) (L19 + M304), było ${options.length}`);
-  assert.equal(options.length, 35, 'różne karty = pełna przestrzeń decyzji bez dziur');
+  // G, etap 3: pełna przestrzeń C(7,3)=35 NIE jest już wyliczana — oferta
+  // niesie 7 ziaren-okien, komplet żyje w deskryptorze, a kreator/walidacja
+  // przyjmują każdy zestaw (klin M304 rozwiązany konstrukcyjnie: żaden
+  // legalny wybór nie zależy od obecności na liście ofert).
+  assert.equal(options.length, 7, `ziarna-okna zamiast C(7,3)=35: ${options.length}`);
+  assert.ok(options.every((cmd) => cmd.cardIds.length === 3), 'każde ziarno odkłada 3 karty');
+  const union = new Set(options.flatMap((cmd) => cmd.cardIds));
+  assert.equal(union.size, 7, 'okna pokrywają całą rękę (kreator ma wszystkich kandydatów)');
+  assert.ok(execute(state, { type: 'resolve_mulligan_bottom_choice', playerId: 'p1', cardIds: ['h0', 'h2', 'h4'] }).ok,
+    'zestaw spoza okien przechodzi walidację przy execute');
 });
 
 // =============================================================================

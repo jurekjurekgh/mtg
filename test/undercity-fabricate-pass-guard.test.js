@@ -29,7 +29,7 @@ test('undercity/fabricate: partia z forgotten-realms nie pada na nielegalnym pas
   // Przed fixem: „Bot wybrał nielegalną komendę: undercity_route_unresolved".
   const seeds = [1002, 1008];
   for (const seed of seeds) {
-    for (const [a, b] of [['alara', 'forgotten-realms'], ['forgotten-realms', 'alara']]) {
+    for (const [a, b] of [['alara', 'forgotten-realms-br'], ['forgotten-realms-br', 'alara']]) {
       const state = setupCardMatch({
         seed,
         players: [{ id: 'p1' }, { id: 'p2' }],

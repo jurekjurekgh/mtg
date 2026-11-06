@@ -35,11 +35,12 @@ describe('PMSSB-7 Wave-A: hold-closure', () => {
     assert.equal(scoreOf(opts, 'cast_spell(dv->p1)'), -5);
     assert.ok(scoreOf(opts, 'cast_spell(dv->p1)') < 0);
   });
-  it('F-H1: bot woli rzucić shock niż divest-self', () => {
+  it('F-H1: bot trzyma i divest-self, i shock w twarz (D etap 8)', () => {
+    // D etap 8 (K4a): Shock w twarz przy 20 życia wroga też jest trzymany
+    // (kara trzymania), więc dawne „woli shock” wygasło — bot pasuje.
     const s = mk(); put(s, 'dv', 'divest'); put(s, 'f1', 'shock'); put(s, 'f2', 'shock');
     const { ch } = decide(s);
-    assert.equal(ch.type, 'cast_spell');
-    assert.ok(ch.objectId === 'f1' || ch.objectId === 'f2');
+    assert.equal(ch.type, 'pass_priority');
   });
   it('F-H1: mindstab-self+2shock = -9 (trzyma mocniej)', () => {
     const s = mk(); put(s, 'ms', 'mindstab'); put(s, 'f1', 'shock'); put(s, 'f2', 'shock');

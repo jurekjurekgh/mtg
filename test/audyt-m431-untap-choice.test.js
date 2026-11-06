@@ -315,18 +315,25 @@ test('A7 — fingerprint: stan z czekającą decyzją ma INNY odcisk niż bez ni
     'pole decyzji MUSI wejść do odcisku — inaczej weryfikacja replayów nie odróżnia „czeka" od „nie czeka"');
 });
 
-test('A8 — determinizm i cap ofert (L19/L151): 40 kandydatów ≠ 2^40 opcji', () => {
+test('A8 — determinizm ofert i komplet kandydatów (L19/L151): 40 kandydatów w deskryptorze', () => {
   const kandydaci = Array.from({ length: 40 }, (_, i) => ({ id: `x${i}` }));
   const state = stolLyry({ extra: kandydaci });
   doStartuTury(state);
   assert.equal(state.pendingUntapChoice.candidateIds.length, 41,
     'kandydaci: lira + 40 doklejonych (wszyscy tapnięci, wszyscy z klauzulą)');
   const oferty = decyzje(state);
-  assert.ok(oferty.length > 1 && oferty.length <= 32,
-    `liczba ofert ograniczona capem (dostałem ${oferty.length})`);
+  assert.ok(oferty.length > 1, 'oferty robocze dla kontrolerów istnieją');
   const klucze = oferty.map((c) => [...(c.keepTappedIds ?? [])].sort().join('|'));
   assert.equal(new Set(klucze).size, klucze.length, 'oferty nie mogą się powtarzać (kanoniczny klucz zbioru, L151)');
-  assert.ok(oferty.length === new Set(oferty.map((c) => JSON.stringify(c.keepTappedIds))).size);
+  assert.deepEqual(decyzje(state).map((c) => [...(c.keepTappedIds ?? [])].sort().join('|')), klucze,
+    'oferty są deterministyczne między wywołaniami');
+  // Zgłoszenie G: ten wybór przejdzie na picker z deskryptora w etapie 3.
+  // Już dziś walidacja silnika przyjmuje każdy podzbiór kandydatów wybrany
+  // przez kontrolera — legalność nie zależy od obecności na liście ofert.
+  const clone = structuredClone(state);
+  assert.ok(execute(clone, {
+    type: 'resolve_untap_choice', playerId: 'p1', keepTappedIds: ['lyre', 'x39'],
+  }).ok, 'wybrany podzbiór spoza roboczej listy ofert przechodzi walidację');
 });
 
 test('A9 — bot ocenia OBA kierunki (bez tego decyzja jest atrapą, L131/L169)', () => {

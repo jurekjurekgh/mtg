@@ -1,0 +1,26 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Feral%20Ridgewolf&set=isd&format=json",
+  "print": "Feral Ridgewolf (ISD)",
+  "name": "Feral Ridgewolf",
+  "mana_cost": "{2}{R}",
+  "cmc": 3,
+  "type_line": "Creature — Wolf",
+  "oracle_text": "Trample\n{1}{R}: This creature gets +2/+0 until end of turn.",
+  "power": "1",
+  "toughness": "2",
+  "colors": ["R"],
+  "color_identity": ["R"],
+  "keywords": ["Trample"],
+  "set": "isd",
+  "set_name": "Innistrad",
+  "collector_number": "142",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/7/8/78c66cc0-cb0f-4daf-8141-0923ad46a834.jpg?1783940937",
+    "normal": "https://cards.scryfall.io/normal/front/7/8/78c66cc0-cb0f-4daf-8141-0923ad46a834.jpg?1783940937"
+  },
+  "rulings": [],
+  "rulingsSource": "https://api.scryfall.com/cards/isd/142/rulings",
+  "rulingsPobrano": "2026-11-06",
+  "pobrano": "2026-11-06"
+}

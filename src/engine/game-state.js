@@ -7,7 +7,7 @@ import { command, event } from '../protocol/types.js';
 import { initialTurn, jumpToStep, nextTurnStep } from './turn.js';
 import { createRng } from './rng.js';
 import { assertStateInvariants } from './invariants.js';
-import { initializeResources, beginTurn, castAuraSpell, castPermanent, convokePaymentVariants, improvisePaymentVariants, legalAuraCasts, playLand, producibleMana, tapLandForMana, canPayColoredCost, canPayColoredCostForOffer, spendMana, spellManaPurpose, legalAuraCastsForObject, treasureManaAvailable, canPayMadnessCost } from './resources.js';
+import { initializeResources, beginTurn, castAuraSpell, castPermanent, convokePaymentVariants, improvisePaymentVariants, legalAuraCasts, playLand, producibleMana, tapLandForMana, canPayColoredCost, canPayColoredCostForOffer, spendMana, spellManaPurpose, turnFaceUpManaPurpose, legalAuraCastsForObject, treasureManaAvailable, canPayMadnessCost } from './resources.js';
 import { MANA_COSTS } from '../cards/mana-costs-data.js';
 import { RIOT_MODES, riotCountOf, queueRiotEntry, applyRiotOnEntry } from './riot.js';
 import { parseManaCost, coloredPipsOf, matchColorRequirements } from './mana-cost.js';
@@ -26,13 +26,13 @@ function hasColorForCardId(state, playerId, cardId, phyrexianPay = 0, purpose = 
   if (offerUnits != null) return canPayColoredCostForOffer(state, playerId, requirements, offerUnits, null, purpose);
   return canPayColoredCost(state, playerId, requirements, null, purpose);
 }
-import { COMBAT_OPTION_CAP, attackerBlockPowerRestriction, blockCandidatePool, blockSlotsFor, cantBeBlockedFromEquipment, declareAttackers, declareBlockers, legalAttackerOptions, legalBlockerOptions, mandatoryAttackerIds, mandatoryBlockerIds, minimalMandatoryBlocks, rememberClosedCombat, resolveCombatDamage, buildDamageAssignmentView, buildDefaultDamageAssignments, validateDamageAssignment, validateBlockerDamageAssignment, staticAttackPreventionOf } from './combat.js';
-import { optionalSpellEffectChoices, castSpell, castCleave, legalSpellCasts, legalCleaveCasts, plotCard, suspendCard, warpCard, resolveTopOfStack, resolveRiotEntry, finishPendingSpell, resumeSuspendedSpell, castEscape, resolveEscapeExile, legalEscapeCasts, ESCAPE_OPTION_CAP, DELVE_OPTION_CAP, declareDelveCast, resolveDelveExile, delveExileLimit, affordableDelveCounts, castFlashback, legalFlashbackCasts, castAdventure, legalAdventureCasts, castAdventureCreature, legalAdventureCreatureCasts, effectiveSpellManaCost, legalTargetCandidates, validateTargets, castMadnessSpell, legalModeCasts, legalXCostCasts, legalFireballCasts, validateVariableTargets, validateFireballTargets, legalTargetCombos, validateDamageDivision, dividedDamageDivisions } from './spells.js';
+import { attackerBlockPowerRestriction, blockCandidatePool, blockSlotsFor, cantBeBlockedFromEquipment, declareAttackers, declareBlockers, attackerSeedDeclarations, blockerSeedAssignments, combatDeclarationView, mandatoryAttackerIds, mandatoryBlockerIds, minimalMandatoryBlocks, rememberClosedCombat, resolveCombatDamage, buildDamageAssignmentView, buildDefaultDamageAssignments, validateDamageAssignment, validateBlockerDamageAssignment, staticAttackPreventionOf } from './combat.js';
+import { optionalSpellEffectChoices, castSpell, castCleave, legalSpellCasts, legalCleaveCasts, plotCard, suspendCard, warpCard, resolveTopOfStack, resolveRiotEntry, finishPendingSpell, resumeSuspendedSpell, castEscape, resolveEscapeExile, legalEscapeCasts, declareDelveCast, resolveDelveExile, delveExileLimit, affordableDelveCounts, castFlashback, legalFlashbackCasts, castAdventure, legalAdventureCasts, castAdventureCreature, legalAdventureCreatureCasts, effectiveSpellManaCost, legalTargetCandidates, validateTargets, castMadnessSpell, legalModeCasts, legalXCostCasts, legalFireballCasts, validateVariableTargets, validateFireballTargets, legalTargetCombos, validateDamageDivision, dividedDamageDivisions } from './spells.js';
 import { legalActivatedAbilities, legalManaAbilities, manualManaOfferUnits, activateAbility, performActivation } from './abilities.js';
-import { attachmentRestrictions, deathZoneFor, wardAmountOf, clearMarkedDamage, clearStatModifiers, creatureCantBlock, effectiveAbilities, effectiveKeywords, effectivePower, effectiveToughness, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, grantedStatBonus, hasTemporaryCantBlock, markDamage, modifyStats, transformedCharacteristics, turnFaceUp, untapObject, activatableAbilities, entersTappedNow } from './permanents.js';
+import { attachmentRestrictions, deathZoneFor, wardAmountOf, clearMarkedDamage, clearStatModifiers, creatureCantBlock, effectiveAbilities, effectiveKeywords, effectivePower, effectiveToughness, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, grantedStatBonus, hasTemporaryCantBlock, staticAbilityIsActive, markDamage, modifyStats, transformedCharacteristics, turnFaceUp, untapObject, activatableAbilities, entersTappedNow } from './permanents.js';
 import { addCounter, removeCounter, hasCounter } from './counters.js';
 import { runStateBasedActions, sacrificeFinishedSagas, stateBasedActionsOpen, tryRegenerate } from './state-based.js';
-import { applyDayNightAtTurnStart, applyDeferredTriggerEffects, resolveDelayedReanimate, graveyardCardTypeCount, processTriggers, queueTriggerToStack, triggerTargetDecisionPending, legalTriggerTargetCandidates, triggerTargetCandidates, triggerConditionHolds, triggerSourceZoneResolvable, eventIsCreatureDeath } from './triggers.js';
+import { applyDayNightAtTurnStart, applyDeferredTriggerEffects, resolveDelayedReanimate, graveyardCardTypeCount, processTriggers, queueTriggerToStack, flushDeferredResolutionTriggers, fireWardTriggers, triggerTargetDecisionPending, legalTriggerTargetCandidates, triggerTargetCandidates, triggerConditionHolds, triggerSourceZoneResolvable, eventIsCreatureDeath } from './triggers.js';
 import { moveObjectDirectly, removeFromCombat } from './objects.js';
 import { detachAttachmentsFromHost, effectiveProtectionFromColors, effectiveProtectionQualities, isLegalAuraHost, isLegalAuraPlayerHost } from './attachments.js';
 import { createBattlefieldToken, elseEffectSummary, nextCopyNumber, TREASURE_TOKEN_EFFECT } from './tokens.js';
@@ -53,7 +53,7 @@ import { canCastByLinkedExilePermission } from './linked-exile-cast.js';
  * mulliganie ma ≤7 kart, więc maksimum podzbiorów to C(7,3)=C(7,4)=35 —
  * poprzednie 32 obcinało 3 kombinacje przy 4. mulliganie (i tyleż przy 3.).
  */
-const MULLIGAN_BOTTOM_OPTION_CAP = 35;
+// Zgłoszenie F: brak limitu wariantów mulligana (dawniej cap 35).
 
 /**
  * Stabilny klucz tożsamości komendy — do deduplikacji oferty (M125/A).
@@ -214,6 +214,8 @@ export function createGameState({ seed, players }) {
     madnessBatchTriggerIds: [],
     pendingTriggerOrder: null,
     pendingDeathTriggerBatch: null,
+    // A106/A107: ogłoszenia Ward zebrane w trakcie umieszczania zwykłej partii.
+    pendingWardAnnouncements: null,
     // CR 702.35a/603.3: oczekujące triggery madness po odrzuceniu;
     // na stos trafiają po dokończeniu sekwencji, a decyzja przy ich rozstrzyganiu.
     madnessQueue: [],
@@ -345,6 +347,9 @@ export function createGameState({ seed, players }) {
     // card wpadł do grobu gracza w bieżącej turze (z dowolnej strefy).
     // Zerowane przy zmianie tury, jak cardsDrawnThisTurn.
     descendedThisTurn: {},
+    // „If a card left your graveyard this turn” (Living History): per-owner
+    // fact, reset at the start of each turn and marked at the central zone mover.
+    cardsLeftGraveyardThisTurn: {},
     // Kolejka oczekujących decyzji backup (CR 702.165): źródło stwora, który
     // wszedł, kontroler i parametry. Blokuje grę do komend resolve_backup
     // (po jednej na wpis — jak pendingScry, ale decyzje mogą się kolejkować,
@@ -778,37 +783,29 @@ function drawStepTurnBasedAction(state) {
  * »zawsze wybieramy «nie odkręcaj»«), a kontroler nie miał oferty — patrz
  * test/audyt-m431-untap-choice.test.js i ADR 0022 (»supported« = 100% Oracle).
  */
-const UNTAP_CHOICE_CAP = 32;
+// G, etap 3: ziarna wyboru odkręceń zamiast 2^n podzbiorów (F zniósł cap,
+// ale pełna enumeracja przy >31 kandydatach była wykładnicza). Kontroler
+// konstruuje własny podzbiór z deskryptora `pendingUntapChoice` (kandydaci
+// + lockedByCandidate), a walidacja przy execute przyjmuje każdy podzbiór
+// kandydatów — kompletność konstrukcyjna, bez listy do ucięcia.
 
 function untapChoiceOffers(state, playerId) {
   const candidates = untapChoiceCandidates(state, playerId);
   const out = [{ keepTappedIds: [] }];
-  if (candidates.length <= 5) {
-    // Pełna enumeracja podzbiorów (≤ 32 warianty) — przy pięciu kandydatach
-    // gracz zobaczy KAŻDĄ realnie różną kombinację. Oba ekstrema (pusty zbiór
-    // i pełny) są w tej enumeracji.
-    const n = candidates.length;
-    for (let mask = 1; mask < (1 << n); mask += 1) {
-      const keepTappedIds = [];
-      for (let i = 0; i < n; i += 1) if (mask & (1 << i)) keepTappedIds.push(candidates[i]);
-      out.push({ keepTappedIds });
-    }
-    return out;
-  }
-  // Powyżej progu: enumeracja po rozmiarze (L19 — nigdy 2^n): najpierw
-  // pojedyncze pozostawienia, potem pary i trójki, aż do wyczerpania capu.
-  // Oba EKSTREMA są legalnym wyborem CR 502.3 i nie mogą wypaść przez cap
-  // (L48: walidacja przyjmuje dowolny podzbiór kandydatów, więc oferta bez
-  // „zostaw wszystkie" ucina ruch, którego komenda by nie odrzuciła).
-  // Pusty zbiór jest już pierwszy. Pełny dokładamy przed cięciem.
-  out.push({ keepTappedIds: [...candidates] });
-  for (let k = 1; k <= 3 && out.length < UNTAP_CHOICE_CAP; k += 1) {
-    const walk = (pos, prefix) => {
-      if (out.length >= UNTAP_CHOICE_CAP) return;
-      if (prefix.length === k) { out.push({ keepTappedIds: [...prefix] }); return; }
-      for (let i = pos; i < candidates.length; i += 1) walk(i + 1, [...prefix, candidates[i]]);
-    };
-    walk(0, []);
+  for (const id of candidates) out.push({ keepTappedIds: [id] });
+  if (candidates.length > 1) out.push({ keepTappedIds: [...candidates] });
+  return out;
+}
+
+/** Okna cykliczne listy: n podzbiorów o rozmiarze k (ziarna selekcji). */
+function cyclicWindows(ids, k) {
+  if (k <= 0) return [[]];
+  if (ids.length < k) return [];
+  const out = [];
+  for (let start = 0; start < ids.length; start += 1) {
+    out.push(ids.slice(start, start + k).length === k
+      ? ids.slice(start, start + k)
+      : [...ids.slice(start), ...ids.slice(0, (start + k) % ids.length)]);
   }
   return out;
 }
@@ -847,6 +844,7 @@ function beginTurnContinuation(state, events, { keepTappedIds = [] } = {}) {
   // »Descended this turn« (Canonized in Blood) — znacznik zeruje się
   // z nową turą, jak licznik dobrań.
   state.descendedThisTurn = {};
+  state.cardsLeftGraveyardThisTurn = {};
   state.creatureDiedThisTurn = false;
   state.landEnteredThisTurn = {};
   state.damageTakenByPlayerThisTurn = {};
@@ -971,19 +969,53 @@ function untapStepTurnBasedAction(state, { pushToState = true } = {}) {
  * enumeracji Epic).
  */
 /**
- * M166/D: kompozycje liczby `total` na dokładnie `parts` części, każda >= 1
- * (3 na 2 = [1,2],[2,1]; 3 na 3 = [1,1,1]). Porządek odpowiada targetIds.
+ * G, etap 2: ziarna podziału obrażeń zamiast wszystkich kompozycji
+ * (M166/D miało pełną listę `damageDivisionsOf`). Kontroler konstruuje
+ * własny podział z deskryptora `pendingDamageDivision`, a `execute`
+ * waliduje (każdy cel >= 1, suma = total) — kompletność konstrukcyjna.
+ * Ziarna: koncentracja na każdym celu po kolei + podział możliwie równy.
  */
-function damageDivisionsOf(total, parts) {
+function damageDivisionSeeds(total, parts) {
+  if (!Number.isInteger(total) || !Number.isInteger(parts) || parts < 1 || total < parts) return [];
   const out = [];
-  const walk = (prefix, remaining, left) => {
-    if (left === 1) {
-      out.push(Object.freeze([...prefix, remaining]));
-      return;
-    }
-    for (let n = 1; n <= remaining - (left - 1); n += 1) walk([...prefix, n], remaining - n, left - 1);
+  const seen = new Set();
+  const push = (amounts) => {
+    const key = amounts.join(',');
+    if (seen.has(key)) return;
+    seen.add(key);
+    out.push(Object.freeze(amounts));
   };
-  if (Number.isInteger(total) && Number.isInteger(parts) && parts >= 1 && total >= parts) walk([], total, parts);
+  for (let i = 0; i < parts; i += 1) {
+    const amounts = Array(parts).fill(1);
+    amounts[i] += total - parts;
+    push(amounts);
+  }
+  const base = Math.floor(total / parts);
+  const rest = total - base * parts;
+  push(Array.from({ length: parts }, (_, i) => base + (i < rest ? 1 : 0)));
+  return out;
+}
+
+/**
+ * G, etap 2: ziarna zestawów celów triggera wielocelowego zamiast
+ * wszystkich podzbiorów (F enumerował komplet). Pierwsze ziarno = pełny
+ * zestaw zachłanny w kolejności polityki kandydatów (konwencja
+ * „pierwsza oferta” jak dawniej), potem singletony, na końcu pusty
+ * zestaw przy `upTo`. Kontroler konstruuje inne podzbiory z deskryptora
+ * `pendingTriggerTarget`; `execute` waliduje każdy legalny podzbiór.
+ */
+function triggerTargetSeedSubsets(candidateIds, count, upTo) {
+  const out = [];
+  const seen = new Set();
+  const push = (ids) => {
+    const key = [...ids].sort().join('|');
+    if (seen.has(key)) return;
+    seen.add(key);
+    out.push([...ids]);
+  };
+  if (candidateIds.length > 0) push(candidateIds.slice(0, count));
+  for (const id of candidateIds) push([id]);
+  if (upTo) push([]);
   return out;
 }
 
@@ -2033,37 +2065,55 @@ function queueMadnessTriggers(state, events) {
   }
 }
 
-// Porządkujemy tylko wpisy wyzwolone od tego samego okna priorytetu co
-// madness. Wybór kolejnego triggera oznacza: ten rozstrzygnie się pierwszy.
-function startMadnessTriggerOrder(state) {
-  const ids = [...new Set(state.madnessBatchTriggerIds)]
-    .filter(id => state.zones.stack.includes(id) && state.objects.get(id)?.triggerEntry);
-  state.madnessBatchTriggerIds = [];
-  const players = state.players.map(p => p.id);
-  const active = players.indexOf(state.turn.activePlayerId);
-  const ordered = active < 0 ? players : [...players.slice(active), ...players.slice(0, active)];
-  const groups = ordered.map(playerId => ({ playerId,
-    remaining: ids.filter(id => state.objects.get(id).controllerId === playerId), topFirst: [] }))
-    .filter(group => group.remaining.length);
-  const first = groups.findIndex(group => group.remaining.length > 1);
-  // Nawet bez wyboru układamy różne kontrolery APNAP.
-  const batch = new Set(ids);
-  state.zones.stack = [...state.zones.stack.filter(id => !batch.has(id)), ...groups.flatMap(g => g.remaining)];
-  if (first < 0) return;
-  state.pendingTriggerOrder = { groups, index: first, restorePriorityTo: state.turn.priorityPlayerId };
+// ADR 0032: wspólny checkpoint ogłoszeń. Historyczna nazwa pola i funkcji
+// (`pendingDeathTriggerBatch`) zostaje na czas migracji, ale partia obejmuje
+// WSZYSTKIE zwykłe wyzwalacze okna, także modalne. Wybory kontrolerów są
+// APNAP; cele/tryby/podziały ogłaszamy pojedynczo w kolejności umieszczania
+// na stosie (od najniższego do najwyższego), bez priorytetu pomiędzy.
+const isOrdinaryCheckpointTrigger = name => name !== 'ward';
+const CHECKPOINT_BATCH_COMMANDS = new Set([
+  'pass_priority', 'play_land', 'cast_spell', 'cast_permanent', 'cast_cleave',
+  'cast_escape', 'cast_flashback', 'cast_adventure', 'cast_adventure_creature',
+  'activate_ability', 'declare_attackers', 'declare_blockers', 'resolve_combat',
+]);
+
+function announceNextTriggerBatchSlot(state, batch, group) {
+  group.announcements ??= [...(group.topFirst ?? group.keys)].reverse();
+  group.announcementIndex ??= 0;
+  while (group.announcementIndex < group.announcements.length) {
+    const key = group.announcements[group.announcementIndex];
+    const slot = batch.slots[key];
+    if (slot.target) {
+      state.pendingTriggerTargets = [{ ...slot.target, deathBatchSlotId: key }];
+      state.turn.priorityPlayerId = group.playerId;
+      return;
+    }
+    if (slot.modal) {
+      state.pendingModalTrigger = { ...slot.modal, deathBatchSlotId: key, next: null };
+      state.turn.priorityPlayerId = group.playerId;
+      return;
+    }
+    // Wpis już jest na stosie (trigger bez celu) — nie ma publicznej decyzji.
+    group.announcementIndex += 1;
+  }
+  batch.index += 1;
+  advanceDeathTriggerBatch(state);
 }
 
-// Ograniczony batch: triggery śmierci bez celu albo z jednym obowiązkowym
-// celem gracza, własnego stwora, lądu lub karty lądu w grobie. Nie obejmuje
-// innych decyzji w efekcie, celów przeciwnika z Ward ani madness; obejmuje
-// również koszt rzutu, niezawieszone obrażenia `resolve_combat` i koszt
-// niemanowej aktywacji oraz samodzielnej zdolności many bez odrzucania.
-// Wybory kontrolerów są APNAP:
-// najpierw porządek aktywnego i jego cele, potem decyzje pozostałych graczy.
+function continueTriggerBatchAnnouncement(state, slotKey) {
+  const batch = state.pendingDeathTriggerBatch;
+  if (!batch) return;
+  const group = batch.groups.find(g => g.keys.includes(slotKey));
+  if (!group) return;
+  group.announcementIndex = (group.announcementIndex ?? 0) + 1;
+  announceNextTriggerBatchSlot(state, batch, group);
+}
+
 function advanceDeathTriggerBatch(state) {
   const batch = state.pendingDeathTriggerBatch;
-  if (!batch || state.pendingTriggerOrder || state.pendingTriggerTargets.length) return;
-  while (batch.index < batch.groups.length) {
+  if (!batch || state.pendingTriggerOrder || state.pendingTriggerTargets.length
+    || state.pendingDamageDivision || state.pendingModalTrigger) return;
+  if (batch.index < batch.groups.length) {
     const group = batch.groups[batch.index];
     if (!group.topFirst && group.keys.length > 1) {
       state.pendingTriggerOrder = { deathBatch: true, groups: [{ playerId: group.playerId,
@@ -2072,16 +2122,8 @@ function advanceDeathTriggerBatch(state) {
       return;
     }
     group.topFirst ??= [...group.keys];
-    if (!group.targetsStarted) {
-      group.targetsStarted = true;
-      const targets = [...group.topFirst].reverse().map(key => batch.slots[key].target).filter(Boolean);
-      if (targets.length) {
-        state.pendingTriggerTargets = targets;
-        state.turn.priorityPlayerId = group.playerId;
-        return;
-      }
-    }
-    batch.index += 1;
+    announceNextTriggerBatchSlot(state, batch, group);
+    return;
   }
   const inOrder = batch.groups.flatMap(group => [...group.topFirst].reverse()
     .map(key => batch.slots[key].stackId).filter(id => id && state.zones.stack.includes(id)));
@@ -2091,41 +2133,35 @@ function advanceDeathTriggerBatch(state) {
   state.turn.priorityPlayerId = batch.restorePriorityTo;
 }
 
-const isDeathBatchTrigger = name => ['dies', 'any_creature_dies', 'other_permanent_you_control_dies'].includes(name);
-
-function startDeathTriggerBatch(state, cmd, events, pendingBefore, restorePriorityTo, standaloneManaActivation = false) {
-  if (!['pass_priority', 'cast_spell', 'resolve_combat', 'activate_ability'].includes(cmd.type) || state.pendingDeathTriggerBatch || pendingBefore !== 0
+function startDeathTriggerBatch(state, cmd, events, pendingBefore, restorePriorityTo, standaloneManaActivation = false, resolutionClosure = false) {
+  const allowedCommand = CHECKPOINT_BATCH_COMMANDS.has(cmd.type)
+    || (resolutionClosure && ['resolve_ward_pay_choice', 'resolve_optional_pay_choice'].includes(cmd.type));
+  if (!allowedCommand || state.pendingDeathTriggerBatch || pendingBefore !== 0
     || state.pendingSpell || state.madnessQueue?.length || state.pendingDiscardChoice) return;
   if (cmd.type === 'activate_ability' && !standaloneManaActivation) {
-    // Nie wchodzimy w płacenie maną ani koszt odrzucenia: tylko faktycznie
-    // zakolejkowana niemanowa zdolność po zakończeniu jej kosztów.
     const activation = events.find(e => e.type === 'ability_activated' && e.onStack && e.stackEntryId);
     const entry = activation && state.objects.get(activation.stackEntryId);
     const cost = entry?.activatedEntry?.ability?.cost;
     if (!entry || !state.zones.stack.includes(entry.id) || cost?.discardCard || cost?.discardCards) return;
   }
-  const targets = state.pendingTriggerTargets;
-  if (targets.some(p => !isDeathBatchTrigger(p.ability?.trigger?.event)
-    || !['player', 'creature_you_control', 'land', 'land_card_in_graveyard'].includes(p.ability?.trigger?.requiresTarget?.type) || p.allowNone
-    || (p.ability?.trigger?.requiresTarget?.count ?? 1) !== 1
-    || p.fixedTargetIds?.length || p.specOverride || !triggerTargetDecisionPending(state, p))) return;
-  // Ward wyzwala się przy ogłoszeniu celu i wymaga osobnej partii ponad całą
-  // partią APNAP. Ten węższy batch nie zajmuje się Wardem: jeśli dowolny
-  // przeciwny kandydat ma Ward, pozostajemy na starej ścieżce zamiast go
-  // przypadkowo umieścić pod późniejszymi triggerami.
-  if (targets.some(p => p.candidates?.some(id => {
-    const target = state.objects.get(id);
-    return target?.zone === 'battlefield' && target.controllerId !== p.playerId && wardAmountOf(target, state) != null;
-  }))) return;
+  const allTargets = state.pendingTriggerTargets;
+  if (allTargets.some(p => !isOrdinaryCheckpointTrigger(p.ability?.trigger?.event)
+    || !triggerTargetDecisionPending(state, p))) return;
+  const modalHead = state.pendingModalTrigger;
+  const modals = [];
+  for (let m = modalHead; m; m = m.next) modals.push(m);
+  if (modals.some(m => !isOrdinaryCheckpointTrigger(m.ability?.trigger?.event))) return;
   // Żadna inna zaległa decyzja nie może być przestawiona przed końcem efektu.
   state.pendingTriggerTargets = [];
+  state.pendingModalTrigger = null;
   const otherDecision = firstPendingDecision(state);
-  state.pendingTriggerTargets = targets;
+  state.pendingTriggerTargets = allTargets;
+  state.pendingModalTrigger = modalHead;
   if (otherDecision) return;
   const ids = [...new Set(events.filter(e => e.type === 'ability_triggered' && e.stackEntryId)
-    .map(e => e.stackEntryId))].filter(id => state.zones.stack.includes(id));
-  if (ids.length + targets.length < 2
-    || ids.some(id => !isDeathBatchTrigger(state.objects.get(id)?.triggerEntry?.ability?.trigger?.event))) return;
+    .map(e => e.stackEntryId))].filter(id => state.zones.stack.includes(id)
+      && isOrdinaryCheckpointTrigger(state.objects.get(id)?.triggerEntry?.ability?.trigger?.event));
+  if (ids.length + allTargets.length + modals.length < 2) return;
   const players = state.players.map(p => p.id);
   const activeIndex = players.indexOf(state.turn.activePlayerId);
   const ordered = activeIndex < 0 ? players : [...players.slice(activeIndex), ...players.slice(0, activeIndex)];
@@ -2133,26 +2169,56 @@ function startDeathTriggerBatch(state, cmd, events, pendingBefore, restorePriori
   for (const id of ids) {
     const entry = state.objects.get(id);
     slots[id] = { playerId: entry.controllerId, cardId: entry.cardId,
-      trigger: entry.triggerEntry.ability.trigger.event, stackId: id, target: null };
+      trigger: entry.triggerEntry.ability.trigger.event, stackId: id, target: null, modal: null };
   }
-  for (const [index, target] of targets.entries()) {
-    // Wirtualny identyfikator żyje tylko w tym batchu, nie jest obiektem gry.
+  for (const [index, target] of allTargets.entries()) {
     const key = `death-target-${index}`;
     slots[key] = { playerId: target.playerId, cardId: target.cardId,
-      trigger: target.ability.trigger.event, stackId: null,
+      trigger: target.ability.trigger.event, stackId: null, modal: null,
       target: { ...target, deathBatchSlotId: key, restorePriorityTo } };
+  }
+  for (const [index, modal] of modals.entries()) {
+    const key = `death-modal-${index}`;
+    const { next: _next, ...rest } = modal;
+    slots[key] = { playerId: modal.playerId, cardId: modal.cardId,
+      trigger: modal.ability?.trigger?.event ?? null, stackId: null, target: null,
+      modal: { ...rest, restorePriorityTo } };
   }
   const keys = Object.keys(slots);
   const groups = ordered.map(playerId => ({ playerId,
-    keys: keys.filter(key => slots[key].playerId === playerId), topFirst: null, targetsStarted: false }))
+    keys: keys.filter(key => slots[key].playerId === playerId), topFirst: null }))
     .filter(group => group.keys.length);
   if (groups.flatMap(group => group.keys).length !== keys.length) return;
   state.pendingTriggerTargets = [];
+  state.pendingModalTrigger = null;
+  state.pendingWardAnnouncements ??= [];
   state.pendingDeathTriggerBatch = { groups, slots, index: 0, restorePriorityTo };
   advanceDeathTriggerBatch(state);
 }
 
-function accepted(state, cmd, result, standaloneManaActivation = false) {
+// A106/A107 / CR 603.3b + 702.21a: Ward z ogłoszenia celów zwykłej partii
+// wchodzi nad nią jako osobna partia. Kontrolerowie wybierają kolejność APNAP,
+// a przy wielu Ward jednego kontrolera — kolejność własnych zdolności.
+function startWardTriggerOrder(state, ids, restorePriorityTo) {
+  if (!ids.length) return;
+  const players = state.players.map(p => p.id);
+  const active = players.indexOf(state.turn.activePlayerId);
+  const ordered = active < 0 ? players : [...players.slice(active), ...players.slice(0, active)];
+  const groups = ordered.map(playerId => ({ playerId,
+    remaining: ids.filter(id => state.objects.get(id)?.controllerId === playerId), topFirst: [] }))
+    .filter(group => group.remaining.length);
+  const batch = new Set(ids);
+  state.zones.stack = [...state.zones.stack.filter(id => !batch.has(id)), ...groups.flatMap(g => g.remaining)];
+  const first = groups.findIndex(group => group.remaining.length > 1);
+  if (first < 0) {
+    state.turn.priorityPlayerId = restorePriorityTo;
+    return;
+  }
+  state.pendingTriggerOrder = { groups, index: first, restorePriorityTo };
+  state.turn.priorityPlayerId = groups[first].playerId;
+}
+
+function accepted(state, cmd, result, standaloneManaActivation = false, resolutionTriggerIds = []) {
   // Zgłoszenie właściciela / czerwone CI (2026-10-10, audyt remisów, para
   // dominaria-wu|worek-mroczny seed 4012, karta Impulse): czar, którego
   // OSTATNI (lub jedyny) efekt kolejkuje blokującą decyzję, zostawia
@@ -2184,6 +2250,15 @@ function accepted(state, cmd, result, standaloneManaActivation = false) {
   // rozstrzygał się BEZ okna na odpowiedź (zgłoszenie właściciela: Carrion
   // Call — „brak okna na instant w odpowiedzi mimo many").
   if (cmd.type !== 'pass_priority') state.turn.passes = 0;
+  // ADR 0032: Ward z celów checkpointu czeka na drugi przebieg ogłoszenia.
+  // W trakcie płatności (Ward/optional) wpisy i tak są odroczone; nie zaczynamy
+  // tam zbierania Ward, żeby nie zmieniać semantyki zamknięcia płatności.
+  if (state.pendingWardAnnouncements == null && !state.pendingWardPay && !state.pendingOptionalPay) {
+    state.pendingWardAnnouncements = [];
+  }
+  // ADR 0032 / CR 117.5: wpisy istniejące przed SBA nie mogą wejść do nowej
+  // partii kontynuacji po SBA (np. właśnie ogłoszone cele/tryby).
+  const stackBeforeSba = new Set(state.zones.stack);
   const sbaEvents = runStateBasedActions(state);
   if (sbaEvents.length > 0) result.events = [...result.events, ...sbaEvents];
   // Zdolności triggerowane (dies, combat damage) rozstrzygają się po SBA,
@@ -2203,9 +2278,26 @@ function accepted(state, cmd, result, standaloneManaActivation = false) {
       if (e.type === 'ability_triggered' && e.stackEntryId) state.madnessBatchTriggerIds.push(e.stackEntryId);
     }
   }
-  if (state.madnessQueue?.length && !firstPendingDecision(state) && !state.pendingSpell) {
+  // ADR 0032: oczekujący cel/tryb jest częścią ogłaszania tej samej partii,
+  // a nie osobną instrukcją blokującą utworzenie wpisów madness. Inne decyzje
+  // (np. scry w środku czaru) nadal wstrzymują domknięcie okna.
+  const madnessDecision = firstPendingDecision(state);
+  const madnessAnnouncement = madnessDecision
+    && ['triggerTarget', 'modalTrigger', 'damageDivision'].includes(madnessDecision.kind);
+  if (state.madnessQueue?.length && (!madnessDecision || madnessAnnouncement) && !state.pendingSpell) {
     queueMadnessTriggers(state, result.events);
-    startMadnessTriggerOrder(state);
+  }
+  if (!state.pendingDiscardChoice && !state.madnessQueue?.length && state.madnessBatchTriggerIds.length) {
+    // Jedno wejście do checkpointu: identyfikatory madness z całego okna
+    // (także z wcześniejszych komend odrzucania) plus bieżące zdarzenia.
+    // Nie dopisujemy syntetycznych zdarzeń do logu — służą tylko zebraniu partii.
+    const madnessIds = [...new Set(state.madnessBatchTriggerIds)];
+    const madnessEvents = madnessIds.map((stackEntryId) => ({ type: 'ability_triggered', stackEntryId }));
+    startDeathTriggerBatch(state, { type: 'pass_priority' }, [...result.events, ...madnessEvents],
+      0, triggerPriorityBefore);
+    if (state.pendingDeathTriggerBatch || !firstPendingDecision(state)) {
+      state.madnessBatchTriggerIds = [];
+    }
   } else if (!state.pendingDiscardChoice && !state.madnessQueue?.length) {
     // Zakończony discard bez madness nie pozostawia danych dla kolejnej akcji.
     state.madnessBatchTriggerIds = [];
@@ -2296,6 +2388,37 @@ function accepted(state, cmd, result, standaloneManaActivation = false) {
   // Także triggery ofiary Sagi należą do tego checkpointu; najpierw zbierz
   // pełną partię, dopiero potem rozpocznij kontrolowane ogłaszanie celów.
   startDeathTriggerBatch(state, cmd, result.events, triggerTargetsBefore, triggerPriorityBefore, standaloneManaActivation);
+  // A84/A101: wpisy ogłoszone w oknie rozstrzygania (Ward lub płatność
+  // opcjonalna) tworzą partię APNAP także z celami czekającymi z poprzednich
+  // komend. Zwykły batch nie startuje, bo pendingTriggerTargets istniały przed
+  // komendą; domknięcie płatności przekazuje identyfikatory tej partii jawnie.
+  if (resolutionTriggerIds.length && !state.pendingDeathTriggerBatch) {
+    const batchEvents = [...result.events, ...resolutionTriggerIds.map((id) => ({ type: 'ability_triggered', stackEntryId: id }))];
+    startDeathTriggerBatch(state, cmd, batchEvents, 0, triggerPriorityBefore, false, true);
+  }
+  // ADR 0032 / CR 117.5: po SBA mogą powstać NOWE wyzwalacze (np. śmierć
+  // od SBA). Dla komend ogłoszenia nie startujemy partii z ich własnych
+  // zdarzeń, ale kontynuacja łapie wyłącznie wpisy spoza stackBeforeSba.
+  if (!state.pendingDeathTriggerBatch) {
+    const continuationEvents = result.events.filter(e => e.type === 'ability_triggered'
+      && e.stackEntryId && !stackBeforeSba.has(e.stackEntryId));
+    if (continuationEvents.length || state.pendingTriggerTargets.length > triggerTargetsBefore) {
+      startDeathTriggerBatch(state, { type: 'pass_priority' }, continuationEvents,
+        triggerTargetsBefore, triggerPriorityBefore);
+    }
+  }
+  // A106/A107: dopiero gdy zwykła partia i jej cele są ogłoszone, Ward z
+  // tych celów trafia na stos nad partią i dostaje własną kolejność.
+  if (Array.isArray(state.pendingWardAnnouncements) && !state.pendingDeathTriggerBatch
+    && state.pendingTriggerTargets.length === 0 && !state.pendingTriggerOrder) {
+    const announcements = state.pendingWardAnnouncements;
+    state.pendingWardAnnouncements = null;
+    const wardStart = state.zones.stack.length;
+    for (const a of announcements) fireWardTriggers(state, a.casterId, a.targetingStackId, a.targetIds, result.events);
+    const wardIds = state.zones.stack.slice(wardStart)
+      .filter(id => state.objects.get(id)?.triggerEntry?.ability?.trigger?.event === 'ward');
+    startWardTriggerOrder(state, wardIds, triggerPriorityBefore);
+  }
   // Zgłoszenie F (CR 115.7a): „change the target” wolno wskazać WYŁĄCZNIE inny
   // legalny cel — a gdy takiego nie ma, oryginalny cel zostaje bez zmian
   // („If a target can’t be changed to another legal target, the original
@@ -2987,6 +3110,10 @@ export function execute(state, input) {
         playerId: cmd.playerId, sourceId: pending.sourceId,
         cardId: pending.cardId ?? null, skipped: true,
       }));
+      if (pending.deathBatchSlotId && state.pendingDeathTriggerBatch) {
+        state.pendingDeathTriggerBatch.slots[pending.deathBatchSlotId].stackId = null;
+        continueTriggerBatchAnnouncement(state, pending.deathBatchSlotId);
+      }
       return accepted(state, cmd, { ok: true, events: state.events.slice(before) });
     }
     const modeIndex = cmd.modeIndex;
@@ -3014,8 +3141,12 @@ export function execute(state, input) {
         trigger: Object.freeze({ ...pending.ability?.trigger, modes: null, requiresTarget: spec ?? null }),
         effect: Object.freeze([...(mode.effects ?? [])]),
       });
-      queueTriggerToStack(state, selectedAbility, { ...source, controllerId: pending.playerId },
+      const modalEntry = queueTriggerToStack(state, selectedAbility, { ...source, controllerId: pending.playerId },
         spec ? [cmd.targetId] : [], [], { ...pending.extra, modeIndex, modeName: mode.name });
+      if (pending.deathBatchSlotId && state.pendingDeathTriggerBatch) {
+        state.pendingDeathTriggerBatch.slots[pending.deathBatchSlotId].stackId = modalEntry?.id ?? null;
+        continueTriggerBatchAnnouncement(state, pending.deathBatchSlotId);
+      }
     }
     return accepted(state, cmd, { ok: true, events: state.events.slice(before) });
   }
@@ -3511,7 +3642,9 @@ export function execute(state, input) {
       targetNames: [...(pending.targetNames ?? [])],
       amounts: [...amounts],
     }));
-    if (pending.restorePriorityTo && state.players.some((pl) => pl.id === pending.restorePriorityTo)) {
+    if (pending.deathBatchSlotId && state.pendingDeathTriggerBatch) {
+      continueTriggerBatchAnnouncement(state, pending.deathBatchSlotId);
+    } else if (pending.restorePriorityTo && state.players.some((pl) => pl.id === pending.restorePriorityTo)) {
       state.turn.priorityPlayerId = pending.restorePriorityTo;
     }
     return accepted(state, cmd, { ok: true, events: state.events.slice(before) });
@@ -4541,9 +4674,13 @@ export function execute(state, input) {
     // Odrzucona płatność musi zostawić oczekującą decyzję i cały stan nietknięte.
     if (cmd.pay && (pending.amount ?? 0) > producibleMana(state, pending.playerId, null, {}, [])) return reject('ward_pay_insufficient_mana');
     const before = state.events.length;
-    state.pendingWardPay = null;
     const targeting = state.objects.get(pending.targetingStackId);
     const targetingOnStack = Boolean(targeting && targeting.zone === 'stack');
+    // A109 / CR 704.4: okno rozstrzygania Ward obejmuje także automatyczną
+    // zapłatę (spendMana może poświęcić Treasure i osierocić aurę) oraz kontrę
+    // przy odmowie. pendingWardPay musi zostać do końca tych efektów, inaczej
+    // choke point odłączania aur otworzyłby SBA w środku płatności. Zamykamy
+    // dopiero po zdarzeniu ward_pay_resolved, przed accepted() (checkpoint SBA).
     if (cmd.pay) {
       if ((pending.amount ?? 0) > 0) spendMana(state, pending.playerId, pending.amount, []);
     } else if (targetingOnStack) {
@@ -4558,16 +4695,29 @@ export function execute(state, input) {
       targetingStackId: pending.targetingStackId, cardId: targeting?.cardId ?? null,
       wardSourceId: pending.wardSourceId ?? null,
     }));
+    state.pendingWardPay = null;
+    // A100: zdolności wyzwolone w trakcie płatności wracają na stos dopiero
+    // po zamknięciu Ward (CR 603.3/605.4a), przed checkpointem SBA w accepted.
+    const wardDeferredTriggerIds = (pending.deferredTriggers ?? []).map((entry) => entry.id);
+    flushDeferredResolutionTriggers(state, pending.deferredTriggers ?? []);
     if (pending.restorePriorityTo && state.players.some((p) => p.id === pending.restorePriorityTo)) {
       state.turn.priorityPlayerId = pending.restorePriorityTo;
     }
-    return accepted(state, cmd, { ok: true, events: state.events.slice(before) });
+    return accepted(state, cmd, { ok: true, events: state.events.slice(before) }, false, wardDeferredTriggerIds);
   }
   if (state.pendingOptionalPay && !manaGeneratingCommandFor(state, cmd, state.pendingOptionalPay.playerId)) {
     // M200/E: jak przy pay_or_sacrifice — kreator many tapuje źródła wcześniej.
     if (cmd.type !== 'resolve_optional_pay_choice') return reject('optional_pay_unresolved');
     if (cmd.playerId !== state.pendingOptionalPay.playerId) return reject('optional_pay_not_your_decision');
     const pending = state.pendingOptionalPay;
+    // A101: zwykłe triggery ogłoszone od otwarcia tej płatności (np. śmierć
+    // Sciona jako koszt many) należą do checkpointu po jej zamknięciu.
+    // Bierzemy identyfikatory ze zdarzeń okna, nie z całego stosu.
+    const requiredIndex = state.events.findLastIndex(e => e.type === 'optional_pay_required'
+      && e.sourceId === pending.sourceId && e.playerId === pending.playerId);
+    const resolutionTriggerIds = requiredIndex < 0 ? [] : state.events.slice(requiredIndex + 1)
+      .filter(e => e.type === 'ability_triggered' && e.stackEntryId)
+      .map(e => e.stackEntryId);
     // Audyt PR #165 (A-2): płatność energią jest atomowa (CR 601.2h). Brak
     // pokrycia odrzucamy PRZED mutacją — decyzja zostaje u gracza, a ścieżka
     // nie rzuca wyjątkiem (ruling PIP: nie można zapłacić więcej, niż się ma).
@@ -4590,7 +4740,6 @@ export function execute(state, input) {
         || !hasCounter(counterSource, costCounter.counter, costCounter.amount ?? 1))) return reject('optional_pay_insufficient_counter');
     }
     const before = state.events.length;
-    state.pendingOptionalPay = null;
     if (cmd.pay) {
       const payColors = (pending.ability?.trigger?.payColors ?? []).map((color) => [color]);
       const payMana = pending.ability?.trigger?.payMana ?? 0;
@@ -4661,11 +4810,28 @@ export function execute(state, input) {
     } else {
       state.events.push(event('optional_pay_resolved', { playerId: pending.playerId, paid: false }));
     }
+    // A98: okno rozstrzygania obejmuje także automatyczną zapłatę i efekt
+    // po niej; dopiero po optional_pay_resolved zamykamy decyzję i ogłaszamy
+    // odroczone wpisy stosu, przed checkpointem SBA w accepted.
+    state.pendingOptionalPay = null;
+    // Ward z celów ogłoszonych po płatności czeka do końca zwykłej partii.
+    state.pendingWardAnnouncements = [];
+    flushDeferredResolutionTriggers(state, pending.deferredTriggers ?? []);
+    // A104/A105: cele wyzwalaczy z okna płatności ogłaszamy dopiero teraz.
+    // decision zachowuje LKI/kandydatów z chwili wyzwolenia; legalność celu
+    // jest przeliczana przy wyborze (resolve_trigger_target).
+    for (const decision of pending.deferredTargets ?? []) {
+      state.pendingTriggerTargets.push(decision);
+      state.events.push(event('trigger_target_required', {
+        playerId: decision.playerId, sourceId: decision.sourceId, cardId: decision.cardId,
+        candidateIds: [...decision.candidates], allowNone: decision.allowNone,
+      }));
+    }
     const resolvedEvents = state.events.slice(before);
     if (pending.restorePriorityTo && state.players.some((p) => p.id === pending.restorePriorityTo)) {
       state.turn.priorityPlayerId = pending.restorePriorityTo;
     }
-    return accepted(state, cmd, { ok: true, events: resolvedEvents });
+    return accepted(state, cmd, { ok: true, events: resolvedEvents }, false, resolutionTriggerIds);
   }
   // Oczekująca decyzja „you may" triggera bez celu (Angel's Feather):
   // tak/nie — jak opcjonalna płatność, ale bez kosztu.
@@ -5127,8 +5293,9 @@ export function execute(state, input) {
       const srcLegalM = Boolean(srcM
         && triggerSourceZoneResolvable(srcM, pending.ability?.trigger?.event)
         && triggerConditionHolds(state, pending.ability, srcM, pending.extra ?? {}));
+      let stackEntryM = null;
       if (srcLegalM && chosenList.length > 0) {
-        const stackEntryM = queueTriggerToStack(state, pending.ability, srcM,
+        stackEntryM = queueTriggerToStack(state, pending.ability, srcM,
           [...pending.fixedTargetIds, ...chosenList], [], pending.extra ?? {});
         // M171/Z6 (CR 603.3d + 601.2d „divided as you choose"): podział
         // obrażeń OGŁASZA SIĘ przy umieszczaniu na stosie — decyzja kwot
@@ -5148,6 +5315,7 @@ export function execute(state, input) {
             targetNames: Object.freeze(chosenList.map((id) => state.objects.get(id)?.name ?? null)),
             total: totalM,
             announceStackId: stackEntryM.id,
+            deathBatchSlotId: pending.deathBatchSlotId ?? null,
             restorePriorityTo: pending.restorePriorityTo ?? state.turn.priorityPlayerId,
           };
           state.events.push(event('damage_division_required', {
@@ -5157,6 +5325,10 @@ export function execute(state, input) {
             targetNames: [...state.pendingDamageDivision.targetNames], total: totalM,
           }));
         }
+      }
+      if (pending.deathBatchSlotId && state.pendingDeathTriggerBatch) {
+        state.pendingDeathTriggerBatch.slots[pending.deathBatchSlotId].stackId = stackEntryM?.id ?? null;
+        if (!state.pendingDamageDivision) continueTriggerBatchAnnouncement(state, pending.deathBatchSlotId);
       }
       state.events.push(event('trigger_target_resolved', {
         playerId: pending.playerId, sourceId: pending.sourceId, cardId: pending.cardId,
@@ -5215,9 +5387,8 @@ export function execute(state, input) {
       targetId: chosen, noEffect: !sourceLegal || chosen === null,
       remaining: state.pendingTriggerTargets.length,
     }));
-    if (pending.deathBatchSlotId && state.pendingDeathTriggerBatch && state.pendingTriggerTargets.length === 0) {
-      state.pendingDeathTriggerBatch.index += 1;
-      advanceDeathTriggerBatch(state);
+    if (pending.deathBatchSlotId && state.pendingDeathTriggerBatch) {
+      continueTriggerBatchAnnouncement(state, pending.deathBatchSlotId);
     } else if (state.pendingTriggerTargets.length > 0) {
       state.turn.priorityPlayerId = state.pendingTriggerTargets[0].playerId;
     } else if (pending.restorePriorityTo && state.players.some((p) => p.id === pending.restorePriorityTo)) {
@@ -6363,12 +6534,12 @@ export function execute(state, input) {
           // kreatur. CR 508.1: gdy aktywny gracz nie ma ŻADNEGO legalnego
           // atakującego, deklaracja jest pusta i AUTOMATYCZNA — decyzja nie
           // istnieje (dotąd generator wystawiał jedną komendę z pustym
-          // zestawem, bo legalAttackerOptions → [[]]). Auto-przejście przy
+          // zestawem, bo przy braku kandydatów ziarno deklaracji to [[]]). Auto-przejście przy
           // wejściu w krok, wzorzec auto-dobrania (CR 504.1): eventy lokalnie
           // (pushToState: false — kolejność logu), priorytet kroku blokujących
           // dla obrońcy (jak w drodze przez komendę).
           if (state.turn.step === 'declare_attackers'
-              && !legalAttackerOptions(state, state.turn.activePlayerId, COMBAT_OPTION_CAP)
+              && !attackerSeedDeclarations(state, state.turn.activePlayerId)
                 .some((attackerIds) => attackerIds.length > 0)) {
             events.push(declareAttackers(state, state.turn.activePlayerId, [], { pushToState: false, events }));
             const defenderId = state.players.find((player) => player.id !== state.turn.activePlayerId).id;
@@ -6389,6 +6560,7 @@ export function execute(state, input) {
           // M214: pula many ograniczonej drukiem znika razem z resztą puli
           // (CR 500.4) — bez tego osierocone jednostki zalegałyby w księgowaniu.
           player.restrictedPool = {};
+          player.purposeRestrictedPool = {};
           player.treasureMana = 0;
           // M201 (znalezisko #3): licznik many ograniczonej znika razem z pulą
           // (CR 500.4) — stały licznik blokowałby płatności w kolejnych krokach.
@@ -6585,9 +6757,9 @@ export function execute(state, input) {
     if (object.controllerId !== cmd.playerId) return reject('manifest_not_your_permanent');
     const cardId = object.cardId;
     const cost = object.manifestTurnUpCost ?? 0;
-    const purpose = spellManaPurpose(object);
+    const purpose = turnFaceUpManaPurpose();
     if (producibleMana(state, cmd.playerId, null, purpose, coloredPipsOf(cardId, 0)) < cost) return reject('manifest_turn_up_insufficient_mana');
-    if (!canPayColoredCost(state, cmd.playerId, coloredPipsOf(cardId, 0))) return reject('manifest_turn_up_no_colored_source');
+    if (!canPayColoredCost(state, cmd.playerId, coloredPipsOf(cardId, 0), null, purpose)) return reject('manifest_turn_up_no_colored_source');
     const before = state.events.length;
     spendMana(state, cmd.playerId, cost, coloredPipsOf(cardId, 0), purpose);
     // M322 (audyt PR #102): znaczniki manifestu zdejmują się w `turnFaceUp`
@@ -6611,9 +6783,9 @@ export function execute(state, input) {
     if (object.controllerId !== cmd.playerId) return reject('cloak_not_your_permanent');
     const cardId = object.cardId;
     const cost = object.cloakTurnUpCost ?? 0;
-    const purpose = spellManaPurpose(object);
+    const purpose = turnFaceUpManaPurpose();
     if (producibleMana(state, cmd.playerId, null, purpose, coloredPipsOf(cardId, 0)) < cost) return reject('cloak_turn_up_insufficient_mana');
-    if (!canPayColoredCost(state, cmd.playerId, coloredPipsOf(cardId, 0))) return reject('cloak_turn_up_no_colored_source');
+    if (!canPayColoredCost(state, cmd.playerId, coloredPipsOf(cardId, 0), null, purpose)) return reject('cloak_turn_up_no_colored_source');
     const before = state.events.length;
     spendMana(state, cmd.playerId, cost, coloredPipsOf(cardId, 0), purpose);
     // M319/NA1: numer kopii zakrycia znika razem z zakryciem — face-up karta
@@ -7068,17 +7240,17 @@ function exileAdditionalCostCandidates(state, playerId, object) {
  *
  * `legalCommands` jest kompletnym kontraktem dla kontrolera: każda oferowana
  * komenda jest akceptowana przez `execute` (pilnuje tego test własnościowy).
- * Dla deklaracji combat opcje są enumerowane do limitu COMBAT_OPTION_CAP;
- * powyżej niego widok oferuje warianty pusty/pojedyncze/pełny, a pełna
- * walidacja pozostaje wyłącznie po stronie engine.
+ * Dla deklaracji combat opcje są enumerowane W PEŁNI (zgłoszenie F
+ * właściciela, 2026-11-05: żaden limit wariantów w żadnej gałęzi); pełna
+ * walidacja pozostaje po stronie engine.
  */
 /**
  * E6 (2026-09-20c): pula kandydatów na blokujących dla widoku BRONIĄCEGO.
  *
- * Widok niesie ją osobno od `options` decyzji, bo opcje są ograniczone
- * `COMBAT_OPTION_CAP` (rozmiar menu), a wizard bloków rysował kandydatów z sumy
- * ofert — legalne pary wycięte przez cap nie miały wiersza i gracz nie mógł ich
- * zadeklarować (CR 509.1a). Pole jest wyłącznie tam, gdzie jest decyzja:
+ * Widok niesie ją osobno od `options` decyzji: historycznie menu było
+ * ograniczone capem i legalne pary bez wiersza wizarda były nieosiągalne
+ * (CR 509.1a); po zgłoszeniu F (2026-11-05) enumeracja jest kompletna, a pula
+ * zostaje jako bezpośrednie źródło wierszy wizarda. Pole jest wyłącznie tam, gdzie jest decyzja:
  * krok deklaracji bloków, walka zadeklarowana, stos pusty, gracz broniący,
  * bloki jeszcze niezadeklarowane (warunki lustrzane wobec `legalCommands`).
  */
@@ -7400,7 +7572,7 @@ export function playerView(state, playerId) {
         // PR #171/T (2026-10-21d, zgłoszenie właściciela Azorius Justiciar):
         // detain (CR 701.35) blokuje blok, ale `creatureCantBlock` tego nie
         // czyta — walka to respektuje (combat.js:316 `if (object.detained)
-        // return false` w `legalBlockerOptions`). Widok musi propagować ten
+        // return false` w predykacie kandydata na blokera). Widok musi propagować ten
         // sam fakt (L1/ADR 0017). Dociągamy jawnie `detained` do
         // `entry.cantBlock` — JEDNO źródło dla badge'a "nie może blokować".
         const cantBlockNow = creatureCantBlock(object, state)
@@ -7439,6 +7611,9 @@ export function playerView(state, playerId) {
         // M407: dar „this turn" (cantBeBlockedUntilTurn, CR 514.2) — badge
         // widoku liczony read-time z numerem tury; kontrakt widoku bez zmian.
         if (object.cantBeBlockedUntilTurn != null && state.turn.number < object.cantBeBlockedUntilTurn) entry.cantBeBlocked = true;
+        if (object.kind === 'creature' && !hiddenFromViewer
+          && effectiveAbilities(object).some((ability) => staticAbilityIsActive(state, object, ability)
+            && ability.cantBeBlocked === true)) entry.cantBeBlocked = true;
         // C (zgłoszenie właściciela 2026-09-19b, Thieves' Tools): ewazja
         // z ZAŁĄCZNIKA („Equipped creature can't be blocked as long as its
         // power is 3 or less”) to ten sam fakt publiczny co `cantBeBlocked`
@@ -7526,7 +7701,7 @@ export function playerView(state, playerId) {
         // wejdzie do katalogu (ADR 0022 §4).
         if (!hiddenFromViewer) {
           for (const a of effectiveAbilities(object)) {
-            if (a?.type !== 'static') continue;
+            if (!staticAbilityIsActive(state, object, a)) continue;
             if (Array.isArray(a.cantBeBlockedExceptByColors)) {
               entry.cantBeBlockedExceptByColors = [...a.cantBeBlockedExceptByColors];
             }
@@ -7894,8 +8069,9 @@ export function playerView(state, playerId) {
         if (!obj || obj.zone !== 'battlefield' || !obj.faceDown || !obj.manifestReady) continue;
         if (obj.controllerId !== playerId) continue;
         const cost = obj.manifestTurnUpCost ?? 0;
-        if (producibleMana(state, playerId, null, spellManaPurpose(obj), coloredPipsOf(obj.cardId, 0)) < cost) continue;
-        if (!canPayColoredCost(state, playerId, coloredPipsOf(obj.cardId, 0))) continue;
+        const purpose = turnFaceUpManaPurpose();
+        if (producibleMana(state, playerId, null, purpose, coloredPipsOf(obj.cardId, 0)) < cost) continue;
+        if (!canPayColoredCost(state, playerId, coloredPipsOf(obj.cardId, 0), null, purpose)) continue;
         legalCommands.push(command('turn_manifest_face_up', playerId, { objectId: objId }));
       }
     }
@@ -7910,8 +8086,9 @@ export function playerView(state, playerId) {
         if (!obj || obj.zone !== 'battlefield' || !obj.faceDown || !obj.cloakReady) continue;
         if (obj.controllerId !== playerId) continue;
         const cost = obj.cloakTurnUpCost ?? 0;
-        if (producibleMana(state, playerId, null, spellManaPurpose(obj), coloredPipsOf(obj.cardId, 0)) < cost) continue;
-        if (!canPayColoredCost(state, playerId, coloredPipsOf(obj.cardId, 0))) continue;
+        const purpose = turnFaceUpManaPurpose();
+        if (producibleMana(state, playerId, null, purpose, coloredPipsOf(obj.cardId, 0)) < cost) continue;
+        if (!canPayColoredCost(state, playerId, coloredPipsOf(obj.cardId, 0), null, purpose)) continue;
         legalCommands.push(command('turn_cloak_face_up', playerId, { objectId: objId }));
       }
     }
@@ -8037,7 +8214,7 @@ export function playerView(state, playerId) {
     for (const stackEntryId of group.remaining) {
       const entry = state.objects.get(stackEntryId);
       const slot = state.pendingDeathTriggerBatch?.slots[stackEntryId];
-      const ability = entry?.triggerEntry?.ability ?? slot?.target?.ability;
+      const ability = entry?.triggerEntry?.ability ?? slot?.target?.ability ?? slot?.modal?.ability;
       const effects = Array.isArray(ability?.effect) ? ability.effect : [ability?.effect];
       legalCommands.push(command('resolve_trigger_order', playerId, { stackEntryId,
         cardId: entry?.cardId ?? slot?.cardId, trigger: ability?.trigger?.event ?? slot?.trigger,
@@ -8079,28 +8256,24 @@ export function playerView(state, playerId) {
     //   1. DEDUPLIKACJA po multizbiorze NAZW kart — jeden wariant na realnie
     //      różną decyzję (to jest właściwa naprawa; gracz przestaje wybierać
     //      spośród klonów);
-    //   2. CAP jak w reszcie enumeracji (COMBAT_OPTION_CAP/CREW_OPTION_CAP =
-    //      32) — zabezpieczenie na wypadek ręki z samymi różnymi kartami.
+    //   2. (dawniej: cap 32 jak w reszcie enumeracji — usunięty na polecenie
+    //      właściciela, zgłoszenie F 2026-11-05: żadnego ucinania wariantów).
     //
     // Kolejność pozostaje deterministyczna (ADR 0005): idziemy po podzbiorach
     // w stałym porządku i bierzemy pierwszy reprezentant każdej klasy.
-    const subsets = (arr, k) => {
-      if (k === 0) return [[]];
-      if (arr.length < k) return [];
-      const [head, ...rest] = arr;
-      const withHead = subsets(rest, k - 1).map((s) => [head, ...s]);
-      return [...withHead, ...subsets(rest, k)];
-    };
+    // G, etap 3: ziarna = okna cykliczne ręki (n podzbiorów zamiast
+    // C(n,k)); dedup po multizbiorze nazw zostaje — bot/wizard konstruują
+    // własny zestaw z deskryptora pendingMulliganBottom, execute waliduje.
     const expected = Math.min(pending.count, pending.handIds.length);
     const nameOfCard = (id) => state.objects.get(id)?.cardId ?? id;
     const seen = new Set();
     const unique = [];
-    for (const combo of subsets(pending.handIds, expected)) {
+    for (const combo of cyclicWindows(pending.handIds, expected)) {
       const key = combo.map(nameOfCard).sort().join('|');
       if (seen.has(key)) continue;
       seen.add(key);
       unique.push(combo);
-      if (unique.length >= MULLIGAN_BOTTOM_OPTION_CAP) break;
+
     }
     // unshift odwraca kolejność, więc wkładamy od tyłu — gracz widzi warianty
     // w tej samej kolejności, w jakiej je wyliczyliśmy.
@@ -8623,8 +8796,14 @@ export function playerView(state, playerId) {
     const triggerDamageEffect = triggerTargetDamageEffectOf(intentAbility);
     const triggerDamageField = (targetId) => {
       if (!triggerDamageEffect) return {};
-      const source = state.objects.get(triggerTargetHead.sourceId);
-      const amount = resolveDamageAmount(state, triggerDamageEffect, source, targetId);
+      // C (2026-11-04, Magma Pummeler): ten sam odczyt co rozstrzygnięcie
+      // (effects.js `damage` → resolveDamageAmount z `context`). Bez kontekstu
+      // zdarzenia `amountFromContext:'countersRemoved'` nie miało wartości,
+      // oferta nie niosła `damage`, a bot omijał wspólną politykę obrażeń i
+      // wybierał największe ciało. LKI źródła jak w legalTriggerTargetCandidates
+      // (CR 603.10/608.2h) — refleks działa także po śmierci źródła.
+      const source = state.objects.get(triggerTargetHead.sourceId) ?? triggerTargetHead.sourceLki ?? null;
+      const amount = resolveDamageAmount(state, triggerDamageEffect, source, targetId, triggerTargetHead.extra ?? {});
       return Number.isFinite(amount) ? { damage: amount } : {};
     };
     // M157/F4(a): wielocelowy trigger (count > 1, „each of up to N") —
@@ -8636,24 +8815,11 @@ export function playerView(state, playerId) {
     const multiCountOffer = Number.isInteger(multiSpecOffer?.count) && multiSpecOffer.count > 1
       ? multiSpecOffer.count : 1;
     if (multiCountOffer > 1) {
-      const MULTI_TRIGGER_TARGET_CAP = 32;
-      const variants = [];
-      for (let size = multiCountOffer; size >= 1; size -= 1) {
-        const combo = (start, acc) => {
-          if (variants.length >= MULTI_TRIGGER_TARGET_CAP) return;
-          if (acc.length === size) { variants.push([...acc]); return; }
-          for (let i = start; i < legal.length; i += 1) {
-            combo(i + 1, [...acc, legal[i]]);
-            if (variants.length >= MULTI_TRIGGER_TARGET_CAP) return;
-          }
-        };
-        combo(0, []);
-      }
-      if (multiSpecOffer.upTo) variants.push([]);
-      // M203/2: warianty w kolejności enumeracji — PIERWSZĄ ofertą jest
-      // pierwszy wariant pełnego rozmiaru (deterministycznie: najwcześniejsze
-      // kandydaty), a wariant pusty („up to") idzie na koniec.
-      for (const targetIds of variants) {
+      // G, etap 2: ziarna zamiast kompletu podzbiorów (F). Pierwsza oferta
+      // jak dawniej = pełny zestaw najwcześniejszych kandydatów (M203/2),
+      // wariant pusty („up to") na końcu; resztę zestawów kontroler
+      // konstruuje z deskryptora, a execute waliduje — bez ucinania.
+      for (const targetIds of triggerTargetSeedSubsets(legal, multiCountOffer, Boolean(multiSpecOffer.upTo))) {
         legalCommands.push(command('resolve_trigger_target', playerId, { targetIds: [...targetIds], friendly: triggerFriendly, removesTarget: triggerRemovesTarget, ...(triggerDebuff ? { debuff: triggerDebuff } : {}), ...(triggerPump ? { pump: triggerPump } : {}), ...(triggerEvasionGrant ? { evasionGrant: true } : {}) }));
       }
     } else {
@@ -8688,20 +8854,15 @@ export function playerView(state, playerId) {
     // botów i fuzzera; gracz dostaje wizard multiselect po kandydatach i
     // komponuje komendę sam (walidacja silnika jest i tak niezależna).
     const pending = state.pendingEscapeExile;
-    const cap = ESCAPE_OPTION_CAP;
-    const results = [];
-    const rec = (start, chosen) => {
-      if (results.length >= cap) return;
-      if (chosen.length === pending.exileCount) { results.push([...chosen]); return; }
-      for (let i = start; i < pending.candidateIds.length; i += 1) {
-        chosen.push(pending.candidateIds[i]);
-        rec(i + 1, chosen);
-        chosen.pop();
-        if (results.length >= cap) return;
-      }
-    };
-    if (pending.exileCount > 0) rec(0, []);
+    // G, etap 3: ziarna = okna cykliczne grobu (pierwsze = kolejność grobu,
+    // jak dawna pierwsza oferta); bot/wizard konstruują własny zestaw
+    // z deskryptora pendingEscapeExile, execute waliduje — bez ucinania.
+    const results = pending.exileCount > 0 ? cyclicWindows(pending.candidateIds, pending.exileCount) : [[]];
+    const seenExile = new Set();
     for (const exileIds of results) {
+      const key = [...exileIds].sort().join('|');
+      if (seenExile.has(key)) continue;
+      seenExile.add(key);
       legalCommands.push(command('resolve_escape_exile', playerId, { exileIds }));
     }
   } else if (state.status === 'active' && !blockedByOthersDecision && activeDelveExile) {
@@ -8711,22 +8872,18 @@ export function playerView(state, playerId) {
     // wariantu, którego płatność odrzuci), cap jak przy Escape. Dla botów
     // i fuzzera; gracz dostaje wizard multiselect i komponuje komendę sam.
     const pending = state.pendingDelveExile;
-    const affordable = new Set(pending.affordableCounts ?? []);
-    const results = [];
-    const rec = (start, chosen) => {
-      if (results.length >= DELVE_OPTION_CAP) return;
-      if (chosen.length >= pending.minExile && affordable.has(chosen.length)) results.push([...chosen]);
-      if (chosen.length === pending.maxExile) return;
-      for (let i = start; i < pending.candidateIds.length; i += 1) {
-        chosen.push(pending.candidateIds[i]);
-        rec(i + 1, chosen);
-        chosen.pop();
-        if (results.length >= DELVE_OPTION_CAP) return;
+    // G, etap 3: ziarna per OPŁACALNA liczba (okna cykliczne grobu);
+    // bot/wizard konstruują własny zestaw z deskryptora
+    // pendingDelveExile, execute waliduje — bez ucinania.
+    const affordableCounts = [...(pending.affordableCounts ?? [])].sort((a, b) => a - b);
+    const seenDelve = new Set();
+    for (const count of affordableCounts) {
+      for (const exileIds of cyclicWindows(pending.candidateIds, count)) {
+        const key = [...exileIds].sort().join('|');
+        if (seenDelve.has(key)) continue;
+        seenDelve.add(key);
+        legalCommands.push(command('resolve_delve_exile', playerId, { exileIds }));
       }
-    };
-    rec(0, []);
-    for (const exileIds of results) {
-      legalCommands.push(command('resolve_delve_exile', playerId, { exileIds }));
     }
   } else if (state.status === 'active' && !blockedByOthersDecision && activeDiscardChoice) {
     // Oczekująca decyzja odrzucenia (Temat 4): decydent wybiera KARTĘ z ręki.
@@ -8961,10 +9118,11 @@ export function playerView(state, playerId) {
     }
   } else if (state.status === 'active' && !blockedByOthersDecision && state.pendingDamageDivision
     && state.pendingDamageDivision.playerId === playerId) {
-    // M166/D (Inferno Titan): kwoty podziału — jedna oferta na kompozycję
-    // total na N celów (przestrzeń miniaturowa, bez własnego wizarda).
+    // M166/D (Inferno Titan) + G, etap 2: kwoty podziału jako ziarna
+    // (koncentracje + podział równy); wizard i kontrolerzy konstruują
+    // własne kwoty z deskryptora pendingDamageDivision, execute waliduje.
     const pending = state.pendingDamageDivision;
-    for (const amounts of damageDivisionsOf(pending.total, pending.targetIds.length)) {
+    for (const amounts of damageDivisionSeeds(pending.total, pending.targetIds.length)) {
       legalCommands.push(command('resolve_damage_division', playerId, { amounts }));
     }
   } else if (state.status === 'active' && !blockedByOthersDecision
@@ -9586,9 +9744,9 @@ export function playerView(state, playerId) {
         const xDesc = object.xCost ?? object.spell.xCost;
         const baseCost = effectiveSpellManaCost(state, object);
         const xReqs = [...coloredPipsOf(object.cardId, 0)];
-        const xCap = xDesc.cap ?? 15;
+        // Zgłoszenie F: X do pełnego budżetu many (bez sufitu 15).
         if (!canPayColoredCostForOffer(state, playerId, xReqs, ofertaUnitsUA.units, null, spellManaPurpose(object))) continue;
-        const maxX = Math.max(0, Math.min(xCap, manaAvailableForOffer(object, xReqs) - baseCost));
+        const maxX = Math.max(0, manaAvailableForOffer(object, xReqs) - baseCost);
         for (let xValue = 0; xValue <= maxX; xValue += 1) {
           legalCommands.push(command('cast_permanent', playerId, { objectId: id, xValue }));
         }
@@ -9694,7 +9852,7 @@ export function playerView(state, playerId) {
     if (state.turn.step === 'declare_attackers' && state.turn.activePlayerId === playerId && !state.combat
       && state.zones.stack.length === 0) {
       const seen = new Set();
-      for (const attackerIds of legalAttackerOptions(state, playerId, COMBAT_OPTION_CAP)) {
+      for (const attackerIds of attackerSeedDeclarations(state, playerId)) {
         const key = JSON.stringify(attackerIds);
         if (seen.has(key)) continue;
         seen.add(key);
@@ -9704,7 +9862,7 @@ export function playerView(state, playerId) {
     if (state.turn.step === 'declare_blockers' && state.combat && state.combat.attackingPlayerId !== playerId
       && state.zones.stack.length === 0) {
       const seen = new Set();
-      for (const assignments of legalBlockerOptions(state, playerId, COMBAT_OPTION_CAP)) {
+      for (const assignments of blockerSeedAssignments(state, playerId)) {
         const key = JSON.stringify(assignments);
         if (seen.has(key)) continue;
         seen.add(key);
@@ -9729,7 +9887,7 @@ export function playerView(state, playerId) {
   // Batch 56 (energia, CR 122.1): licznik gracza jest JAWNY dla obu graczy
   // (jak poison i speed) — bez niego gracz nie widziałby, ile energii ma,
   // a bot nie miałby z czego wyceniać kosztu {E}.
-  const players = state.players.map(({ id, name, life, mana, landPlays, poison, manaPool, restrictedPool, speed, energy }) => ({
+  const players = state.players.map(({ id, name, life, mana, landPlays, poison, manaPool, restrictedPool, purposeRestrictedPool, speed, energy }) => ({
     id, name, life, mana: mana ?? 0, landPlays: landPlays ?? 0, poison: poison ?? 0, energy: energy ?? 0,
     // M313 (zgłoszenie właściciela, Leonin Surveyor): prędkość (DFT „Start
     // your engines!", Batch 24) jest jawna dla OBU graczy — licznik publiczny,
@@ -9739,6 +9897,7 @@ export function playerView(state, playerId) {
     // M214: jednostki many ograniczonej drukiem (Powerstone) — UI/audyt widzi
     // je osobno, żeby nie liczyć ich jako „mana na wszystko".
     restrictedPool: { ...(restrictedPool ?? {}) },
+    purposeRestrictedPool: { ...(purposeRestrictedPool ?? {}) },
   }));
   // Fog of War scry: patrzący (właściciel decyzji) widzi treść kart (jak rękę),
   // przeciwnik dowiaduje się wyłącznie, że decyzja trwa i ile kart obejrzano.
@@ -10162,6 +10321,14 @@ export function playerView(state, playerId) {
     // choose not to untap". Widok niesie kandydatów (żeby panel wystawił
     // wybór) ORAZ ilu bytów każde źródło pilnuje (żeby wycena była liczona
     // z danych, nie z kolejności ofert — L169).
+    // G, etap 3: deskryptor odłożenia po mulliganie (własna ręka decydenta
+    // + ile kart odłożyć) — kontroler konstruuje zestaw, silnik waliduje.
+    pendingMulliganBottom: (state.pendingMulliganBottom && state.pendingMulliganBottom.playerId === playerId)
+      ? {
+          count: state.pendingMulliganBottom.count,
+          handIds: [...state.pendingMulliganBottom.handIds],
+        }
+      : null,
     pendingUntapChoice: (state.pendingUntapChoice && state.pendingUntapChoice.playerId === playerId)
       ? {
           candidateIds: [...state.pendingUntapChoice.candidateIds],
@@ -10268,9 +10435,16 @@ export function playerView(state, playerId) {
     // (uwagi B/C właściciela 2026-08-10 — opcje modala bez nazwy karty).
     pendingTriggerTarget: (() => {
       const head = state.pendingTriggerTargets.find((pending) => triggerTargetDecisionPending(state, pending)) ?? null;
+      // G, etap 2: deskryptor problemu wyboru celów — kandydaci liczeni
+      // dynamicznie (ta sama lista, którą waliduje execute), limit slotów
+      // i flaga upTo; kontroler konstruuje z tego zestaw, silnik waliduje.
+      const specOf = head?.ability?.trigger?.requiresTarget;
       return head ? Object.freeze({
         playerId: head.playerId, sourceId: head.sourceId, cardId: head.cardId ?? null,
-        allowNone: Boolean(head.allowNone), candidateIds: [...(head.candidates ?? [])],
+        allowNone: Boolean(head.allowNone),
+        candidateIds: legalTriggerTargetCandidates(state, head),
+        maxTargets: Number.isInteger(specOf?.count) && specOf.count > 1 ? specOf.count : 1,
+        upTo: Boolean(specOf?.upTo),
         // E (2026-09-25g): „you may [verb] target" — decline w modalu celu
         // ma własne brzmienie („Nie tapuj nikogo (you may)"), inne niż
         // odmowa „up to one"; render.js rozróżnia po tej fladze.
@@ -10343,6 +10517,10 @@ export function playerView(state, playerId) {
     pendingDamageAssignment: buildDamageAssignmentView(state, playerId),
     // E6: pełna pula kandydatów na blokerów (niezależna od cap-a menu, CR 509.1a).
     blockCandidates: blockerView?.pool ?? null,
+    // G, etap 1: deskryptor problemu deklaracji walki (kandydaci, wymuszeni,
+    // pula). Kreator i kontrolerzy budują z niego jedną wybraną deklarację,
+    // którą silnik waliduje przy execute; legalCommands niesie tylko ziarna.
+    combatDeclaration: combatDeclarationView(state, playerId),
     // F14: liczba użyć, jaką silnik przyjmie od jednego blokera (L48 — wizard
     // musi znać tę samą regułę, żeby nie wysyłać komendy do odrzucenia).
     blockerSlots: blockerView?.slots ?? null,
@@ -10460,6 +10638,7 @@ export function playerView(state, playerId) {
     dayNight: state.dayNight ?? null,
     undercityProgress: { ...state.undercityProgress },
     descendedThisTurn: { ...state.descendedThisTurn },
+    cardsLeftGraveyardThisTurn: { ...(state.cardsLeftGraveyardThisTurn ?? {}) },
     // M107 (ADR 0017 — kompletność widoku; zlecenie właściciela 2026-08-16):
     // PEŁNA sekcja WALKI. Do tej pory widok nie niósł jej wcale: kontroler
     // (bot, UI, tester) musiał rekonstruować walkę ze znaczników na kaflach

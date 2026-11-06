@@ -327,6 +327,8 @@ const HANDLED_TRIGGER_EVENTS = new Set([
   // Batch 70 (Magma Pummeler): licznik zdjęty przez efekt zastępczy prewencji
   // obrażeń — trigger czyta wyłącznie tę drogę (`damagePreventionOnly`).
   'counter_removed',
+  // Batch 72 (Living History): attack event observed by a controlled permanent.
+  'attacks_you_control',
 ]);
 
 test('strażnik: każdy trigger w registry używa zdarzenia obsługiwanego przez engine', () => {

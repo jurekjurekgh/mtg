@@ -65,11 +65,14 @@ for (const first of ['madness','reflexive_discard']) test(`A28: Talion's Messeng
  round(s);
  const discard=view(s).legalCommands.find(c=>c.type==='resolve_discard_choice'&&c.cardId==='rev');
  assert.ok(discard);assert.ok(execute(s,discard).ok);
- const target=view(s).legalCommands.find(c=>c.type==='resolve_trigger_target'&&c.targetId==='clique');
- assert.ok(target,'cel refleksu wybrany po odrzuceniu'); assert.ok(execute(s,target).ok);
+ // ADR 0032: najpierw kolejność całej partii, dopiero potem cel refleksu
+ // przy umieszczaniu tej zdolności na stosie (CR 603.3b–d).
  const choices=view(s).legalCommands.filter(c=>c.type==='resolve_trigger_order');
  assert.deepEqual(choices.map(c=>c.trigger).sort(),['madness','reflexive_discard']);
+ assert.ok(!view(s).legalCommands.some(c=>c.type==='resolve_trigger_target'),'cel nie wyprzedza kolejności');
  assert.ok(execute(s,choices.find(c=>c.trigger===first)).ok);
+ const target=view(s).legalCommands.find(c=>c.type==='resolve_trigger_target'&&c.targetId==='clique');
+ assert.ok(target,'cel refleksu ogłoszony po wyborze kolejności'); assert.ok(execute(s,target).ok);
  assert.equal(s.objects.get(s.zones.stack.at(-1)).triggerEntry.ability.trigger.event,first);
  round(s);
  if(first==='madness') {

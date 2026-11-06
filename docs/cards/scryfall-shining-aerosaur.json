@@ -1,0 +1,26 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Shining%20Aerosaur&set=xln&format=json",
+  "print": "Shining Aerosaur (XLN)",
+  "name": "Shining Aerosaur",
+  "mana_cost": "{4}{W}",
+  "cmc": 5,
+  "type_line": "Creature — Dinosaur",
+  "oracle_text": "Flying",
+  "power": "3",
+  "toughness": "4",
+  "colors": ["W"],
+  "color_identity": ["W"],
+  "keywords": ["Flying"],
+  "set": "xln",
+  "set_name": "Ixalan",
+  "collector_number": "36",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/8/e/8e900d0d-6f35-4e5d-9365-6ade227d218d.jpg?1783935791",
+    "normal": "https://cards.scryfall.io/normal/front/8/e/8e900d0d-6f35-4e5d-9365-6ade227d218d.jpg?1783935791"
+  },
+  "rulings": [],
+  "rulingsSource": "https://api.scryfall.com/cards/xln/36/rulings",
+  "rulingsPobrano": "2026-11-06",
+  "pobrano": "2026-11-06"
+}

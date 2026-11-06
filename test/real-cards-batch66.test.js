@@ -28,7 +28,7 @@ import {
   cardInfo, commandLabel, isManaAbilityCommand, rulesText, waitingExileStatus,
 } from '../src/table/render.js';
 import { drawPlayerCards, dealNonCombatDamage } from '../src/engine/effects.js';
-import { legalBlockerOptions } from '../src/engine/combat.js';
+import { blockerSeedAssignments } from '../src/engine/combat.js';
 import {
   resolveUntilDecision, optionalTriggerOpen, triggerTargetOpen,
 } from './helpers/deferred-trigger.js';
@@ -137,7 +137,7 @@ test('B66/351: reach pozwala blokować flying, zwykły naziemny stwór nie może
   put(state, 'spider', 'sporecap-spider', 'p2', 'battlefield', { summoningSickness: false });
   put(state, 'ground', 'druid-of-the-cowl', 'p2', 'battlefield', { summoningSickness: false });
   state.combat = { attackers: ['flyer'], assignments: {}, defendingPlayerId: 'p2' };
-  const options = legalBlockerOptions(state, 'p2');
+  const options = blockerSeedAssignments(state, 'p2');
   assert.ok(options.some((assignment) => (assignment.flyer ?? []).includes('spider')),
     'reach jest legalnym blokerem flying');
   assert.ok(options.every((assignment) => !(assignment.flyer ?? []).includes('ground')),

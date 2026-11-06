@@ -165,6 +165,11 @@ function conditionHolds(trigger, state, sourceObject = null, eventData = {}) {
   if (condition.descendedThisTurn) {
     return Boolean((state.descendedThisTurn ?? {})[sourceObject?.controllerId]);
   }
+  // Living History (CR 603.4): intervening-if checked both when the attack
+  // trigger would fire and when it resolves. Fact is keyed by graveyard owner.
+  if (condition.cardLeftGraveyardThisTurn) {
+    return Boolean((state.cardsLeftGraveyardThisTurn ?? {})[sourceObject?.controllerId]);
+  }
   // „if you control a creature with a counter on it" (CR 603.4 — intervening
   // if; Delta Bloodflies). Warunek sprawdzany jest przy odpaleniu triggera.
   if (condition.controlsCreatureWithCounter) {
@@ -1212,8 +1217,21 @@ export function queueTriggerToStack(state, ability, source, targets, events, ext
       printLki,
     }),
   });
-  state.objects.set(id, entry);
-  state.zones.stack.push(id);
+  // A100/A98 / CR 603.3 + 605.4a: zdolności wyzwolone podczas rozstrzygania
+  // płatności (Ward albo opcjonalnej, np. koszt many: Scion, Treasure) NIE
+  // trafiają na stos w środku płatności. Czekają w deferredTriggers danej
+  // decyzji do checkpointu po jej zamknięciu. Zdarzenie ability_triggered
+  // powstaje od razu (fakt wyzwolenia), ale wpis stosu jest odroczony; dlatego
+  // nie ma go jeszcze w state.objects/zones.stack i skan Ward/APNAP nie może
+  // go ogłosić. Wybory celów spoza stosu pozostają na dotychczasowej ścieżce.
+  if (state.pendingWardPay) {
+    (state.pendingWardPay.deferredTriggers ??= []).push(entry);
+  } else if (state.pendingOptionalPay) {
+    (state.pendingOptionalPay.deferredTriggers ??= []).push(entry);
+  } else {
+    state.objects.set(id, entry);
+    state.zones.stack.push(id);
+  }
   const fired = event('ability_triggered', {
     objectId: source.id, cardId: source.cardId,
     trigger: ability?.trigger?.event ?? null, onStack: true,
@@ -1225,6 +1243,40 @@ export function queueTriggerToStack(state, ability, source, targets, events, ext
   events.push(fired);
   // M171/Z6: wywołujący (announce podziału obrażeń) potrzebuje id wpisu.
   return entry;
+}
+
+/**
+ * A100/A98: domknięcie okna płatności odkłada odroczone wpisy na stos DOPIERO
+ * po zakończeniu płatności. Zachowuje ich identyfikatory i LKI z chwili
+ * wyzwolenia; ogłasza Ward dla celowanych wpisów dopiero w tej chwili
+ * (CR 603.3 — zdolność jest na stosie, gdy zostaje ogłoszona).
+ */
+export function flushDeferredResolutionTriggers(state, deferredTriggers, events = []) {
+  if (!Array.isArray(deferredTriggers) || deferredTriggers.length === 0) return events;
+  const stackStart = state.zones.stack.length;
+  for (const entry of deferredTriggers) {
+    state.objects.set(entry.id, entry);
+    state.zones.stack.push(entry.id);
+  }
+  placeTriggerBatchInApnapOrder(state, stackStart);
+  const wardStart = state.zones.stack.length;
+  const announcements = new Set();
+  for (const entry of deferredTriggers) {
+    // Ten sam filtr co zdarzenie ability_triggered w queueTriggerToStack:
+    // cele stałe (fixedTargetCount) nie są ogłaszane jako nowe targety Ward.
+    const fixedTargetCount = entry.triggerEntry?.extra?.fixedTargetCount ?? 0;
+    const targets = (entry.triggerEntry?.targets ?? [])
+      .slice(fixedTargetCount).filter((targetId) => targetId != null);
+    if (!targets.length || announcements.has(entry.id)) continue;
+    announcements.add(entry.id);
+    if (Array.isArray(state.pendingWardAnnouncements)) {
+      state.pendingWardAnnouncements.push({ casterId: entry.controllerId, targetingStackId: entry.id, targetIds: [...targets] });
+    } else {
+      fireWardTriggers(state, entry.controllerId, entry.id, targets, events);
+    }
+  }
+  placeTriggerBatchInApnapOrder(state, wardStart);
+  return events;
 }
 
 /**
@@ -2108,7 +2160,7 @@ function queueTargetDecision(state, ability, source, candidates, allowNone, fixe
   // stos (odpowiedź przeciwnika jak dla celu wybranego z modalu).
   const autoSpec = ability?.trigger?.requiresTarget;
   const autoMulti = Number.isInteger(autoSpec?.count) && autoSpec.count > 1;
-  if (!allowNone && candidates.length === 1 && fixedTargetIds.length === 0 && !autoMulti) {
+  if (!state.pendingOptionalPay && !allowNone && candidates.length === 1 && fixedTargetIds.length === 0 && !autoMulti) {
     // LKI jak w ścieżce resolve (M166/B): źródło mogło umrzeć z SBA tej samej
     // komendy, co odpaliło trigger (Enrage) — bierzemy ostatni znany stan.
     const src = state.objects.get(source.id) ?? source;
@@ -2129,7 +2181,7 @@ function queueTargetDecision(state, ability, source, candidates, allowNone, fixe
     events.push(resolved);
     return true;
   }
-  state.pendingTriggerTargets.push({
+  const decision = {
     playerId: controllerId,
     sourceId: source.id,
     cardId: source.cardId,
@@ -2152,7 +2204,21 @@ function queueTargetDecision(state, ability, source, candidates, allowNone, fixe
     // w locie); bez override rozstrzyganie nie znałoby kandydatów.
     specOverride: specOverride ? Object.freeze({ ...specOverride }) : null,
     restorePriorityTo: state.turn.priorityPlayerId,
-  });
+  };
+  // A104/A105 / CR 603.3: w trakcie rozstrzygania płatności opcjonalnej
+  // zdolność już wyzwoliła, ale cel wybieramy dopiero przy ogłoszeniu na stos.
+  // Bufor nie jest publiczną decyzją i nie zmienia priorytetu płatności.
+  if (state.pendingOptionalPay) {
+    (state.pendingOptionalPay.deferredTargets ??= []).push(decision);
+    const fired = event('ability_triggered', {
+      objectId: source.id, cardId: source.cardId,
+      trigger: ability?.trigger?.event ?? null, awaitingTarget: true,
+    });
+    state.events.push(fired);
+    events.push(fired);
+    return true;
+  }
+  state.pendingTriggerTargets.push(decision);
   state.turn.priorityPlayerId = controllerId;
   // M172/B: rozdział Sagi ma effect: [] (efekty wykonuje fireSagaChapter) —
   // typ efektu dla etykiet bierzemy wtedy z extra.chapterEffectType.
@@ -2630,8 +2696,9 @@ function fireEnterBattlefieldTriggers(state, entered, events, context = {}) {
  * they choose." APNAP = gracz aktywny, potem każdy inny gracz w kolejności tur
  * (CR 101.4) — w tym silniku kolejność tur to `state.players` cyklicznie od
  * gracza aktywnego (tak samo liczy ją `nextTurnStep`, turn.js). Kolejność
- * wewnątrz jednego kontrolera zostaje bez zmian (deterministyczna kolejność
- * wykrycia — silnik nie pyta gracza o kolejność własnych zdolności).
+ * wewnątrz jednego kontrolera ten helper tylko stabilizuje kolejność wykrycia;
+ * właściwy wybór kolejności oferuje wspólny checkpoint (ADR 0032,
+ * `pendingDeathTriggerBatch` / `resolve_trigger_order`).
  *
  * `stackStart` = długość stosu przed skanem, więc regulujemy WYŁĄCZNIE wpisy
  * dodane przez ten skan (starsze wpisy stosu są nietykalne). Gdy w segmencie
@@ -2686,10 +2753,21 @@ function processTriggersScan(state, recentEvents) {
   // zdolności wyzwolonych od ostatniego priorytetu — na końcu skanu
   // przestawiamy je w kolejność APNAP (patrz helper niżej).
   const stackStart = state.zones.stack.length;
-  // Kontrolerzy, których permanenty opuściły pole bitwy w tej komendzie —
-  // trigger „one or more permanents you control leave the battlefield"
-  // odpala się RAZ na komendę, nie raz na permanent (CR 603.2).
-  const leftBattlefield = new Set();
+  // A110 / ADR 0031: „one or more permanents you control leave the battlefield"
+  // odpala się RAZ na grupę równoczesnych odejść, nie raz na permanent i nie
+  // automatycznie raz na całą komendę (CR 603.2). Emiter może przynieść
+  // `departureGroupId`; brak identyfikatora zachowuje dawną grupę komendy jako
+  // bezpieczny fallback dla ścieżek jeszcze niezinwentaryzowanych.
+  const departureGroups = new Map();
+  const processedDepartureGroups = new Set();
+  let departureGroupOrder = 0;
+  // CR 603.10a: obserwator, który sam opuszcza pole bitwy w tym zdarzeniu,
+  // też może mieć zdolność „one or more permanents you control leave…”.
+  // Zapamiętujemy stan sprzed ruchu (stary identyfikator, kontroler i efektywne
+  // zdolności), bo po zmianie strefy powstaje nowy obiekt (CR 400.7).
+  const departureSources = new Map();
+  const departureSourceOrder = new Map();
+  const departedInstanceIds = new Set();
   // GRUPOWANIE zbiorczych wyzwalaczy („Whenever one or more …") — patrz
   // `mayFireGrouped` poniżej. Zestaw kluczy jest JEDEN dla wszystkich ścieżek,
   // bo dawniej każda miała własny (osobny dedup obrażeń i osobny dedup
@@ -2766,7 +2844,6 @@ function processTriggersScan(state, recentEvents) {
   // silnika, nie reguła MtG).
   const MAX_TRIGGER_EVENTS_SCANNED = 512;
   const queue = [...recentEvents];
-  const aggregatedControllers = new Set();
   // E9/F5: obiekty, których wejście na pole bitwy już obsłużono w tym
   // przebiegu (podwójna emisja object_moved + permanent_entered_battlefield).
   const etbEnterFired = new Set();
@@ -2900,17 +2977,28 @@ function processTriggersScan(state, recentEvents) {
     // zdarzeniu śmierci, który widziałby cudze zgony tej samej partii SBA).
     // ODBICIE gospodarza nie jest śmiercią (zdarzenie nie istnieje) — aura
     // idzie do grobu, a trigger NIE odpala, zgodnie z Oracle.
-    if (ev.type === 'permanent_put_into_graveyard' && ev.attachedTo != null) {
+    // Griffin Guide / A108/A109 (CR 603.10a, 704.4): „enchanted creature dies"
+    // patrzy na ŚMIERĆ gospodarza w tej samej partii zdarzeń. Są dwa kształty:
+    //  - aura odchodzi razem z gospodarzem: permanent_put_into_graveyard niesie
+    //    attachedTo (LKI), bo po ruchu obiekt nie ma już pola attachedTo;
+    //  - aura czeka na SBA po Ward: object_detached.deferredAuraSba niesie
+    //    fromHostId, a aura wciąż jest na polu bitwy (attachedTo=null).
+    // Obie ścieżki odpalają trigger RAZ, w chwili śmierci gospodarza; późniejsze
+    // SBA aury nie szukają śmierci ponownie (attachedTo=null w jej zdarzeniu).
+    const auraDeparture = ev.type === 'permanent_put_into_graveyard' && ev.attachedTo != null;
+    const auraDeferred = ev.type === 'object_detached' && ev.deferredAuraSba && ev.fromHostId != null;
+    if (auraDeparture || auraDeferred) {
+      const formerHostId = auraDeparture ? ev.attachedTo : ev.fromHostId;
       const hostDeath = queue.find((sibling) => {
         // CR 122.1h: „exile instead\" to nie śmierć.
         if (sibling.toZone === 'exile') return false;
         if (sibling.type === 'creature_destroyed' || sibling.type === 'permanent_destroyed'
           || sibling.type === 'permanent_sacrificed') {
-          return sibling.fromId === ev.attachedTo;
+          return sibling.fromId === formerHostId;
         }
         if (sibling.type === 'object_moved') {
           return sibling.fromZone === 'battlefield' && sibling.toZone === 'graveyard'
-            && (sibling.object?.id ?? sibling.fromId) === ev.attachedTo;
+            && (sibling.object?.id ?? sibling.fromId) === formerHostId;
         }
         return false;
       });
@@ -2918,47 +3006,51 @@ function processTriggersScan(state, recentEvents) {
         ? (hostDeath.object ?? state.objects.get(hostDeath.objectId ?? hostDeath.toId))
         : null;
       if (hostDeath && diedAs(hostLki, 'creature', 'Creature')) {
-        const aura = ev.object ?? state.objects.get(ev.toId);
-        for (const ability of abilitiesOnDeath(aura)) {
-          if (ability?.trigger?.event === 'enchanted_creature_dies') {
-            tryFire(state, ability, aura, [], events);
+        const aura = auraDeparture
+          ? (ev.object ?? state.objects.get(ev.toId))
+          : state.objects.get(ev.objectId);
+        if (aura) {
+          for (const ability of abilitiesOnDeath(aura)) {
+            if (ability?.trigger?.event === 'enchanted_creature_dies') {
+              tryFire(state, ability, aura, [], events);
+            }
           }
         }
       }
     }
     if (ev.type === 'creature_destroyed') {
       // Finality (exile) NIE uruchamia triggera „dies\" (CR 122.1h — obiekt
-      // nie umiera, jest wygnany).
-      if (ev.toZone === 'exile') return;
-      // M160/A: współzgony tej samej partii SBA (simultaneousIds) — LKI
-      // poległych źródeł z ich zdarzeń śmierci w bieżącej kolejce skanu.
-      const fellows = (ev.simultaneousIds ?? []).length > 1
-        ? queue
-          .filter((sibling) => sibling !== ev && sibling.type === 'creature_destroyed'
-            && sibling.toZone !== 'exile'
-            && (ev.simultaneousIds ?? []).includes(sibling.fromId))
-          .map((sibling) => {
-            const fellow = state.objects.get(sibling.toId) ?? sibling.object;
-            const fellowController = eventControllerAtDeath(sibling, fellow);
-            return fellow && fellowController != null && fellowController !== fellow.controllerId
-              ? Object.freeze({ ...fellow, controllerId: fellowController })
-              : fellow;
-          })
-        : [];
-      // M160/A: TOKEN po śmierci przestaje istnieć (SBA CR 704.5e usuwa
-      // trupa z grobu) — bez fallbacku na LKI zdarzenia śmierć tokena była
-      // NIEWIDZIALNA dla triggerów any_creature_dies (fireDeathTriggers
-      // dostawał undefined i wychodził).
-      fireDeathTriggers(state.objects.get(ev.toId) ?? ev.object, fellows, ev.fromId,
-        eventControllerAtDeath(ev, state.objects.get(ev.toId) ?? ev.object));
+      // nie umiera, jest wygnany). Pomijamy tylko trigger śmierci; dalszy
+      // skan odejścia z pola bitwy nadal musi zobaczyć to zdarzenie.
+      if (ev.toZone !== 'exile') {
+        // M160/A: współzgony tej samej partii SBA (simultaneousIds) — LKI
+        // poległych źródeł z ich zdarzeń śmierci w bieżącej kolejce skanu.
+        const fellows = (ev.simultaneousIds ?? []).length > 1
+          ? queue
+            .filter((sibling) => sibling !== ev && sibling.type === 'creature_destroyed'
+              && sibling.toZone !== 'exile'
+              && (ev.simultaneousIds ?? []).includes(sibling.fromId))
+            .map((sibling) => {
+              const fellow = state.objects.get(sibling.toId) ?? sibling.object;
+              const fellowController = eventControllerAtDeath(sibling, fellow);
+              return fellow && fellowController != null && fellowController !== fellow.controllerId
+                ? Object.freeze({ ...fellow, controllerId: fellowController })
+                : fellow;
+            })
+          : [];
+        // M160/A: TOKEN po śmierci przestaje istnieć (SBA CR 704.5e usuwa
+        // trupa z grobu) — bez fallbacku na LKI zdarzenia śmierć tokena była
+        // NIEWIDZIALNA dla triggerów any_creature_dies (fireDeathTriggers
+        // dostawał undefined i wychodził).
+        fireDeathTriggers(state.objects.get(ev.toId) ?? ev.object, fellows, ev.fromId,
+          eventControllerAtDeath(ev, state.objects.get(ev.toId) ?? ev.object));
+      }
     }
-    if (ev.type === 'permanent_sacrificed') {
-      if (ev.toZone === 'exile') return; // finality
+    if (ev.type === 'permanent_sacrificed' && ev.toZone !== 'exile') {
       fireDeathTriggers(state.objects.get(ev.objectId) ?? ev.object, [], ev.objectId,
         eventControllerAtDeath(ev, state.objects.get(ev.objectId) ?? ev.object));
     }
-    if (ev.type === 'permanent_destroyed') {
-      if (ev.toZone === 'exile') return; // finality
+    if (ev.type === 'permanent_destroyed' && ev.toZone !== 'exile') {
       fireDeathTriggers(state.objects.get(ev.objectId) ?? ev.object, [], ev.objectId,
         eventControllerAtDeath(ev, state.objects.get(ev.objectId) ?? ev.object));
     }
@@ -2975,6 +3067,10 @@ function processTriggersScan(state, recentEvents) {
     // control leave the battlefield" (Nefarious Imp) — licznik odejść wyżej.
     if (ev.type === 'creature_destroyed' || ev.type === 'permanent_destroyed'
       || ev.type === 'permanent_sacrificed'
+      // A109: czysta aura osierocona przez gospodarza opuszcza pole przez
+      // SBA (704.5m) i emituje ten agregat zamiast gołego object_moved.
+      // Bez tego Nefarious Imp nie widział drugiego, późniejszego odejścia.
+      || ev.type === 'permanent_put_into_graveyard'
       || (ev.type === 'object_moved' && ev.fromZone === 'battlefield' && ev.toZone !== 'battlefield')
       || (ev.type === 'object_exiled' && ev.fromId)) {
       // CR 603.10: obiekt mógł już przestać istnieć (token poza polem bitwy —
@@ -2988,7 +3084,30 @@ function processTriggersScan(state, recentEvents) {
       // przejęty permanent, który opuszcza pole bitwy, liczy się kontrolerowi
       // z chwili odejścia (przed poprawką trafiał do właściciela).
       const goneControllerId = eventControllerAtDeath(ev, gone);
-      if (goneControllerId) leftBattlefield.add(goneControllerId);
+      if (goneControllerId) {
+        const groupTag = ev.departureGroupId ?? `legacy:${goneControllerId}`;
+        const groupKey = `${goneControllerId}|${groupTag}`;
+        if (!departureGroups.has(groupKey)) {
+          departureGroups.set(groupKey, { controllerId: goneControllerId, order: departureGroupOrder++ });
+        }
+        const groupOrder = departureGroups.get(groupKey).order;
+        const fromId = ev.fromId ?? ev.object?.id ?? gone?.id;
+        if (fromId != null && !departureSources.has(fromId)) {
+          // Zdarzenia zniszczenia niosą obiekt sprzed ruchu; pozostałe ścieżki
+          // mają obiekt po ruchu z polami `former*`. W obu przypadkach źródło
+          // grupowego triggera musi zachować cechy z chwili sprzed odejścia.
+          const pre = ev.object?.zone === 'battlefield' && ev.object.id === fromId ? ev.object : null;
+          const base = pre ?? gone;
+          if (base) {
+            const abilities = pre ? effectiveAbilities(pre) : abilitiesOnDeath(gone);
+            departureSources.set(fromId, Object.freeze({
+              ...base, id: fromId, zone: 'battlefield', controllerId: goneControllerId, abilities,
+            }));
+            departureSourceOrder.set(fromId, groupOrder);
+            if (base.instanceId != null) departedInstanceIds.add(base.instanceId);
+          }
+        }
+      }
       // „When this creature leaves the battlefield" (Fear of Abduction —
       // powrót wygnanych kart): trigger własny obiektu na ODEJŚCIE z pola bitwy
       // (dowolna strefa docelowa: ręka, exile, grób — CR 603.6c). Uwaga:
@@ -3013,7 +3132,10 @@ function processTriggersScan(state, recentEvents) {
     }
     // Descended: permanent card wpada do grobu z ręki (odrzucenie), milla
     // albo poświęcenia — liczymy po kontrolerze docelowego obiektu.
-    if (ev.type === 'permanent_sacrificed') markDescended(state.objects.get(ev.objectId));
+    // Poświęcenie z finality trafia do wygnania, nie do grobu (CR 122.1h).
+    if (ev.type === 'permanent_sacrificed' && ev.toZone !== 'exile') {
+      markDescended(state.objects.get(ev.objectId));
+    }
     if (ev.type === 'card_discarded' || ev.type === 'card_milled') {
       const enteredGrave = state.objects.get(ev.objectId);
       markDescended(enteredGrave);
@@ -4050,6 +4172,18 @@ function processTriggersScan(state, recentEvents) {
       for (const attackerId of ev.attackerIds ?? []) {
         const attacker = state.objects.get(attackerId);
         if (!attacker || attacker.zone !== 'battlefield') continue;
+        // „Whenever you attack" may live on any controlled permanent (for
+        // example an enchantment). It fires for each declared attacker under
+        // its controller. The separate `attacks` event below remains specific
+        // to abilities on the attacking object.
+        for (const source of state.objects.values()) {
+          if (source.zone !== 'battlefield' || source.controllerId !== attacker.controllerId) continue;
+          for (const ability of effectiveAbilities(source)) {
+            if (ability?.trigger?.event === 'attacks_you_control') tryFire(state, ability, source, [], events, {
+              attackerIds: [...(ev.attackerIds ?? [])],
+            });
+          }
+        }
         for (const ability of effectiveAbilities(attacker)) {
           // Kontekst zdarzenia dla triggerów ataku: lista współdeklarowanych
           // atakujących ORAZ wynik testu „z innym atakującym o większej sile"
@@ -4435,20 +4569,40 @@ function processTriggersScan(state, recentEvents) {
       for (let j = beforeEvent; j < events.length; j += 1) queue.push(events[j]);
     }
     if (scanned >= MAX_TRIGGER_EVENTS_SCANNED) break;
-    const freshControllers = [...leftBattlefield].filter((controllerId) => !aggregatedControllers.has(controllerId));
-    if (freshControllers.length === 0 && idx >= queue.length) break;
+    const freshGroups = [...departureGroups.entries()]
+      .filter(([key]) => !processedDepartureGroups.has(key))
+      .sort((a, b) => a[1].order - b[1].order);
+    if (freshGroups.length === 0 && idx >= queue.length) break;
     // „Whenever one or more permanents you control leave the battlefield"
-    // (Nefarious Imp, CR 603.2): RAZ na kontrolera na komendę, także po
-    // odejściach spowodowanych przez same triggery; zdarzenia agregatu
-    // wracają do kolejki i też są skanowane.
-    for (const controllerId of freshControllers) {
-      aggregatedControllers.add(controllerId);
+    // (Nefarious Imp, CR 603.2): RAZ na kontrolera na grupę równoczesnych
+    // odejść. Grupy bez jawnego identyfikatora nadal tworzą jedną grupę
+    // komendy; zdarzenia agregatu wracają do kolejki i też są skanowane.
+    for (const [groupKey, group] of freshGroups) {
+      processedDepartureGroups.add(groupKey);
+      const controllerId = group.controllerId;
       const beforeAggregate = events.length;
       for (const source of state.objects.values()) {
         if (source.zone !== 'battlefield' || source.controllerId !== controllerId) continue;
+        // Jeśli ten sam obiekt zdążył wrócić na pole bitwy w tej komendzie,
+        // nowy obiekt nie istniał w chwili dawnego odejścia — nie obserwuje go.
+        if (source.instanceId != null && departedInstanceIds.has(source.instanceId)) continue;
         for (const ability of effectiveAbilities(source)) {
           // Grupowanie po kontrolerze deklaruje KARTA (tag `groupPer`), rdzeń
           // nie zna żadnej karty po nazwie ani po nazwie zdarzenia-grup.
+          if (ability?.trigger?.event === 'permanents_you_control_leave_battlefield'
+            && ability?.trigger?.groupPer === 'controller') {
+            tryFire(state, ability, source, [], events);
+          }
+        }
+      }
+      // Własne odejście źródła: zdolność czytamy z LKI sprzed ruchu, nie z
+      // nowego obiektu w grobie/wygnaniu/ręce (CR 603.10a/400.7).
+      for (const [fromId, source] of departureSources.entries()) {
+        if (source.controllerId !== controllerId) continue;
+        // Źródło, które odeszło wcześniej, nie obserwuje późniejszej grupy.
+        const sourceOrder = departureSourceOrder.get(fromId);
+        if (sourceOrder == null || sourceOrder < group.order) continue;
+        for (const ability of source.abilities) {
           if (ability?.trigger?.event === 'permanents_you_control_leave_battlefield'
             && ability?.trigger?.groupPer === 'controller') {
             tryFire(state, ability, source, [], events);
@@ -4497,7 +4651,13 @@ function processTriggersScan(state, recentEvents) {
     if (ev.type !== 'ability_triggered' || !ev.onStack || !ev.targets?.length
       || announcements.has(ev.stackEntryId) || !state.objects.has(ev.stackEntryId)) continue;
     announcements.add(ev.stackEntryId);
-    fireWardTriggers(state, ev.playerId, ev.stackEntryId, ev.targets, events);
+    // A106/A107: jeśli trwa umieszczanie zwykłej partii, Ward nie wchodzi
+    // jeszcze na stos. Zbieramy ogłoszenia; game-state flushuje je po partii.
+    if (Array.isArray(state.pendingWardAnnouncements)) {
+      state.pendingWardAnnouncements.push({ casterId: ev.playerId, targetingStackId: ev.stackEntryId, targetIds: [...ev.targets] });
+    } else {
+      fireWardTriggers(state, ev.playerId, ev.stackEntryId, ev.targets, events);
+    }
   }
   placeTriggerBatchInApnapOrder(state, wardStart);
 

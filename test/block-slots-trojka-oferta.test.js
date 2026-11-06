@@ -1,7 +1,7 @@
 // E4 sesji 2026-09-19 (pętla jakości, ADR 0021 pkt 4a) — punkt otwarty
 // z poprzednich sesji: „kierunek odwrotny oferty bloków (Math.min(slots, 2))”.
 //
-// Defekt (odwrotny kierunek, L48): `legalBlockerOptions` w gałęzi pełnej
+// Defekt (odwrotny kierunek, L48): `blockerSeedAssignments` w gałęzi pełnej
 // enumeracji przetwarzał blokera z dodatkowymi slotami tylko DWA razy
 // (`Math.min(slots, 2)`), więc bloker o 3 slotach (Highland Game z licznikiem
 // +1/+1 + 2× Cenn's Tactician) nigdy nie dostawał w ofercie potrójnego bloku —
@@ -23,7 +23,7 @@ import { createCardRegistry } from '../src/cards/card-data.js';
 import { gameObjectDataOf } from '../src/cards/materialize.js';
 import { addCounter } from '../src/engine/counters.js';
 import { replaceObject } from '../src/engine/permanents.js';
-import { legalBlockerOptions, blockSlotsFor, COMBAT_OPTION_CAP } from '../src/engine/combat.js';
+import { blockerSeedAssignments, blockSlotsFor } from '../src/engine/combat.js';
 
 const REGISTRY = createCardRegistry();
 
@@ -71,7 +71,7 @@ const opcjeZ = (options, blockerId) => options.filter((o) =>
 test('E4/1: bloker o 3 slotach — oferta zawiera potrójny blok i silnik go przyjmuje', () => {
   const state = scena();
   assert.equal(blockSlotsFor(state, state.objects.get('b1')), 3, '1 + 2× statyka Cenn\'s Tactician');
-  const options = legalBlockerOptions(state, 'p1');
+  const options = blockerSeedAssignments(state, 'p1');
   const potrojny = { a1: ['b1'], a2: ['b1'], a3: ['b1'] };
   assert.ok(options.some((o) => JSON.stringify(o) === JSON.stringify(potrojny)),
     `legalny potrójny blok musi być w ofercie (L48): ${JSON.stringify(options)}`);
@@ -81,7 +81,7 @@ test('E4/1: bloker o 3 slotach — oferta zawiera potrójny blok i silnik go prz
 
 test('E4/2 (dźwięczność): każda opcja oferty przechodzi przez declareBlockers', () => {
   const wzorcowa = scena();
-  const options = legalBlockerOptions(wzorcowa, 'p1');
+  const options = blockerSeedAssignments(wzorcowa, 'p1');
   assert.ok(options.length > 0);
   for (const assignment of options) {
     const swiezy = scena();
@@ -93,7 +93,7 @@ test('E4/2 (dźwięczność): każda opcja oferty przechodzi przez declareBlocke
 test('E4/3 (anty-over-fix): bloker o 1 slocie nadal bez podwójnego bloku', () => {
   const state = scena({ licznik: false });
   assert.equal(blockSlotsFor(state, state.objects.get('b1')), 1, 'bez licznika brak dodatkowych slotów');
-  const options = legalBlockerOptions(state, 'p1');
+  const options = blockerSeedAssignments(state, 'p1');
   assert.equal(opcjeZ(options, 'b1').length, 0,
     `bez dodatkowych slotów podwójny blok nie może być oferowany: ${JSON.stringify(options)}`);
   const r = execute(scena({ licznik: false }), {
@@ -102,11 +102,9 @@ test('E4/3 (anty-over-fix): bloker o 1 slocie nadal bez podwójnego bloku', () =
   assert.equal(r.ok, false, 'silnik odrzuca podwójne użycie blokera o 1 slocie');
 });
 
-test('E4/4: oferta nadal mieści się w capie i nie ma duplikatów przypisań', () => {
+test('E4/4: oferta kompletna (bez dawnego capa) i nie ma duplikatów przypisań', () => {
   const state = scena();
-  const options = legalBlockerOptions(state, 'p1');
-  assert.ok(options.length <= COMBAT_OPTION_CAP,
-    `rozrost przebiegów nie może wysadzić limitu oferty (jest ${options.length})`);
+  const options = blockerSeedAssignments(state, 'p1');
   // To samo przypisanie powstawało wieloma ścieżkami enumeracji (kolejność
   // atakujących, powtórzone przebiegi) — oferta ma mieć JEDEN wpis na
   // przypisanie, inaczej „liczba opcji” rośnie ponad cap.

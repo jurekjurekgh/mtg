@@ -2,7 +2,7 @@ import { isActivatedManaAbility, colorsProducibleBySubtype, manaAbilityHasManual
 import { graveyardCardTypeCount } from './triggers.js';
 import { event } from '../protocol/types.js';
 import { activatableAbilities, deathZoneFor, hasCreatureType, effectiveKeywords, effectivePower, effectiveToughness, tapObject } from './permanents.js';
-import { producibleMana, spendMana, canPayColoredCost, grantManaOnLand, landCanProduceMana, untappedFreeManaSources } from './resources.js';
+import { producibleMana, spendMana, canPayColoredCost, grantManaOnLand, landCanProduceMana, untappedFreeManaSources, turnFaceUpManaPurpose } from './resources.js';
 import { moveObjectDirectly } from './objects.js';
 import { addCounter, removeCounter } from './counters.js';
 import { changeLife, payEnergyCounters } from './players.js';
@@ -372,7 +372,13 @@ export function isStatic(ability) { return ability?.type === ABILITY_TYPE.static
  * Wspólna funkcja oferty (legalActivatedAbilities) i walidacji (activateAbility),
  * żeby oferowana komenda zawsze była akceptowana.
  */
+function manaPurposeForAbility(ability) {
+  const effects = Array.isArray(ability?.effect) ? ability.effect : [ability?.effect];
+  return effects.some((effect) => effect?.type === 'turn_face_up') ? turnFaceUpManaPurpose() : {};
+}
+
 function manaForActivation(state, playerId, object, ability, selfAbilityKey = null, baseMana = null) {
+  const purpose = manaPurposeForAbility(ability);
   // M180/Z1 (regresja M179/D, klasa L48): KAŻDE źródło many tapowane kosztem
   // własnej zdolności nie zapłaci tej zdolności — po M179/D nielandowe
   // źródła czystej many (Seer's Lantern) też liczą się w bazie, więc oferta
@@ -383,10 +389,10 @@ function manaForActivation(state, playerId, object, ability, selfAbilityKey = nu
   // id:indeks (budżet już wydany tą aktywacją) — precyzyjnie tę zdolność,
   // nie cały obiekt (własny ląd inną zdolnością płaci normalnie).
   const reqs = colorRequirementsOf(ability.cost);
-  if (baseMana == null) baseMana = producibleMana(state, playerId, selfAbilityKey, {}, reqs);
+  if (baseMana == null) baseMana = producibleMana(state, playerId, selfAbilityKey, purpose, reqs);
   if (ability.cost?.tap && !object.tapped) {
     const excl = selfAbilityKey != null ? [object.id, selfAbilityKey] : object.id;
-    return producibleMana(state, playerId, excl, {}, reqs);
+    return producibleMana(state, playerId, excl, purpose, reqs);
   }
   return baseMana;
 }
@@ -717,6 +723,7 @@ export function legalActivatedAbilities(state, playerId) {
       // nie finansuje własnego kosztu (klucz id:indeks, jak ewidencja).
       const selfKey = ability.oncePerTurn ? `${id}:${index}` : null;
       const mana = manaForActivation(state, playerId, object, ability, selfKey);
+      const manaPurpose = manaPurposeForAbility(ability);
       // M174/B (Immersturm Skullcairn, L48 oferta=walidacja): źródło many
       // tapowane KOSZTEM zdolności nie zapłaci jej pipów kolorowych —
       // bramka kolorów liczy się z jego wykluczeniem (ilość already w
@@ -808,6 +815,12 @@ export function legalActivatedAbilities(state, playerId) {
           object.equipment.equipFor?.equip ?? Infinity,
         );
         if (cheapestEquip > mana) continue;
+        // Equip wybiera cel w CR 702.6a — użyj wspólnej listy legalnych
+        // celów, by uwzględnić hexproof/shroud i ochronę przed kolorem
+        // źródła. Własna pętla poniżej nadal filtruje kontrolę/no-op i koszt.
+        const legalEquipTargets = new Set(legalTargetCandidates(
+          state, playerId, { type: 'creature_you_control' }, object,
+        ));
         for (const targetId of state.zones.battlefield) {
           const target = state.objects.get(targetId);
           // CR 702.6a: equipment nie może wyposażyć SAMEGO SIEBIE — oferta
@@ -833,6 +846,7 @@ export function legalActivatedAbilities(state, playerId) {
             : (object.equipment.colors ?? []);
           if (target?.zone === 'battlefield' && target.kind === 'creature'
             && target.controllerId === playerId && target.id !== id
+            && legalEquipTargets.has(targetId)
             && equipForTarget <= mana
             && object.attachedTo !== target.id
             && canPayColoredCost(state, playerId, colorRequirementsOf({ colors: targetColors }))) {
@@ -859,7 +873,7 @@ export function legalActivatedAbilities(state, playerId) {
         });
         if (candidates.length === 0) continue;
         if ((ability.cost?.mana ?? 0) > mana) continue;
-        if (!canPayColoredCost(state, playerId, colorRequirementsOf(ability.cost), colorExcludeId)) continue;
+        if (!canPayColoredCost(state, playerId, colorRequirementsOf(ability.cost), colorExcludeId, manaPurposeForAbility(ability))) continue;
         for (const tapId of candidates) {
           out.push({ objectId: id, abilityIndex: index, ability, tapCreatureId: tapId });
         }
@@ -876,12 +890,12 @@ export function legalActivatedAbilities(state, playerId) {
             && !candidate.tapped && (candidate.subtypes ?? []).includes(sub);
         });
         if (candidates.length === 0) continue;
-        if (!canPayColoredCost(state, playerId, colorRequirementsOf(ability.cost), colorExcludeId)) continue;
+        if (!canPayColoredCost(state, playerId, colorRequirementsOf(ability.cost), colorExcludeId, manaPurposeForAbility(ability))) continue;
         for (const tapId of candidates) {
           // Klasa Z1/M180: źródło ({T} w koszcie) ANI kandydat tapowany
           // kosztem nie zapłacą many — oferta liczy manę BEZ obu
           // (płatność tapuje je przed spendMana).
-          const manaWithout = producibleMana(state, playerId, ability.cost?.tap ? [id, tapId] : [tapId], {}, colorRequirementsOf(ability.cost));
+          const manaWithout = producibleMana(state, playerId, ability.cost?.tap ? [id, tapId] : [tapId], manaPurpose, colorRequirementsOf(ability.cost));
           if ((ability.cost?.mana ?? 0) > manaWithout) continue;
           out.push({ objectId: id, abilityIndex: index, ability, tapPermanentCostId: tapId });
         }
@@ -890,7 +904,7 @@ export function legalActivatedAbilities(state, playerId) {
       if (ability.cost?.sacrificeCreature) {
         if (effectiveAbilityManaCost(state, playerId, ability, object) > mana) continue;
         if (ability.cost.tap && (object.tapped || tapBlockedBySummoningSickness(state, object, ability))) continue;
-        if (!canPayColoredCost(state, playerId, colorRequirementsOf(ability.cost), colorExcludeId)) continue;
+        if (!canPayColoredCost(state, playerId, colorRequirementsOf(ability.cost), colorExcludeId, manaPurposeForAbility(ability))) continue;
         for (const sacrificeCreatureId of sacrificeCreatureCandidates(state, playerId, object, ability.cost)) {
           out.push({ objectId: id, abilityIndex: index, ability, sacrificeCreatureId });
         }
@@ -909,7 +923,7 @@ export function legalActivatedAbilities(state, playerId) {
         if ((ability.cost?.mana ?? 0) > mana) continue;
         if (ability.cost?.tap && object.tapped) continue;
         if (ability.cost?.tap && tapBlockedBySummoningSickness(state, object, ability)) continue;
-        if (!canPayColoredCost(state, playerId, colorRequirementsOf(ability.cost), colorExcludeId)) continue;
+        if (!canPayColoredCost(state, playerId, colorRequirementsOf(ability.cost), colorExcludeId, manaPurposeForAbility(ability))) continue;
         const combos = [];
         for (const a of perColor[0] ?? []) {
           for (const b of perColor[1] ?? []) {
@@ -931,7 +945,7 @@ export function legalActivatedAbilities(state, playerId) {
         const comboRank = (combo) => combo.reduce((max, cid) => Math.max(max, zoneRank.get(cid) ?? 0), 0);
         combos.sort((left, right) => (comboPenalty(left) - comboPenalty(right))
           || (comboRank(left) - comboRank(right)));
-        for (const combo of combos.slice(0, 12)) {
+        for (const combo of combos) { // zgłoszenie F: bez odcinania kombinacji
           out.push({ objectId: id, abilityIndex: index, ability, sacrificeCreatureIds: combo });
         }
         continue;
@@ -947,7 +961,7 @@ export function legalActivatedAbilities(state, playerId) {
         });
         if (candidates.length === 0) continue;
         if ((ability.cost?.mana ?? 0) > mana) continue;
-        if (!canPayColoredCost(state, playerId, colorRequirementsOf(ability.cost), colorExcludeId)) continue;
+        if (!canPayColoredCost(state, playerId, colorRequirementsOf(ability.cost), colorExcludeId, manaPurposeForAbility(ability))) continue;
         for (const tapId of candidates) {
           out.push({ objectId: id, abilityIndex: index, ability, tapOtherCreatureId: tapId });
         }
@@ -964,7 +978,7 @@ export function legalActivatedAbilities(state, playerId) {
         });
         if (lands.length === 0) continue;
         if ((ability.cost?.mana ?? 0) > mana) continue;
-        if (!canPayColoredCost(state, playerId, colorRequirementsOf(ability.cost), colorExcludeId)) continue;
+        if (!canPayColoredCost(state, playerId, colorRequirementsOf(ability.cost), colorExcludeId, manaPurposeForAbility(ability))) continue;
         for (const landId of lands) {
           out.push({ objectId: id, abilityIndex: index, ability, sacrificeLandId: landId });
         }
@@ -1020,7 +1034,7 @@ export function legalActivatedAbilities(state, playerId) {
       if (targetSpec.length === 1 && targetSpec[0].type === 'land_you_control') {
         // Cel „land you control": wszystkie własne landy (także land creatures).
         if ((ability.cost?.mana ?? 0) > mana) continue;
-        if (!canPayColoredCost(state, playerId, colorRequirementsOf(ability.cost), colorExcludeId)) continue;
+        if (!canPayColoredCost(state, playerId, colorRequirementsOf(ability.cost), colorExcludeId, manaPurposeForAbility(ability))) continue;
         for (const targetId of state.zones.battlefield) {
           const target = state.objects.get(targetId);
           const isLand = target && (target.kind === 'land' || (target.types ?? []).includes('Land'));
@@ -1051,7 +1065,7 @@ export function legalActivatedAbilities(state, playerId) {
         if ((ability.cost?.mana ?? 0) > mana) continue;
         if (ability.cost?.tap && object.tapped) continue;
         if (ability.cost?.tap && tapBlockedBySummoningSickness(state, object, ability)) continue;
-        if (!canPayColoredCost(state, playerId, colorRequirementsOf(ability.cost), colorExcludeId)) continue;
+        if (!canPayColoredCost(state, playerId, colorRequirementsOf(ability.cost), colorExcludeId, manaPurposeForAbility(ability))) continue;
         const artifactPool = state.zones.battlefield.filter((aid) => {
           const cand = state.objects.get(aid);
           return cand && cand.id !== id && cand.controllerId === playerId && !cand.tapped
@@ -1066,7 +1080,7 @@ export function legalActivatedAbilities(state, playerId) {
         const fixed = ability.cost.mana ?? 0;
         const life = state.players.find((entry) => entry.id === playerId)?.life ?? 0;
         const maxX = Math.min(Math.max(0, mana - fixed), life, 20);
-        if (!canPayColoredCost(state, playerId, colorRequirementsOf(ability.cost), colorExcludeId)) continue;
+        if (!canPayColoredCost(state, playerId, colorRequirementsOf(ability.cost), colorExcludeId, manaPurposeForAbility(ability))) continue;
         for (let x = 1; x <= maxX; x += 1) {
           out.push({ objectId: id, abilityIndex: index, ability, xValue: x });
         }
@@ -1079,7 +1093,7 @@ export function legalActivatedAbilities(state, playerId) {
         if (abilityEffectIsNoOp(state, object, ability, object)) continue;
         const effManaNoTarget = effectiveAbilityManaCost(state, playerId, ability, object);
         if (effManaNoTarget > mana) continue;
-        if (!canPayColoredCost(state, playerId, colorRequirementsOf(ability.cost), colorExcludeId)) continue;
+        if (!canPayColoredCost(state, playerId, colorRequirementsOf(ability.cost), colorExcludeId, manaPurposeForAbility(ability))) continue;
         out.push({ objectId: id, abilityIndex: index, ability });
         continue;
       }
@@ -1149,7 +1163,7 @@ export function legalActivatedAbilities(state, playerId) {
             if (ownCreatureTarget && target.controllerId !== playerId) return false;
             return true;
           });
-      if (!canPayColoredCost(state, playerId, colorRequirementsOf(ability.cost), colorExcludeId)) continue;
+      if (!canPayColoredCost(state, playerId, colorRequirementsOf(ability.cost), colorExcludeId, manaPurposeForAbility(ability))) continue;
       for (const targetId of candidates) {
         const target = state.objects.get(targetId);
         // M103/A2 + M104: wariant, po którym cel zostaje w tym samym stanie
@@ -1193,7 +1207,7 @@ export function legalActivatedAbilities(state, playerId) {
       if (ability?.type !== ABILITY_TYPE.activated) continue;
       if (ability.timing === 'sorcery' && !sorcerySpeed) continue;
       if ((ability.cost?.mana ?? 0) > producibleMana(state, playerId, null, {}, colorRequirementsOf(ability.cost))) continue;
-      if (!canPayColoredCost(state, playerId, colorRequirementsOf(ability.cost))) continue;
+      if (!canPayColoredCost(state, playerId, colorRequirementsOf(ability.cost), null, manaPurposeForAbility(ability))) continue;
       const targetSpec = ability.targets ?? [];
       if (targetSpec.length === 0) {
         out.push({ objectId: id, abilityIndex: index, ability, grantedFromEquipment: true });
@@ -1232,7 +1246,7 @@ export function legalActivatedAbilities(state, playerId) {
       if (abilityConditionFailure(state, playerId, ability, object) !== null) continue;
       const mana = manaForActivation(state, playerId, object, ability);
       if (effectiveAbilityManaCost(state, playerId, ability, object) > mana) continue;
-      if (!canPayColoredCost(state, playerId, colorRequirementsOf(ability.cost))) continue;
+      if (!canPayColoredCost(state, playerId, colorRequirementsOf(ability.cost), null, manaPurposeForAbility(ability))) continue;
       const targetSpec = ability.targets ?? [];
       if (targetSpec.length === 0) {
         out.push({ objectId: id, abilityIndex: index, ability });
@@ -1253,7 +1267,7 @@ export function legalActivatedAbilities(state, playerId) {
       const ability = object.abilities[index];
       if (ability?.type !== ABILITY_TYPE.activated || !ability.cycling) continue;
       if ((ability.cost?.mana ?? 0) > producibleMana(state, playerId, null, {}, colorRequirementsOf(ability.cost))) continue;
-      if (!canPayColoredCost(state, playerId, colorRequirementsOf(ability.cost))) continue;
+      if (!canPayColoredCost(state, playerId, colorRequirementsOf(ability.cost), null, manaPurposeForAbility(ability))) continue;
       out.push({ objectId: id, abilityIndex: index, ability });
     }
   }
@@ -1267,7 +1281,7 @@ export function legalActivatedAbilities(state, playerId) {
       if (ability?.type !== ABILITY_TYPE.activated || !ability.channel) continue;
       const effManaChannel = effectiveAbilityManaCost(state, playerId, ability, object);
       if (effManaChannel > producibleMana(state, playerId, null, {}, colorRequirementsOf(ability.cost))) continue;
-      if (!canPayColoredCost(state, playerId, colorRequirementsOf(ability.cost))) continue;
+      if (!canPayColoredCost(state, playerId, colorRequirementsOf(ability.cost), null, manaPurposeForAbility(ability))) continue;
       out.push({ objectId: id, abilityIndex: index, ability });
     }
   }
@@ -1282,7 +1296,7 @@ export function legalActivatedAbilities(state, playerId) {
       if (ability?.type !== ABILITY_TYPE.activated || !ability.reinforce) continue;
       const effManaReinforce = effectiveAbilityManaCost(state, playerId, ability, object);
       if (effManaReinforce > producibleMana(state, playerId, null, {}, colorRequirementsOf(ability.cost))) continue;
-      if (!canPayColoredCost(state, playerId, colorRequirementsOf(ability.cost))) continue;
+      if (!canPayColoredCost(state, playerId, colorRequirementsOf(ability.cost), null, manaPurposeForAbility(ability))) continue;
       const targetSpec = ability.targets ?? [];
       if (targetSpec.length === 0) {
         out.push({ objectId: id, abilityIndex: index, ability });
@@ -1306,7 +1320,7 @@ export function legalActivatedAbilities(state, playerId) {
       if (ability?.type !== ABILITY_TYPE.activated || !ability.bloodrush) continue;
       const effManaBloodrush = effectiveAbilityManaCost(state, playerId, ability, object);
       if (effManaBloodrush > producibleMana(state, playerId, null, {}, colorRequirementsOf(ability.cost))) continue;
-      if (!canPayColoredCost(state, playerId, colorRequirementsOf(ability.cost))) continue;
+      if (!canPayColoredCost(state, playerId, colorRequirementsOf(ability.cost), null, manaPurposeForAbility(ability))) continue;
       const targetSpec = ability.targets ?? [];
       if (targetSpec.length === 0) continue; // bloodrush bez celu to błąd danych
       const candidates = legalTargetCandidates(state, playerId, targetSpec[0], object);
@@ -1328,7 +1342,7 @@ export function legalActivatedAbilities(state, playerId) {
         if (state.abilityActivatedThisTurn?.[`${id}:${index}`]) continue;
         const mana = effectiveAbilityManaCost(state, playerId, ability, object);
         if (mana > producibleMana(state, playerId, null, {}, colorRequirementsOf(ability.cost))) continue;
-        if (!canPayColoredCost(state, playerId, colorRequirementsOf(ability.cost))) continue;
+        if (!canPayColoredCost(state, playerId, colorRequirementsOf(ability.cost), null, manaPurposeForAbility(ability))) continue;
         const targetSpec = ability.targets ?? [];
         if (targetSpec.length === 0) {
           out.push({ objectId: id, abilityIndex: index, ability });
@@ -1352,7 +1366,7 @@ export function legalActivatedAbilities(state, playerId) {
       if (ability.timing === 'sorcery' && !sorcerySpeed) continue;
       if (abilityConditionFailure(state, playerId, ability, object) !== null) continue;
       if ((ability.cost?.mana ?? 0) > producibleMana(state, playerId, null, {}, colorRequirementsOf(ability.cost))) continue;
-      if (!canPayColoredCost(state, playerId, colorRequirementsOf(ability.cost))) continue;
+      if (!canPayColoredCost(state, playerId, colorRequirementsOf(ability.cost), null, manaPurposeForAbility(ability))) continue;
       out.push({ objectId: id, abilityIndex: index, ability });
     }
   }
@@ -1387,7 +1401,7 @@ export function legalActivatedAbilities(state, playerId) {
         // płatność ją przyjmowała (L48; jedyne aktywowane kosztowanie,
         // które nie miało koloru — cycling/reinforce/bloodrush/channel/
         // forecast/equip respektują pipy).
-        if (!canPayColoredCost(state, playerId, colorRequirementsOf(ability.cost))) continue;
+        if (!canPayColoredCost(state, playerId, colorRequirementsOf(ability.cost), null, manaPurposeForAbility(ability))) continue;
         for (const attackerId of unblocked) out.push({ objectId: id, abilityIndex: index, attackerId });
       }
     }
@@ -1513,7 +1527,7 @@ export function activateAbility(state, playerId, objectId, abilityIndex, attacke
   // Kolorowe wymagania kosztu (CR 118.2): pipy muszą być pokryte kolorową pulą
   // lub nietapniętymi źródłami PRZED mutacją (CR 601.2h — jak czary).
   const colorReqs = colorRequirementsOf(cost);
-  if (colorReqs.length > 0 && !canPayColoredCost(state, playerId, colorReqs)) {
+  if (colorReqs.length > 0 && !canPayColoredCost(state, playerId, colorReqs, null, manaPurposeForAbility(ability))) {
     throw new Error('Brak kolorowego źródła many');
   }
   if (cost.tap && object.tapped) throw new Error('Obiekt jest już tapped');
@@ -1780,7 +1794,7 @@ export function performActivation(state, ctx) {
     if (preReqs.length > 0 && (ability.cost?.mana ?? 0) > 0) {
       // M180/Z1: jak w ofercie — każde źródło tapowane kosztem wykluczone.
       const preExcludeId = cost.tap && !object.tapped ? objectId : null;
-      if (!canPayColoredCost(state, playerId, preReqs, preExcludeId)) {
+      if (!canPayColoredCost(state, playerId, preReqs, preExcludeId, manaPurposeForAbility(ability))) {
         throw new Error('Brak kolorowej many');
       }
     }
@@ -1854,7 +1868,7 @@ export function performActivation(state, ctx) {
   // więc `cost.mana` jest tam zerowe i zachowanie się nie zmienia).
   const manaCost = cost.manaX ? (xValue ?? 0) + (cost.mana ?? 0) : effManaSpend;
   if (manaCost > 0) {
-    spendMana(state, playerId, manaCost, colorReqs);
+    spendMana(state, playerId, manaCost, colorReqs, manaPurposeForAbility(ability));
   }
   // M115 (Krumar Initiate): „Pay X life" to KOSZT (CR 601.2h) — płacony
   // przed efektem i niezwracalny, także gdy zdolność później fizzluje.
