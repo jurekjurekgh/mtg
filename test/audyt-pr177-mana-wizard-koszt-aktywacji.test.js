@@ -91,6 +91,10 @@ test('B: stos kreatorów — podrzędny wraca do nadrzędnego, zamknięcie czyś
   });
   runInContext(`
     let manaWizardDescriptor = null;
+    // F-CYK (audyt PR #180): openNestedManaWizard czyta długość stosu sesji
+    // (stackAtOpen dla drenażu triggerów płatności) — sandbox deklaruje
+    // session jak closure main.js.
+    let session = null;
     const manaWizardParents = [];
     let refreshed = 0;
     function showModal() {}

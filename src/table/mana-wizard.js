@@ -1096,6 +1096,19 @@ export function isWizardCommandLegal(view, paidCommand) {
  * pozwalając prawdziwemu kontrolerowi bota odpowiedzieć w `advanceGuarded()`,
  * weryfikuje pełny klucz wariantu (`commandOptionKey`), domyka finalny rzut
  * przez `runCommand` (`playDirect`) i synchronizuje UI także przy przerwaniu.
+ *
+ * F-CYK (audyt PR #180, Żywy Tester — partia dominaria-brg|ravnica-wur seed
+ * 4242): drenaż z F-1 odpalał się TYLKO, gdy komenda była nielegalna przy
+ * niepustym stosie — czyli dla rzutów sorcery-speed. Natychmiastowe komendy
+ * (cycling, instanty) są legalne od razu, więc wjeżdżały NAD wyzwalacz z
+ * tapnięcia źródła i rozstrzygały się PRZED nim. CR 602.2a+b (aktywacja
+ * powstaje na stosie PRZED zapłatą), 603.3 + 117.5 (trigger z płatności
+ * „becomes the topmost object on the stack” przy najbliższym oknie
+ * priorytetu) wymagają odwrotności: trigger rozstrzyga się PRZED opłacaną
+ * komendą. Kreator drenuje więc wpisy NAŁOŻONE NA STOS W TRAKCIE płatności
+ * (`stackAtOpen` z otwarcia kreatora) ZANIM commitnie — niezależnie od
+ * prędkości komendy. Wpisy istniejące PRZED otwarciem kreatora (gracz
+ * odpowiada na cudzy czar) zostają POD komendą, jak w CR.
  */
 export function finishWizardPayment(session, pending, {
   runCommand = (cmd, options) => session.apply(cmd, options),
@@ -1106,10 +1119,17 @@ export function finishWizardPayment(session, pending, {
 } = {}) {
   const paidCommand = wizardPaidCommandOf(pending);
   if (!session || !paidCommand) return { committed: false, reason: 'invalid' };
+  // F-CYK: linia odcięcia „co jest jeszcze częścią tej płatności”. Testy i
+  // starsi wołający bez `stackAtOpen` dostają 0 (drenaż do pustego stosu —
+  // semantyka F-1), bo w ich scenariuszach kreator otwiera się na pustym stosie.
+  const baseline = Number.isInteger(pending?.stackAtOpen) ? pending.stackAtOpen : 0;
   let mutatedDuringDrain = false;
   for (let i = 0; i <= maxPasses; i += 1) {
     const view = session.view();
-    if (isWizardCommandLegal(view, paidCommand)) {
+    const stackLen = view.zones?.stack?.length ?? 0;
+    // Commit dopiero, gdy nad linią odcięcia nie wisi już żaden trigger
+    // z płatności (kolejność CR: trigger PRZED opłacaną komendą).
+    if (isWizardCommandLegal(view, paidCommand) && stackLen <= baseline) {
       onCloseWizard();
       const res = runCommand(paidCommand);
       if (res?.ok === false) {
@@ -1120,8 +1140,7 @@ export function finishWizardPayment(session, pending, {
       }
       return { committed: true };
     }
-    const stackLen = view.zones?.stack?.length ?? 0;
-    if (stackLen === 0 || i === maxPasses || session.artPausePending) break;
+    if (stackLen <= baseline || i === maxPasses || session.artPausePending) break;
     const canHumanPass = (view.legalCommands ?? []).some((c) => c.type === 'pass_priority');
     if (!canHumanPass) {
       onCloseWizard();

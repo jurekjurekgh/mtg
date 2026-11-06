@@ -3137,7 +3137,10 @@ function bootstrapTable() {
   function openNestedManaWizard(descriptor) {
     if (!els.manaWizardBody) return;
     if (manaWizardDescriptor) manaWizardParents.push(manaWizardDescriptor);
-    manaWizardDescriptor = descriptor;
+    // F-CYK (audyt PR #180): linia odcięcia dla drenażu triggerów z płatności
+    // w finishWizardPayment — wpisy dodane OD TEJ CHWILI są częścią płatności
+    // i mają rozstrzygnąć się PRZED komitowaną komendą (CR 603.3 + 117.5).
+    manaWizardDescriptor = { ...descriptor, stackAtOpen: session?.state?.zones?.stack?.length ?? 0 };
     refreshManaWizard();
     showModal('mana-wizard');
   }
@@ -3161,7 +3164,10 @@ function bootstrapTable() {
 
   function openManaWizard(descriptor) {
     if (!els.manaWizardBody) return;
-    manaWizardDescriptor = descriptor;
+    // F-CYK (audyt PR #180): jak w openNestedManaWizard — stackAtOpen oddziela
+    // triggery z tej płatności od wpisów, na które gracz ODPOWIADA (te zostają
+    // pod komendą; drenuje się tylko nadłożone w trakcie płatności).
+    manaWizardDescriptor = { ...descriptor, stackAtOpen: session?.state?.zones?.stack?.length ?? 0 };
     refreshManaWizard();
     showModal('mana-wizard');
   }
