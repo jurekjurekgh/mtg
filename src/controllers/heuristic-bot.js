@@ -5548,7 +5548,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   // (ta sama miara co add_counter). Bez armii: nowa 0/0 Army z N licznikami =
   // ciało N/N (ta sama miara co create_token, tokenBodyValue). Dawna stała 6
   // (ETB) i 6+3N (czar) nie zależały od armii, a ETB nie znała N.
-  // PMSSB-69 + audyt PR #168/A-3 (CR 726.2 i CR 726.5; L41): każde objęcie,
+  // PMSSB-69 + audyt PR #168/A-3 (CR 727.2 i CR 727.5; L41): każde objęcie,
   // także przez obecnego posiadacza, uruchamia venture (bazowe 6). Kradzież
   // wrogowi daje dodatkową korzyść P.initiativeStealBonus. Kara ekspozycji
   // dotyczy tylko NOWEGO posiadacza — ponowne objęcie nie zwiększa ryzyka,
@@ -11902,7 +11902,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         return finish(cmd.replace ? delta : -delta);
       }
       case 'cast_adventure_creature': {
-        // E2/C (plan 2026-09-07, CR 715.3a): strona-stwora przygody z EXILE za
+        // E2/C (plan 2026-09-07, CR 716.3a): strona-stwora przygody z EXILE za
         // pełny koszt — dotąd default 0 (remis z pasem, wybór z kolejności).
         // Wycena jak rzut stwora (ciało + bonus ETB jak w warp); koszt
         // rozlicza silnik (oferta = walidacja, L48).

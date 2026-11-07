@@ -44,7 +44,7 @@ function dobijSage(cardId, { finality = false } = {}) {
   let guard = 0;
   while (state.zones.stack.length > 0 && guard < 20) { resolveTopOfStack(state); guard += 1; }
   // Zgłoszenie właściciela B2 (2026-09-10): poświęcenie Sagi po ostatnim
-  // rozdziale to AKCJA STANOWA (CR 714.4 / 704.5s), nie część rozstrzygania
+  // rozdziale to AKCJA STANOWA (CR 715.4 / 704.5s), nie część rozstrzygania
   // rozdziału. Silnik odpala ją w `execute` PO przebiegu triggerów
   // (CR 704.3 — akcje stanowe powtarza się po włożeniu triggerów na stos),
   // więc sterownik testu robi oba przebiegi w tej samej kolejności.

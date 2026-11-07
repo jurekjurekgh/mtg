@@ -1,4 +1,4 @@
-// Audyt #168/A-11: historyczny PMSSB-69 nie może uczyć odwrotności CR 726.2/726.5.
+// Audyt #168/A-11: historyczny PMSSB-69 nie może uczyć odwrotności CR 727.2/727.5.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';

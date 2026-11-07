@@ -2113,7 +2113,7 @@ function bootstrapTable() {
     // Obie strony są publiczne (CR 711/712). Dla takiej karty kliknięcie
     // ZAWSZE otwiera warstwę Działania z podglądem OBU stron — nawet bez
     // żadnych zdolności. Strefy spoza pola bitwy (grób/wygnanie/ręka) zachowują
-    // dotychczasowe zachowanie — tam DFC ma wyłącznie twarz przednią (CR 712.8a).
+    // dotychczasowe zachowanie — tam DFC ma wyłącznie twarz przednią (CR 712.6a).
     const viewEntry = view.zones.battlefield.find((o) => o.id === objectId);
     const otherSideId = viewEntry?.transformToCardId ?? null;
     const isDfc = Boolean(otherSideId);

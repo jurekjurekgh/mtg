@@ -124,7 +124,7 @@ export function createGameState({ seed, players }) {
     // turn-based action na początku tury (applyDayNightAtTurnStart), nie
     // przy rzucie ani w upkeep.
     dayNight: null,
-    // Czary poprzedniej tury PER GRACZ (CR 730.2b: poprzedni aktywny).
+    // Czary poprzedniej tury PER GRACZ (CR 731.2b: poprzedni aktywny).
     lastTurnSpellsCastByPlayer: {},
     // Liczba rzutów PER GRACZ w bieżącej turze (Illvoi Operative: „your
     // second spell each turn"). Naliczana w skanie zdarzeń rzutu
@@ -888,7 +888,7 @@ function beginTurnContinuation(state, events, { keepTappedIds = [] } = {}) {
 function beginTurnStart(state, events) {
   // Przeliczenie licznika czarów poprzedniej tury (transform).
   state.lastTurnSpellsCast = state.spellsCastThisTurn;
-  // M68: per-gracz kopia poprzedniej tury (daybound upkeep — CR 731.2a/b).
+  // M68: per-gracz kopia poprzedniej tury (daybound upkeep — CR 732.2a/b).
   state.lastTurnSpellsCastByPlayer = { ...state.spellsCastThisTurnByPlayer };
   const previousActive = state.turn.activePlayerId === state.players[0].id
     ? state.players[1].id
@@ -2372,10 +2372,10 @@ function accepted(state, cmd, result, standaloneManaActivation = false, resoluti
       state.objects.delete(token.id);
     }
   }
-  // Zgłoszenie właściciela B2 (2026-09-10), CR 714.4 / 704.5s: poświęcenie
+  // Zgłoszenie właściciela B2 (2026-09-10), CR 715.4 / 704.5s: poświęcenie
   // Sagi, której rozdział zszedł ze stosu. PO triggerach (jak cleanup tokenów
   // z CR 704.5d powyżej), bo rozdział dołożony właśnie licznikiem lore
-  // (proliferate — CR 701.34 → 714.2b) musi najpierw trafić na stos: CR 704.3
+  // (proliferate — CR 701.34 → 715.2b) musi najpierw trafić na stos: CR 704.3
   // powtarza akcje stanowe dopiero po włożeniu triggerów na stos.
   const sagaEvents = sacrificeFinishedSagas(state);
   if (sagaEvents.length > 0) {
@@ -5089,7 +5089,7 @@ export function execute(state, input) {
             // `enteringId` wyklucza go z liczenia „other …”, a cechy bierzemy
             // z kopiowalnej bazy celu (CR 707.2) z kontrolerem kopii.
             ...(entersTappedNow(state, { ...copyBase, id: null, controllerId: src.controllerId }, { enteringId: pending.sourceId }) ? { tapped: true } : {}),
-            // M264/2.3 (CR 712.9): kopia na KARCIE jednostronnej (Jwari —
+            // M264/2.3 (CR 712.7): kopia na KARCIE jednostronnej (Jwari —
             // zwykła karta wchodząca jako kopia) nie ma drugiej strony.
             // „If a spell or ability instructs a player to transform ... any
             // permanent that isn't represented by a double-faced token or a

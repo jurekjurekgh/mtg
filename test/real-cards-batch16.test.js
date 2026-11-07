@@ -460,7 +460,7 @@ test('Jill: {3}{U}{U},{T} wygania i zwraca przemienioną jako Shiva z rozdziałe
   assert.equal(shiva.power, 4);
   assert.equal(shiva.toughness, 5);
   assert.ok(shiva.types.includes('Enchantment'), 'Legendary Enchantment Creature');
-  assert.equal(shiva.counters.lore, 1, 'Wejście Sagi kładzie licznik lore (CR 714.3a)');
+  assert.equal(shiva.counters.lore, 1, 'Wejście Sagi kładzie licznik lore (CR 715.3a)');
   // Rozdział I (Mesmerize): Shiva wybrana jako cel — nie może BYĆ BLOKOWANA
   // w tej turze (cantBeBlocked), nie „nie może blokować" (cantBlock).
   // M407 (rewizja pinu): stan niesie TERMIN daru „this turn"
@@ -538,7 +538,7 @@ test('Shiva: rozdział III tapuje landy przeciwnika i zwraca Jill (bez poświęc
   passBoth(state); // T6: rozstrzygnij trigger ze stosu
   const jillId = findId(state, 'jill-shivas-dominant');
   assert.ok(jillId, 'Po rozdziale III Shiva wraca jako Jill (strona przednia)');
-  assert.equal(countByCardId(state, 'shiva-warden-of-ice', 'graveyard'), 0, 'Saga NIE jest poświęcana — sama się przemieniła (CR 714.4 nie ma czego zjeść)');
+  assert.equal(countByCardId(state, 'shiva-warden-of-ice', 'graveyard'), 0, 'Saga NIE jest poświęcana — sama się przemieniła (CR 715.4 nie ma czego zjeść)');
   assert.ok(state.objects.get('foe-land-1').tapped, 'Landy przeciwnika tapnięte (Cold Snap)');
   assert.ok(state.objects.get('foe-land-2').tapped, 'Landy przeciwnika tapnięte (Cold Snap)');
   assert.ok(eventsOfType(state, 'saga_chapter_fired').some((e) => e.chapter === 3));

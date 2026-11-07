@@ -1,9 +1,11 @@
 // M264/Etap 2.3 — enterAsCopy (Jwari Shapeshifter) wobec karty dwustronnej.
 //
-// CR 712.9: „Only permanents represented by double-faced tokens and
-// double-faced cards can transform ... If a spell or ability instructs a
-// player to transform ... any permanent that isn't represented by a
-// double-faced token or a double-faced card, nothing happens." Przykład
+// CR 712.7: „Only permanents represented by double-faced tokens and
+// double-faced cards can transform ..." Drugie zdanie („If a spell or
+// ability instructs a player to transform ... any permanent that isn't
+// represented by a double-faced token or a double-faced card, nothing
+// happens") żyje od wydania 2026-11-06 w 701.27d (transform) / 701.28d
+// (convert). Przykład
 // reguły: Clone wchodzący jako kopia back-face DFC (Wildblood Pack) jest
 // kopią TEJ twarzy i NIE MOŻE się transformować — kopia ma jedną stronę,
 // bo obiekt reprezentujący ją (Jwari — zwykła karta) nie jest dwustronny.
@@ -11,7 +13,7 @@
 // M155 kopiował do enterAsCopy cały `transformTo` — przez co kopia Jwari
 // stawała się „pół-DFC": umiała się obrócić, a druga transformacja
 // przywracała cardId ŹRÓDŁA (Jwari), tworząc chimerę (transformTo.cardId
-// nie należał już do pary). Zgodnie z 712.9 kopia w ogóle nie ma drugiej
+// nie należał już do pary). Zgodnie z 712.7 kopia w ogóle nie ma drugiej
 // strony: zdolność transform z bieżącej twarzy jest kopiowana (CR 707.2),
 // ale instrukcja transform na takim permanencie to no-op („nothing
 // happens"). To samo dla craft (efekt bez transformTo jest już no-op od
@@ -53,7 +55,7 @@ function asCopy(state, sourceId, targetId) {
   return execute(state, { type: 'resolve_enter_as_copy', playerId: 'p1', targetId });
 }
 
-test('M264/2.3-A1: kopia Jwari nie nosi transformTo (CR 712.9 — jedna strona)', () => {
+test('M264/2.3-A1: kopia Jwari nie nosi transformTo (CR 712.7 — jedna strona)', () => {
   const state = game();
   put(state, 'villager', 'scorned-villager'); // DFC z triggerem transform (upkeep)
   put(state, 'jwari', 'jwari-shapeshifter');
@@ -66,7 +68,7 @@ test('M264/2.3-A1: kopia Jwari nie nosi transformTo (CR 712.9 — jedna strona)'
   assert.equal(copy.frontFaceId, null, 'i brak tożsamości frontu pary');
 });
 
-test('M264/2.3-A2: transform na kopii Jwari to no-op (CR 712.9 — „nothing happens")', () => {
+test('M264/2.3-A2: transform na kopii Jwari to no-op (CR 712.7 — „nothing happens")', () => {
   const state = game();
   put(state, 'villager', 'scorned-villager');
   put(state, 'jwari', 'jwari-shapeshifter');

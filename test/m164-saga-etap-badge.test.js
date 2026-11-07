@@ -7,7 +7,7 @@
 // (M159/Z4). Brak tekstowego badge'a AKTYWNEGO rozdziału.
 //
 // Fix: badge na nakładce kafla — „Rozdział II (2/3)" (licznik lore = numer
-// rozdziału, CR 714.3); generyczny licznik lore nie dubluje się przy Sagach.
+// rozdziału, CR 715.3); generyczny licznik lore nie dubluje się przy Sagach.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';

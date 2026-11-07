@@ -15,7 +15,7 @@ import { createCardDeck } from '../src/cards/materialize.js';
  * representing that copy is itself a double-faced card), the mana value
  * of the copy is 0."
  *
- * Sam przekształcony permanent ma MV przedniej strony (712.8e) — silnik
+ * Sam przekształcony permanent ma MV przedniej strony (712.6d) — silnik
  * modeluje to polam manaCost, którego transform NIE rusza (koszt przedni).
  * Ale KOPIA takiego obiektu (token-kopia z Cogwork Assemblera, kopia
  * „enter as copy" Jwari) ma MV 0 — obie ścieżki kopiowania brały koszt
@@ -74,11 +74,11 @@ test('M258/C1: token-kopia TYLNEJ twarzy DFC ma MV 0 (CR 202.3b, Cogwork Assembl
   // (payload transformTo buduje createCardDeck — L94).
   putMaterialized(state, 'needle', materializedEntry('lodestone-needle'));
   // Craft = exile + return transformed; efekt `transform` daje ten sam stan
-  // „tył w górę" (cardId = tył, manaCost pozostaje przedni — 712.8e).
+  // „tył w górę" (cardId = tył, manaCost pozostaje przedni — 712.6d).
   applyEffect(state, { type: 'transform' }, state.objects.get('needle'), []);
   const transformed = state.objects.get('needle');
   assert.equal(transformed.cardId, 'guidestone-compass', 'tył w górę po transformacji');
-  assert.equal(transformed.manaCost, 2, 'sam permanent ma MV przedniej strony (712.8e)');
+  assert.equal(transformed.manaCost, 2, 'sam permanent ma MV przedniej strony (712.6d)');
 
   // Cogwork Assembler kopiuje przekształcony artefakt.
   const cogwork = putOnBattlefield(state, 'cogwork', 'cogwork-assembler', 'p1');

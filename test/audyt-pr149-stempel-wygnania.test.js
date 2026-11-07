@@ -7,9 +7,9 @@
 //     NIE gotowość rebound. Sonda: obiekt z reboundReady w exile → grób →
 //     ponowne wygnanie (inny efekt) → flaga dalej `true`, więc upkeep oferował
 //     darmowy rzut z dowolnie wygnanej karty.
-// F2 („on an adventure", CR 715.3d): `legalAdventureCreatureCasts` i
+// F2 („on an adventure", CR 716.3d): `legalAdventureCreatureCasts` i
 //     `castAdventureCreature` pytały tylko o `zone==='exile' && object.adventure`,
-//     a `adventure` to STAŁY druk karty (CR 715.2a). Sonda: Gray Slaad na polu
+//     a `adventure` to STAŁY druk karty (CR 716.2a). Sonda: Gray Slaad na polu
 //     wygnany cudzym efektem → oferta i `execute` cast_adventure_creature OK.
 //     Ruling (FIN Release Notes 2025-01-15): „If an adventurer card ends up in
 //     exile for any other reason than by exiling itself while resolving, it

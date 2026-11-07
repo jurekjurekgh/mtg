@@ -5,7 +5,7 @@
 //   - `supported`     — pełna karta (100% Oracle), taliowalna;
 //   - `token`         — token tworzony przez karty/mechaniki, nie do talii;
 //   - `back`          — tylna strona karty dwustronnej; w talii istnieje
-//                       wyłącznie przód (CR 712.8), do gry wchodzi transformem;
+//                       wyłącznie przód (CR 712.6), do gry wchodzi transformem;
 //   - `unsupported`   — karta bez pełnego Oracle; w katalogu jej NIE MA
 //   - `in-development`  (ADR 0022: karta albo jest w 100%, albo jej nie ma).
 // Bramką taliowalności pozostaje `status === 'supported'`.
@@ -392,7 +392,7 @@ export function defineCard(data) {
     // Saga (CR 714, Shiva Warden of Ice): { chapters } — lista rozdziałów;
     // każdy rozdział to lista efektów odpalana przy dołożeniu licznika lore
     // (enter = rozdział I; po komponencie draw = kolejne). Po rozdziale
-    // ostatnim Saga jest poświęcana (CR 714.4), chyba że sama zniknęła.
+    // ostatnim Saga jest poświęcana (CR 715.4), chyba że sama zniknęła.
     saga: data.saga ? Object.freeze({
       // M172/B: tytuły rozdziałów (Oracle) — etykiety decyzji celu i logu.
       chapterNames: data.saga.chapterNames ? Object.freeze([...data.saga.chapterNames]) : null,

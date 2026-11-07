@@ -908,14 +908,14 @@ export function eventIsCreatureDeath(state, ev) {
 
 /** Czy któryś efekt wymaga zdjęcia licznika ze źródła (warunek odpalenia). */
 /**
- * CR 714.2b — „{rN}—[Effect]" znaczy „When one or more lore counters are put
+ * CR 715.2b — „{rN}—[Effect]" znaczy „When one or more lore counters are put
  * onto this Saga, if the number of lore counters on it was less than N and
  * became at least N, [effect]." Cytat zweryfikowany u źródła 2026-10-01b
  * (CR 2026-09-25, mtg.wiki/page/Saga — zamyka U3 z audytu PR #146; ADR 0030).
  *
  * Jedno miejsce wyliczające przekroczone progi (L41: kopie się rozjeżdżają).
  * Zgłoszenie właściciela B2 (2026-09-10): poświęcenie Sagi jest AKCJĄ
- * STANOWĄ (CR 714.4), więc od tej pory liczy się KAŻDA droga dołożenia
+ * STANOWĄ (CR 715.4), więc od tej pory liczy się KAŻDA droga dołożenia
  * licznika lore — proliferate (CR 701.34) też. Wcześniej rozdziały
  * kolejkowały tylko wejście i akcja turowa, więc Saga dobita proliferatem do
  * ostatniego progu była poświęcana bez rozstrzygnięcia rozdziału.
@@ -935,7 +935,7 @@ function queueSagaChaptersForLore(state, sagaObject, previousTotal, newTotal, ev
 }
 
 /**
- * Kolejkuje rozdział Sagi (CR 714.3) — Temat 2 dla Sag: rozdziały z
+ * Kolejkuje rozdział Sagi (CR 715.3) — Temat 2 dla Sag: rozdziały z
  * `requiresTarget` na którymkolwiek efekcie (Mesmerize Shiva I/II) wymagają
  * wyboru celu przez kontrolera Sagi. Kolejka przebiega tak, jak inne
  * decyzje celu triggera (Temat 2: `pendingTriggerTargets` z `resolve_trigger_target`).
@@ -1004,7 +1004,7 @@ function queueSagaChapter(state, sagaObject, chapterNumber, events) {
 
 /**
  * Odpala rozdział Sagi (CR 714): efekty rozdziału, zdarzenie saga_chapter_fired,
- * a po rozdziale OSTATNIM — poświęcenie Sagi (CR 714.4), o ile wciąż jest na
+ * a po rozdziale OSTATNIM — poświęcenie Sagi (CR 715.4), o ile wciąż jest na
  * polu bitwy jako Saga (Shiva sama się przemienia w rozdziale III, więc jej
  * poświęcenia nie ma). Rozdział zwracający permanenta na pole bitwy (powrót
  * stroną przednią) uruchamia jego triggery wejścia — jeden ograniczony poziom
@@ -1053,7 +1053,7 @@ function fireSagaChapter(state, sagaObject, chapterNumber, events, chapterTarget
   // (zdarzenie object_moved → battlefield) — pętla zagnieżdżona poniżej
   // (usunięta) odpalała je DRUGI raz (podwójne decyzje celu ETB od T6).
   // Zgłoszenie właściciela B2 (2026-09-10): poświęcenie Sagi po ostatnim
-  // rozdziale to AKCJA STANOWA (CR 714.4, na liście SBA jako 704.5s) —
+  // rozdziale to AKCJA STANOWA (CR 715.4, na liście SBA jako 704.5s) —
   // mtg.wiki/Saga: „the Saga's
   // controller sacrifices it as soon as its chapter ability has left the
   // stack, most likely by resolving or being countered. This state-based
@@ -1507,12 +1507,12 @@ export function resolveTriggerEntry(state, entry) {
       ...(printLki.transformTo ? { transformTo: printLki.transformTo } : {}),
       ...(printLki.frontFaceId ? { frontFaceId: printLki.frontFaceId } : {}),
     }) : null,
-    // D (zgłoszenie właściciela 2026-09-28e, CR 113.7a + 714.2): „Once
+    // D (zgłoszenie właściciela 2026-09-28e, CR 113.7a + 715.2): „Once
     // activated or triggered, an ability exists on the stack independently of
     // its source. Destruction or removal of the source after that time won't
     // affect the ability. […] its last known information is used. The source
     // can still perform the action even though it no longer exists.” Rozdział
-    // Sagi (zdolność triggerowana, CR 714.2) rozstrzyga się także po
+    // Sagi (zdolność triggerowana, CR 715.2) rozstrzyga się także po
     // zniszczeniu Sagi w oknie odpowiedzi — `fireSagaChapter` czyta
     // `source.saga`, więc deskryptor rozdziałów musi być NA WIERZCHU stuba
     // LKI (wcześniej siedział tylko w zagnieżdżonym `lkiPrint` → cichy
@@ -1855,7 +1855,7 @@ export function resolveTriggerEntry(state, entry) {
     }));
     return state.events.slice(before);
   }
-  // Rozdział Sagi (CR 714.3 — zdolność rozdziału to zdolność triggerowana):
+  // Rozdział Sagi (CR 715.3 — zdolność rozdziału to zdolność triggerowana):
   // efekty + ewentualne poświęcenie po ostatnim rozdziale wykonuje
   // fireSagaChapter (zachowuje LKI, gdy Saga opuściła pole bitwy w oknie).
   // Temat 2 dla Sag: rozdziały z `requiresTarget` na efektach (Mesmerize Shiva
@@ -3543,7 +3543,7 @@ function processTriggersScan(state, recentEvents) {
           { enteredTapped: Boolean(ev.object.tapped) });
         return;
       }
-      // CR 730.2c / 702.145: daybound LUB nightbound przy designation=null
+      // CR 731.2c / 702.145: daybound LUB nightbound przy designation=null
       // ustawia dzień (setDayNight transformuje nightbound → daybound).
       // Przy ustalonej designation permanent wchodzi właściwą stroną —
       // także poza resolvePermanentSpell (reanimacja, search, bounce).
@@ -3695,7 +3695,7 @@ function processTriggersScan(state, recentEvents) {
           effect: [],
         }, entered, [], events, { endureAmount: entered.endure });
       }
-      // Saga (CR 714.3a/2a, Shiva Warden of Ice): „As this Saga enters\" —
+      // Saga (CR 715.3a/2a, Shiva Warden of Ice): „As this Saga enters\" —
       // kontroler kładzie licznik lore, co odpala rozdział I. Dotyczy każdej
       // drogi wejścia (rzut, powrót przemieniony, reanimacja). T6: rozdział
       // to zdolność triggerowana — idzie na STOS i rozstrzyga się po passach.
@@ -3885,7 +3885,7 @@ function processTriggersScan(state, recentEvents) {
       // Zgłoszenie właściciela B1 (2026-09-10): opóźnione zdolności „do końca
       // tury" z rejestru stanowego (rozdział III Sagi). Ich źródło mogło już
       // opuścić pole bitwy — Saga jest poświęcana po ostatnim rozdziale
-      // (CR 714.4), a ruling WotC 2025-04-04 wprost mówi, że zdolność
+      // (CR 715.4), a ruling WotC 2025-04-04 wprost mówi, że zdolność
       // rozdziału III „may trigger multiple times during the turn, even
       // though Rediscover the Way will likely no longer be on the
       // battlefield" — więc pętla po polu bitwy wyżej ich nie widzi.
@@ -4433,7 +4433,7 @@ function processTriggersScan(state, recentEvents) {
         }, card, [], events, { reboundObjectId: id });
       }
     }
-    // CR 714.2b: licznik lore dołożony DOWOLNĄ drogą (proliferate — CR 701.34,
+    // CR 715.2b: licznik lore dołożony DOWOLNĄ drogą (proliferate — CR 701.34,
     // efekt „put a lore counter") triggeruje przekroczone rozdziały. Zdarzenie
     // `counter_added` jest tu widoczne, bo pochodzi z ciała komendy
     // (`state.events.slice(before)` w execute); liczniki z wejścia i z akcji
@@ -4488,7 +4488,7 @@ function processTriggersScan(state, recentEvents) {
         queueSagaChaptersForLore(state, loreSaga, newTotal - (ev.amount ?? 1), newTotal, events);
       }
     }
-    // Po kroku dobierania (CR 714.3b: „after your draw step") każda Saga
+    // Po kroku dobierania (CR 715.3b: „after your draw step") każda Saga
     // AKTYWNEGO gracza dostaje licznik lore i odpala kolejny rozdział.
     // Temat 2 dla Sag: rozdziały z `requiresTarget` kolejkuja decyzję CELU
     // (resolve_trigger_target) zamiast iść od razu na stos.

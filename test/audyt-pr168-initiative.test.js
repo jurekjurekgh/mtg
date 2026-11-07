@@ -1,4 +1,4 @@
-// Audyt PR #168/A-3 — CR 726.2 i CR 726.5 (wydanie 2026-09-25): aktualny posiadacz
+// Audyt PR #168/A-3 — CR 727.2 i CR 727.5 (wydanie 2026-09-25): aktualny posiadacz
 // inicjatywy może ją ponownie objąć; nadal uruchamia venture do Undercity.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';

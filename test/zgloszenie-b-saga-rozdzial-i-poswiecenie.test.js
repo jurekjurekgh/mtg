@@ -77,7 +77,7 @@ function addCreature(state, id, controllerId, power, toughness) {
   return state.objects.get(id);
 }
 
-/** CR 714.3b: po kroku dobierania aktywny gracz dokłada licznik lore + rozdział. */
+/** CR 715.3b: po kroku dobierania aktywny gracz dokłada licznik lore + rozdział. */
 function poKrokuDobierania(state) {
   const ev = { type: 'step_advanced', step: 'main1', phase: 'precombat_main', playerId: 'p1' };
   state.events.push(ev);
@@ -236,8 +236,8 @@ test('B3: log nie mówi już „Rediscover the Way zyskuje: podwójne uderzenie"
     `w logu poświęcenie musi być PO rozstrzygnięciu rozdziału:\n${tekst}`);
 });
 
-test('B4 (CR 714.2b): licznik lore z proliferate odpala rozdział, a Saga czeka na jego rozstrzygnięcie', () => {
-  // Poświęcenie Sagi jest akcją stanową (CR 714.4), więc od teraz liczy się
+test('B4 (CR 715.2b): licznik lore z proliferate odpala rozdział, a Saga czeka na jego rozstrzygnięcie', () => {
+  // Poświęcenie Sagi jest akcją stanową (CR 715.4), więc od teraz liczy się
   // KAŻDA droga dołożenia licznika lore — proliferate (CR 701.34) też.
   // Bez rozdziału w `counter_added` Saga dobita proliferatem do progu była
   // poświęcana bez rozstrzygnięcia rozdziału (regresja, którą wprowadziłaby
@@ -255,8 +255,8 @@ test('B4 (CR 714.2b): licznik lore z proliferate odpala rozdział, a Saga czeka 
 
   assert.equal(state.objects.get('rtw').counters.lore, 3, 'setup: trzeci licznik lore');
   assert.equal(state.objects.get('rtw').zone, 'battlefield',
-    'CR 714.4: Saga nie może być poświęcona, póki rozdział nie zszedł ze stosu');
-  assert.ok(state.zones.stack.length > 0, 'CR 714.2b: rozdział III odpalił od licznika z proliferate');
+    'CR 715.4: Saga nie może być poświęcona, póki rozdział nie zszedł ze stosu');
+  assert.ok(state.zones.stack.length > 0, 'CR 715.2b: rozdział III odpalił od licznika z proliferate');
 
   resolveStack(state);
   const strumien = state.events;
@@ -278,7 +278,7 @@ test('B4 anty-over-fix: proliferate na Sadze PONIŻEJ ostatniego rozdziału nie 
 
   assert.equal(state.objects.get('rtw').counters.lore, 2, 'setup: dwa liczniki lore');
   assert.equal(state.objects.get('rtw').zone, 'battlefield',
-    'dwa z trzech liczników to jeszcze nie ostatni rozdział (CR 714.4)');
+    'dwa z trzech liczników to jeszcze nie ostatni rozdział (CR 715.4)');
   assert.ok(!state.events.some((e) => e.type === 'permanent_sacrificed' && e.saga === true),
     'żadnego poświęcenia przed ostatnim rozdziałem');
 });

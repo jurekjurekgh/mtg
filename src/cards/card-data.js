@@ -1962,7 +1962,7 @@ export const REAL_CARDS = Object.freeze([
   }),
   // Guidestone Compass — back face of Lodestone Needle. Tyły kart
   // dwustronnych NIE są osobnymi pozycjami do talii (poza polem bitwy karta
-  // istnieje tylko stroną frontową, CR 712.8) — bug ze stołu 2026-08-05:
+  // istnieje tylko stroną frontową, CR 712.6) — bug ze stołu 2026-08-05:
   // backside na ręku nie da się rzucić. Jak przy Shiva/tokenach: `back`
   // (walidacja talii i kreator odrzucają ten wpis).
   defineCard({
@@ -2358,7 +2358,7 @@ export const REAL_CARDS = Object.freeze([
         [{ type: 'cant_be_blocked', requiresTarget: { type: 'creature' } }],
         [{ type: 'cant_be_blocked', requiresTarget: { type: 'creature' } }],
         // III — Cold Snap: tap wszystkich landów przeciwników + exile+return
-        // stroną przednią (Saga znika przed warunkiem poświęcenia CR 714.4).
+        // stroną przednią (Saga znika przed warunkiem poświęcenia CR 715.4).
         // Efekty bezcelowe — idą od razu na stos, bez requiresTarget.
         [{ type: 'tap_all_lands_opponents_control' }, { type: 'exile_return_transformed' }],
       ],

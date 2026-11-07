@@ -20,7 +20,7 @@
 //    (gracz nadal jest w lochu, pokój 3). Root cause: firstTime liczony jako
 //    „zmiana posiadacza" (previous !== playerId), a nie „wejście do lochu
 //    teraz" (undercityProgress == 0). Mechanika venture (awans pokoju przy
-//    obejmowaniu inicjatywy) jest zgodna z CR 725.4 — błędna była treść
+//    obejmowaniu inicjatywy) jest zgodna z CR 726.4 — błędna była treść
 //    samego komunikatu.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -231,7 +231,7 @@ test('B1: ODZYSKANIE inicjatywy ≠ „po raz pierwszy" — firstTime tylko przy
   assert.equal(second.firstTime, true, 'p1 enters the dungeon');
   assert.equal(state.undercityProgress.p2, 3, 'postęp p2 zachowany');
   // 3) p2 ODZYSKUJE inicjatywę — nadal jest w lochu (Lost Well) → NIE „po raz
-  //    pierwszy"; venture rusza dalej (zachowanie CR 725.4).
+  //    pierwszy"; venture rusza dalej (zachowanie CR 726.4).
   // M190/B: Lost Well ma DWIE drogi (Arena, Stash), więc venture otwiera
   // wybór ścieżki zamiast awansować automatycznie (CR 309.4).
   const regained = castExplorer(state, 'p2', 'ex3');
