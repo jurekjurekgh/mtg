@@ -72,6 +72,13 @@ export function previewCardIdOfOption(option, resolveCardId, view = null) {
   // hover na nazwie ścieżki pokazuje ten sam druk, co panel Undercity.
   // Wcześnie, bo identyfikator nie przechodzi przez tłumacza kart.
   if (option.type === 'resolve_undercity_route') return 'undercity';
+  // K (zgłoszenie właściciela 2026-11-07): kolejność zdolności — wybór dotyczy
+  // ŹRÓDŁA zdolności (cmd.cardId), a nie jej celu; lupa pokazuje kartę, której
+  // kolejność rozstrzygamy, zanim cele zaciemnią podgląd (polityka „cel przed
+  // źródłem” służy czarom, nie układaniu stosu).
+  if (option.type === 'resolve_trigger_order') {
+    return typeof option.cardId === 'string' ? resolveCardId(option.cardId) : null;
+  }
   const ordered = [
     // cele (zdolności, czary, decyzje wyboru celu)
     ...(Array.isArray(option.targets) ? option.targets : []),

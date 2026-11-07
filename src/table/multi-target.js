@@ -680,6 +680,14 @@ const SINGLE_PICK_EXCLUDED_TYPES = new Set([
   'resolve_exile_cast', 'resolve_grave_free_cast', 'resolve_madness_cast',
   'resolve_rebound_cast', 'resolve_suspend_cast',
   'resolve_look_top_choice',
+  // K (zgłoszenie właściciela 2026-11-07, kolejność równoczesnych triggerów):
+  // każda opcja `resolve_trigger_order` niesie `cardId` ŹRÓDŁA zdolności, więc
+  // ogólna rodzina jednowyborowa porywała grupę jako „wybór kartę” — modal
+  // pokazywał „wskaż kartę:” z wierszami „?” (cardId nie jest objectId w
+  // strefach). To decyzja o KOLEJNOŚCI zdolności, nie wybór karty: zostaje
+  // przy wspólnej liście przycisków (M302), gdzie etykieta komendy nazywa
+  // kartę, zdarzenie i skutek zdolności.
+  'resolve_trigger_order',
 ]);
 
 /** Czy komenda jest wariantem ODMOWY rodziny jednowyborowej. */

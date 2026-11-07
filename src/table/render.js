@@ -4515,7 +4515,17 @@ function commandLabelBase(cmd, session, view) {
       const targets = (cmd.targets ?? []).map(id => nameOfObjectId(id)).join(', ');
       // Różne zdolności tego samego źródła (np. persist i nadany dies) muszą
       // dać się rozpoznać, zanim kontroler wybierze ich kolejność.
-      const effects = (cmd.effectTypes ?? []).map(type => describeEffect({ type })).filter(Boolean).join(' + ');
+      // K (zgłoszenie właściciela 2026-11-07): opis skutku bierze PEŁNE
+      // deskryptory efektów z wpisu zdolności na stosie (ADR 0017 — jawne od
+      // wejścia na stos), więc etykieta mówi, CO zdolność zrobi („1 obrażenie
+      // obrońcy”), a nie sam typ efektu („? obrażeń obrońcy”). Fallback na
+      // `effectTypes` komendy — partia śmierci (deathBatch) trzyma zdolności
+      // w slotach bez wpisów na stosie.
+      const orderStackEntry = (view.zones?.stack ?? []).find((o) => o.id === cmd.stackEntryId);
+      const orderEffectList = orderStackEntry?.abilityEffects != null
+        ? [].concat(orderStackEntry.abilityEffects)
+        : (cmd.effectTypes ?? []).map((type) => ({ type }));
+      const effects = orderEffectList.map(effect => describeEffect(effect)).filter(Boolean).join(' + ');
       return `Najpierw: ${escapeHtml(session.nameOf(cmd.cardId))} — ${TRIGGER_EVENT_LABELS[cmd.trigger] ?? cmd.trigger ?? 'zdolność'}${effects ? ` — ${escapeHtml(effects)}` : ''}${targets ? ` → cel: ${targets}` : ''}`;
     }
     case 'resolve_madness_cast': {

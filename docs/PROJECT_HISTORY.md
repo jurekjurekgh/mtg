@@ -20,6 +20,41 @@
 > nie trafiają do repozytorium".
 
 
+## 2026-11-07 — zgłoszenie „K“: kolejność równoczesnych zdolności — modal „wskaż kartę: ?” i brak skutku w etykiecie (PR #181, kontynuacja arena/b2771170-mtg)
+
+- **Zgłoszenie:** rozstrzyganie dwóch zdolności triggerowanych atakiem
+  (równoczesnych) dawało modal „Wybierz: Która zdolność ma rozstrzygnąć
+  się jako następna? — wskaż kartę:” z dwiema opcjami „?” — „I jak ja mam
+  to wybrać???”. Scena repro (pin): Scorch Spitter + Gruul Beastmaster
+  atakują naraz.
+- **Root cause (dwie warstwy UI):** (1) ogólna rodzina jednowyborowa M299
+  (`singleTargetPlanOf`) porywała grupę `resolve_trigger_order` po polu
+  `cardId` ŹRÓDŁA zdolności jak „wybór karty” — kreator „wskaż kartę”
+  etykietował wiersze przez objectId w strefach, a cardId nim nie jest
+  (stąd „?”); (2) opis skutku brał z komendy sam `effectTypes` (typ bez
+  parametrów) — „? obrażeń obrońcy” zamiast „1 obrażenie obrońcy”.
+- **Naprawa:** (1) `resolve_trigger_order` trafia do
+  SINGLE_PICK_EXCLUDED_TYPES (multi-target.js) — decyzja o KOLEJNOŚCI
+  zdolności zostaje przy wspólnym helperze przyciskowym M302 z pełnymi
+  etykietami komend; (2) `commandLabel` czyta PEŁNE deskryptory efektów z
+  wpisu zdolności na stosie w widoku (`abilityEffects`, jawne od wejścia na
+  stos — ADR 0017), z fallbackiem na `effectTypes` (partia śmierci trzyma
+  zdolności w slotach bez wpisów na stosie); (3) `previewCardIdOfOption`
+  (choice-request.js) dla kolejności zwraca kartĘ ŹRÓDŁA zdolności — lupa
+  w modalu pokazuje kartę, której kolejność rozstrzygamy (polityka „cel
+  przed źródłem” służy czarom, nie układaniu stosu).
+- **Efekt w UI:** modal pyta jak dotąd „Która zdolność ma rozstrzygnąć się
+  jako następna?”, a przyciski nazywają kartę, zdarzenie i skutek:
+  „Najpierw: Scorch Spitter — atak — 1 obrażenie obrońcy”,
+  „Najpierw: Gruul Beastmaster — atak — +X/+0 (X = moc źródła) do końca
+  tury”; każdy przycisk z lupą na kartę źródła.
+- **Piny:** `test/zgloszenie-k-kolejnosc-zdolnosci.test.js` — K/1 kaskada
+  (singleTargetPlanOf=null, buttonsPlanOf przejmuje), K/2 etykieta z pełnym
+  skutkiem, K/3 tytuł bez „wskaż kartę”, K/4 podgląd = karta źródła.
+- **Bramy:** fast 10 095/10 095 (4 nowe), test:all 10 364/10 364/0, build
+  78 modułów / 5773,8 kB.
+
+
 ## 2026-11-07 — zgłoszenie „J. Undercity“: etykiety pokoi lochu nazywają pokój i efekt (PR #181, kontynuacja arena/b2771170-mtg)
 
 - **Zgłoszenie:** „Kolejne pokoje Undercity mają źle opisane efekty — ani w
