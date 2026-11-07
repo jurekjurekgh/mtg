@@ -20,6 +20,42 @@
 > nie trafiają do repozytorium".
 
 
+## 2026-11-07 — zgłoszenie „J. Undercity“: etykiety pokoi lochu nazywają pokój i efekt (PR #181, kontynuacja arena/b2771170-mtg)
+
+- **Zgłoszenie:** „Kolejne pokoje Undercity mają źle opisane efekty — ani w
+  «Twoje działania», ani w modalach wyboru nie wiadomo, o jaki pokój chodzi
+  ani jaki jest jego efekt” (przykład dosłowny: Forge → modal „Wybierz: Cel
+  pokoju lochu”). Wymaganie właściciela: za każdym razem dokładnie napisane,
+  JAKI to pokój i JAKI efekt celujemy — w modalach wyboru i w panelu działań.
+- **Root cause:** trzy etykiety były generyczne albo niepełne — intro modala
+  i grupa panelu brały deskryptor typu żądania (`'room-target': 'Cel pokoju
+  lochu'`), wiersz celu nazywał pokój bez efektu (`Pokój Forge: wybierz cel —
+  …`), a oferta trasy pokój docelowy bez skutku (`Podziemia — idź do: Forge`).
+- **Naprawa (jedno źródło tekstu — L41):** `undercityRoomEffectText(roomName)`
+  w `src/engine/effects.js` wyprowadza polski opis efektu z DANYCH
+  `UNDERCITY_ROOMS` (nie z ręcznej kopii — nowy pokój nie może zostać bez
+  opisu), z fallbackiem na typ efektu. `choiceGroupTitle` (render.js) dla
+  `room-target`/`resolve_room_target` zwraca „Pokój <nazwa> — <efekt>: wybierz
+  cel”; ten sam tytuł zasila intro modala wyboru (introLabel w main.js) i
+  grupę w panelu „Twoje działania” (choiceGroupLabel spada na choiceGroupTitle).
+  Wiersze opcji celu (`commandLabel`) i oferta trasy („Podziemia — idź do:
+  <pokój> — <efekt>”) doklejają ten sam tekst; awaryjna mapa typów w
+  choice-request.js przemianowana na jawnie awaryjną.
+- **Piny (3 warstwy):** `test/zgloszenie-j-undercity-etykiety-pokoi.test.js`
+  — J/1 silnik (wszystkie 9 pokoi ma opis, fallback dla nieznanego pokoju),
+  J/2 Forge (tytuł modala, grupa panelu, wiersz opcji z kandydatem — bez
+  „Cel pokoju lochu”), J/3 Trap! (cel gracza — każda etykieta), J/4 trasa
+  (efekt pokoju docelowego; tytuł grupy trasy pozostaje „Ścieżka w Undercity”
+  — pin M200/A2). Warstwa harnessu: fixtury M103 w
+  `test/table-tester-detectors.test.js` dopięte o nowe kształty etykiet
+  (detektor „grupa bez ptaszka” nadal milczy dla decyzji obowiązkowych).
+- **Bramy:** fast 10 091/10 091 (4 nowe), test:all 10 360/10 360/0, build
+  78 modułów / 5772,2 kB; bundle dist niesie nowe etykiety (sanity grep).
+- **Zgłoszenie J (granica tury, wariant bez DFC) pozostaje WSTRZYMANE przez
+  właściciela** — protokół przy nawrocie w
+  `docs/setup/HANDOFF_2026-11-07-zgloszenie-j-granica-tury.md`.
+
+
 ## 2026-11-07 — zgłoszenie J: zamknięcie warstwy grafik zjadało pauzę granicy tury (transformacja DFC przed nagłówkiem) (PR #181, kontynuacja arena/b2771170-mtg)
 
 - **Zgłoszenie (po zamknięciu H1(a)):** „Początek tury bota NIE ZROBIŁ PAUZY w

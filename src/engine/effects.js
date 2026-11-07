@@ -59,6 +59,61 @@ export const UNDERCITY_ROOMS = Object.freeze([
   Object.freeze({ name: 'Throne of the Dead Three', effects: Object.freeze([Object.freeze({ type: 'reveal_top_put_creature', amount: 10, counters: '+1/+1', countersAmount: 3, hexproofUntilNextTurn: true })]), leadsTo: Object.freeze([]) }),
 ]);
 
+/**
+ * Polski opis efektu pokoju lochu dla etykiet UI — zgłoszenie „J. Undercity”
+ * (uwaga właściciela 2026-11-07): KAŻDA etykieta wyboru i działania pokoju
+ * musi nazywać POKÓJ i jego EFEKT (dotąd modal pokazywał „Wybierz: Cel
+ * pokoju lochu”, czyli ani o który pokój chodzi, ani co wybór zrobi).
+ * Tekst wyprowadzamy z DANYCH UNDERCITY_ROOMS (L41 — jedno źródło: nowy
+ * pokój nie może zostać z osobną, cicho rozjechaną kopią opisu); nieznany
+ * deskryptor spada na typ efektu, więc opis nigdy nie jest pusty.
+ */
+export function undercityRoomEffectText(roomName) {
+  const room = UNDERCITY_ROOMS.find((entry) => entry.name === roomName);
+  if (!room) return 'efekt pokoju lochu';
+  return room.effects.map(describeRoomEffectForUi).join('; ');
+}
+
+/** Opis JEDNEGO deskryptora efektu pokoju (dane → tekst, bez ręcznej kopii). */
+function describeRoomEffectForUi(effect) {
+  const amount = effect.amount ?? 1;
+  switch (effect.type) {
+    case 'search_library_to_hand':
+      return 'znajdź ląd podstawowy do ręki i przetasuj';
+    case 'add_counter':
+      return `${amount} ${polishPluralOf(amount, 'licznik', 'liczniki', 'liczników')} +1/+1 na wybranym stworze`;
+    case 'scry':
+      return `scry ${amount}`;
+    case 'lose_life':
+      return `wybrany gracz traci ${amount} ${amount === 1 ? 'punkt' : 'punktów'} życia`;
+    case 'goad':
+      return 'wybrany stwór musi atakować do końca tury (goad)';
+    case 'draw_cards':
+      return `dobierz ${amount} ${polishPluralOf(amount, 'kartę', 'karty', 'kart')}`;
+    case 'create_token': {
+      const pt = effect.power != null && effect.toughness != null ? ` ${effect.power}/${effect.toughness}` : '';
+      const keywords = effect.keywords ?? [];
+      const kw = keywords.length > 0 ? ` z ${keywords.join(' i ')}` : '';
+      return `stwórz token ${effect.name ?? 'Skarb'}${pt}${kw}`;
+    }
+    case 'reveal_top_put_creature':
+      return `odsłoń ${amount} ${polishPluralOf(amount, 'kartę', 'karty', 'kart')}, stwór spośród nich`
+        + ` z ${effect.countersAmount ?? 1} ${polishPluralOf(effect.countersAmount ?? 1, 'licznikiem', 'licznikami', 'licznikami')} +1/+1`
+        + (effect.hexproofUntilNextTurn ? ' i hexproof do twojej następnej tury' : '');
+    default:
+      return String(effect.type).replaceAll('_', ' ');
+  }
+}
+
+/** Polska odmiana liczebnika (1 kartę, 2 karty, 5 kart) — helper opisów pokoi. */
+function polishPluralOf(n, one, few, many) {
+  if (n === 1) return one;
+  const last = n % 10;
+  const last2 = n % 100;
+  if (last >= 2 && last <= 4 && (last2 < 12 || last2 > 14)) return few;
+  return many;
+}
+
 /** Wirtualne źródło efektów lochu (nie jest obiektem w strefie — jak emblem). */
 /** Karta-ląd (kind albo typ) — jedno miejsce prawdy dla efektów-reanimacji. */
 function isLandCard(object) {

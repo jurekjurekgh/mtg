@@ -818,6 +818,11 @@ test('M103: grupa „Cel pokoju lochu" (decyzja obowiązkowa) NIE jest zgłaszan
   const found = detectGroupWithoutTick([
     { label: 'Wybierz: Cel pokoju lochu (5 opcji)', hasTick: false },
     { label: 'Wybierz: Cel pokoju lochu (8 opcji)', hasTick: false },
+    // Zgłoszenie „J. Undercity“ (2026-11-07): etykieta grupy nazywa teraz
+    // pokój i efekt („Pokój Forge — …: wybierz cel“) — dopięte oba kształty,
+    // żeby zmiana etykiety nie otworzyła fałszywych alarmów na Żywym Testerze.
+    { label: 'Pokój Forge — 2 liczniki +1/+1 na wybranym stworze: wybierz cel (5 opcje)', hasTick: false },
+    { label: 'Pokój Trap! — wybrany gracz traci 5 punktów życia: wybierz cel (2 opcje)', hasTick: false },
   ]);
   assert.equal(found.length, 0);
 });

@@ -4,7 +4,7 @@ import {
   nextHoverMode, HOVER_MODES, tileImageSources, localArtUrl, scryfallCardUrl, IMAGE_SIZE,
 } from './card-images.js';
 import { choiceRequest } from '../protocol/types.js';
-import { UNDERCITY_ROOMS } from '../engine/effects.js';
+import { UNDERCITY_ROOMS, undercityRoomEffectText } from '../engine/effects.js';
 import { castsWithoutPayingMana, hasFreeCastStamp, impulseWindowOf } from '../engine/impulse-window.js';
 import { isPureManaAbilityCommand } from '../engine/mana-sources.js';
 import { activatableAbilities, CARD_TYPES } from '../engine/permanents.js';
@@ -3172,6 +3172,17 @@ export function choiceGroupTitle(request, session, view, { manaHtml = false } = 
   // Kanał many jest jawny: modal = tekst, panel akcji (`manaHtml`) = ikonki.
   const titled = choiceSourceTitle(options[0], session, view, { manaHtml });
   if (titled) return titled;
+  // Zgłoszenie „J. Undercity” (uwaga właściciela 2026-11-07): tytuł grupy
+  // celu pokoju nazywa POKÓJ i jego EFEKT — dotąd „Wybierz: Cel pokoju
+  // lochu” nie mówiło ani, o który pokój chodzi, ani co wybór zrobi.
+  // Jeden tytuł dla modala wyboru (introLabel w main.js) i grupy w panelu
+  // „Twoje działania” (choiceGroupLabel spada na choiceGroupTitle — L41).
+  // Warunek podwójny: grupa może przyjść typem żądania (room-target) albo
+  // typem pierwszej komendy (resolve_room_target).
+  if ((request?.type === 'room-target' || options[0]?.type === 'resolve_room_target') && view?.pendingRoomTarget) {
+    const pendingRoom = view.pendingRoomTarget;
+    return `Pokój ${pendingRoom.roomName} — ${undercityRoomEffectText(pendingRoom.roomName)}: wybierz cel`;
+  }
   const descriptor = CHOICE_GROUP_TYPE_DESCRIPTORS[request?.type]
     ?? CHOICE_GROUP_COMMAND_DESCRIPTORS[options[0]?.type]
     ?? (request?.type === 'target' ? 'Cel' : 'Wariant');
@@ -4088,9 +4099,11 @@ function commandLabelBase(cmd, session, view) {
         : `Clash: ${what} na wierzch biblioteki`;
     }
     // M190/B: wybór ścieżki w lochu — etykieta nazywa POKÓJ, do którego
-    // gracz wchodzi (Oracle „Leads to: Forge, Lost Well").
+    // gracz wchodzi (Oracle „Leads to: Forge, Lost Well"). Zgłoszenie
+    // „J. Undercity” (2026-11-07): doklejony EFEKT pokoju docelowego —
+    // gracz wybiera drogę po skutku, nie po samej nazwie pokoju.
     case 'resolve_undercity_route':
-      return `Podziemia — idź do: ${escapeHtml(String(cmd.roomName ?? ''))}`;
+      return `Podziemia — idź do: ${escapeHtml(String(cmd.roomName ?? ''))} — ${escapeHtml(undercityRoomEffectText(cmd.roomName))}`;
     // Batch 46 (fabricate, CR 702.123): dwa warianty wyboru kontrolera.
     case 'resolve_fabricate':
       return cmd.mode === 'counters'
@@ -4098,8 +4111,13 @@ function commandLabelBase(cmd, session, view) {
         : 'Fabricate: tokeny Servo 1/1';
     case 'resolve_room_target': {
       // Wybór celu pokoju lochu (M24): etykieta pokazuje pokój i kandydata.
+      // Zgłoszenie „J. Undercity” (2026-11-07): prefiks niesie też EFEKT
+      // pokoju (jak tytuł grupy) — „Pokój Forge: wybierz cel” nie mówiło,
+      // co wybór zrobi. Oba teksty pochodzą z undercityRoomEffectText (L41).
       const pending = view.pendingRoomTarget;
-      const prefix = pending ? `Pokój ${pending.roomName}: wybierz cel — ` : 'Cel pokoju: ';
+      const prefix = pending
+        ? `Pokój ${escapeHtml(String(pending.roomName))} — ${escapeHtml(undercityRoomEffectText(pending.roomName))}: wybierz cel — `
+        : 'Cel pokoju: ';
       if (pending?.kind === 'player') {
         const name = view.players.find((p) => p.id === cmd.targetId)?.name ?? cmd.targetId;
         return `${prefix}${name}`;
