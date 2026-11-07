@@ -117,3 +117,35 @@ zachowania dla „czystych" pauz zagraniowych.
 2. Fuzzer scratch (patrz wyżej) nadaje się na stały strażnik regresji
    granic tur, gdyby właściciel chciał — wymaga dokumentacji w
    TESTER_STOLU.md i rozwiązania artefaktu T1 (odtwarzanie mulliganów).
+
+## Kontynuacja 2 (ta sama doba, po korekcie właściciela)
+
+Właściciel wykluczył DFC/day-night („nie miałem żadnego wilkołaka, nic się
+nie otwierało na granicy tury"): fix DFC z 24c679f zostaje (realna klasa,
+piny + czułość), ale NIE jest jego scenariuszem. Dosłowny repro do złamania:
+jego tura → pauza draw → jedno „Rozumiem" → tura kończy się sama → tura bota
+bez stopu → pierwszy stop = rzut sorcery w Main1 (ekran wysokograficzny).
+
+Zrobione (detektory: nagłówek tury bota MUSI dostać własny stop modala przed
+pierwszą akcją bota w Main1):
+- Fuzz sesyjny (art-sim onCast/onTransform→true + wyciszenia ignoredOptionKeys,
+  832 gry, 8 par talii × 5 seedów): 0 naruszeń. UWAGA metodyczna: pierwsze
+  przebiegi (840 gier) miały ślepy detektor — literówka „Nieprzyaciel" (brak
+  „j") w obu regexach; po naprawie wynik bez zmian (0), ale dopiero wtedy
+  wiarygodny.
+- Driver UI na prawdziwym artefakcie (tools/table-tester/owner-flow2.mjs,
+  jsdom, hi-gfx domyślnie ON): 23 pełne gry, 142 zamknięcia warstwy grafik,
+  mulligany/bloki/odrzucenia — każda granica tury bota ze stopem nagłówka.
+- Czułość obu jarzem udowodniona: revert fixu DFC → 2+2 wykroczenia (UI,
+  innistrad s7/s42) i 2 (fuzz sesyjny, 6 gier); fix przywrócony → 0.
+- Ślepe zaułki wykluczone w advance(): auto-decline NIE odpala się wcale
+  (sonda 2018 × resolve_combat = samo step_advanced; decline = 0), a gałęzie
+  pass/bot/tail-flush noszą sygnał granicy M261 (streamAutoEvents → true).
+
+Werdykt: scenariusza właściciela NIE odtworzono w żadnym jarzmie. Zostały:
+specyficzna karta/interakcja w jego taliach (własne z kreatora?) albo stan
+nieodwiedzony przez tali repozytorium. DECYDUJĄCE: „Eksportuj zapis" partii
+(#export-replay) — resumeReplayText + owner-flow2.mjs odtworzy dokładną grę.
+
+Narzędzia scratch (niewersjonowane): tools/table-tester/owner-flow2.mjs
+(driver właściciela, jsdom), t-j2-fuzz.mjs (fuzz sesyjny z art-sim i mutingiem).
