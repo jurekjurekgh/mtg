@@ -111,6 +111,18 @@ import {
  *     zamiast declare_blockers wybrał pass_priority. Heurystyczny p1 wykonał
  *     jeden dodatkowy pass (262→263 decyzje), scoreSum bez zmian: 2971.65.
  *     Pozostałe pięć śladów bitowo identyczne; nie dowodzi to jakości bota.
+ *   - abc4017e… → 83ee50de… (zgłoszenie H2, 2026-11-07): kara
+ *     `suspendMain1Penalty` (40, heuristic-params.js) — dodatni scoring
+ *     suspend wyłącznie w Głównej 2 („mana pod koniec tury"). Zmierzona
+ *     różnica: TYLKO dominaria-brg|mirrodin-wu@1001 — jedyna partia
+ *     korpusu z Mindstabem w talii (decks/dominaria-brg.txt). Liczba decyzji
+ *     (285), scoreSum (3307.1953) i chosenKinds WYBRANYCH komend są bitowo
+ *     identyczne we wszystkich sześciu partiach: zmieniły się wyłącznie
+ *     wyceny NIE-WYBRANYCH opcji suspend_card w Głównej 1 (−40 każda),
+ *     których bot w tych partiach i tak nie wybierał. Żadna decyzja nie
+ *     została odwrócona. Dowód przełączenia okna (main1→pasowanie/main2→
+ *     suspend) żyje w test/audyt-pmssb35-odroczenie.test.js, sekcja H2,
+ *     i w partii t3 Żywego Testera (seed 4242). Świadoma regeneracja.
  */
 
 test('golden-master: ślad bota == zamrożony fixture (bit w bit)', () => {

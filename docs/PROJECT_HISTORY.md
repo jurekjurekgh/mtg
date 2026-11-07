@@ -20,7 +20,59 @@
 > nie trafiają do repozytorium".
 
 
-## 2026-11-07 — bump pinu CR do wydania 2026-11-06 + jednostka ogłoszeń płatności kreatora (PR #181, kontynuacja arena/b2771170-mtg)
+## 2026-11-07 — zgłoszenia H (suspend: piny gwarancyjne + kara Main1) i I (hover trasy Undercity) (PR #181, kontynuacja arena/b2771170-mtg)
+
+- Zlecenie właściciela, dwa zgłoszenia. Plan:
+  `docs/plans/PLAN_2026-11-07-zgloszenia-h-i.md`. Commity: `c5b641f` (plan),
+  `80c4893` (piny + fixy), docs zamknięcia. Incydent: trzeci reset workspace
+  w PR #181 — tym razem w TRAKCIE tury (historia lokalnego .git cofnięta do
+  d2e0d61, katalogi .arena i node_modules testera wymazane); odzyskane
+  `git fetch` + `git reset origin/arena/b2771170-mtg` + rekommit — zdalny
+  miał pełną historię (6ada667), diff odtworzony 1:1 (8 plików), push
+  fast-forward 6ada667..80c4893.
+- **H1 — „bot zawiesza Mindstab w podtrzymaniu" (rozpoznanie: NIEMOŻLIWE):**
+  silnik bramkuje akt zawieszenia (oferta w `legalCommands` i `execute` →
+  `suspendCard`) do WŁASNEJ fazy main przy PUSTYM stosie — zgodnie z CR 702.62a
+  („if you could begin to cast this card…") + 307.1. Linia logu widziana przez
+  właściciela („Mindstab — trigger (suspend — zdjęcie licznika czasu
+  w podtrzymaniu)") to LEGALNY trigger upkeep z CR 702.62a (zdjęcie licznika);
+  w katalogu JEDYNA karta z suspend to Mindstab (sorcery). Piny gwarancyjne
+  (nie było błędu — jest dowód na zawsze): `test/zgloszenie-h1-suspend-timing.test.js`
+  (brak oferty w upkeep / main ze stosiem / cudzej main; odrzucenie execute
+  z `illegal_suspend:`; oferta w main1 i main2).
+- **H2 — dodatni scoring suspend TYLKO w Głównej 2 (decyzja właściciela):**
+  nowy parametr deskryptorowy `suspendMain1Penalty` (domyślnie 40; baza
+  rodziny ≤ 30 → każda Główna 1 strictly pod pasowaniem), stosowany w
+  `case 'suspend_card'` po doliczeniu kosztu i zwłoki — wzorzec
+  `morbidMain1Penalty`. Arytmetyka baza/koszt/zwłoka bez zmian (sceny B
+  audytu PMSSB-35 przeniesione do main2 — są bezfazowe); piny sekcji H2:
+  main1 → pasowanie, main2 → zawieszenie, pokrętło 0 przywraca 24, kotwica
+  24−40=−16. Recydywa zależności: `test/pmssb6-discard-wave-a.test.js` F-A2
+  („mindstab w pustkę woli suspend") — scena przeniesiona do main2 (tam ta
+  „wola" jest emergentna). Golden master: ŚWIADOMA regeneracja
+  `abc4017e…` → `83ee50de…` — zmierzona różnica: TYLKO
+  dominaria-brg|mirrodin-wu@1001 (jedyna partia z Mindstabem), decyzje (285),
+  scoreSum (3307.1953) i chosenKinds BITOWO identyczne — zmieniły się wyłącznie
+  wyceny NIE-WYBRANYCH opcji suspend_card w Głównej 1; wpis w rejestrze
+  regeneracji `test/bot-scoring-snapshot.test.js`.
+- **I — hover trasy Undercity:** opcje „Podziemia — idź do: X"
+  (`resolve_undercity_route`, modal przez buttonsPlanOf) nie miały podglądu,
+  bo komenda nie niesie karty. `previewCardIdOfOption` zwraca teraz pseudo-id
+  `'undercity'` (karta specjalna spoza rejestru), a `main.js` tłumaczy je
+  w `modalHoverInfoByCardId` (hover → druk lochu — ten sam, co panel
+  `renderUndercity` przez `attachSpecialCardHover`) i
+  `openCardFullscreenByCardId` (tap → `openUndercityFullscreen`). Piny:
+  `test/zgloszenie-i-undercity-podglad-trasy.test.js` (czysta funkcja +
+  instalacja w modalu + skan drutu main.js, wzorzec L16).
+- **Bramy:** `npm run test:all` **10 352 pass / 0 fail / 0 skip** (10 339 + 13
+  nowych pinów), build 78 modułów / 5 766,4 kB, golden master zielony po
+  regeneracji, benchmark bota: heuristic 89,1% (599/672), vs random 97,6%,
+  vs aggro 80,7% — bez regresji progu. Dowód decyzyjny H2 na partii Żywego
+  Testera (seed 100, bot dominaria-brg): akt „Nieprzyjaciel zawiesza Mindstab"
+  w T12 PO zadaniu obrażeń w walce (Główna 2), transkrypt
+  `tools/table-tester/.arena/t3-s100.txt` (nie trafia do repo — TESTER_STOLU).
+
+
 
 - Zlecenie: „zrób 1 i 2 zgodnie z sugestią" — obie otwarte pozycje handoffu
   2026-11-06-audyt-pr180. Plan: `docs/plans/PLAN_2026-11-07-bump-cr-i-ogloszenia.md`.
