@@ -20,6 +20,60 @@
 > nie trafiają do repozytorium".
 
 
+## 2026-11-07 — zgłoszenie J: zamknięcie warstwy grafik zjadało pauzę granicy tury (transformacja DFC przed nagłówkiem) (PR #181, kontynuacja arena/b2771170-mtg)
+
+- **Zgłoszenie (po zamknięciu H1(a)):** „Początek tury bota NIE ZROBIŁ PAUZY w
+  Rozgrywce (nie czekał na moje Rozumiem), tylko od razu doszedł do Main1 i tam
+  zatrzymał się na rzuceniu sorcery przez bota (ekran wysokograficzny).
+  Zazwyczaj działa, czasem nie." Repro: pauza draw → „Rozumiem" (jedno
+  kliknięcie, mysz — wprost doprecyzowane: NIGDY podwójne) → własna tura
+  auto-się-kończy → brak stopu na starcie tury bota. Reguła M261 rozciągnięta
+  przez właściciela: KAŻDE rozpoczęcie tury (gracza i bota) pauzuje modal.
+- **Śledztwo (wykluczenia):** warstwa sesji czysta — fuzz biernego gracza
+  (narzędzie scratch, nie w repo — odtwarzalne wg przepisu w handoffu J)
+  na 181 parach talii × 2 seedy,
+  ~1500 tur bota: każda granica środka gry pauzuje z nagłówkiem (26 zgłoszeń
+  to wyłącznie artefakt tury 1 fuzzera — pomija mulligany, przez co
+  `game_started` nie płynie przez komendę keep; w żywym UI nagłówek T1 jeździ
+  z ostatnim keepem — potwierdzone transkryptami testera). Warstwa UI czysta
+  przy pojedynczych klikach — driver właściciela
+  (scratch: jsdom na artefakcie, keep → tylko „Rozumiem" → pass, nic nie rzuca):
+  15 gier, wszystkie nagłówki pokazane. Teoria odbicia palca (double-tap)
+  odrzucona po sprostowaniu właściciela.
+- **Root cause (mechanizm znaleziony w eventach silnika):** `beginTurnStart`
+  emituje zdarzenia DAY/NIGHT (transformacje DFC — wilkołaki) **PRZED**
+  `turn_started`. Gdy transformacja wypada w strumieniu granicy tury:
+  `emitTransformEvent` uzbraja `awaitingArtAck` jeszcze przed nagłówkiem;
+  `turn_started` uzbraja obowiązkową pauzę M261; UI tłumi modal (bramka
+  `artPause`), gracz zamyka warstwę ilustracji → `continueArtPlay()` →
+  `advance()`, który kasuje `awaitingBotAck` NA WEJŚCIU — pauza granicy ginie
+  bez pokazania, gra przetacza się przez ogon (untap/upkeep/draw) prosto do
+  Main1 bota i zatrzymuje się dopiero na jego zagraniu (rzut = ponownie
+  warstwa grafik — dokładnie doświadczenie właściciela). „Czasem" = tylko gdy
+  obserwator artów odpali w strumieniu granicy (transformacja day/night;
+  strumień passa niósł też inne zdarzenia pre-header w tej samej klasie).
+- **Fix:** `continueArtPlay()` (session.js) po zdjęciu `awaitingArtAck` NIE
+  przetacza gry, gdy czeka niepotwierdzona pauza, której blok zawiera
+  nagłówek tury (ta sama klasyfikacja co `botPauseAtTurnBoundary`): warstwa
+  grafik jest PREZENTACJĄ równoległą, nie potwierdzeniem pauzy granicy —
+  gra stoi, UI po zamknięciu ilustracji pokazuje modal z „Tura N — …" i czeka
+  na „Rozumiem". Pauza rzutu BEZ nagłówka tury dalej jest konsumowana przez
+  obejrzenie ilustracji (M254/C bez zmian).
+- **Piny:** `test/zgloszenie-j-pauza-granicy-tury.test.js` — J/1 (rasa:
+  transformacja w strumieniu granicy uzbraja pauzę M261 i warstwę
+  JEDNOCZEŚNIE — wilkołak bota, dzień→noc na starcie jego tury),
+  J/2 (zamknięcie warstwy nie zjada pauzy: bot nic nie zagrał w Main1,
+  nagłówek w buforze, ogon czeka na „Rozumiem"). RED→GREEN udowodniony
+  (checkout fixu → J/2 fail „bot zdążył zagrać w Main1", apply → 2/2).
+- **Bramy:** fast `npm test` **10 087/0** (10 085 + 2 piny J); fuzz 60 seedów
+  bez zmian (26 × artefakt T1); build 78 modułów / 5 768,2 kB; driver
+  właściciela 3 gry (w tym innistrad×innistrad i wiedzmin×innistrad-brg —
+  talie transformacyjne) kompletne, wszystkie nagłówki; Żywy Tester
+  (innistrad-wu vs wiedzmin-bg s210 defensive, dominaria-wu vs tarkir-wur
+  s211 greedy): detektory 0 zgłoszeń, skaner nagłówków czysty;
+  `test:all` patrz niżej.
+
+
 ## 2026-11-07 — zgłoszenia H (suspend: piny gwarancyjne + kara Main1) i I (hover trasy Undercity) (PR #181, kontynuacja arena/b2771170-mtg)
 
 - **KONTYNUACJA po odpowiedzi właściciela** („Zawieszenie nastąpiło w fazie

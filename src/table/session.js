@@ -4339,6 +4339,23 @@ export function createSession(config) {
     continueArtPlay() {
       if (!awaitingArtAck) return { ok: true, artPause: false, botPause: awaitingBotAck };
       awaitingArtAck = false;
+      // Zgłoszenie J (właściciel, 2026-11-07): strumień granicy tury zaczyna się
+      // od zdarzeń DAY/NIGHT (transformacje DFC — `beginTurnStart` emituje je
+      // PRZED `turn_started`), więc warstwa grafik uzbraja się JESZCZE PRZED
+      // nagłówkiem nowej tury. Modal pauzy granicy (M261 — obowiązkowa) jest
+      // wtedy tłumiony bramką `artPause` w UI, a `advance()` kasuje
+      // `awaitingBotAck` NA WEJŚCIU — zamknięcie ilustracji zjadało pauzę
+      // granicy i gra przetaczała się prosto do Main1 bota (pierwszy stop =
+      // jego zagrywka). Warstwa grafik jest PREZENTACJĄ równoległą, nie
+      // potwierdzeniem pauzy granicy: gdy po zamknięciu ilustracji czeka
+      // niepotwierdzona pauza, której blok zawiera nagłówek tury (ta sama
+      // klasyfikacja co `botPauseAtTurnBoundary`), gra ma nadal STÁĆ — UI
+      // pokaże modal z nagłówkiem i czeka na „Rozumiem”. Pauza rzutu bez
+      // nagłówka tury (M254/C — warstwa zastępuje modal przy rzucie) dalej
+      // jest konsumowana przez obejrzenie ilustracji, bez zmian.
+      if (awaitingBotAck && botMoves.some((m) => m.type === 'turn_started')) {
+        return { ok: true, artPause: false, botPause: true };
+      }
       const internalError = advanceGuarded();
       return { ok: true, artPause: awaitingArtAck, botPause: awaitingBotAck, ...(internalError ? { internalError } : {}) };
     },
