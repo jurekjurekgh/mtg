@@ -53,6 +53,22 @@
   skutkiem, K/3 tytuł bez „wskaż kartę”, K/4 podgląd = karta źródła.
 - **Bramy:** fast 10 095/10 095 (4 nowe), test:all 10 364/10 364/0, build
   78 modułów / 5773,8 kB.
+- **Kontynuacja (sprostowanie, wieczór 2026-11-07):** podsumowanie zamknięcia
+  K OPISAŁO nieistniejącą „lupę” przy przyciskach — właściciel stanowczo:
+  „Żadnych lup! Modale wyboru mają być wszystkie z jednego wspólnego
+  źródła, ze wspólnym modelem wyświetlania. Jedynym akceptowalnym modelem
+  jest podkreślona nazwa karty/efektu i hover z img karty ze scryfall
+  (fullscreen po kliknięciu na ekranach dotykowych). ŻADNYCH NOWYCH
+  NIEZALEŻNYCH MODALI!!!”. Zweryfikowano stan kodu: modal kolejności
+  renderuje WSPÓLNY helper M302 (wiersze radio + Zatwierdź), nazwa wiersza
+  jest podkreślona (`picker-name is-openable`) z hoverem pokazującym img
+  karty źródła ze Scryfall, na dotyku klik w nazwę otwiera pełny ekran;
+  ikon lup nie ma w żadnym modalu (`renderPeekButton` to od O2/2026-10-18
+  nazwa, nie ikona). Konwencję przypięto na scenie zgłoszenia:
+  `test/zgloszenie-k-kontynuacja-wspolny-model.test.js` — K/5 wspólne
+  źródło + zero osobnych podglądów, K/6 podkreślona nazwa + hover na
+  kartę źródła, K/7 dotyk (klik w nazwę = fullscreen, z hoverem nie),
+  K/8 radio + Zatwierdź oddaje komendę.
 
 
 ## 2026-11-07 — zgłoszenie „J. Undercity“: etykiety pokoi lochu nazywają pokój i efekt (PR #181, kontynuacja arena/b2771170-mtg)

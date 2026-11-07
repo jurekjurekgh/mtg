@@ -56,8 +56,32 @@ skutek, np.:
 - „Najpierw: Scorch Spitter — atak — 1 obrażenie obrońcy"
 - „Najpierw: Gruul Beastmaster — atak — +X/+0 (X = moc źródła) do końca tury"
 
-Każdy przycisk z lupą (pełny ekran karty źródła — obraz Scryfalla niesie
-pełny oracle text).
+Podgląd karty źRÓDŁA zdolności działa WSPÓLNYM modelem wszystkich modali:
+nazwa wiersza jest podkreślona i pokazuje hoverem img karty ze Scryfall;
+na dotyku klik w nazwę otwiera pełny ekran. Żadnych ikon lup — patrz
+niżej „Model wyświetlania”.
+
+## Model wyświetlania (kontynuacja 2026-11-07, wieczór — dyrektywa właściciela)
+
+Wcześniejsze podsumowanie zamknięcia K błędnie opisało „lupę” przy
+przyciskach. Stanowisko właściciela (wiążące): „Żadnych lup! Modale
+wyboru mają być wszystkie z jednego wspólnego źródła, ze wspólnym
+modelem wyświetlania. Jedynym akceptowalnym modelem jest podkreślona
+nazwa karty/efektu i hover z img karty ze scryfall (fullscreen po
+kliknięciu na ekranach dotykowych). ŻADNYCH NOWYCH NIEZALEŻNYCH
+MODALI!!!”
+
+Zweryfikowany stan kodu (zgadza się z dyrektywą): modal kolejności
+renderuje wspólny helper M302 (wiersze radio + „Zatwierdź wybór”),
+nazwa wiersza jest podkreślona (`picker-name is-openable`, kropkowane
+podkreślenie w index.html) i pokazuje hoverem img karty ŹRÓDŁA zdolności
+ze Scryfall; na dotyku (brak callbacków hover) klik w nazwę otwiera pełny
+ekran. Ikony lup nie ma w żadnym modalu — `renderPeekButton` to od
+O2 (2026-10-18) i zgłoszenia 2026-11-05 PODKREŚLONA NAZWA z hoverem,
+nie ikona.
+
+Piny konwencji na scenie zgłoszenia:
+`test/zgloszenie-k-kontynuacja-wspolny-model.test.js` (K/5–K/8).
 
 ## Piny
 
