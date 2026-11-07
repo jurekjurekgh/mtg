@@ -3232,7 +3232,11 @@ function bootstrapTable() {
         // Zdolność many jest tylko kolejnym krokiem wstrzymanej płatności.
         // Auto-pass sesji mógłby opuścić krok i wyczyścić pulę, zanim
         // nadrzędny kreator zdąży ją wykorzystać (także dla wyciszonej oferty).
-        runCommand: (cmd, options) => playDirect(cmd, nested ? { ...options, holdPriority: true } : options),
+        // F-OGŁ: commit kreatora podrzędnego KONTYNUUJE jednostkę ogłoszeń
+        // (paymentUnit: true nadpisuje 'end' z finishWizardPayment) — po nim
+        // rodzic dalej dopłaca i dopisuje do TEJ SAMEJ jednostki; zamyka ją
+        // dopiero commit kreatora nadrzędnego (opcje bez nadpisania).
+        runCommand: (cmd, options) => playDirect(cmd, nested ? { ...options, holdPriority: true, paymentUnit: true } : options),
         onCloseWizard: () => { if (!nested) closeManaWizard(); },
         onSyncUi: () => {
           autosave();
@@ -3313,7 +3317,8 @@ function bootstrapTable() {
         }
         // Kolor tapniętego źródła trafia do KOLOROWEJ PULI (engine), więc pokrycie
         // kolorów liczy się samo z puli — bez śledzenia committed (cz. 8).
-        playDirect(plan.command, { holdPriority: true });
+        // F-OGŁ: tapnięcie źródła = krok płatności (jednostka ogłoszeń).
+        playDirect(plan.command, { holdPriority: true, paymentUnit: true });
         refreshManaWizard();
       },
       onSelectTapCost: (creatureId) => {
@@ -3326,7 +3331,7 @@ function bootstrapTable() {
           && source.command?.type === 'activate_ability' && source.command?.abilityIndex === selection.abilityIndex);
         const cmd = resolveManaSourceTapCost(latestSource, creatureId, session.view());
         delete manaWizardDescriptor._tapCostSelection;
-        if (cmd) playDirect(cmd, { holdPriority: true });
+        if (cmd) playDirect(cmd, { holdPriority: true, paymentUnit: true });
         refreshManaWizard();
       },
       onCancelTapCost: () => {

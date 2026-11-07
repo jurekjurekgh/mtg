@@ -1131,7 +1131,9 @@ export function finishWizardPayment(session, pending, {
     // z płatności (kolejność CR: trigger PRZED opłacaną komendą).
     if (isWizardCommandLegal(view, paidCommand) && stackLen <= baseline) {
       onCloseWizard();
-      const res = runCommand(paidCommand);
+      // F-OGŁ: commit DOMYKA jednostkę ogłoszeń płatności (paymentUnit: 'end'
+      // — dokleja się do skutków drenażu zamiast je wycierać).
+      const res = runCommand(paidCommand, { paymentUnit: 'end' });
       if (res?.ok === false) {
         // playDirect już pokazuje szczegóły wyjątku — nie zastępuj ich
         // ogólnym komunikatem o odrzuceniu komendy.
@@ -1147,7 +1149,10 @@ export function finishWizardPayment(session, pending, {
       if (mutatedDuringDrain) onSyncUi();
       return { committed: false, reason: 'pending_decision' };
     }
-    const passRes = session.apply({ type: 'pass_priority', playerId: HUMAN_ID });
+    // F-OGŁ: pass drenażu to krok płatności — jego skutki (mielenia z
+    // triggera aury) mają DOŻYĆ modala „Rozgrywka", a nie zostać wytarte
+    // przez czyszczenie bufora przy commicie (patrz session.js apply).
+    const passRes = session.apply({ type: 'pass_priority', playerId: HUMAN_ID }, { paymentUnit: true });
     if (passRes?.ok === false || passRes?.internalError) {
       onCloseWizard();
       if (mutatedDuringDrain) onSyncUi();
