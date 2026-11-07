@@ -22,6 +22,27 @@
 
 ## 2026-11-07 — zgłoszenia H (suspend: piny gwarancyjne + kara Main1) i I (hover trasy Undercity) (PR #181, kontynuacja arena/b2771170-mtg)
 
+- **KONTYNUACJA po odpowiedzi właściciela** („Zawieszenie nastąpiło w fazie
+  Podtrzymanie i stąd w ogóle zgłoszenie" — odrzucenie wyjaśnienia
+  „misreading linii triggera"): archeologia git na drzewie buildu gracza
+  (7a18659 = po scaleniu PR #179; piny H1 odpalone w worktree — 5/5 ZIELONE,
+  bramki fazy istnieją od PR #36/#64) + diff pipeline'u ogłoszeń (session.js
+  między 7a18659 a HEAD różni się WYŁĄCZNIE etykietą attacks_you_control
+  i F-OGŁ). Właściciel miał rację co do TEGO, CO WIDZIAŁ: **ogłoszenie
+  „zawiesza Mindstab" wjeżdżało w modal „Rozgrywka" przy granicy tury —
+  stół pokazywał już Podtrzymanie następnej tury.** Root cause:
+  `suspendCard`/`plotCard` przenoszą kartę cichym `moveObjectDirectly`
+  (bez `object_moved`), a `card_suspended`/`card_plotted` nie było w
+  `BOT_PAUSE_EVENTS` — decyzja właściciela 2026-08-05 („pauza po zmianie
+  strefy karty bota") nie łapała specjalnych akcji; ogłoszenie czekało
+  w buforze do następnego przystanku. Fix: oba zdarzenia w BOT_PAUSE_EVENTS
+  (pauza przy SAMYM akcie, nagłówek „Faza: Główna 2" tuż nad ogłoszeniem).
+  Piny RED→GREEN: `test/zgloszenie-h-ogloszenie-zawieszenia.test.js`
+  (H-ogł/1 czerwony bez fixu — ogłoszenie w fazie beginning; H-ogł/2:
+  kontekst „Faza: Główna 2"). Akt zawieszenia w upkeep pozostaje
+  niemożliwy (silnik), ale prezentacja ogłoszenia była myląca — repair
+  w warstwie, w której zgłoszenie było słuszne.
+
 - Zlecenie właściciela, dwa zgłoszenia. Plan:
   `docs/plans/PLAN_2026-11-07-zgloszenia-h-i.md`. Commity: `c5b641f` (plan),
   `80c4893` (piny + fixy), docs zamknięcia. Incydent: trzeci reset workspace

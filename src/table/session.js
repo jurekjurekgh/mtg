@@ -3533,6 +3533,15 @@ export function createSession(config) {
    * wystawieniu lądu, użyciu zdolności i zmianie strefy karty — nawet gdy
    * gracz nie ma żadnej możliwej odpowiedzi). Tylko `object_moved` jest
    * jednocześnie szumem logu — dostaje własny opis w noteBotMove.
+   *
+   * Zgłoszenie H (kontynuacja 2026-11-07): `card_suspended`/`card_plotted`
+   * to TEŻ zmiana strefy karty (ręka → exile), ale specjalne akcje idą
+   * przez ciche `moveObjectDirectly` (bez `object_moved`), więc ogólna
+   * reguła ich nie łapała. Skutek: ogłoszenie „zawiesza/plotuje X" czekało
+   * w buforze do następnego przystanku — zwykle granicy tury — i modal
+   * „Rozgrywka" pokazywał je W PODTRZYMANIU następnej tury (właściciel
+   * czytał to jako zawieszenie w upkeep). Pauza przy samym akcie daje
+   * ogłoszenie we właściwej fazie, z nagłówkiem „Faza: Główna …" tuż nad nim.
    */
   const BOT_PAUSE_EVENTS = new Set([
     'spell_cast', 'permanent_cast', 'aura_spell_cast',
@@ -3541,6 +3550,7 @@ export function createSession(config) {
     'object_moved', 'object_exiled', 'permanent_destroyed', 'creature_destroyed',
     'permanent_sacrificed', 'permanent_put_into_graveyard',
     'token_created', 'permanent_entered_battlefield',
+    'card_suspended', 'card_plotted',
   ]);
 
   // Uwaga C (2026-08-12): śledzimy ostatnią FAZĘ pokazaną w modalu ruchu bota,

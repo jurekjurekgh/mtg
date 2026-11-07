@@ -1,8 +1,35 @@
 # Handoff: zgłoszenia H + I (2026-11-07, PR #181)
 
 Gałąź: `arena/b2771170-mtg` (PR #181, inkrementalnie). Komity tej sesji:
-`c5b641f` (plan), `80c4893` (piny + fixy), plus docs zamknięcia.
+`c5b641f` (plan), `80c4893` (piny + fixy), plus docs zamknięcia i fix
+warstwy ogłoszeń (kontynuacja H po odpowiedzi właściciela).
 Plan: `docs/plans/PLAN_2026-11-07-zgloszenia-h-i.md`.
+
+## Kontynuacja H po odpowiedzi właściciela („zawieszenie nastąpiło w Podtrzymaniu")
+
+- Właściciel odrzucił wyjaśnienie „misreading linii triggera". Zweryfikowano
+  jego build (7a18659, po PR #179): piny H1 w worktree — 5/5 zielone; bramki
+  fazy w silniku istnieją od PR #36/#64; diff session.js (7a18659→HEAD) to
+  tylko etykieta attacks_you_control + F-OGŁ. Akt zawieszenia w upkeep był
+  niemożliwy także na jego drzewie.
+- **Ale jego obserwacja była realna — wada warstwy ogłoszeń:**
+  `card_suspended`/`card_plotted` nie było w `BOT_PAUSE_EVENTS` (specjalne
+  akcje idą cichym `moveObjectDirectly`, bez `object_moved`), więc ogłoszenie
+  „Nieprzyaciel zawiesza Mindstab" czekało w buforze modala „Rozgrywka"
+  do następnego przystanku — zwykle granicy tury — i pokazywało się, gdy
+  stół był już w Podtrzymaniu następnej tury. Czytający modal gracz
+  widział zawieszenie ogłoszone w upkeep.
+- Fix (decyzja właściciela 2026-08-05: pauza po zmianie strefy karty bota):
+  `card_suspended` + `card_plotted` w `BOT_PAUSE_EVENTS` — modal pauzuje
+  przy SAMYM akcie, we właściwej fazie, z nagłówkiem „Faza: Główna 2" tuż
+  nad ogłoszeniem.
+- Piny: `test/zgloszenie-h-ogloszenie-zawieszenia.test.js` — H-ogł/1
+  (ogłoszenie w fazie głównej; RED bez fixu: faza beginning — doświadczenie
+  właściciela), H-ogł/2 (kontekst „Faza: Główna 2" nad ogłoszeniem; przy okazji
+  integracja H2 — akt wypada w Głównej 2).
+- Benchmark NIE uruchamiany ponownie (zmiana warstwy ogłoszeń/pauz, nie
+  wyceny bota — ADR 0018; ścieżka decyzji bota bez zmian: pauza nie wpływa
+  na wybory, tylko na moment pokazania ogłoszenia).
 
 ## Co zostało zrobione
 
