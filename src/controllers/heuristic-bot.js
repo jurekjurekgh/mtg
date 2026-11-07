@@ -12155,6 +12155,17 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // plus czas: liczniki zdejmowane po jednym na turę (CR 702.62c).
         score -= P.creatureManaCostWeight * ((card.suspend.cost ?? 0) + (card.suspend.colors ?? []).length);
         score -= P.suspendWaitPenalty * Math.max(0, card.suspend.timeCounters ?? 0);
+        // H2 (zgłoszenie właściciela 2026-11-07): dodatni scoring suspend ma
+        // istnieć WYŁĄCZNIE w Głównej 2 — „mana pod koniec tury". W Głównej 1
+        // mana jest na rozwój (rzut/aktywację), a odroczenie przegrywa z
+        // pasowaniem: kara płaska za samo okno przed walką (zwłokę liczy
+        // suspendWaitPenalty wyżej). Oferta suspend i tak istnieje tylko
+        // we własnej main (silnik, CR 702.62a) — straż myTurn jest lustrzana
+        // jak przy morbidMain1Penalty. Pomiar PRZED (t3, seed 4242, T8):
+        // Mindstab zawieszany w MAIN1 z wynikiem 24.
+        if (myTurn(view) && view.turn.phase === 'precombat_main') {
+          score -= P.suspendMain1Penalty;
+        }
         return finish(score);
       }
       case 'plot_card': {

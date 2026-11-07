@@ -37,9 +37,9 @@ import { createHeuristicBot } from '../src/controllers/heuristic-bot.js';
 
 const REGISTRY = createCardRegistry();
 
-function game({ turn = 4 } = {}) {
+function game({ turn = 4, step = 'main1' } = {}) {
   const state = createGameState({ seed: 4012, players: [{ id: 'p1' }, { id: 'p2' }] });
-  state.turn = jumpToStep(state.turn, 'main1', 'p1');
+  state.turn = jumpToStep(state.turn, step, 'p1');
   state.turn.activePlayerId = 'p1';
   state.turn.priorityPlayerId = 'p1';
   state.turn.number = turn;
@@ -149,16 +149,20 @@ test('A4: rzut płatny z wygnania = rzut z ręki (L41: jedna arytmetyka dla stre
 });
 
 // --- B. suspend_card: dostępność z oferty silnika + cena + zwłoka ----------
+// Sceny B siedzą w GŁÓWNEJ 2 (H2 2026-11-07): arytmetyka baza/koszt/zwłoka
+// jest bezfazowa, a od zgłoszenia H2 dodatni scoring suspend istnieje
+// wyłącznie w postcombat_main — w main1 dochodzi kara `suspendMain1Penalty`
+// (sekcja H2 niżej). Główna 2 to naturalne środowisko pomiaru rodziny.
 
 test('B1: rzut nieosiągalny → suspend opłacalny, ale z ceną kosztu i zwłoki (PRZED: 30)', () => {
-  const s = game({ turn: 4 }); bagno(s, 5); reka(s, 'ms', 'mindstab');
+  const s = game({ turn: 4, step: 'main2' }); bagno(s, 5); reka(s, 'ms', 'mindstab');
   const { cmd, opcje } = oferta(s);
   assert.equal(cmd.type, 'suspend_card', 'jedyna sensowna akcja w oknie');
   assert.equal(opcje.get('suspend_card'), 24, '30 bazy − koszt {B} (1 mana + 1 pip) − 4 liczniki × 1');
 });
 
 test('B2: rzut osiągalny (latarnia) → oferta silnika decyduje, rzut bije odroczenie', () => {
-  const s = game({ turn: 4 }); bagno(s, 5);
+  const s = game({ turn: 4, step: 'main2' }); bagno(s, 5);
   dodaj(s, 'lamp', 'seers-lantern', 'battlefield', 'artifact');
   reka(s, 'ms', 'mindstab');
   // Wróg z kartami w ręce: discard 3 MA co zabrać (inaczej rzut jest jałowy
@@ -171,7 +175,7 @@ test('B2: rzut osiągalny (latarnia) → oferta silnika decyduje, rzut bije odro
 });
 
 test('B3: wymiar ZWŁOKI jest osobny (mutacja pokrętła) — 1 licznik vs 4 liczniki', () => {
-  const s = game({ turn: 4 }); bagno(s, 5); reka(s, 'ms', 'mindstab');
+  const s = game({ turn: 4, step: 'main2' }); bagno(s, 5); reka(s, 'ms', 'mindstab');
   const czekanieZero = wynik(s, 'suspend_card', { suspendWaitPenalty: 0 });
   const czekanieDwa = wynik(s, 'suspend_card', { suspendWaitPenalty: 2 });
   assert.equal(czekanieZero, 28, 'baza 30 − koszt 2 (bez zwłoki)');
@@ -179,19 +183,54 @@ test('B3: wymiar ZWŁOKI jest osobny (mutacja pokrętła) — 1 licznik vs 4 lic
 });
 
 test('B4: wymiar KOSZTU jest osobny — plan {B} płaci 1 manę + 1 pip', () => {
-  const s = game({ turn: 4 }); bagno(s, 5); reka(s, 'ms', 'mindstab');
+  const s = game({ turn: 4, step: 'main2' }); bagno(s, 5); reka(s, 'ms', 'mindstab');
   assert.equal(wynik(s, 'suspend_card', WOLNE), 28, 'bez zwłoki zostaje baza minus koszt');
   assert.equal(wynik(s, 'suspend_card'), 24, 'domyślnie: 30 − 2 − 4');
 });
 
 test('B5: faza gry jest w modelu — ten sam Mindstab w t14 (14 lądów) = 2, nie 24 jak w t4', () => {
-  const s = game({ turn: 14 }); bagno(s, 14); reka(s, 'ms', 'mindstab');
+  const s = game({ turn: 14, step: 'main2' }); bagno(s, 14); reka(s, 'ms', 'mindstab');
   // Cel rzutu nie może być jałowy — inaczej rzut (nie odroczenie) jest karany
   // przez `allEffectsInertNow` i suspend wygrywa z pustą ręką wroga (S5).
   for (let i = 0; i < 3; i += 1) dodaj(s, `w${i}`, 'hill-giant', 'hand', null, { controllerId: 'p2' });
   const { cmd, opcje } = oferta(s);
   assert.equal(opcje.get('suspend_card'), 2, '8 bazy (rzut osiągalny) − 2 kosztu − 4 zwłoki');
   assert.equal(cmd.type, 'cast_spell', 'późna gra: rzut (62) bije odroczenie (2) — PRZED oba warianty były płaskie');
+});
+
+// --- H2 (zgłoszenie właściciela 2026-11-07): suspend tylko w Głównej 2 ------
+// „Bot ma mieć DODATNI scoring suspend TYLKO w Main2 — mana pod koniec tury,
+// nie Main1." W main1 odroczenie przegrywa z pasowaniem (kara
+// `suspendMain1Penalty`); w main2 zachowuje dawną wycenę (sekcja B). Partia
+// t3 (seed 4242, T8): akt zawieszenia Mindstaba wylądował w MAIN1 — poniżej
+// pin decyzyjny, że to się nie powtarza.
+
+test('H2/1: Główna 1 — bot NIE zawiesza (odroczenie przegrywa z pasowaniem)', () => {
+  const s = game({ turn: 4 }); bagno(s, 5); reka(s, 'ms', 'mindstab');
+  const chosen = createHeuristicBot({ seed: 4012 }).chooseCommand(playerView(s, 'p1'), {});
+  assert.notEqual(chosen?.type, 'suspend_card',
+    `mana na początku tury jest na rozwój, nie na odroczenie; wybrał: ${JSON.stringify(chosen)}`);
+});
+
+test('H2/2: Główna 2 — ta sama scena, bot ZAWIESZA (mana „pod koniec tury")', () => {
+  const s = game({ turn: 4, step: 'main2' }); bagno(s, 5); reka(s, 'ms', 'mindstab');
+  const chosen = createHeuristicBot({ seed: 4012 }).chooseCommand(playerView(s, 'p1'), {});
+  assert.equal(chosen?.type, 'suspend_card',
+    `niewykorzystana mana końca tury to inwestycja w odrocenie; wybrał: ${JSON.stringify(chosen)}`);
+});
+
+test('H2/3: kara Main1 jest osobnym pokrętłem — 0 przywraca dawną wycenę', () => {
+  const s = game({ turn: 4 }); bagno(s, 5); reka(s, 'ms', 'mindstab');
+  assert.equal(wynik(s, 'suspend_card', { suspendMain1Penalty: 0 }), 24,
+    'wymiar wyłączalny (konwencja M429): 30 − 2 kosztu − 4 zwłoki, jak w main2');
+  assert.equal(wynik(s, 'suspend_card', { suspendMain1Penalty: 2 }), 22,
+    'kara jest płaska za samo okno main1, nie za licznik');
+});
+
+test('H2/4: domyślna kara sprowadza Main1 pod pasowanie (kotwica arytmetyczna)', () => {
+  const s = game({ turn: 4 }); bagno(s, 5); reka(s, 'ms', 'mindstab');
+  blisko(wynik(s, 'suspend_card'), 24 - 40,
+    'main1: 24 (baza−koszt−zwłoka, sekcja B) − suspendMain1Penalty 40 — strictly pod pass');
 });
 
 // --- C. plot_card: cena plotu + gra dominowana (dowód decyzyjny S6) --------

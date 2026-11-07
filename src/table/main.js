@@ -206,6 +206,20 @@ function bootstrapTable() {
   let modalHoverKey = null;
   function modalHoverInfoByCardId(cardId) {
     if (!session) return null;
+    // I (zgłoszenie właściciela 2026-11-07): pseudo-id lochu — karta specjalna
+    // spoza rejestru. Ten sam druk, który podgląda panel Undercity
+    // (attachSpecialCardHover w renderUndercity), tylko kanałem modala
+    // wyboru (opcje „Podziemia — idź do: X”).
+    if (cardId === 'undercity') {
+      return {
+        name: UNDERCITY_DUNGEON.name,
+        colors: [], kind: 'card', types: ['Dungeon'], subtypes: [], keywords: [],
+        manaCost: null, power: undefined, toughness: undefined,
+        livePower: undefined, liveToughness: undefined,
+        spell: null, abilities: [], morph: null, set: null,
+        imageUri: UNDERCITY_DUNGEON.imageUri, artId: null, faceDown: false,
+      };
+    }
     const details = session.cardDetails(cardId);
     if (!details) return null;
     return {
@@ -1708,6 +1722,9 @@ function bootstrapTable() {
       cardIdOfOption: (option) => cardIdForChoiceOption(option),
       cardNameOfOption: (option) => {
         const cardId = cardIdForChoiceOption(option);
+        // I: pseudo-id lochu nie żyje w rejestrze — nazwa z karty specjalnej
+        // (etykieta przycisku podglądu na awaryjnej ścianie renderChoiceRequest).
+        if (cardId === 'undercity') return UNDERCITY_DUNGEON.name;
         return cardId && session ? (session.cardDetails(cardId)?.name ?? null) : null;
       },
       onResponse: (response) => {
@@ -1968,6 +1985,13 @@ function bootstrapTable() {
 
   function openCardFullscreenByCardId(cardId) {
     if (!session || !els.cardFullscreenBody) return;
+    // I (zgłoszenie właściciela 2026-11-07): pseudo-id lochu → pełny ekran
+    // Undercity (jak tapnięcie miniatury panelu). Ścieżka dotykowa modala
+    // wyboru trasy: brak kursora = brak hovera, tap w nazwę otwiera druk.
+    if (cardId === 'undercity') {
+      openUndercityFullscreen();
+      return;
+    }
     const details = session.cardDetails(cardId);
     if (!details) return;
     hideModal('context-menu');

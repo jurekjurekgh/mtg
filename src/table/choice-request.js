@@ -62,6 +62,13 @@ const CHOICE_TYPE_LABELS = Object.freeze({
  */
 export function previewCardIdOfOption(option, resolveCardId, view = null) {
   if (!option || typeof option !== 'object' || typeof resolveCardId !== 'function') return null;
+  // I (zgłoszenie właściciela 2026-11-07): „Podziemia — idź do: X” — trasa
+  // wskazuje KARTĘ LOCHU Undercity: specjalną, spoza rejestru (jak Day/Night
+  // czy Poison Counter), więc `resolveCardId` jej nie zna. Zwracamy pseudo-id
+  // rozpoznawany przez warstwę stołu (main.js: hover info + pełny ekran) —
+  // hover na nazwie ścieżki pokazuje ten sam druk, co panel Undercity.
+  // Wcześnie, bo identyfikator nie przechodzi przez tłumacza kart.
+  if (option.type === 'resolve_undercity_route') return 'undercity';
   const ordered = [
     // cele (zdolności, czary, decyzje wyboru celu)
     ...(Array.isArray(option.targets) ? option.targets : []),
