@@ -9,15 +9,15 @@
 // najlepiej przez `--zapisz` na świeżo pobranym pliku. Powód: audyt PR #135
 // znalazł 16 martwych numerów (F-1), których nie pilnowało nic.
 //
-// Wydanie CR: 2026-09-25
-// SHA-256 pliku CR: 8d860e451f20f38865b725b42d82feb714c725373dd8f3b32b8652b3eeb070ca
+// Wydanie CR: 2026-11-06
+// SHA-256 pliku CR: d7cdcc11f2b7ab88b1164791dd0cafb6bf0c4e1f0863e0ee6abca2d3a7fb7674
 // Źródło (ADR 0030): mirror nwgarne/mtg-data (rules/cr-raw.txt) — patrz docs/audits/AUDYT_PR135_2026-09-24b.md §0
-// Data pobrania: 2026-11-06
+// Data pobrania: 2026-11-07
 
-export const CR_WYDANIE = "2026-09-25";
-export const CR_SHA256 = "8d860e451f20f38865b725b42d82feb714c725373dd8f3b32b8652b3eeb070ca";
+export const CR_WYDANIE = "2026-11-06";
+export const CR_SHA256 = "d7cdcc11f2b7ab88b1164791dd0cafb6bf0c4e1f0863e0ee6abca2d3a7fb7674";
 export const CR_ZRODLO = "mirror nwgarne/mtg-data (rules/cr-raw.txt) — patrz docs/audits/AUDYT_PR135_2026-09-24b.md §0";
-export const CR_DATA_POBRANIA = "2026-11-06";
+export const CR_DATA_POBRANIA = "2026-11-07";
 
 export const NUMERY = [
   // 1xx
@@ -150,8 +150,6 @@ export const NUMERY = [
   '302.6',
   '303.4',
   '303.4a',
-  // Batch 71 (Curse of the Bloody Tome): „enchanted player" — dosłownie
-  // „303.4b The object or player an Aura is attached to is called enchanted."
   '303.4b',
   '303.4f',
   '305.1',
@@ -556,32 +554,47 @@ export const NUMERY = [
   '708.6',
   '708.8',
   '708.9',
+  '712.5',
+  '712.6',
+  '712.6a',
   '712.7',
   '712.8',
   '712.8a',
   '712.9',
+  '712.10',
   '712.11',
   '712.13',
-  '712.18',
+  '712.15',
   '714.2',
   '714.2b',
   '714.3',
-  '714.3a',
-  '714.3b',
   '714.4',
+  '715.2',
   '715.2a',
+  '715.2b',
   '715.3',
   '715.3a',
   '715.3b',
-  '715.3d',
   '715.4',
-  '725.4',
+  '716.2a',
+  '716.3',
+  '716.3a',
+  '716.3b',
+  '716.3d',
+  '716.4',
   '726.2',
+  '726.4',
   '726.5',
+  '727.2',
+  '727.5',
   '730.2b',
   '730.2c',
   '731.2a',
+  '731.2b',
+  '731.2c',
+  '732.2a',
   '733.1',
+  '734.1',
   // 8xx
   '800.4a',
   // 9xx

@@ -906,7 +906,7 @@ test('B59/G1.10: wejście na pole bitwy ustawia dzień — 1/4 z reach', async (
   assert.ok(entry, 'Bird Admirer w talii planu Eldraine (Krok 5: talie singleton)');
   assert.equal(entry.transformTo?.cardId, 'wing-shredder',
     'transformTo obecne na obiekcie z materializacji talii (inaczej daybound martwy)');
-  assert.equal(entry.frontFaceId, 'bird-admirer', 'karta z talii wchodzi ZAWSZE przodem (CR 712.8a)');
+  assert.equal(entry.frontFaceId, 'bird-admirer', 'karta z talii wchodzi ZAWSZE przodem (CR 712.6a)');
   const bf = moveObjectDirectly(state, entry.id, 'battlefield', `bf-${entry.id}`);
   assert.equal(state.dayNight, null, 'gra startuje bez oznaczenia dnia/nocy (ruling MID)');
   processTriggers(state, [{
@@ -928,7 +928,7 @@ test('B59/G1.10: staje się noc → permanent obraca się na Wing Shredder 3/5',
   assert.ok(changed.some((e) => e.type === 'day_night_changed'), 'designation się zmieniło');
   const shredded = state.objects.get(bf.id);
   assert.equal(shredded.cardId, 'wing-shredder', 'tylna strona (transform natychmiastowy, CR 702.145)');
-  assert.equal(shredded.id, bf.id, 'transform jest IN PLACE — ten sam obiekt, to samo id (CR 712.18)');
+  assert.equal(shredded.id, bf.id, 'transform jest IN PLACE — ten sam obiekt, to samo id (CR 712.15)');
   assert.equal(effectivePower(shredded, state), 3);
   assert.equal(effectiveToughness(shredded, state), 5);
   assert.ok(effectiveKeywords(shredded, state).includes('reach'));

@@ -141,7 +141,7 @@ test('Z5a: rzut Invasion of the Giants z ręki — lore 1 i rozdział I (scry 2)
   const onBf = [...state.objects.values()].find((o) => o.cardId === 'invasion-of-the-giants' && o.zone === 'battlefield');
   assert.ok(onBf, 'Saga na polu bitwy');
   assert.ok(onBf.saga, 'obiekt na stole NIESIE deskryptor saga (nie tylko rejestr — L5/L21)');
-  assert.equal(onBf.counters?.lore, 1, 'licznik lore po wejściu (CR 714.3a)');
+  assert.equal(onBf.counters?.lore, 1, 'licznik lore po wejściu (CR 715.3a)');
   assert.ok(state.pendingScry, 'rozdział I: scry 2 czeka na decyzję');
   assert.equal(state.pendingScry.playerId, 'p1');
 });

@@ -41,6 +41,16 @@
 // | DFC: MV permanentu z tyłem = koszt przodu      | 712.8e      | 712.8e (BEZ ZMIAN)   |
 // | DFC: transform nie tworzy nowego obiektu       | (brak)      | 712.18               |
 //
+// BUMP wydania 2026-11-06 (sesja 2026-11-07): sekcja 712 zrestrukturyzowana
+// (meld wydzielony do NOWEJ sekcji 713), więc wiersze „BEZ ZMIAN" z wydania
+// 2026-09-25 zmieniły numer: transform nie-DFC 712.9→712.7 (zdanie „nothing
+// happens" żyje w 701.27d/701.28d), MV tyłu 712.8e→712.6d, cechy twarzy
+// 712.8/8a→712.6/6a, ukryte strefy 712.7→712.5, rzut przodem 712.11→712.8,
+// wejście tą samą twarzą 712.13→712.10, wejście z innej strefy 712.14→712.11,
+// transform nie tworzy obiektu 712.18→712.15. Weryfikacja: mirror
+// nwgarne/mtg-data rules/cr-raw.txt (sha256 d7cdcc11…), diff tekstów wszystkich
+// 555 cytowanych numerów między wydaniami.
+//
 // L164 (dopisane po pierwszej fali): pierwsze podejście przepisało DFC na
 // numerację ze STARSZEGO lustra CR (`ancestral.vision`: 712.4a = cechy twarzy,
 // 712.7 = rzut przodem) i przy okazji „poprawiło” dwa cytaty, które były
@@ -70,6 +80,10 @@ const POMIN = new Set([
   'test/audyt-pr134-2026-09-24-cytaty-cr.test.js',
   'test/cr-numery-mechanik-straznik.test.js',
   'test/cr-numery-702-tabela-straznik.test.js',
+  // Tabela istnienia numerów (bump 2026-11-06): DANE — numery bez kontekstu,
+  // jak w strażnikach 701/702. Kiedyś nie było potrzeby (712.5 nie było w
+  // tabeli), po renumeracji na wydanie 2026-11-06 712.5 = ukryte strefy DFC.
+  'test/helpers/cr-numery-tabela.js',
 ]);
 
 /**
@@ -80,14 +94,16 @@ const POMIN = new Set([
  * `test/cr-numery-mechanik-straznik.test.js` zamiast go kasować.
  */
 const PRZESTARZALE = [
-  ['711.2', 'DFC: cechy twarzy = 712.8'],
-  ['711.3', 'DFC: ukryte strefy = 712.7'],
-  ['711.4', 'DFC: cechy przodu = 712.8/712.8a'],
-  ['711.7', 'DFC: rzut przodem = 712.11'],
-  ['711.8', 'DFC: wejście przodem = 712.13'],
-  ['712.4a', 'DFC: cechy twarzy = 712.8a (712.4a to zdolność pary meld)'],
-  ['712.4d', 'DFC: MV tyłu = 712.8e (712.4d to podreguła meld)'],
-  ['712.5', 'DFC: transform nie-DFC = 712.9 (712.5 to siedem par meld)'],
+  ['711.2', 'DFC: cechy twarzy = 712.6'],
+  ['711.3', 'DFC: ukryte strefy = 712.5'],
+  ['711.4', 'DFC: cechy przodu = 712.6/712.6a'],
+  ['711.7', 'DFC: rzut przodem = 712.8'],
+  ['711.8', 'DFC: wejście przodem = 712.10'],
+  ['712.4a', 'DFC: cechy twarzy = 712.6a (712.4a nie istnieje w CR 2026-11-06)'],
+  ['712.4d', 'DFC: MV tyłu = 712.6d (712.4d nie istnieje w CR 2026-11-06)'],
+  // '712.5' usunięte w bumpie 2026-11-06: w nowym wydaniu 712.5 = ukryte strefy
+  // DFC (poprawny cytat!). Zagrożenie „transform ≠ 712.5" pilnuje od teraz
+  // para mechanika+numer w cr-numery-mechanik-straznik.test.js.
 ];
 
 /** Cytaty, które MUSZĄ pozostać (żeby „naprawa” nie polegała na ich usunięciu). */
@@ -102,15 +118,15 @@ const WYMAGANE = [
   ['src/engine/permanents.js', '614.1d', 'statyk „wpisy wchodzą odkręcone”'],
   ['src/engine/attachments.js', '704.5m', 'SBA: aura bez legalnego gospodarza'],
   // F-3 fala 2: DFC w numeracji CR 2026-09-25
-  ['src/engine/objects.js', '712.8a', 'reset twarzy DFC przy zmianie strefy'],
-  ['src/engine/objects.js', '712.13', 'wejście przodem po rzucie'],
-  ['src/engine/objects.js', '712.11', 'rzut DFC idzie na stos przodem'],
-  ['src/engine/game-state.js', '712.9', 'transform kopii jednostronnej = no-op'],
-  ['test/m264-enter-as-copy-dfc.test.js', '712.9', 'pin: kopia Jwari nie ma transformTo'],
-  ['src/engine/identity.js', '712.8e', 'MV permanentu z tyłem = koszt przodu'],
-  ['test/m258-cr202-kopia-tylu-dfc.test.js', '712.8e', 'pin: MV przekształconego permanentu'],
-  ['src/engine/permanents.js', '712.18', 'transform w miejscu = ten sam obiekt, efekty trwają (O-6, naprawione)'],
-  ['src/engine/effects.js', '712.18', 'gałąź transform przenosi trwające efekty (O-6)'],
+  ['src/engine/objects.js', '712.6a', 'reset twarzy DFC przy zmianie strefy'],
+  ['src/engine/objects.js', '712.10', 'wejście przodem po rzucie'],
+  ['src/engine/objects.js', '712.8', 'rzut DFC idzie na stos przodem'],
+  ['src/engine/game-state.js', '712.7', 'transform kopii jednostronnej = no-op'],
+  ['test/m264-enter-as-copy-dfc.test.js', '712.7', 'pin: kopia Jwari nie ma transformTo'],
+  ['src/engine/identity.js', '712.6d', 'MV permanentu z tyłem = koszt przodu'],
+  ['test/m258-cr202-kopia-tylu-dfc.test.js', '712.6d', 'pin: MV przekształconego permanentu'],
+  ['src/engine/permanents.js', '712.15', 'transform w miejscu = ten sam obiekt, efekty trwają (O-6, naprawione)'],
+  ['src/engine/effects.js', '712.15', 'gałąź transform przenosi trwające efekty (O-6)'],
   // F-7 (audyt PR #135, druga fala rozjazdów tej samej klasy)
   ['src/controllers/heuristic-bot.js', '702.20', 'vigilance (nie 702.21 = ward)'],
   ['test/m221d-vigilance-window.test.js', '702.20', 'pin okna kupowania vigilance'],

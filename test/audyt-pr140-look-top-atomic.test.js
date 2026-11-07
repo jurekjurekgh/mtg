@@ -9,7 +9,7 @@ import { addMana } from '../src/engine/resources.js';
 // F1 audytu PR140: walidujemy CAŁĄ decyzję przed ruchem z biblioteki.
 // CR 608.2d (pobrane 2026-09-28): „The player can't choose an option that's
 // illegal or impossible” — https://mtg.wiki/page/Resolving_spells_and_abilities
-// CR 733.1: „No abilities trigger and no effects apply as a result of an
+// CR 734.1: „No abilities trigger and no effects apply as a result of an
 // undone action.” — https://mtg.wiki/page/Illegal_action (CR 2026-09-25).
 // Nie cofamy wykonanego legalnego look ani nie odwracamy biblioteki:
 // niepoprawna komenda nie rozpoczyna żadnego ruchu. Chronimy również

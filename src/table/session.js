@@ -3760,6 +3760,15 @@ export function createSession(config) {
   // synchroniczni (testy, narzędzia) zachowali dotychczasowy przebieg.
   const pauseOnBotMoves = config.pauseOnBotMoves === true;
   let awaitingBotAck = false;
+  // F-OGŁ (pozycja 2 z handoffu 2026-11-06-audyt-pr180): czy trwa JEDNOSTKA
+  // OGŁOSZEŃ płatności kreatora many. Płatność to SEKWENCJA komend człowieka
+  // (tap_for_mana × N → pass drenażu → commit), a polityka „jedna komenda =
+  // jedna jednostka modala Rozgrywka" czyściła bufor przy każdej z nich —
+  // drugie tapnięcie gubiło ogłoszenie triggera, commit wycierał skutki
+  // drenażu (mielenia z Chronic Flooding). Komendy z `paymentUnit` doklejają
+  // się do jednej jednostki; zamyka ją commit ('end') albo pierwsza zwykła
+  // komenda (samonaprawa po anulowaniu kreatora).
+  let wizardPaymentUnitOpen = false;
   let isBotAdvancing = false;
   // M261 (korekta właściciela 2026-08-31): silnik generuje w JEDNYM execute
   // cały strumień granicy tury (`turn_started` + untapy + upkeep + triggery).
@@ -4168,7 +4177,7 @@ export function createSession(config) {
       return probeCommandEffect(state, cmd);
     },
     /** Wykonuje komendę człowieka przez protokół; zwraca { ok, reason?, botPause? }. */
-    apply(cmd, { holdPriority = false } = {}) {
+    apply(cmd, { holdPriority = false, paymentUnit = null } = {}) {
       // M90 (bug B, zgłoszenie właściciela 2026-08-14): stan sesji zmienia
       // WYŁĄCZNIE zaakceptowana komenda. Wcześniej `apply` czyścił bufor
       // modala i kasował pauzę bota PRZED `execute()` — gdy engine odrzucił
@@ -4203,13 +4212,19 @@ export function createSession(config) {
       // awaitingBotAck false); niepokazany zachowujemy i doklejamy do niego
       // skutek tej komendy — gracz dostanie wszystko jednym modalem.
       const hadPendingPause = awaitingBotAck;
+      // F-OGŁ: komenda płatności kreatora DOKLEJA się do otwartej jednostki
+      // ogłoszeń (paymentUnit: true w trakcie, 'end' na commicie) — bez
+      // resetu bufora. Pierwszy krok płatności (jednostka zamknięta) przechodzi
+      // przez zwykłe czyszczenie i JEDNOCZEŚNIE otwiera jednostkę.
+      const joinPaymentUnit = paymentUnit === 'end' || (paymentUnit === true && wizardPaymentUnitOpen);
       let currentTurnHeader = null;
-      if (!hadPendingPause) {
+      if (!hadPendingPause && !joinPaymentUnit) {
         currentTurnHeader = botMoves.find(
           (m) => m.type === 'turn_started' && m.text?.startsWith(`Tura ${state.turn.number} — `),
         );
         botMoves.length = 0;
       }
+      wizardPaymentUnitOpen = paymentUnit === true;
       // Konsument nie powinien aplikować komendy w trakcie pauzy (UI blokuje
       // ją modalem) — po UDANEJ komendzie niedokończoną pauzę zamykamy,
       // ale NIEpokazany bufor zostaje (wyżej) i gramy dalej.

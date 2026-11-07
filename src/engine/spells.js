@@ -2507,7 +2507,7 @@ export function resolveTopOfStack(state) {
     state.events.push(resolved);
     return state.events.slice(before);
   }
-  // Adventure (CR 715.3): rozstrzygnięty czar przygody idzie do EXILE
+  // Adventure (CR 716.3): rozstrzygnięty czar przygody idzie do EXILE
   // („on an adventure\"), nie do grobu — stamtąd można rzucić stronę-stwora
   // (cast_adventure_creature). Kontrczar (counter_spell) wysyła kartę do
   // grobu jak każdy czar — to inna ścieżka, bez flagi adventure w zdarzeniu.
@@ -2522,7 +2522,7 @@ export function resolveTopOfStack(state) {
     }));
     return state.events.slice(before);
   }
-  // Etap F (CR 608.2b): fizzle to NIE rozstrzygnięcie — przygoda (CR 715.3d:
+  // Etap F (CR 608.2b): fizzle to NIE rozstrzygnięcie — przygoda (CR 716.3d:
   // „as it resolves") i rebound (CR 702.88a: „exile it as it resolves") nie
   // wygnają czaru, który się nie rozstrzygnął; idzie do grobu. Flashback
   // (CR 702.34a: „any time it would leave the stack") wygania zawsze.
@@ -2891,7 +2891,7 @@ export function finishPendingSpell(state, stackId, remainingEffects) {
   }
   // Etap F: dokończenie wstrzymanego czaru to TO SAMO rozstrzygnięcie, co
   // w resolveTopOfStack — skutki „as it resolves" (buyback CR 702.27a,
-  // przygoda CR 715.3d, rebound CR 702.88a) muszą zajść także tutaj
+  // przygoda CR 716.3d, rebound CR 702.88a) muszą zajść także tutaj
   // (dawniej czar z decyzją w środku efektów je tracił).
   if (object.wasBuyback) state.pendingSpellReturnToHand = true;
   const returnToHand = state.pendingSpellReturnToHand;
@@ -3071,7 +3071,7 @@ function resolvePermanentSpell(state, stackId, object, before, riotChoices = nul
     const target = permanent.transformTo;
     const nightbound = Object.freeze({
       ...permanent,
-      // Komplet charakterystyk drugiej strony (CR 712.8) — wspólny helper,
+      // Komplet charakterystyk drugiej strony (CR 712.6) — wspólny helper,
       // ten sam co w transform_permanent i crafcie: niesie też `kind`/`types`,
       // więc strona nocna zmieniająca rodzaj permanentu nie gubi typu.
       ...transformedCharacteristics(target, permanent),
@@ -4562,7 +4562,7 @@ export function castAdventure(state, playerId, objectId, targets) {
 
 /**
  * Legalne rzuty strony-stwora karty z przygodą z EXILE („on an adventure\",
- * CR 715.3): zwykły rzut permanenta — koszt many karty, kolorowe pipy z
+ * CR 716.3): zwykły rzut permanenta — koszt many karty, kolorowe pipy z
  * MANA_COSTS, timing jak przy cast_permanent (main phase bez flash).
  */
 export function legalAdventureCreatureCasts(state, playerId) {
@@ -4585,7 +4585,7 @@ export function legalAdventureCreatureCasts(state, playerId) {
 }
 
 /**
- * Rzuca stronę-stwora karty z przygodą z exile (CR 715.3): jak castPermanent,
+ * Rzuca stronę-stwora karty z przygodą z exile (CR 716.3): jak castPermanent,
  * ale źródłem jest exile „on an adventure\" — po wejściu na pole bitwy karta
  * jest zwykłym permanentem (flaga adventureDone odróżnia ją od świeżej).
  */
@@ -4613,13 +4613,13 @@ export function castAdventureCreature(state, playerId, objectId) {
   const stackId = `spell-${state.objectSequence++}`;
   const moved = moveObjectDirectly(state, objectId, 'stack', stackId);
   // Zgłoszenie właściciela (2026-10-10, Gray Slaad): przygoda nadpisała
-  // `kind` na 'spell' (castAdventure — CR 715.3b: „While on the stack as an
+  // `kind` na 'spell' (castAdventure — CR 716.3b: „While on the stack as an
   // Adventure, the spell has only its alternative characteristics”) i ten
-  // STAN przetrwał do exile (CR 715.3d), a stamtąd na pole bitwy. Permanent
+  // STAN przetrwał do exile (CR 716.3d), a stamtąd na pole bitwy. Permanent
   // z `kind: 'spell'` nie jest stworem dla silnika: nie da się go wziąć za
   // cel („target creature an opponent controls” — Diplomatic Relations, ETB
   // Warmaker Gunship: „brak legalnych celów”) i nie może blokować.
-  // CR 715.4: „In every zone except the stack, and while on the stack not as
+  // CR 716.4: „In every zone except the stack, and while on the stack not as
   // an Adventure, an adventurer card has only its normal characteristics” —
   // więc w tym rzucie obowiązują cechy NORMALNE i rodzaj odbudowujemy z
   // linii typu karty (CR 205.2a); linia typu jest nienaruszona. Ten sam

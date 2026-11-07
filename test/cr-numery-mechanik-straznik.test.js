@@ -136,16 +136,26 @@ const PARY = [
   { mechanika: /equipment|sprzęt/i, zakazany: /702\.16(?![0-9])/, poprawny: '702.6a / 704.5n',
     wyklucz: /protection|ochron|chronion/i,
     zrodlo: '702.6a equip celuje w stwora, 704.5n odłącza sprzęt; 702.16 to Protection (F-7g)' },
-  // Karty dwustronne: sekcja 711 z wydań ≤2025 i 712.4x ze starszego lustra CR
-  // nie opisują już DFC. W CR 2026-09-25: 712.6 obie strony widoczne,
-  // 712.7 ukryte strefy, 712.8/8a cechy twarzy (poza polem bitwy tylko przód),
-  // 712.8e MV permanentu z tyłem = koszt przodu, 712.9 transform nie-DFC = nic,
-  // 712.11 rzut przodem na stos, 712.13 rozstrzygnięty czar wchodzi tą samą
-  // twarzą, 712.14 wejście z innej strefy niż stos przodem, 712.18 transform
-  // nie tworzy nowego obiektu. Meld to 712.4/712.5 (wykluczony: brak kart meld).
+  // Karty dwustronne: sekcja 711 z wydań ≤2025 nie opisuje DFC. W CR 2026-11-06:
+  // 712.4 obie strony widoczne, 712.5 ukryte strefy, 712.6/6a cechy twarzy
+  // (poza polem bitwy tylko przód), 712.6d MV permanentu z tyłem = koszt przodu,
+  // 712.7 transform nie-DFC = nic, 712.8 rzut przodem na stos, 712.10
+  // rozstrzygnięty czar wchodzi tą samą twarzą, 712.11 wejście z innej strefy
+  // niż stos przodem, 712.15 transform nie tworzy nowego obiektu. Meld to od
+  // tego wydania OSOBNA sekcja 713 (713.1c: meld nie transformuje się);
+  // wykluczony: brak kart meld. UWAGA (bump 2026-11-06): w wydaniu 2026-09-25
+  // 712.4/712.5 były meld, a cechy twarzy siedziały w 712.8/8a — sekcja 712
+  // została zrestrukturyzowana, więc numery w niej weryfikować co wydanie.
   { mechanika: /dwustronn|DFC|dwie twarze|twarz|transform/i,
-    zakazany: /711\.\d|712\.4(?![0-9])/, poprawny: '712.8/712.8a/712.8e/712.9/712.11/712.13/712.14/712.18',
-    wyklucz: /meld/i, zrodlo: 'CR 2026-09-25, mtg.wiki/page/Double-faced_card §Rules (F-3, fala 2)' },
+    zakazany: /711\.\d/, poprawny: '712.4/712.5/712.6/712.6a/712.6d/712.7/712.8/712.10/712.11/712.15',
+    wyklucz: /meld/i, zrodlo: 'CR 2026-11-06, mirror nwgarne/mtg-data rules/cr-raw.txt (sha256 d7cdcc11…, bump sesji 2026-11-07)' },
+  // Ban przeniesiony z listy PRZESTARZALE (audyt PR #134, C1) w bumpie
+  // 2026-11-06: 712.5 jest teraz POPRAWNYM numerem (ukryte strefy DFC), więc
+  // zakaz globalny stał się nieuczciwy — ale „transform nie-DFC = nic" to
+  // nadal 712.7, nie 712.5 (numeracja sprzed 2026-09-25).
+  { mechanika: /transform/i, zakazany: /712\.5(?![0-9])/, poprawny: '712.7',
+    wyklucz: /ukryt|opaque|nierozróżni/i,
+    zrodlo: '712.5 = ukryte strefy DFC (CR 2026-11-06); „nothing happens" = 712.7' },
   // Pary dodane w sesji 2026-09-24b (audyt PR #135, znalezisko F-2): rozjazdy
   // pary „mechanika <-> numer", które PRZESZŁY przez detektory okna, bo w oknie
   // ±4 linie stało przypadkowe słowo-alias cytowanego numeru (np. „activated"

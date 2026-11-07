@@ -5548,7 +5548,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   // (ta sama miara co add_counter). Bez armii: nowa 0/0 Army z N licznikami =
   // ciało N/N (ta sama miara co create_token, tokenBodyValue). Dawna stała 6
   // (ETB) i 6+3N (czar) nie zależały od armii, a ETB nie znała N.
-  // PMSSB-69 + audyt PR #168/A-3 (CR 726.2 i CR 726.5; L41): każde objęcie,
+  // PMSSB-69 + audyt PR #168/A-3 (CR 727.2 i CR 727.5; L41): każde objęcie,
   // także przez obecnego posiadacza, uruchamia venture (bazowe 6). Kradzież
   // wrogowi daje dodatkową korzyść P.initiativeStealBonus. Kara ekspozycji
   // dotyczy tylko NOWEGO posiadacza — ponowne objęcie nie zwiększa ryzyka,
@@ -11902,7 +11902,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         return finish(cmd.replace ? delta : -delta);
       }
       case 'cast_adventure_creature': {
-        // E2/C (plan 2026-09-07, CR 715.3a): strona-stwora przygody z EXILE za
+        // E2/C (plan 2026-09-07, CR 716.3a): strona-stwora przygody z EXILE za
         // pełny koszt — dotąd default 0 (remis z pasem, wybór z kolejności).
         // Wycena jak rzut stwora (ciało + bonus ETB jak w warp); koszt
         // rozlicza silnik (oferta = walidacja, L48).
@@ -12155,6 +12155,17 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // plus czas: liczniki zdejmowane po jednym na turę (CR 702.62c).
         score -= P.creatureManaCostWeight * ((card.suspend.cost ?? 0) + (card.suspend.colors ?? []).length);
         score -= P.suspendWaitPenalty * Math.max(0, card.suspend.timeCounters ?? 0);
+        // H2 (zgłoszenie właściciela 2026-11-07): dodatni scoring suspend ma
+        // istnieć WYŁĄCZNIE w Głównej 2 — „mana pod koniec tury". W Głównej 1
+        // mana jest na rozwój (rzut/aktywację), a odroczenie przegrywa z
+        // pasowaniem: kara płaska za samo okno przed walką (zwłokę liczy
+        // suspendWaitPenalty wyżej). Oferta suspend i tak istnieje tylko
+        // we własnej main (silnik, CR 702.62a) — straż myTurn jest lustrzana
+        // jak przy morbidMain1Penalty. Pomiar PRZED (t3, seed 4242, T8):
+        // Mindstab zawieszany w MAIN1 z wynikiem 24.
+        if (myTurn(view) && view.turn.phase === 'precombat_main') {
+          score -= P.suspendMain1Penalty;
+        }
         return finish(score);
       }
       case 'plot_card': {

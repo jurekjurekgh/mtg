@@ -14,7 +14,7 @@ import { destroyPermanents } from '../src/engine/destruction.js';
 // zadziałać."
 //
 // Reguły (ADR 0030, CR z 2026-09-25, pin repo):
-// — CR 714.2: „A chapter symbol is a keyword ability that represents a
+// — CR 715.2: „A chapter symbol is a keyword ability that represents a
 //   triggered ability referred to as a chapter ability.”
 // — CR 113.7a: „Once activated or triggered, an ability exists on the stack
 //   independently of its source. Destruction or removal of the source after
@@ -114,5 +114,5 @@ test('D/anty-over-fix: trigger rozdziału bez zaginionego źródła rozstrzyga s
   resolveTriggerEntry(state, state.objects.get(triggerId));
   assert.ok(state.pendingLookTopN?.objectIds.length === 3, 'żywe źródło: rozdział działa');
   assert.ok(!state.events.some((e) => e.type === 'permanent_sacrificed'),
-    'rozdział I nie poświęca Sagi (dopiero III + SBA, CR 714.4)');
+    'rozdział I nie poświęca Sagi (dopiero III + SBA, CR 715.4)');
 });

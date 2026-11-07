@@ -708,6 +708,11 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   'plotRedundantPenalty',        // surcharge, gdy plot nie oszczędza many wobec rzutu dostępnego TERAZ
   'plotDelayPenalty',            // surcharge za turę zwłoki, gdy rzut jest dostępny teraz
   'suspendWaitPenalty',          // surcharge za każdy licznik czasu zawieszenia
+  // H2 (zgłoszenie właściciela 2026-11-07): surcharge za samo OKNO Głównej 1 —
+  // dodatni scoring suspend ma istnieć wyłącznie w Głównej 2 („mana pod
+  // koniec tury"). Płaska kara za okno, nie za licznik (zwłokę liczy
+  // suspendWaitPenalty) — wymiar wyłączalny jak każde pokrętło (M429).
+  'suspendMain1Penalty',         // surcharge za zawieszenie w Głównej 1 (przed walką)
   // PMSSB-69 (inicjatywa, take_initiative): dopłata za kradzież, kara za ryzyko, limit kary.
   'initiativeStealBonus', 'initiativeExposurePenalty', 'initiativeExposureCap',
 ]);
@@ -1375,6 +1380,11 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   //   nie znikając przy tym z gry (wariant „czar chwilowo jałowy, rzut
   //   nieopłacalny” nadal zostaje nad passem).
   suspendWaitPenalty: 1,
+  // H2: baza suspend to najwyżej 30 (rzut nieosiągalny, patrz S1 wyżej), więc
+  // 40 sprowadza każdy wariant Głównej 1 strictly pod pasowanie (≤ −10),
+  // zostawiając Głównej 2 pełną wycenę inwestycji. Por. morbidMain1Penalty 90
+  // przy bazie ciała ~70 — kara przebijająca realne maksimum rodziny.
+  suspendMain1Penalty: 40,
   // PMSSB-69 + audyt #168/A-3 (CR 726): składnik ETB = 6 za venture także
   // u obecnego posiadacza, + dopłata za kradzież, − kara ekspozycji dla nowego posiadacza.
   // initiativeStealBonus 6 = jedna venture ≈ jedna dobrana karta (drawCardValue): objęcie zabiera wrogowi postęp.

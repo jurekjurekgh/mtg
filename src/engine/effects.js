@@ -2057,7 +2057,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
       ...(src.transformTo ? { transformTo: src.transformTo } : {}),
       // M264/2.3 (CR 707.8a): dwustronny token zna też front pary — inaczej
       // kopia TYLNEJ twarzy nie odróżnia się od zwykłego obiektu na tyle
-      // (MV 0 — CR 202.3b przez copyManaValueOf; reset K5 — CR 712.8a).
+      // (MV 0 — CR 202.3b przez copyManaValueOf; reset K5 — CR 712.6a).
       ...(src.transformTo && src.frontFaceId ? { frontFaceId: src.frontFaceId } : {}),
       // F3 (audyt PR106, CR 707.2 + 614.1d): kopia przejmuje kopiowalny
       // „enters tapped” oryginału — token wchodzi tapnięty (jak Static Net).
@@ -3973,7 +3973,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     // (bez crasha). Pełne B0 (seed 1025, random red vs heuristic green).
     if (!sourceObject || sourceObject.zone !== 'battlefield' || !sourceObject.transformTo) return;
     const target = sourceObject.transformTo;
-    // O-6 (audyt PR #134, CR 712.18): transform NIE tworzy nowego obiektu —
+    // O-6 (audyt PR #134, CR 712.15): transform NIE tworzy nowego obiektu —
     // trwające efekty (animacja, nadpisanie podtypów, modyfikatory, granty)
     // działają dalej na nowej stronie, a `transformTo` zapisuje opuszczaną
     // stronę WYDRUKOWANYMI cechami. Wcześniej cechy drugiej strony szły wprost
@@ -4478,7 +4478,7 @@ function markTemporaryExile(state, exileId, sourceObject) {
     return seen.length > 0;
   }
   if (effect.type === 'take_initiative') {
-    // Audyt PR #168/A-3 (CR 726.2 i CR 726.5): także OBECNY posiadacz może
+    // Audyt PR #168/A-3 (CR 727.2 i CR 727.5): także OBECNY posiadacz może
     // ponownie „take the initiative" i za każdym razem venture'uje. Nie
     // powstaje drugie oznaczenie; zmienia się tylko postęp w lochu.
     const playerId = effect.playerId ?? sourceObject.controllerId;
@@ -5914,7 +5914,7 @@ function markTemporaryExile(state, exileId, sourceObject) {
       enteredOnTurn: state.turn.number,
       // D4b (CR 613.7d): nowy obiekt na polu bitwy = nowy znacznik czasu.
       timestamp: nextTimestamp(state),
-      // Komplet charakterystyk drugiej strony (CR 712.8) — wspólny helper
+      // Komplet charakterystyk drugiej strony (CR 712.6) — wspólny helper
       // niesie też `kind`, którego wcześniej brakowało: strona zmieniająca
       // rodzaj permanentu (Incubator → Phyrexian) wracała z pola bitwy jako
       // obiekt o rodzaju strony przedniej.
@@ -6020,7 +6020,7 @@ function markTemporaryExile(state, exileId, sourceObject) {
     const typesAdd = effect.typesAdd ?? ['Artifact', 'Creature'];
     const types = [...new Set([...(target.types ?? []), ...typesAdd])];
     const subtypes = [...new Set([...(target.subtypes ?? []), ...(effect.subtypesAdd ?? [])])];
-    // O-6 (CR 712.18): warstwa animacji w zapisie cofnięcia — transform
+    // O-6 (CR 712.15): warstwa animacji w zapisie cofnięcia — transform
     // w miejscu nakłada ją na drugą stronę (`transformInPlaceFields`).
     const layer = mergedAnimationLayer(target, {
       power: effect.power ?? 0, toughness: effect.toughness ?? 0,

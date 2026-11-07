@@ -5486,7 +5486,7 @@ export function buildStateOverlay(visual, info) {
     // M164 (pytanie właściciela 2026-08-20): ETAP Sagi jako badge tekstowy —
     // analogia do aur/equipmentów/liczników. Dotąd jedynym znacznikiem postępu
     // był generyczny licznik „lore×N"; badge nazywa AKTYWNY rozdział
-    // (licznik lore = numer rozdziału, CR 714.3).
+    // (licznik lore = numer rozdziału, CR 715.3).
     if (info.saga?.chapters?.length) {
       const total = info.saga.chapters.length;
       const lore = info.counters?.lore ?? 0;

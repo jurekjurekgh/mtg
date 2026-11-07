@@ -206,6 +206,20 @@ function bootstrapTable() {
   let modalHoverKey = null;
   function modalHoverInfoByCardId(cardId) {
     if (!session) return null;
+    // I (zgłoszenie właściciela 2026-11-07): pseudo-id lochu — karta specjalna
+    // spoza rejestru. Ten sam druk, który podgląda panel Undercity
+    // (attachSpecialCardHover w renderUndercity), tylko kanałem modala
+    // wyboru (opcje „Podziemia — idź do: X”).
+    if (cardId === 'undercity') {
+      return {
+        name: UNDERCITY_DUNGEON.name,
+        colors: [], kind: 'card', types: ['Dungeon'], subtypes: [], keywords: [],
+        manaCost: null, power: undefined, toughness: undefined,
+        livePower: undefined, liveToughness: undefined,
+        spell: null, abilities: [], morph: null, set: null,
+        imageUri: UNDERCITY_DUNGEON.imageUri, artId: null, faceDown: false,
+      };
+    }
     const details = session.cardDetails(cardId);
     if (!details) return null;
     return {
@@ -1708,6 +1722,9 @@ function bootstrapTable() {
       cardIdOfOption: (option) => cardIdForChoiceOption(option),
       cardNameOfOption: (option) => {
         const cardId = cardIdForChoiceOption(option);
+        // I: pseudo-id lochu nie żyje w rejestrze — nazwa z karty specjalnej
+        // (etykieta przycisku podglądu na awaryjnej ścianie renderChoiceRequest).
+        if (cardId === 'undercity') return UNDERCITY_DUNGEON.name;
         return cardId && session ? (session.cardDetails(cardId)?.name ?? null) : null;
       },
       onResponse: (response) => {
@@ -1968,6 +1985,13 @@ function bootstrapTable() {
 
   function openCardFullscreenByCardId(cardId) {
     if (!session || !els.cardFullscreenBody) return;
+    // I (zgłoszenie właściciela 2026-11-07): pseudo-id lochu → pełny ekran
+    // Undercity (jak tapnięcie miniatury panelu). Ścieżka dotykowa modala
+    // wyboru trasy: brak kursora = brak hovera, tap w nazwę otwiera druk.
+    if (cardId === 'undercity') {
+      openUndercityFullscreen();
+      return;
+    }
     const details = session.cardDetails(cardId);
     if (!details) return;
     hideModal('context-menu');
@@ -2113,7 +2137,7 @@ function bootstrapTable() {
     // Obie strony są publiczne (CR 711/712). Dla takiej karty kliknięcie
     // ZAWSZE otwiera warstwę Działania z podglądem OBU stron — nawet bez
     // żadnych zdolności. Strefy spoza pola bitwy (grób/wygnanie/ręka) zachowują
-    // dotychczasowe zachowanie — tam DFC ma wyłącznie twarz przednią (CR 712.8a).
+    // dotychczasowe zachowanie — tam DFC ma wyłącznie twarz przednią (CR 712.6a).
     const viewEntry = view.zones.battlefield.find((o) => o.id === objectId);
     const otherSideId = viewEntry?.transformToCardId ?? null;
     const isDfc = Boolean(otherSideId);
@@ -3137,7 +3161,10 @@ function bootstrapTable() {
   function openNestedManaWizard(descriptor) {
     if (!els.manaWizardBody) return;
     if (manaWizardDescriptor) manaWizardParents.push(manaWizardDescriptor);
-    manaWizardDescriptor = descriptor;
+    // F-CYK (audyt PR #180): linia odcięcia dla drenażu triggerów z płatności
+    // w finishWizardPayment — wpisy dodane OD TEJ CHWILI są częścią płatności
+    // i mają rozstrzygnąć się PRZED komitowaną komendą (CR 603.3 + 117.5).
+    manaWizardDescriptor = { ...descriptor, stackAtOpen: session?.state?.zones?.stack?.length ?? 0 };
     refreshManaWizard();
     showModal('mana-wizard');
   }
@@ -3161,7 +3188,10 @@ function bootstrapTable() {
 
   function openManaWizard(descriptor) {
     if (!els.manaWizardBody) return;
-    manaWizardDescriptor = descriptor;
+    // F-CYK (audyt PR #180): jak w openNestedManaWizard — stackAtOpen oddziela
+    // triggery z tej płatności od wpisów, na które gracz ODPOWIADA (te zostają
+    // pod komendą; drenuje się tylko nadłożone w trakcie płatności).
+    manaWizardDescriptor = { ...descriptor, stackAtOpen: session?.state?.zones?.stack?.length ?? 0 };
     refreshManaWizard();
     showModal('mana-wizard');
   }
@@ -3226,7 +3256,11 @@ function bootstrapTable() {
         // Zdolność many jest tylko kolejnym krokiem wstrzymanej płatności.
         // Auto-pass sesji mógłby opuścić krok i wyczyścić pulę, zanim
         // nadrzędny kreator zdąży ją wykorzystać (także dla wyciszonej oferty).
-        runCommand: (cmd, options) => playDirect(cmd, nested ? { ...options, holdPriority: true } : options),
+        // F-OGŁ: commit kreatora podrzędnego KONTYNUUJE jednostkę ogłoszeń
+        // (paymentUnit: true nadpisuje 'end' z finishWizardPayment) — po nim
+        // rodzic dalej dopłaca i dopisuje do TEJ SAMEJ jednostki; zamyka ją
+        // dopiero commit kreatora nadrzędnego (opcje bez nadpisania).
+        runCommand: (cmd, options) => playDirect(cmd, nested ? { ...options, holdPriority: true, paymentUnit: true } : options),
         onCloseWizard: () => { if (!nested) closeManaWizard(); },
         onSyncUi: () => {
           autosave();
@@ -3307,7 +3341,8 @@ function bootstrapTable() {
         }
         // Kolor tapniętego źródła trafia do KOLOROWEJ PULI (engine), więc pokrycie
         // kolorów liczy się samo z puli — bez śledzenia committed (cz. 8).
-        playDirect(plan.command, { holdPriority: true });
+        // F-OGŁ: tapnięcie źródła = krok płatności (jednostka ogłoszeń).
+        playDirect(plan.command, { holdPriority: true, paymentUnit: true });
         refreshManaWizard();
       },
       onSelectTapCost: (creatureId) => {
@@ -3320,7 +3355,7 @@ function bootstrapTable() {
           && source.command?.type === 'activate_ability' && source.command?.abilityIndex === selection.abilityIndex);
         const cmd = resolveManaSourceTapCost(latestSource, creatureId, session.view());
         delete manaWizardDescriptor._tapCostSelection;
-        if (cmd) playDirect(cmd, { holdPriority: true });
+        if (cmd) playDirect(cmd, { holdPriority: true, paymentUnit: true });
         refreshManaWizard();
       },
       onCancelTapCost: () => {

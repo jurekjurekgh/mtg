@@ -1929,7 +1929,7 @@ export function grantKeywordsUntilEndOfTurn(state, objectId, keywords, options =
  *
  * CRAFT: permanent jest WYGNANY i wraca, a zmiana strefy tworzy nowy obiekt
  * (CR 400.7), więc nadane charakterystyki wygasają i nowa strona wchodzi
- * z własnymi cechami (CR 712.8/712.8e). Tu reset jest zgodny z CR. Bez niego
+ * z własnymi cechami (CR 712.6/712.6d). Tu reset jest zgodny z CR. Bez niego
  * ożywiony artefakt po crafcie zostawał `kind='creature'` z
  * `power/toughness = null` z drugiej strony: stwór bez liczbowego P/T (łamie
  * CR 208.1), którego SBA nie potrafiły zabić (CR 704.5f porównuje `null <= 0`,
@@ -1941,7 +1941,7 @@ export function grantKeywordsUntilEndOfTurn(state, objectId, keywords, options =
  * WSZYSTKIE trzy dotyczą NOWEGO obiektu, więc reset jest zgodny z CR.
  *
  * Transform W MIEJSCU (efekt `transform`, `effects.js`) tego helpera NIE
- * używa: CR 712.18 — „When a double-faced permanent transforms or converts, it
+ * używa: CR 712.15 — „When a double-faced permanent transforms or converts, it
  * doesn’t become a new object. Any effects that applied to that permanent will
  * continue to apply to it.” Tamta ścieżka przenosi trwające efekty
  * (modyfikatory, granty, animację — `transformInPlaceFields` niżej).
@@ -1957,7 +1957,7 @@ export function grantKeywordsUntilEndOfTurn(state, objectId, keywords, options =
  * Jeden wspólny odczyt dla dwóch miejsc, które ODBUDOWUJĄ cechy obiektu po
  * tym, jak inna operacja nadała mu cechy cudzej strony karty (L41 — reguła
  * w jednym miejscu): druga strona DFC (`transformedCharacteristics`) oraz
- * strona-stwór karty z przygodą (`castAdventureCreature`, CR 715.3).
+ * strona-stwór karty z przygodą (`castAdventureCreature`, CR 716.3).
  * `null` = linia typu nie rozstrzyga rodzaju — wywołujący zostaje przy
  * dotychczasowym `kind`.
  */
@@ -2012,7 +2012,7 @@ export function transformedCharacteristics(back, previous = null) {
 }
 
 /**
- * O-6 (audyt PR #134, CR 712.18 + 613): opis TRWAJĄCEJ animacji obiektu jako
+ * O-6 (audyt PR #134, CR 712.15 + 613): opis TRWAJĄCEJ animacji obiektu jako
  * „warstwy” nakładanej na wydrukowane cechy — typy/podtypy dodane (albo
  * zastąpione przy `retainTypes: false`) i ustawione bazowe P/T (warstwa 7b).
  * Animacje zapisują ją w `originalBeforeAnimation.layer`; dla zapisów bez
@@ -2143,7 +2143,7 @@ function withAnimationLayer(base, layer) {
 }
 
 /**
- * O-6 (audyt PR #134): pola obiektu po transformie W MIEJSCU (CR 712.18 —
+ * O-6 (audyt PR #134): pola obiektu po transformie W MIEJSCU (CR 712.15 —
  * ten sam obiekt, trwające efekty działają dalej).
  *
  * Przed poprawką efekt `transform` rozkładał cechy drugiej strony na obiekt
@@ -2195,7 +2195,7 @@ export function transformInPlaceFields(object, back) {
     originalBeforeAnimation: layer ? Object.freeze({ ...printedBack, layer }) : null,
   };
   if (object.subtypesBeforeOverride) {
-    // Nadpisanie podtypów trwa (712.18) — obiekt zachowuje podtypy-cel,
+    // Nadpisanie podtypów trwa (712.15) — obiekt zachowuje podtypy-cel,
     // a cleanup przywróci podtypy NOWEJ strony.
     fields.subtypesBeforeOverride = [...visible.subtypes];
     fields.subtypes = [...(object.subtypes ?? [])];
@@ -2220,7 +2220,7 @@ export function animatePermanentUntilEndOfTurn(state, objectId, { power, toughne
   const types = retainTypes ? [...new Set([...(object.types ?? []), ...typesAdd])] : [...typesAdd];
   const subtypes = retainTypes ? [...new Set([...(object.subtypes ?? []), ...subtypesAdd])] : [...subtypesAdd];
   const kind = types.includes('Creature') ? 'creature' : object.kind;
-  // O-6 (CR 712.18): zapis cofnięcia niesie też WARSTWĘ animacji, żeby
+  // O-6 (CR 712.15): zapis cofnięcia niesie też WARSTWĘ animacji, żeby
   // transform w miejscu umiał nałożyć ją na drugą stronę (`transformInPlaceFields`).
   const layer = mergedAnimationLayer(object, { power, toughness, typesAdd, subtypesAdd, retainTypes, ts: nextTimestamp(state) });
   const updated = replaceObject(state, object, {
