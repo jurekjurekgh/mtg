@@ -149,3 +149,20 @@ nieodwiedzony przez tali repozytorium. DECYDUJĄCE: „Eksportuj zapis" partii
 
 Narzędzia scratch (niewersjonowane): tools/table-tester/owner-flow2.mjs
 (driver właściciela, jsdom), t-j2-fuzz.mjs (fuzz sesyjny z art-sim i mutingiem).
+
+
+## Decyzja właściciela (2026-11-07, koniec sesji): śledztwo WSTRZYMANE
+
+„Na razie odłóżmy to. Jak błąd się pojawi ponownie, to będziemy szukać."
+Scenariusz bez-DFC pozostaje NIEODTWORZONY (patrz Kontynuacja 2).
+
+PROTOKÓŁ PRZY NAWROCIE (ważna kolejność!):
+1. NIE zaczynać nowej partii — autosave trzyma tylko ostatnią. Najpierw
+   „Eksportuj zapis" (#export-replay) i zachować treść (plik/wklejka).
+2. Odnotować talie (nazwy/własne z kreatora) i numer tury zdarzenia.
+3. resumeReplayText(zapis) w sesji + tools/table-tester/owner-flow2.mjs
+   (npm i w tools/table-tester po resecie workspace; build artefaktu).
+4. Detektory już zwalidowane czułościowo (revert fixu DFC → wykroczenia).
+
+Gotowe narzędzia (niewersjonowane, przetrwały w workspace): owner-flow2.mjs,
+t-j2-fuzz.mjs. Fix DFC (24c679f) pozostaje w PR #181 — klasa realna sama w sobie.
