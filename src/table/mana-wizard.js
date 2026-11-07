@@ -52,6 +52,11 @@ function isUntappedLandSource(object, playerId) {
   if (!object || object.controllerId !== playerId || object.tapped || object.detained || object.cantActivateAbilities) return false;
   const isLand = object.kind === 'land' || (object.types ?? []).includes('Land');
   if (!isLand) return false;
+  // L (zgłoszenie właściciela 2026-11-07, Nature's Embrace): grant many z aury
+  // („{T}: Add two mana of any one color") SAM jest zdolnością many (CR 605.1a)
+  // — ląd bez własnej produkcji z grantem jest pełnoprawnym źródłem (F5b:
+  // engine wymaga wtedy grantColor w komendzie, więc kreator pyta o kolor).
+  if ((object.manaGrant ?? 0) > 0) return true;
   const src = object.manaSource ?? getSourceForObject(object);
   return !!src && (src.amount ?? 1) > 0;
 }
@@ -61,6 +66,17 @@ export function untappedLandSourcesOf(view, playerId) {
   const out = [];
   for (const object of view?.zones?.battlefield ?? []) {
     if (!isUntappedLandSource(object, playerId)) continue;
+    // L (zgłoszenie właściciela 2026-11-07, Nature's Embrace): ląd z grantem
+    // many z aury pokazuje w kreatorze GRANT („dowolny kolor +2”) — własna
+    // zdolność {T} (1 mana koloru lądu) jest ściśle dominowana (2 dowolnego
+    // ⊇ 1 własnego; nadmiarowa mana w puli nie szkodi — brak mana burn),
+    // więc wiersz grantu ją zastępuje. Tapnięcie wiersza najpierw pyta
+    // o KOLOR grantu (engine: tap_for_mana z grantColor).
+    const grant = object.manaGrant ?? 0;
+    if (grant > 0) {
+      out.push({ id: object.id, cardId: object.cardId, colors: [...COLOR_ORDER], amount: grant, grant: true });
+      continue;
+    }
     const src = object.manaSource ?? getSourceForObject(object);
     out.push({ id: object.id, cardId: object.cardId, colors: src.colors ?? [], amount: src.amount ?? 1 });
   }
@@ -123,7 +139,11 @@ export function manaSourcesOf(view, playerId, abilityInfo, { excludeSourceId = n
     // rzeczywiście bezbarwne (Basilisk Gate) zostają bezbarwne — pełny
     // stan też im kolorów nie przypisze.
     let spendOnly = null;
-    if (typeof abilityInfo === 'function') {
+    // L (zgłoszenie 2026-11-07): mostek abilityInfo opisuje produkcję „za samo
+    // {T}” z WŁASNEJ zdolności lądu — dla wiersza grantu aury (2 dowolnego
+    // koloru) nadpisałby amount (2→1) i zaciemnił kolory. Wiersz grantu
+    // niesie już pełną prawdę z widoku (manaGrant).
+    if (typeof abilityInfo === 'function' && !s.grant) {
       const full = abilityInfo(s.id, null);
       if (full && (full.colors?.length ?? 0) > 0) {
         colors = [...new Set([...colors, ...full.colors])];
@@ -134,6 +154,9 @@ export function manaSourcesOf(view, playerId, abilityInfo, { excludeSourceId = n
     return {
       id: s.id, cardId: s.cardId, colors, amount,
       kind: 'land',
+      // L: flaga grantu aury — onTapSource otwiera wybór koloru zamiast
+      // deterministycznego tap_for_mana bez grantColor.
+      grant: s.grant || undefined,
       spendOnly,
       command: { type: 'tap_for_mana', playerId, objectId: s.id },
     };
@@ -913,7 +936,7 @@ export function wizardSourceName(source, session) {
  * Anuluj. Teksty wędrują przez textContent (kontrakt render.js).
  */
 export function renderManaWizard(host, model, {
-  onTapSource, onSelectTapCost, onCancelTapCost, onToggleDelve, onConfirm, onCancel, onOpenCard, onHoverCard = null, onHoverCardEnd = null, session = null,
+  onTapSource, onSelectTapCost, onCancelTapCost, onSelectGrantColor, onCancelGrantColor, onToggleDelve, onConfirm, onCancel, onOpenCard, onHoverCard = null, onHoverCardEnd = null, session = null,
 }) {
   host.textContent = '';
   if (model.tapCostSelection) {
@@ -933,6 +956,34 @@ export function renderManaWizard(host, model, {
     back.className = 'ghost-btn mana-wizard-tap-cost-back';
     back.textContent = 'Wróć do źródeł';
     back.addEventListener('click', () => onCancelTapCost?.());
+    host.appendChild(back);
+    return;
+  }
+  // L (zgłoszenie właściciela 2026-11-07, Nature's Embrace): grant aury na
+  // lądzie produkuje „two mana of any one color” — kolor wybiera GRACZ przy
+  // tapnięciu (engine: tap_for_mana z grantColor; F5b — bez wyboru komenda
+  // nie ma czego rozstrzygać). Ten sam dwustopniowy wzorzec co tapCostSelection.
+  if (model.grantColorSelection) {
+    const source = model.grantColorSelection.source;
+    const grantAmount = Math.max(1, source.amount ?? 2);
+    const intro = document.createElement('div');
+    intro.className = 'choice-request-intro';
+    intro.textContent = `Wybierz kolor many — ${wizardSourceName(source, session)} (${grantAmount} ${grantAmount === 1 ? 'manę' : 'many'} tego koloru)`;
+    host.appendChild(intro);
+    const list = document.createElement('div');
+    list.className = 'mana-wizard-sources choice-request-options';
+    for (const color of source.colors ?? []) {
+      const pips = Array.from({ length: grantAmount }, () => `{${color}}`).join('');
+      renderPickerRow(list, { kind: 'button', id: color,
+        html: `${manaSymbolsHtml(pips)} — dodaj ${grantAmount} ${grantAmount === 1 ? 'manę' : 'many'} tego koloru`,
+        rowClassName: 'action choice-request-option mana-wizard-grant-color',
+        onActivate: (chosen) => onSelectGrantColor?.(chosen) });
+    }
+    host.appendChild(list);
+    const back = document.createElement('button');
+    back.className = 'ghost-btn mana-wizard-grant-color-back';
+    back.textContent = 'Wróć do źródeł';
+    back.addEventListener('click', () => onCancelGrantColor?.());
     host.appendChild(back);
     return;
   }
@@ -962,6 +1013,12 @@ export function renderManaWizard(host, model, {
   list.className = 'mana-wizard-sources choice-request-options';
   for (const source of model.untappedSources) {
     const gain = source.amount !== 1 ? ` +${source.amount}` : '';
+    // L (zgłoszenie właściciela 2026-11-07, Nature's Embrace): wiersz grantu
+    // aury na lądzie MUSI mówić wprost „dowolny JEDEN kolor" — pięć pipów
+    // kolorów wyglądałoby jak produkcja wszystkich pięciu naraz.
+    const grantLabel = source.grant
+      ? ` +${source.amount} — ${source.amount} many dowolnego jednego koloru (wybierasz kolor)`
+      : '';
     // M311: koszt aktywacji zdolności many pokazywany WPROST („koszt aktywacji
     // {U}") — nie jest wliczony w gain (pełna produkcja), bo płaci go pula/
     // inne źródła (CR 601.2h), nie produkcja tego źródła.
@@ -977,7 +1034,7 @@ export function renderManaWizard(host, model, {
     renderPickerRow(list, {
       kind: 'button',
       id: source.id,
-      html: `Tapnij: ${escapeHtml(wizardSourceName(source, session))} (${sourceColorsLabel(source.colors)}${gain})${cost}${covers}`,
+      html: `Tapnij: ${escapeHtml(wizardSourceName(source, session))} (${source.grant ? grantLabel : `${sourceColorsLabel(source.colors)}${gain}`})${cost}${covers}`,
       rowClassName: 'action choice-request-option mana-wizard-source',
       onActivate: (sourceId) => onTapSource?.(sourceId, source.command),
     });

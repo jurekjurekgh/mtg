@@ -3284,10 +3284,19 @@ function bootstrapTable() {
       && source.command?.type === 'activate_ability' && source.command?.abilityIndex === selectedCost.abilityIndex
       && source.tapCostChoices?.length);
     if (selectedCost && !selectedSource) delete manaWizardDescriptor._tapCostSelection;
+    // L (zgłoszenie właściciela 2026-11-07, Nature's Embrace): aktywny wybór
+    // koloru grantu many (aura „{T}: Add two mana of any one color” na lądzie).
+    // Ten sam wzorzec invalidacji co _tapCostSelection — jeśli źródło zniknęło
+    // z bieżącej oferty (tapnięte/usunięte), selekcja wygasa zamiast renderować
+    // martwy widok.
+    const selectedGrant = manaWizardDescriptor._grantColorSelection;
+    const selectedGrantSource = selectedGrant && sources.find((source) => source.id === selectedGrant.objectId && source.grant);
+    if (selectedGrant && !selectedGrantSource) delete manaWizardDescriptor._grantColorSelection;
     renderManaWizard(els.manaWizardBody, {
       costStr: manaWizardDescriptor.costStr,
       tapCostSelection: selectedSource
         ? { source: selectedSource, choices: selectedSource.tapCostChoices.map(id => ({ id })) } : null,
+      grantColorSelection: selectedGrantSource ? { source: selectedGrantSource } : null,
       remainingTotal: progress.remainingTotal,
       requirements: progress.requirements,
       // G (zgłoszenie właściciela): brakujące KOLORY jadą do renderu — wiersz
@@ -3322,6 +3331,17 @@ function bootstrapTable() {
         if (!src) return; // stary wiersz nie może wykonać innego trybu
         if (src.tapCostChoices?.length) {
           manaWizardDescriptor._tapCostSelection = { objectId: src.id, abilityIndex: src.command.abilityIndex };
+          refreshManaWizard();
+          return;
+        }
+        // L (zgłoszenie właściciela 2026-11-07, Nature's Embrace): wiersz
+        // grantu aury na lądzie („{T}: Add two mana of any one color")
+        // wymaga KOLORU od gracza. Deterministyczny tap_for_mana bez
+        // grantColor uruchomiłby własną (dominowaną) zdolność lądu — 1 manę
+        // pierwotnego koloru. Drugi stopień wybiera kolor; dopiero wtedy
+        // leci komenda z grantColor.
+        if (src.grant && !selectedCommand?.grantColor) {
+          manaWizardDescriptor._grantColorSelection = { objectId: src.id };
           refreshManaWizard();
           return;
         }
@@ -3360,6 +3380,26 @@ function bootstrapTable() {
       },
       onCancelTapCost: () => {
         if (manaWizardDescriptor) delete manaWizardDescriptor._tapCostSelection;
+        refreshManaWizard();
+      },
+      // L (zgłoszenie właściciela 2026-11-07, Nature's Embrace): kolor grantu
+      // many z aury („two mana of any one color”) — komenda tap_for_mana
+      // niesie grantColor; wybór ponawiamy na aktualnym stanie (fail-closed
+      // jak onSelectTapCost), bo ląd mógł zostać tapnięty w międzyczasie.
+      onSelectGrantColor: (color) => {
+        const selection = manaWizardDescriptor?._grantColorSelection;
+        if (!selection) return;
+        const latestSources = manaSourcesForPlayer(selfTapExclusionFor(manaWizardDescriptor.cmd));
+        const latestSource = latestSources.find((source) => source.id === selection.objectId && source.grant);
+        delete manaWizardDescriptor._grantColorSelection;
+        if (latestSource && ['W', 'U', 'B', 'R', 'G'].includes(color)) {
+          playDirect({ type: 'tap_for_mana', playerId: HUMAN_ID, objectId: latestSource.id, grantColor: color },
+            { holdPriority: true, paymentUnit: true });
+        }
+        refreshManaWizard();
+      },
+      onCancelGrantColor: () => {
+        if (manaWizardDescriptor) delete manaWizardDescriptor._grantColorSelection;
         refreshManaWizard();
       },
       onToggleDelve: (objectId, on) => {

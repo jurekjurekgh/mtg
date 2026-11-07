@@ -7,7 +7,7 @@ import { command, event } from '../protocol/types.js';
 import { initialTurn, jumpToStep, nextTurnStep } from './turn.js';
 import { createRng } from './rng.js';
 import { assertStateInvariants } from './invariants.js';
-import { initializeResources, beginTurn, castAuraSpell, castPermanent, convokePaymentVariants, improvisePaymentVariants, legalAuraCasts, playLand, producibleMana, tapLandForMana, canPayColoredCost, canPayColoredCostForOffer, spendMana, spellManaPurpose, turnFaceUpManaPurpose, legalAuraCastsForObject, treasureManaAvailable, canPayMadnessCost } from './resources.js';
+import { initializeResources, beginTurn, castAuraSpell, castPermanent, convokePaymentVariants, improvisePaymentVariants, legalAuraCasts, playLand, producibleMana, tapLandForMana, canPayColoredCost, canPayColoredCostForOffer, spendMana, spellManaPurpose, turnFaceUpManaPurpose, legalAuraCastsForObject, treasureManaAvailable, canPayMadnessCost, grantManaOnLand } from './resources.js';
 import { MANA_COSTS } from '../cards/mana-costs-data.js';
 import { RIOT_MODES, riotCountOf, queueRiotEntry, applyRiotOnEntry } from './riot.js';
 import { parseManaCost, coloredPipsOf, matchColorRequirements } from './mana-cost.js';
@@ -7451,6 +7451,14 @@ export function playerView(state, playerId) {
               amount: Number.isFinite(zrodloMany.amount) ? zrodloMany.amount : 1,
             };
           }
+          // L (zgłoszenie właściciela 2026-11-07, Nature's Embrace): grant many
+          // z aury na lądzie („{T}: Add two mana of any one color") jest
+          // publiczną informacją stołu (aura leży odkryta) — bez tego widok
+          // (i Mana Wizard) pokazywał ląd jako źródło 1 many własnego koloru
+          // i tapował WŁASNĄ zdolność zamiast grantu (grantColor zna tylko
+          // silnik — auto-tap — i komenda tap_for_mana).
+          const manaGrant = grantManaOnLand(state, object.id);
+          if (manaGrant > 0) entry.manaGrant = manaGrant;
         }
         // Keywordy efektywne (własne + tymczasowe granty + nadane przez
         // załączniki) — publiczna informacja liczona tak samo jak w combat.
