@@ -15120,10 +15120,26 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             const sorceryPump = ability?.timing === 'sorcery';
             if (!inCombat && myTurn(view) && !sorceryPump) value -= 26;
             if (!inCombat && myTurn(view) && sorceryPump) {
+              // M (zgłoszenie właściciela 2026-11-07, Basilisk Gate): okno
+              // sorcery jest jedyne legalne (PMSSB-59/B wyżej), ale „odbiorca
+              // MOŻE zaatakować" to za słabe proxy — wszystkie warianty celu
+              // remisowały na value = pGain+1 i bot brał pierwszy z enumeracji,
+              // po czym w deklaracji atakował INNYM stworzem: +X/+X i {2}
+              // wyparowywały w cleanup (CR 514.2). Reguła właściciela:
+              // „bezwzględnie buffować tylko te kreatury, które mają zaatakować".
+              // Pytamy TĘ SAMĄ politykę ataku co deklaracja — ostrzejszy
+              // predykat `zamiarAtakuWybranego` (najlepszy zestaw Z tym stworem
+              // musi bić najlepszy BEZ niego), ten sam co celowanie triggerów
+              // (Battle-Rattle Shaman, A 2026-10-21e; L41 — jedno źródło
+              // prawdy o zamiarze ataku). `canCreatureAttackNow` (nie słaby
+              // `canAttackNow`): haste/cantAttackStatic/detained, spójnie z
+              // listą legalnych atakujących polityki (PR #171 F-7b).
+              // Kolejność koniunkcji: drogi predykat ZAMIARU na końcu.
               const recipientJoinsAttack = Boolean(recipient)
                 && recipient.controllerId === view.playerId
-                && canAttackNow(recipient)
-                && intendsToAttackThisTurn(view);
+                && canCreatureAttackNow(recipient)
+                && intendsToAttackThisTurn(view)
+                && zamiarAtakuWybranego(view, recipient.id);
               if (!recipientJoinsAttack) value -= 26;
               // PMSSB-59/B: pump, który zamienia atak w LETALNY, jest warty
               // zamknięcia partii — bez tego bot przepuszczał jedyne okno, w
