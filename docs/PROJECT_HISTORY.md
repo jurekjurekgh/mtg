@@ -20,6 +20,43 @@
 > nie trafiają do repozytorium".
 
 
+## 2026-11-07 — bump pinu CR do wydania 2026-11-06 + jednostka ogłoszeń płatności kreatora (PR #181, kontynuacja arena/b2771170-mtg)
+
+- Zlecenie: „zrób 1 i 2 zgodnie z sugestią" — obie otwarte pozycje handoffu
+  2026-11-06-audyt-pr180. Plan: `docs/plans/PLAN_2026-11-07-bump-cr-i-ogloszenia.md`.
+  Commity: `a7cd367` (plan), `0acbc43` (CR bump), `05a2cf0` (F-OGŁ), docs
+  zamknięcia. Incydent: drugi reset workspace w PR #181 — odzyskany fetch +
+  `reset --hard FETCH_HEAD`, zero strat (drzewo miało wersje środkowe,
+  zdalny 7df963f kompletny).
+- **Bump pinu CR (decyzja właściciela, ADR 0030):** wydanie „effective as of
+  November 6, 2026" z mirrora nwgarne/mtg-data (sha256 `d7cdcc11…`; stare
+  wydanie pobrane z historii mirrora — sha256 zgodne z pinem `8d860e45…`).
+  Metoda: diff tekstów WSZYSTKICH 555 cytowanych numerów między wydaniami —
+  nie sam test istnienia, bo przesunięcie sekcji zostawia numery istniejące,
+  ale znaczące co innego. Zmiany wydania: NOWA sekcja 713 Meld, sekcje
+  713–733 przesunięte +1, restrukturyzacja 712 („nothing happens" →
+  701.27d/701.28d), Sagi 714→715, Przygody 715→716, Monarcha 725.4→726.4,
+  Inicjatywa 726→727, Merge 730→731, Dzień/Noc 731.2a→732.2a, Nielegalne
+  akcje 733.1→734.1; nowości: 701.72 Assimilate, 702.196 Beam me up, typy
+  Star Trek, „battlefront", 608.2g/603.7g. Renumeracja ~112 miejsc + 7 linii
+  ręcznych; strażnicy (para DFC, TABELA_701/702 + nowe numery, C1/C2 audytu
+  PR #134 — ban 712.5 przeniesiony do pary „transform↔712.5") doprowadzone
+  do nowego wydania; tabela istnienia: 570 numerów. Lekcja praktyczna: przy
+  bumpie CR porównywać TEKSTY wszystkich cytowanych reguł, nie tylko
+  istnienie numerów (strażnik istnienia przechodzi przez rozjazd klasy
+  „numer istnieje, znaczy co innego").
+- **F-OGŁ (ogłoszenia modala „Rozgrywka"):** linie „Mielisz …" z triggerów
+  rozstrzyganych w trakcie płatności kreatora ginęły — `session.apply`
+  czyścił bufor ogłoszeń przy KAŻDEJ komendzie, a płatność to sekwencja
+  (tapy → pass drenażu → commit): commit wycierał mielenia z drenażu. Fix:
+  opcja `paymentUnit` (jednostka ogłoszeń płatności; nested kontynuuje
+  jednostkę rodzica; zwykła komenda zamyka — samonaprawa po anulowaniu).
+  Piny F-OGŁ/1-2 RED→GREEN; re-run partii seed 4242 pokazuje w modalu
+  mielenia → rozstrzygnięcie CF → cycling → dobranie (kolejność CR 603.3).
+- Bramy: `npm test` **10 070/0** (baza 10 068 + 2 piny), `npm run test:all`
+  **10 339 pass / 0 fail / 0 skip**, build **78 modułów / 5 763,3 kB**; strażnicy
+  CR 42/42; budżet lektury zielony (lektury obowiązkowe nietknięte).
+
 ## 2026-11-06 — audyt scalonego PR #180 i pętla jakości Żywym Testerem (PR #181, sesja arena/b2771170-mtg)
 
 - Zlecenie: „kontynuuj" wg `docs/plans/PLAN_2026-11-06-audyt-pr180.md` (ADR 0020:

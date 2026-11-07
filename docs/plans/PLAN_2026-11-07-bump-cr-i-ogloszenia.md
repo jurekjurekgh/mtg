@@ -46,7 +46,28 @@ Zlecenie właściciela: „zrób 1 i 2 zgodnie z sugestią" — dwie otwarte poz
 
 ## Commity
 
-1. Ten plan.
-2. Zadanie 1 (renumeracja + strażnicy + tabela + weryfikacja).
-3. Zadanie 2 (fix + pin).
+1. Ten plan. — `a7cd367`
+2. Zadanie 1 (renumeracja + strażnicy + tabela + weryfikacja). — `0acbc43`
+3. Zadanie 2 (fix + pin). — `05a2cf0`
 4. Dokumenty zamknięcia (historia, handoff — dopisek o wykonaniu pozycji 1–2).
+
+## Wykonanie (2026-11-07)
+
+- **Zadanie 1 — DONE.** Diff tekstów 555 cytowanych numerów: 513 identycznych,
+  5 brakujących, 37 renumeracji/edycji. Nowa sekcja 713 Meld + przesunięcie
+  713–733 + restrukturyzacja 712; zdanie „nothing happens" z 712.9 → 701.27d/28d
+  (adnotacja w m264). Renumeracja ~112 miejsc + 7 linii ręcznych (kontynuacje
+  po ukośniku, numery bez prefiksu). Strażnicy: para DFC, TABELA_701 + 701.72
+  Assimilate, TABELA_702 + 702.196 Beam me up, C1/C2 audytu PR #134 (POMIN o
+  tabelę danych, WYMAGANE na nowe numery, ban 712.5 przeniesiony do pary
+  „transform↔712.5"). Tabela istnienia: 570 numerów, CR 2026-11-06,
+  sha256 d7cdcc11…, `cr-numery.mjs --cr` → OK; strażnicy CR 42/42.
+- **Zadanie 2 — DONE (F-OGŁ).** Root cause: `session.apply` czyścił bufor
+  ogłoszeń przy każdej komendzie, a płatność kreatora to sekwencja komend
+  (tapy → pass drenażu → commit) — commit wycierał mielenia z drenażu, drugi
+  tap ogłoszenie triggera. Fix: opcja `paymentUnit` (true w trakcie, 'end' na
+  commicie; nested kontynuuje jednostkę rodzica; zwykła komenda zamyka —
+  samonaprawa po anulowaniu). Piny F-OGŁ/1-2 RED→GREEN; re-run partii seed
+  4242: modal pokazuje mielenia → rozstrzygnięcie CF → cycling → dobranie.
+- Bramy: fast 10 070/0 (baza 10 068 + 2 piny), build 78/5 763,3 kB,
+  test:all — patrz PROJECT_HISTORY.
