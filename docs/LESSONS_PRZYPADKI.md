@@ -1031,6 +1031,18 @@ bota w modalu, brak skutku `+3/+3`).
    zielonego pinu. Sprawdzaj datę CR: archiwum może cytować starą
    regułę (PR #106).
 
+**Dopisek (2026-11-08, audyt PR #181):** mutacja MUT-UNDO usunęła
+`noteTurnBoundaryPause()` z końca `session.apply()` i przeszła CAŁY zestaw
+10 131 testów bez jednego fała — a to jedyne źródło migawki „początek
+tury”, gdy pauzę granicy uzbraja strumień komendy gracza (`turnStartedPause`
+blokuje wtedy `advance()`, a `advance()` jest drugim producentem migawek).
+Objaw u użytkownika: po zatrzymaniu ręki otwarcia gra stoi w pauzie
+„Tura 1”, `canUndoTurn === false` → Undo nieaktywne na starcie meczu,
+wbrew zleceniu „schodzimy aż do początku meczu”. Naprawa: strażnik
+`test/zgloszenie-undo-granica-tury-z-komendy-gracza.test.js` (pin stanu
+W PAUZIE, nie efektu po wznowieniu — wznowienie samo odtworzy migawkę
+i zamaskuje lukę); GREEN na czystym kodzie, RED po powtórzonej mutacji.
+
 → narracja: `docs/LESSONS_PRZYPADKI.md` (L13)
 
 ## L14 (2026-08-15) — przypadek

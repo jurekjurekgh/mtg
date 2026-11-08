@@ -2546,7 +2546,7 @@ function fireCardIntoGraveyardFromNonbattlefield(state, ev, entered, events) {
  * śmierć w wyniku obrażeń zdążyła wygenerować creature_destroyed.
  */
 /**
- * M68 — daybound/nightbound (CR 708.9): GLOBALNY znacznik dnia/nocy, jak
+ * M68 — daybound/nightbound (CR 732.1 + 702.145): GLOBALNY znacznik dnia/nocy, jak
  * inicjatywa. `setDayNight` zmienia designation i transformuje in-place
  * wszystkie permanenty daybound (przy →night) / nightbound (przy →day);
  * zwykłe transform DFC (Civilized Scholar itd.) bez tych keywordów są
@@ -2573,7 +2573,7 @@ export function setDayNight(state, designation) {
 }
 
 /**
- * CR 502.2 / 730.2: na początku tury, PRZED untapem, dzień/noc zmienia się
+ * CR 502.2 / 732.2: na początku tury, PRZED untapem, dzień/noc zmienia się
  * wg liczby czarów POPRZEDNIEGO aktywnego gracza:
  * - dzień i 0 czarów → noc;
  * - noc i ≥2 czary → dzień.
@@ -3543,7 +3543,7 @@ function processTriggersScan(state, recentEvents) {
           { enteredTapped: Boolean(ev.object.tapped) });
         return;
       }
-      // CR 731.2c / 702.145: daybound LUB nightbound przy designation=null
+      // CR 732.2c / 702.145: daybound LUB nightbound przy designation=null
       // ustawia dzień (setDayNight transformuje nightbound → daybound).
       // Przy ustalonej designation permanent wchodzi właściwą stroną —
       // także poza resolvePermanentSpell (reanimacja, search, bounce).
@@ -3783,7 +3783,7 @@ function processTriggersScan(state, recentEvents) {
           }
         }
       }
-      // CR 502.2 / 730.2: dzien/noc zmienia sie na poczatku tury (applyDayNightAtTurnStart), nie przy rzucie.
+      // CR 502.2 / 732.2: dzien/noc zmienia sie na poczatku tury (applyDayNightAtTurnStart), nie przy rzucie.
       for (const source of state.objects.values()) {
         if (source.zone !== 'battlefield') continue;
         for (const ability of effectiveAbilities(source)) {
@@ -4488,8 +4488,11 @@ function processTriggersScan(state, recentEvents) {
         queueSagaChaptersForLore(state, loreSaga, newTotal - (ev.amount ?? 1), newTotal, events);
       }
     }
-    // Po kroku dobierania (CR 715.3b: „after your draw step") każda Saga
-    // AKTYWNEGO gracza dostaje licznik lore i odpala kolejny rozdział.
+    // Na początku fazy głównej PRZED walką (CR 715.3c: „As a player's
+    // precombat main phase begins, that player puts a lore counter on each
+    // Saga…") każda Saga AKTYWNEGO gracza dostaje licznik lore i odpala
+    // kolejny rozdział. (Stare brzmienie „after your draw step” pochodzi
+    // z wydania CR przed 2021 — akcja jest w precombat main.)
     // Temat 2 dla Sag: rozdziały z `requiresTarget` kolejkuja decyzję CELU
     // (resolve_trigger_target) zamiast iść od razu na stos.
     if (ev.type === 'step_advanced' && ev.step === 'main1' && ev.phase === 'precombat_main') {

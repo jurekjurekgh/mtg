@@ -119,12 +119,13 @@ export function createGameState({ seed, players }) {
     // wilkołaków: „if no spells were cast last turn"). Liczone są wszystkie
     // zagrania niebędące landami (stwory + instants + sorceries).
     spellsCastThisTurn: 0,
-    // M68/M49 (daybound/nightbound, CR 708.9 / 502.2 / 730.2): GLOBALNY
+    // M68/M49 (daybound/nightbound, CR 732.1 + 502.2; wydanie CR 2026-11-06 —
+    // dzień/noc to sekcja 732, akcja stanowa w untapie 502.2): GLOBALNY
     // znacznik dnia/nocy — jak inicjatywa; null = nieustalony. Zmiana to
     // turn-based action na początku tury (applyDayNightAtTurnStart), nie
     // przy rzucie ani w upkeep.
     dayNight: null,
-    // Czary poprzedniej tury PER GRACZ (CR 731.2b: poprzedni aktywny).
+    // Czary poprzedniej tury PER GRACZ (CR 732.2b: poprzedni aktywny).
     lastTurnSpellsCastByPlayer: {},
     // Liczba rzutów PER GRACZ w bieżącej turze (Illvoi Operative: „your
     // second spell each turn"). Naliczana w skanie zdarzeń rzutu
@@ -888,7 +889,8 @@ function beginTurnContinuation(state, events, { keepTappedIds = [] } = {}) {
 function beginTurnStart(state, events) {
   // Przeliczenie licznika czarów poprzedniej tury (transform).
   state.lastTurnSpellsCast = state.spellsCastThisTurn;
-  // M68: per-gracz kopia poprzedniej tury (daybound upkeep — CR 732.2a/b).
+  // M68: per-gracz kopia poprzedniej tury (daybound — sprawdzenie w untapie,
+  // CR 502.2 + 732.2a/b; „upkeep” w nazwie zmiennej jest historyczny).
   state.lastTurnSpellsCastByPlayer = { ...state.spellsCastThisTurnByPlayer };
   const previousActive = state.turn.activePlayerId === state.players[0].id
     ? state.players[1].id

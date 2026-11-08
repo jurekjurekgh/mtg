@@ -6278,7 +6278,7 @@ export function renderTableView({ els, session, play, onCardClick, onChoiceReque
  * (chip current) i pokoi ukończonych (done). Ukryty, gdy nikt nie wszedł.
  */
 /**
- * M68 — Day/Night (CR 708.9): globalny znacznik dnia/nocy na stole, spójny
+ * M68 — Day/Night (CR 732.1): globalny znacznik dnia/nocy na stole, spójny
  * z lochami — karta Day//Night (img ze Scryfall TVOW 21, front/back wg
  * designation) + status. Ukryty, gdy designation nie jest ustalone.
  */

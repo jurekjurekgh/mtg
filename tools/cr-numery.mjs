@@ -55,6 +55,10 @@ export const WYKLUCZONE = new Set([
   'test/cr-numery-istnienie-straznik.test.js',
   'test/cr-numery-701-tabela-straznik.test.js',
   'test/cr-numery-702-tabela-straznik.test.js',
+  // Strażnik dnia/nocy po bumpie (audyt PR #181): plik CELOWO cytuje starą
+  // numerację (708.9 / 730.2 / 731.2) w dowodzie RED detektora i w komentarzu
+  // o klasie L164 — bez wyłączenia czerwieniłby własny skan (wzorzec 701/702).
+  'test/audyt-pr181-cytaty-cr-dzien-noc.test.js',
   // Strażnik par 508/509 (audyt PR #145, zn. F5): fixture'y detektora cytują
   // CELOWO błędne pary (508.1c przy „attacks if able", 508.1d przy „attack
   // alone") — bez wyłączenia czerwieniłyby własny skan.
@@ -164,11 +168,16 @@ export function zapiszTabele(numery, { wydanie, sha256, zrodlo, pobrano }, korze
     '//',
     '// Tabela ISTNIENIA numerów CYTOWANYCH: każdy cytat `CR <numer>` w `src/`,',
     '// `test/` i `tools/` musi tu być (strażnik: test/cr-numery-istnienie-straznik.test.js).',
-    '// Zawiera TYLKO numery użyte w repo — nie pełny spis reguł CR.',
+    '// Zawiera numery KIEDYKOLWIEK użyte w repo (nie pełny spis reguł CR).',
     '// Nowy numer dopisuj TYLKO po weryfikacji wobec dosłownego tekstu CR w BIEŻĄCYM',
     '// wydaniu (ADR 0030; L164 — masowe przenumerowanie bywa o wydanie do tyłu),',
     '// najlepiej przez `--zapisz` na świeżo pobranym pliku. Powód: audyt PR #135',
     '// znalazł 16 martwych numerów (F-1), których nie pilnowało nic.',
+    '//',
+    '// UWAGA (audyt PR #181): tabela NIE MALEJE sama — `--zapisz` dopisuje nowe',
+    '// cytaty do już zweryfikowanych, więc po refaktorze numer może zostać jako',
+    '// martwy wpis. To świadome: numer raz potwierdzony w wydaniu nie przestaje',
+    '// istnieć, a skan cytatów pilnuje kierunku „każdy CYTAT jest w tabeli”.',
     '//',
     `// Wydanie CR: ${wydanie}`,
     `// SHA-256 pliku CR: ${sha256}`,

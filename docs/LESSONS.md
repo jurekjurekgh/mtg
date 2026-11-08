@@ -813,18 +813,14 @@ Strażnicy M348: `test/table-tester-runtime-errors.test.js`, żywe A/B.
 
 **Reguła:** (1) Test/detektor uznawaj dopiero po jednowierszowej mutacji RED → cofnięcie → GREEN, per GAŁĄŹ; gałąź niemutowalna to brak testu albo zbędny kod (usuń). (2) Detektor sprawdź jako „bug → zgłoszenie → fix → cisza” w obu trybach logowania; unit na sztucznym wejściu nie dowodzi zdarzenia w grze. Gdy mutacja nie czerwieni, odtwórz kształt danych z realnego artefaktu. (3) Samo oczekiwanie testu musi pochodzić z aktualnego Oracle/CR; „przypięte testem” bez pomiaru przed/po to hipoteza.
 
-**Strażnik:** log mutacji RED/GREEN dla każdego naprawianego testu/detektora; aktualny CR przy asercji (M334/C, M336/E2).
+**Strażnik:** log mutacji RED/GREEN dla każdego naprawianego testu/detektora; aktualny CR przy asercji (M334/C, M336/E2). (Dopisek 2026-11-08, audyt #181: mutacja „zielona” bywa BRAKIEM PINU w oknie PAUZY, nie zbędnym kodem — gdy gra stoi, żaden `advance()` nie odtworzy stanu, więc pinuj stan w pauzie, np. `canUndoTurn`; opis: narracja L13.)
 
 → narracja: `docs/LESSONS_PRZYPADKI.md` (L13)
 
 ## L14 (2026-08-15) — Jedna instrukcja, dwie zasady: sklejone reguły to gotowy bug
 
-**Przypadek:** — M101/B5 (CR 302.6) i B6 (CR 702.19b) to ten sam błąd w dwóch miejscach: **dwie niezależne zasady wyrażone jedną instrukcją** —…
-
-**Wzorzec:** reguła B obowiązywała „przy okazji" reguły A. Kod nie był zły, był
-NIEDOSPECYFIKOWANY — w miejscu, gdzie testy przechodziły, bo szczęśliwa
-ścieżka pokrywała obie naraz.
-
+**Przypadek:** M101/B5 (CR 302.6) i B6 (CR 702.19b) to ten sam błąd w dwóch
+miejscach: **dwie niezależne zasady wyrażone jedną instrukcją**.
 **Reguła:** jedna instrukcja = jeden punkt CR, nawet gdy dziś dają ten sam
 wynik. Polując na błędy, pytaj nie „co ten kod robi?", tylko „od czego ten kod
 UZALEŻNIA regułę i czy CR uzależnia ją tak samo?" (B5 wyszedł z pytania, czy
@@ -1120,8 +1116,8 @@ end of turn".
 
 ## L43 (2026-08-18) — Deskryptor „po nazwie pola" to heurystyka; do KASOWANIA obiektu potrzeba flagi jawnej
 
-**Przypadek:** reguła CR 704.5e („token poza polem bitwy przestaje istnieć") napisana po deskryptorze „token = obiekt z polem `name`" skasowała zwykłe KARTY (testy legalnie nadawały `name`, np.
-
+**Przypadek:** reguła CR 704.5e („token poza polem bitwy przestaje istnieć")
+napisana po deskryptorze „token = obiekt z polem `name`" skasowała zwykłe KARTY.
 **Reguła:** dobierz siłę deskryptora do siły skutku. Filtrowanie może iść po
 heurystyce; TRWAŁE zniszczenie wymaga jawnego znacznika (`isToken` ustawiany
 wyłącznie w `createBattlefieldToken`) — wciąż generycznego (ADR 0002).
@@ -1322,8 +1318,9 @@ osiem kopii reguły „gdzie ląduje czar" → jedna.
 
 ## L111 (2026-08-31) — Sonda wołająca `applyEffect` pomija state-based actions
 
-**Przypadek (M272):** „zmiana kontroli nie usuwa atakującego z walki” (CR 506.4) wyglądała na błąd, ale regułę egzekwuje `state-based.js` od M201 — sonda nie przepuszczała stanu przez pętlę SBA i widziała stan pośredni; naprawę wycofano.
-
+**Przypadek (M272):** „zmiana kontroli nie usuwa atakującego z walki” (CR 506.4)
+wyglądała na błąd, ale egzekwuje ją `state-based.js` (M201) — sonda nie przepuszczała
+stanu przez pętlę SBA; naprawę wycofano.
 **Reguła:** przed uznaniem braku reguły za błąd: (1) repro przez PEŁNĄ komendę (`execute`), nie `applyEffect`; (2) grep zdarzenia w CAŁYM `src/` — reguła bywa w `state-based.js`; (3) test falsyfikacyjny: usuń własną łatkę i sprawdź, czy repro nadal przechodzi (tylko ten punkt łapie to niezawodnie).
 
 → narracja: `docs/LESSONS_PRZYPADKI.md` (L111)
@@ -1342,8 +1339,8 @@ Gdy klasa wraca trzeci raz ([L107]): przestań szukać egzemplarzy, napisz anali
 
 ## L113 (2026-09-01) — Filtr wyciszający w strażniku opisuje INTENCJĘ, nie ciąg znaków
 
-**Przypadek (M274; klasa i reguła naprawy: [L107], pomiar narzędzia: L27):** strażnik „każda ścieżka ETB zna liczniki” przepuścił TRZY ścieżki; po poszerzeniu skanu sam wskazał czwartą (Dragon Arch), której nie dał ręczny przegląd.
-
+**Przypadek (M274; klasa: [L107], pomiar narzędzia: L27):** strażnik „każda ścieżka
+ETB zna liczniki” przepuścił TRZY ścieżki; poszerzony skan wskazał czwartą (Dragon Arch).
 **Reguła:**
 1. Zasięg skanu = zasięg KLASY, nie plik z pierwszym przypadkiem (tu: `effects.js` → + `triggers.js`, `game-state.js`).
 2. Wyciszenie zapisuj jako WARUNEK intencji, nie jako obecność słowa: filtr pomijał okno z `faceDown` (intencja: zakryte wejście bez liczników, CR 708.2), a Pyxis ustawia `faceDown: false` — ODKRYWA kartę — więc wyciszył przypadek, którego miał pilnować.
@@ -1642,19 +1639,15 @@ przywracaj gitem (cofa je do indeksu, a nie do „stanu przed mutacją"):
 ## L137 (2026-09-07) — etykieta to rodzina: jedno źródło brzmienia, test na PRAWDZIWYM widoku, partia celowana
 
 **Reguła:** fakt prezentowany w UI ma JEDNO źródło brzmienia i tylu
-konsumentów, ilu formatuje ten sam tekst — podnosząc nowe pole do widoku zrób
-grep po WSZYSTKICH miejscach formatujących DANY TEKST (nie po nazwie pola!)
-i przepnij je na jeden helper; konsumentem jest TEŻ log (`nameOfObject`)
-i karty (`cardInfo`), nie tylko kafel. Asercję kładź na PRAWDZIWYM
-`playerView`/`createSession` (fikcje testowe zaktualizuj do nowego kształtu —
-inaczej test pinuje nieaktualny stan), dodaj strażnika ŹRÓDŁOWEGO rodziny
-(L107: skan „żaden konsument nie wyprowadza znacznika z pola
-znajomości-reguły"), a mechanikę rzadką w talii sprawdź partią na CHWILOWEJ
-talii (`docs/setup/TESTER_STOLU.md`; plik usuń przed bramką — M178 nie znosi
-dubli). Strona PTASZKA (`OPTION_IGNORABLE_TYPES` w UI i `actions.mjs`
-w testerze) jest częścią kontraktu etykiety — idą razem (W1).
+konsumentów, ilu formatuje ten sam tekst (kafel, log `nameOfObject`, karty
+`cardInfo`): przy nowym polu zrób grep po miejscach formatujących DANY
+TEKST, nie po nazwie pola, i przepnij je na jeden helper. Asercję kładź na
+PRAWDZIWYM `playerView`/`createSession` (fikcje testowe zaktualizuj do
+nowego kształtu), dodaj strażnika ŹRÓDŁOWEGO rodziny (L107), a mechanikę
+rzadką sprawdź partią na CHWILOWEJ talii (`docs/setup/TESTER_STOLU.md`;
+plik usuń przed bramką — M178). Strona PTASZKA (`OPTION_IGNORABLE_TYPES`
+w UI i `actions.mjs` w testerze) jest częścią kontraktu etykiety (W1).
 **Strażnik:** `test/m326-cloak-przyczyna.test.js` — szczegóły: archiwum (L137).
-
 ## L138 (2026-09-07) — zwrot prawdy z efektu = blokada; ścieżka bez decyzji nie może jej zgłaszać
 
 **Reguła:**
@@ -1846,10 +1839,8 @@ Wyjątki: atak wygrywający teraz oraz atak letalny (wróg MUSI blokować).
 
 ## L156 (2026-09-20) — Trzy warstwy zgłoszenia: prowadzenie płatności, dane decyzji, narracja zdarzenia
 
-**Przypadek:** paczka F–I: kreator many kazał tapnąć 4 lądy do czaru za 2,
-modal Explore pytał „co z odsłoniętą kartą?” BEZ nazwy karty, a discover bez
-trafienia nie zostawił w logu ŻADNEGO wpisu.
-
+**Przypadek:** paczka F–I: kreator many kazał tapnąć 4 lądy do czaru za 2, modal
+Explore pytał o kartę BEZ jej nazwy, a discover bez trafienia nie zostawił w logu wpisu.
 **Reguła:** (1) ścieżka płatności proponuje tylko kroki, które przybliżają
 koszt — źródła brakującego koloru pierwsze, nadmiarowe po zebranej sumie nie
 są proponowane (tapnięć ≤ koszt); (2) decyzja bez karty w komendzie bierze ją
@@ -1921,8 +1912,8 @@ produkcja po M300/1) — pinuj funkcje, które woła gracz.
 
 ## L161 (2026-09-20) — Narracja efektu zbiorczego nazywa ZAKRES z deskryptora karty; pin mierzy też FALLBACK
 
-**Przypadek:** log prewencji Ethersworn Shieldmage milczał o ZAKRESIE (karta mówi o tworach artefaktowych); znalazła to ręczna lektura transkryptu E3 (alara-76), zero zgłoszeń detektorów (L27).
-
+**Przypadek:** log prewencji Ethersworn Shieldmage milczał o ZAKRESIE (artefaktowe);
+znalazła to ręczna lektura transkryptu E3 (alara-76), detektory milczały (L27).
 **Reguła:**
 1. Komunikat o efekcie zbiorczym bierze ZAKRES z danych karty (deskryptor `description` → `filterDescription` w zdarzeniu i w filtrze stanu), nie z sesji/renderu (wzorzec L156).
 2. Efekt bez opisu potrzebuje FALLBACKU, a pin mierzy OBA kierunki (opisany → jego treść; nieopisany → fallback).
@@ -2012,10 +2003,9 @@ efektów rozstrzygała STAŁA kolejność w kodzie (utrata keywordu ponad nadani
 
 ## L167 (2026-09-24) — Scalona warstwa stanu gubi czas trwania pojedynczych efektów
 
-**Przypadek (F/5, W-10/W-11):** animacje (Skilled Animator „dopóki źródło
-na polu bitwy”, crew „do końca tury”) zapisywały się w JEDNEJ warstwie pól
-obiektu — koniec jednego efektu kasował całą warstwę albo żadnej.
-
+**Przypadek (F/5, W-10/W-11):** animacje (Skilled Animator, crew „do końca tury”)
+zapisywały się w JEDNEJ warstwie pól obiektu — koniec jednego efektu kasował całą
+warstwę albo żadnej.
 **Reguła:**
 1. Efekt ciągły z własnym czasem trwania (CR 611.2) to osobny WPIS z tym
    czasem, a stan warstwy jest pochodną wpisów, które jeszcze trwają
@@ -2091,10 +2081,8 @@ odkręcania: `test/audyt-m431-untap-choice.test.js` + piny `test/bot-params.test
 
 ## L172 (2026-10-01) — składnik zależny od WYNIKU wariantu działa jak kara: premia liczona ze STANU
 
-**Przypadek (O2, audyt PR #148):** premia „presji życia" w bloku czytała życie PO
-zablokowaniu, więc malała, gdy blok ratował więcej — przy 7 życia „blok obu" (+2)
-remisował z „blok jednego" (+4), a wybór rozstrzygała kolejność ofert.
-
+**Przypadek (O2, audyt PR #148):** premia „presji życia” w bloku czytała życie PO
+zablokowaniu, więc przy 7 życia „blok obu” (+2) remisował z „blok jednego” (+4).
 **Reguła:** składnik faworyzujący jedną stronę osi wyboru musi być względem niej
 NIEMALEJĄCY — wysokość licz ze STANU (moje życie), nie z wariantu; wariant może co
 najwyżej ZEROWAĆ składnik jako bramka pierwszeństwa (`lifeAfter >= 1`, M146).
@@ -2223,12 +2211,10 @@ wejść w zakres — `slice(before, -1)` albo jawny push. → Klasa: [L130].
 
 ## L188 (2026-10-25) — Legalność oferty ≠ wykonalność wprost: osiągalność many jest DWUFAZOWA
 
-**Przypadek:** K (Abstruse) i N (cast przez Eldrazi Scion): komenda może
-być legalną OFERTĄ (CR 605.3a/608.2g — mana powstaje przed płatnością),
-choć silnik jej w tej chwili nie wykona. Boty i kierowcy testów grający
-wprost z `legalCommands` dostawali odrzucenia; kwotowa miara automatu
-(botów) dodatkowo ignorowała czyste źródła many poza lądami i liczyła
-koszt `colors` jako drugą jednostkę.
+**Przypadek:** K (Abstruse) i N (cast przez Eldrazi Scion): komenda legalna jako
+OFERTA (CR 605.3a/608.2g), choć silnik nie wykona jej wprost; kwotowa miara
+botów ignorowała czyste źródła many poza lądami i liczyła `colors` drugą
+jednostką.
 **Reguła:** konsument komendy zna dwufazowość: najpierw legalna aktywacja
 czystej many, potem komenda (wspólna miara automatu
 `src/controllers/mana-offer-guards.js` — jednostki+kolory+pipy); kreator
@@ -2241,10 +2227,9 @@ many wykonuje fazę pierwszą zamiast zgasić ofertę.
 ## L189 (2026-10-25) — „Przestaje pasować” ≠ „anulowane”: stan kluczowany tożsamością wariantu wraca ze stanem planszy
 
 **Przypadek:** M/M2 (*Revealing Wind*): ptaszek wyciszenia trzymał
-`commandOptionKey` (z dokładnym zestawem celów), więc wyciszenie X/Y
-wracało samo, gdy po śmierci nowego stworzenia Z plansza wróciła do
-układu X/Y. Sondy I rundy miały pusty zbiór wyciszeń — diagnozę
-(hipotezę o pamięci kombinacji) podał właściciel.
+`commandOptionKey` z pełnym zestawem celów, więc wyciszenie X/Y wracało samo,
+gdy po śmierci stworzenia Z plansza wróciła do układu X/Y; sondy startowały
+z pustą pamięcią wyciszeń.
 **Reguła:** trwały stan UI/sesji kluczowany pełną tożsamością wariantu
 komendy to pamięć okoliczności, nie ustawienie gracza. Konsument musi
 rozróżniać „klucz nie pasuje teraz” od „obowiązuje”: przy nowej
@@ -2260,7 +2245,7 @@ startującej z pustą pamięcią.
 ## L190 (2026-11-03) — Mapa diffu PR musi kotwiczyć nagłówki i porównać z REST, bo patch może zawierać patch
 
 **Przypadek:** parser diffu #178 dał 197 wpisów z 194 plików, bo łapał
-`+diff --git` wewnątrz patchy; listy commitów/view też mają limity.
+`+diff --git` wewnątrz patchów; listy commitów i view też mają limity.
 **Reguła:** inwentarz bierz z `pulls/<nr>/files`; dziel diff przez
 `^diff --git ` i porównaj zbiór z REST; pełną liczbę commitów czytaj z obiektu PR.
 **Strażnik:** `docs/setup/ENVIRONMENT.md` §3; mapa #178 ma 194 wiersze.
