@@ -23,6 +23,10 @@
 // Reality Fracture), pobrany 2026-09-24 z `mtg.wiki/page/Keyword_ability`
 // (chunki 0–2 sekcji Rules). Numery 702.x rosną historycznie, nie alfabetycznie,
 // więc każda luka w tabeli jest świadoma (sekcja o tym numerze nie istnieje).
+// Bump wydania 2026-11-06 (sesja 2026-11-07): sekcja 702 urosła wyłącznie o
+// 702.196 „Beam me up” (Star Trek TNG) — zweryfikowane dosłownie w mirrorze
+// nwgarne/mtg-data rules/cr-raw.txt (sha256 d7cdcc11…); pozostałe numery
+// bez zmian (diff numerów 702 między wydaniami pusty poza 196).
 //
 // Gdy detektor świeci, są trzy uczciwe wyjścia (w tej kolejności):
 //   1. popraw numer na ten z tabeli (najczęstszy przypadek — rozjazd),
@@ -53,7 +57,7 @@ const POMIN = new Set([
   'test/audyt-pr134-2026-09-24-cytaty-cr.test.js',
 ]);
 
-/** 702.<n> → nazwa mechaniki, CR 2026-09-25 (Reality Fracture). */
+/** 702.<n> → nazwa mechaniki, CR 2026-11-06 (bump: sekcja urosła o 702.196 Beam me up). */
 const TABELA_702 = {
   2: 'Deathtouch', 3: 'Defender', 4: 'Double Strike', 5: 'Enchant', 6: 'Equip',
   7: 'First Strike', 8: 'Flash', 9: 'Flying', 10: 'Haste', 11: 'Hexproof',
@@ -95,6 +99,7 @@ const TABELA_702 = {
   183: 'Tiered', 184: 'Station', 185: 'Warp', 186: 'Infinity', 187: 'Mayhem',
   188: 'Web-slinging', 189: 'Firebending', 190: 'Sneak', 191: 'Increment',
   192: 'Paradigm', 193: 'Power-up', 194: 'Teamwork', 195: 'Storied',
+  196: 'Beam me up',
 };
 
 /**
@@ -214,7 +219,7 @@ export function znajdzRozjazdy(linie, nazwaPliku = 'pamiec') {
       const n = Number(m[1]);
       if (NUMERY_OGOLNE.has(n)) continue;
       if (!(n in TABELA_702)) {
-        trafienia.push(`${nazwaPliku}:${i + 1} — 702.${n} nie istnieje w CR 2026-09-25 (sekcja 702 kończy się na 702.195 Storied)`);
+        trafienia.push(`${nazwaPliku}:${i + 1} — 702.${n} nie istnieje w CR 2026-11-06 (sekcja 702 kończy się na 702.196 Beam me up)`);
         continue;
       }
       if (WYJATKI_702.some((w) => w.wzorzec.test(linia))) continue;
@@ -242,7 +247,7 @@ function pliki() {
   return out.filter((p) => !POMIN.has(path.relative(ROOT, p))).sort();
 }
 
-test('CR 702.x: każdy cytat siedzi przy nazwie mechaniki z BIEŻĄCEGO wydania CR (2026-09-25)', () => {
+test('CR 702.x: każdy cytat siedzi przy nazwie mechaniki z BIEŻĄCEGO wydania CR (2026-11-06)', () => {
   const trafienia = [];
   for (const plik of pliki()) {
     const rel = path.relative(ROOT, plik);
@@ -280,7 +285,7 @@ test('CR 702.x: detektor łapie podstawione rozjazdy (dowód RED bez mutacji rep
 });
 
 test('CR 702.x: tabela i skan nie są puste (kontrola własna, L5)', () => {
-  assert.ok(Object.keys(TABELA_702).length >= 180, 'tabela 702.x ma ~190 wpisów z CR 2026-09-25');
+  assert.ok(Object.keys(TABELA_702).length >= 180, 'tabela 702.x ma ~190 wpisów z CR 2026-11-06');
   assert.ok(Object.keys(ALIASY_702).length >= 50, 'aliasy pokrywają numery cytowane w repo');
   assert.ok(WYJATKI_702.every((w) => w.powod && w.powod.length > 10), 'każdy wyjątek ma powód');
   const lista = pliki();

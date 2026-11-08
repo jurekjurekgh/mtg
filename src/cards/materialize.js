@@ -238,16 +238,16 @@ export function createCardDeck({ cardIds, ownerId, registry }) {
     if (card.transformTo) {
       const back = registry.get(card.transformTo);
       if (!back) throw new Error(`Brak drugiej strony transform: ${card.transformTo}`);
-      // CR 712.8a (M257/K5, Żywy Tester): DFC poza polem bitwy ma wyłącznie
+      // CR 712.6a (M257/K5, Żywy Tester): DFC poza polem bitwy ma wyłącznie
       // cechy twarzy przedniej. Karta z talii ZAWSZE wchodzi przodem (parser
       // talii zamienia nazwę tyłu na front), więc `card` jest tu twarzą
       // przednią pary — engine resetuje na nią twarz przy opuszczeniu pola
       // bitwy (obrócony wilkołak odbity na rękę wraca przodem; rzut z ręki
-      // idzie na stos przodem — CR 712.11/712.13).
+      // idzie na stos przodem — CR 712.8/712.10).
       data.frontFaceId = card.id;
       data.transformTo = {
         cardId: back.id,
-        // RODZAJ drugiej strony (CR 712.8): bez niego transformacja nie umiała
+        // RODZAJ drugiej strony (CR 712.6): bez niego transformacja nie umiała
         // odróżnić „artefakt → artefaktowy stwór" od zwykłej podmiany statystyk
         // i musiała zgadywać z types. Liczony tym samym kodem, co strona
         // przednia, więc pozostaje spójny z `kind` obiektu wejściowego.

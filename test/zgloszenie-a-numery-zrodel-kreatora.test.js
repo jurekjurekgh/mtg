@@ -75,7 +75,10 @@ test('A/render: wiersz „Tapnij: …” pokazuje numer — dwa Plainsy rozróż
 test('A/wiring (L5): main.js buduje nazwy modelu przez wizardSourceName z sesją', () => {
   const main = fs.readFileSync('src/table/main.js', 'utf8');
   const start = main.indexOf('function refreshManaWizard');
-  const slice = main.slice(start, start + 6000);
+  // Okno 8000 znaków (L, 2026-11-07): model grantu aury (grantColorSelection)
+  // wydłużył refreshManaWizard o ~130 znaków — pin dotyczy OBECNOŚCI
+  // wiringu w tej funkcji, nie sztywnej długości.
+  const slice = main.slice(start, start + 8000);
   assert.ok(slice.includes('name: wizardSourceName(src, session)'),
     'model kreatora many niesie nazwę z ordynałem (wizardSourceName)');
   assert.ok(main.includes('wizardSourceName'), 'main importuje wizardSourceName');

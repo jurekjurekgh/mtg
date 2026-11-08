@@ -6,7 +6,7 @@
 //    („Enchant creature”) trafia do grobu, zanim ktokolwiek dostanie priorytet.
 //  • Rediscover the Way + Feedback + Courage in Crisis: proliferate dokłada
 //    trzeci licznik lore, rozdział III się rozstrzyga, Saga jest poświęcona
-//    (CR 714.4), a Feedback („Enchant enchantment”) nie zostaje sierotą.
+//    (CR 715.4), a Feedback („Enchant enchantment”) nie zostaje sierotą.
 // Przypięty CR: SHA-256 8d860e451f20f38865b725b42d82feb714c725373dd8f3b32b8652b3eeb070ca.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';

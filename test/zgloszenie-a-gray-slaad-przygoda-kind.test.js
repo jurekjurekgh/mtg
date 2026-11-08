@@ -79,7 +79,7 @@ function slaadZPrzygody(state) {
   assert.ok(settle(state), 'przygoda rozstrzygnięta');
 
   const inExile = [...state.objects.values()].find((o) => o.cardId === 'gray-slaad');
-  assert.equal(inExile.zone, 'exile', 'karta czeka w exile „on an adventure” (CR 715.3)');
+  assert.equal(inExile.zone, 'exile', 'karta czeka w exile „on an adventure” (CR 716.3)');
 
   addMana(state, 'p2', 5, { colors: ['B'] });
   const creature = playerView(state, 'p2').legalCommands.find((c) => c.type === 'cast_adventure_creature');

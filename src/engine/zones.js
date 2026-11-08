@@ -104,7 +104,7 @@ export function exiledByEnchantedDamage(state, object) {
  * `effects`, więc helper w `spells` oznaczałby CYKL; pilnuje tego
  * `test/module-graph.test.js`).
  *
- * `adventure` (CR 715.3), `flashedBack` (CR 702.34a) i `reboundCast`
+ * `adventure` (CR 716.3), `flashedBack` (CR 702.34a) i `reboundCast`
  * (CR 702.88) dotyczą wyłącznie pełnej ścieżki rozstrzygnięcia — przekazuje
  * je caller.
  */
@@ -115,15 +115,15 @@ export function spellExitZone(object, { adventure = false, flashedBack = false, 
 }
 
 /**
- * Karta „on an adventure" (CR 715.3d): wygnana Z ROZSTRZYGNIĘCIA własnego
- * czaru przygody. CR 715.3d (dosłownie, CR 2026-09-25): „Instead of putting a
+ * Karta „on an adventure" (CR 716.3d): wygnana Z ROZSTRZYGNIĘCIA własnego
+ * czaru przygody. CR 716.3d (dosłownie, CR 2026-09-25): „Instead of putting a
  * spell that was cast as an Adventure into its owner's graveyard as it
  * resolves, its controller exiles it. For as long as that card remains
  * exiled, that player may play it.\" Ruling (Release Notes Final Fantasy,
  * 2025-01-15): „If an adventurer card ends up in exile for any other reason
  * than by exiling itself while resolving, it won't give you permission to play
  * it with its primary characteristics.\" — więc sam deskryptor `adventure`
- * (stały druk karty, CR 715.2a) NIE wystarcza: stan „on an adventure\" to
+ * (stały druk karty, CR 716.2a) NIE wystarcza: stan „on an adventure\" to
  * stempel źródła wygnania `meta.exiledBy === 'adventure'`, nadawany tylko przy
  * rozstrzygnięciu czaru przygody, a czyszczony wraz z `meta` przy opuszczeniu
  * exile („for as long as that card remains exiled\", CR 400.7).

@@ -20,6 +20,310 @@
 > nie trafiają do repozytorium".
 
 
+## 2026-11-07 — zgłoszenie „K“: kolejność równoczesnych zdolności — modal „wskaż kartę: ?” i brak skutku w etykiecie (PR #181, kontynuacja arena/b2771170-mtg)
+
+- **Zgłoszenie:** rozstrzyganie dwóch zdolności triggerowanych atakiem
+  (równoczesnych) dawało modal „Wybierz: Która zdolność ma rozstrzygnąć
+  się jako następna? — wskaż kartę:” z dwiema opcjami „?” — „I jak ja mam
+  to wybrać???”. Scena repro (pin): Scorch Spitter + Gruul Beastmaster
+  atakują naraz.
+- **Root cause (dwie warstwy UI):** (1) ogólna rodzina jednowyborowa M299
+  (`singleTargetPlanOf`) porywała grupę `resolve_trigger_order` po polu
+  `cardId` ŹRÓDŁA zdolności jak „wybór karty” — kreator „wskaż kartę”
+  etykietował wiersze przez objectId w strefach, a cardId nim nie jest
+  (stąd „?”); (2) opis skutku brał z komendy sam `effectTypes` (typ bez
+  parametrów) — „? obrażeń obrońcy” zamiast „1 obrażenie obrońcy”.
+- **Naprawa:** (1) `resolve_trigger_order` trafia do
+  SINGLE_PICK_EXCLUDED_TYPES (multi-target.js) — decyzja o KOLEJNOŚCI
+  zdolności zostaje przy wspólnym helperze przyciskowym M302 z pełnymi
+  etykietami komend; (2) `commandLabel` czyta PEŁNE deskryptory efektów z
+  wpisu zdolności na stosie w widoku (`abilityEffects`, jawne od wejścia na
+  stos — ADR 0017), z fallbackiem na `effectTypes` (partia śmierci trzyma
+  zdolności w slotach bez wpisów na stosie); (3) `previewCardIdOfOption`
+  (choice-request.js) dla kolejności zwraca kartĘ ŹRÓDŁA zdolności — lupa
+  w modalu pokazuje kartę, której kolejność rozstrzygamy (polityka „cel
+  przed źródłem” służy czarom, nie układaniu stosu).
+- **Efekt w UI:** modal pyta jak dotąd „Która zdolność ma rozstrzygnąć się
+  jako następna?”, a przyciski nazywają kartę, zdarzenie i skutek:
+  „Najpierw: Scorch Spitter — atak — 1 obrażenie obrońcy”,
+  „Najpierw: Gruul Beastmaster — atak — +X/+0 (X = moc źródła) do końca
+  tury”; każdy przycisk z lupą na kartę źródła.
+- **Piny:** `test/zgloszenie-k-kolejnosc-zdolnosci.test.js` — K/1 kaskada
+  (singleTargetPlanOf=null, buttonsPlanOf przejmuje), K/2 etykieta z pełnym
+  skutkiem, K/3 tytuł bez „wskaż kartę”, K/4 podgląd = karta źródła.
+- **Bramy:** fast 10 095/10 095 (4 nowe), test:all 10 364/10 364/0, build
+  78 modułów / 5773,8 kB.
+- **Kontynuacja (sprostowanie, wieczór 2026-11-07):** podsumowanie zamknięcia
+  K OPISAŁO nieistniejącą „lupę” przy przyciskach — właściciel stanowczo:
+  „Żadnych lup! Modale wyboru mają być wszystkie z jednego wspólnego
+  źródła, ze wspólnym modelem wyświetlania. Jedynym akceptowalnym modelem
+  jest podkreślona nazwa karty/efektu i hover z img karty ze scryfall
+  (fullscreen po kliknięciu na ekranach dotykowych). ŻADNYCH NOWYCH
+  NIEZALEŻNYCH MODALI!!!”. Zweryfikowano stan kodu: modal kolejności
+  renderuje WSPÓLNY helper M302 (wiersze radio + Zatwierdź), nazwa wiersza
+  jest podkreślona (`picker-name is-openable`) z hoverem pokazującym img
+  karty źródła ze Scryfall, na dotyku klik w nazwę otwiera pełny ekran;
+  ikon lup nie ma w żadnym modalu (`renderPeekButton` to od O2/2026-10-18
+  nazwa, nie ikona). Konwencję przypięto na scenie zgłoszenia:
+  `test/zgloszenie-k-kontynuacja-wspolny-model.test.js` — K/5 wspólne
+  źródło + zero osobnych podglądów, K/6 podkreślona nazwa + hover na
+  kartę źródła, K/7 dotyk (klik w nazwę = fullscreen, z hoverem nie),
+  K/8 radio + Zatwierdź oddaje komendę.
+
+
+## 2026-11-07 — zgłoszenie „J. Undercity“: etykiety pokoi lochu nazywają pokój i efekt (PR #181, kontynuacja arena/b2771170-mtg)
+
+- **Zgłoszenie:** „Kolejne pokoje Undercity mają źle opisane efekty — ani w
+  «Twoje działania», ani w modalach wyboru nie wiadomo, o jaki pokój chodzi
+  ani jaki jest jego efekt” (przykład dosłowny: Forge → modal „Wybierz: Cel
+  pokoju lochu”). Wymaganie właściciela: za każdym razem dokładnie napisane,
+  JAKI to pokój i JAKI efekt celujemy — w modalach wyboru i w panelu działań.
+- **Root cause:** trzy etykiety były generyczne albo niepełne — intro modala
+  i grupa panelu brały deskryptor typu żądania (`'room-target': 'Cel pokoju
+  lochu'`), wiersz celu nazywał pokój bez efektu (`Pokój Forge: wybierz cel —
+  …`), a oferta trasy pokój docelowy bez skutku (`Podziemia — idź do: Forge`).
+- **Naprawa (jedno źródło tekstu — L41):** `undercityRoomEffectText(roomName)`
+  w `src/engine/effects.js` wyprowadza polski opis efektu z DANYCH
+  `UNDERCITY_ROOMS` (nie z ręcznej kopii — nowy pokój nie może zostać bez
+  opisu), z fallbackiem na typ efektu. `choiceGroupTitle` (render.js) dla
+  `room-target`/`resolve_room_target` zwraca „Pokój <nazwa> — <efekt>: wybierz
+  cel”; ten sam tytuł zasila intro modala wyboru (introLabel w main.js) i
+  grupę w panelu „Twoje działania” (choiceGroupLabel spada na choiceGroupTitle).
+  Wiersze opcji celu (`commandLabel`) i oferta trasy („Podziemia — idź do:
+  <pokój> — <efekt>”) doklejają ten sam tekst; awaryjna mapa typów w
+  choice-request.js przemianowana na jawnie awaryjną.
+- **Piny (3 warstwy):** `test/zgloszenie-j-undercity-etykiety-pokoi.test.js`
+  — J/1 silnik (wszystkie 9 pokoi ma opis, fallback dla nieznanego pokoju),
+  J/2 Forge (tytuł modala, grupa panelu, wiersz opcji z kandydatem — bez
+  „Cel pokoju lochu”), J/3 Trap! (cel gracza — każda etykieta), J/4 trasa
+  (efekt pokoju docelowego; tytuł grupy trasy pozostaje „Ścieżka w Undercity”
+  — pin M200/A2). Warstwa harnessu: fixtury M103 w
+  `test/table-tester-detectors.test.js` dopięte o nowe kształty etykiet
+  (detektor „grupa bez ptaszka” nadal milczy dla decyzji obowiązkowych).
+- **Bramy:** fast 10 091/10 091 (4 nowe), test:all 10 360/10 360/0, build
+  78 modułów / 5772,2 kB; bundle dist niesie nowe etykiety (sanity grep).
+- **Zgłoszenie J (granica tury, wariant bez DFC) pozostaje WSTRZYMANE przez
+  właściciela** — protokół przy nawrocie w
+  `docs/setup/HANDOFF_2026-11-07-zgloszenie-j-granica-tury.md`.
+
+
+## 2026-11-07 — zgłoszenie J: zamknięcie warstwy grafik zjadało pauzę granicy tury (transformacja DFC przed nagłówkiem) (PR #181, kontynuacja arena/b2771170-mtg)
+
+- **Zgłoszenie (po zamknięciu H1(a)):** „Początek tury bota NIE ZROBIŁ PAUZY w
+  Rozgrywce (nie czekał na moje Rozumiem), tylko od razu doszedł do Main1 i tam
+  zatrzymał się na rzuceniu sorcery przez bota (ekran wysokograficzny).
+  Zazwyczaj działa, czasem nie." Repro: pauza draw → „Rozumiem" (jedno
+  kliknięcie, mysz — wprost doprecyzowane: NIGDY podwójne) → własna tura
+  auto-się-kończy → brak stopu na starcie tury bota. Reguła M261 rozciągnięta
+  przez właściciela: KAŻDE rozpoczęcie tury (gracza i bota) pauzuje modal.
+- **Śledztwo (wykluczenia):** warstwa sesji czysta — fuzz biernego gracza
+  (narzędzie scratch, nie w repo — odtwarzalne wg przepisu w handoffu J)
+  na 181 parach talii × 2 seedy,
+  ~1500 tur bota: każda granica środka gry pauzuje z nagłówkiem (26 zgłoszeń
+  to wyłącznie artefakt tury 1 fuzzera — pomija mulligany, przez co
+  `game_started` nie płynie przez komendę keep; w żywym UI nagłówek T1 jeździ
+  z ostatnim keepem — potwierdzone transkryptami testera). Warstwa UI czysta
+  przy pojedynczych klikach — driver właściciela
+  (scratch: jsdom na artefakcie, keep → tylko „Rozumiem" → pass, nic nie rzuca):
+  15 gier, wszystkie nagłówki pokazane. Teoria odbicia palca (double-tap)
+  odrzucona po sprostowaniu właściciela.
+- **Root cause (mechanizm znaleziony w eventach silnika):** `beginTurnStart`
+  emituje zdarzenia DAY/NIGHT (transformacje DFC — wilkołaki) **PRZED**
+  `turn_started`. Gdy transformacja wypada w strumieniu granicy tury:
+  `emitTransformEvent` uzbraja `awaitingArtAck` jeszcze przed nagłówkiem;
+  `turn_started` uzbraja obowiązkową pauzę M261; UI tłumi modal (bramka
+  `artPause`), gracz zamyka warstwę ilustracji → `continueArtPlay()` →
+  `advance()`, który kasuje `awaitingBotAck` NA WEJŚCIU — pauza granicy ginie
+  bez pokazania, gra przetacza się przez ogon (untap/upkeep/draw) prosto do
+  Main1 bota i zatrzymuje się dopiero na jego zagraniu (rzut = ponownie
+  warstwa grafik — dokładnie doświadczenie właściciela). „Czasem" = tylko gdy
+  obserwator artów odpali w strumieniu granicy (transformacja day/night;
+  strumień passa niósł też inne zdarzenia pre-header w tej samej klasie).
+- **Fix:** `continueArtPlay()` (session.js) po zdjęciu `awaitingArtAck` NIE
+  przetacza gry, gdy czeka niepotwierdzona pauza, której blok zawiera
+  nagłówek tury (ta sama klasyfikacja co `botPauseAtTurnBoundary`): warstwa
+  grafik jest PREZENTACJĄ równoległą, nie potwierdzeniem pauzy granicy —
+  gra stoi, UI po zamknięciu ilustracji pokazuje modal z „Tura N — …" i czeka
+  na „Rozumiem". Pauza rzutu BEZ nagłówka tury dalej jest konsumowana przez
+  obejrzenie ilustracji (M254/C bez zmian).
+- **Piny:** `test/zgloszenie-j-pauza-granicy-tury.test.js` — J/1 (rasa:
+  transformacja w strumieniu granicy uzbraja pauzę M261 i warstwę
+  JEDNOCZEŚNIE — wilkołak bota, dzień→noc na starcie jego tury),
+  J/2 (zamknięcie warstwy nie zjada pauzy: bot nic nie zagrał w Main1,
+  nagłówek w buforze, ogon czeka na „Rozumiem"). RED→GREEN udowodniony
+  (checkout fixu → J/2 fail „bot zdążył zagrać w Main1", apply → 2/2).
+- **Bramy:** fast `npm test` **10 087/0** (10 085 + 2 piny J); fuzz 60 seedów
+  bez zmian (26 × artefakt T1); build 78 modułów / 5 768,2 kB; driver
+  właściciela 3 gry (w tym innistrad×innistrad i wiedzmin×innistrad-brg —
+  talie transformacyjne) kompletne, wszystkie nagłówki; Żywy Tester
+  (innistrad-wu vs wiedzmin-bg s210 defensive, dominaria-wu vs tarkir-wur
+  s211 greedy): detektory 0 zgłoszeń, skaner nagłówków czysty;
+  `test:all` patrz niżej.
+
+
+## 2026-11-07 — zgłoszenia H (suspend: piny gwarancyjne + kara Main1) i I (hover trasy Undercity) (PR #181, kontynuacja arena/b2771170-mtg)
+
+- **KONTYNUACJA po odpowiedzi właściciela** („Zawieszenie nastąpiło w fazie
+  Podtrzymanie i stąd w ogóle zgłoszenie" — odrzucenie wyjaśnienia
+  „misreading linii triggera"): archeologia git na drzewie buildu gracza
+  (7a18659 = po scaleniu PR #179; piny H1 odpalone w worktree — 5/5 ZIELONE,
+  bramki fazy istnieją od PR #36/#64) + diff pipeline'u ogłoszeń (session.js
+  między 7a18659 a HEAD różni się WYŁĄCZNIE etykietą attacks_you_control
+  i F-OGŁ). Właściciel miał rację co do TEGO, CO WIDZIAŁ: **ogłoszenie
+  „zawiesza Mindstab" wjeżdżało w modal „Rozgrywka" przy granicy tury —
+  stół pokazywał już Podtrzymanie następnej tury.** Root cause:
+  `suspendCard`/`plotCard` przenoszą kartę cichym `moveObjectDirectly`
+  (bez `object_moved`), a `card_suspended`/`card_plotted` nie było w
+  `BOT_PAUSE_EVENTS` — decyzja właściciela 2026-08-05 („pauza po zmianie
+  strefy karty bota") nie łapała specjalnych akcji; ogłoszenie czekało
+  w buforze do następnego przystanku. Fix: oba zdarzenia w BOT_PAUSE_EVENTS
+  (pauza przy SAMYM akcie, nagłówek „Faza: Główna 2" tuż nad ogłoszeniem).
+  Piny RED→GREEN: `test/zgloszenie-h-ogloszenie-zawieszenia.test.js`
+  (H-ogł/1 czerwony bez fixu — ogłoszenie w fazie beginning; H-ogł/2:
+  kontekst „Faza: Główna 2"). Akt zawieszenia w upkeep pozostaje
+  niemożliwy (silnik), ale prezentacja ogłoszenia była myląca — repair
+  w warstwie, w której zgłoszenie było słuszne.
+
+- Zlecenie właściciela, dwa zgłoszenia. Plan:
+  `docs/plans/PLAN_2026-11-07-zgloszenia-h-i.md`. Commity: `c5b641f` (plan),
+  `80c4893` (piny + fixy), docs zamknięcia. Incydent: trzeci reset workspace
+  w PR #181 — tym razem w TRAKCIE tury (historia lokalnego .git cofnięta do
+  d2e0d61, katalogi .arena i node_modules testera wymazane); odzyskane
+  `git fetch` + `git reset origin/arena/b2771170-mtg` + rekommit — zdalny
+  miał pełną historię (6ada667), diff odtworzony 1:1 (8 plików), push
+  fast-forward 6ada667..80c4893.
+- **H1 — „bot zawiesza Mindstab w podtrzymaniu" (rozpoznanie: NIEMOŻLIWE):**
+  silnik bramkuje akt zawieszenia (oferta w `legalCommands` i `execute` →
+  `suspendCard`) do WŁASNEJ fazy main przy PUSTYM stosie — zgodnie z CR 702.62a
+  („if you could begin to cast this card…") + 307.1. Linia logu widziana przez
+  właściciela („Mindstab — trigger (suspend — zdjęcie licznika czasu
+  w podtrzymaniu)") to LEGALNY trigger upkeep z CR 702.62a (zdjęcie licznika);
+  w katalogu JEDYNA karta z suspend to Mindstab (sorcery). Piny gwarancyjne
+  (nie było błędu — jest dowód na zawsze): `test/zgloszenie-h1-suspend-timing.test.js`
+  (brak oferty w upkeep / main ze stosiem / cudzej main; odrzucenie execute
+  z `illegal_suspend:`; oferta w main1 i main2).
+- **H2 — dodatni scoring suspend TYLKO w Głównej 2 (decyzja właściciela):**
+  nowy parametr deskryptorowy `suspendMain1Penalty` (domyślnie 40; baza
+  rodziny ≤ 30 → każda Główna 1 strictly pod pasowaniem), stosowany w
+  `case 'suspend_card'` po doliczeniu kosztu i zwłoki — wzorzec
+  `morbidMain1Penalty`. Arytmetyka baza/koszt/zwłoka bez zmian (sceny B
+  audytu PMSSB-35 przeniesione do main2 — są bezfazowe); piny sekcji H2:
+  main1 → pasowanie, main2 → zawieszenie, pokrętło 0 przywraca 24, kotwica
+  24−40=−16. Recydywa zależności: `test/pmssb6-discard-wave-a.test.js` F-A2
+  („mindstab w pustkę woli suspend") — scena przeniesiona do main2 (tam ta
+  „wola" jest emergentna). Golden master: ŚWIADOMA regeneracja
+  `abc4017e…` → `83ee50de…` — zmierzona różnica: TYLKO
+  dominaria-brg|mirrodin-wu@1001 (jedyna partia z Mindstabem), decyzje (285),
+  scoreSum (3307.1953) i chosenKinds BITOWO identyczne — zmieniły się wyłącznie
+  wyceny NIE-WYBRANYCH opcji suspend_card w Głównej 1; wpis w rejestrze
+  regeneracji `test/bot-scoring-snapshot.test.js`.
+- **I — hover trasy Undercity:** opcje „Podziemia — idź do: X"
+  (`resolve_undercity_route`, modal przez buttonsPlanOf) nie miały podglądu,
+  bo komenda nie niesie karty. `previewCardIdOfOption` zwraca teraz pseudo-id
+  `'undercity'` (karta specjalna spoza rejestru), a `main.js` tłumaczy je
+  w `modalHoverInfoByCardId` (hover → druk lochu — ten sam, co panel
+  `renderUndercity` przez `attachSpecialCardHover`) i
+  `openCardFullscreenByCardId` (tap → `openUndercityFullscreen`). Piny:
+  `test/zgloszenie-i-undercity-podglad-trasy.test.js` (czysta funkcja +
+  instalacja w modalu + skan drutu main.js, wzorzec L16).
+- **Bramy:** `npm run test:all` **10 352 pass / 0 fail / 0 skip** (10 339 + 13
+  nowych pinów), build 78 modułów / 5 766,4 kB, golden master zielony po
+  regeneracji, benchmark bota: heuristic 89,1% (599/672), vs random 97,6%,
+  vs aggro 80,7% — bez regresji progu. Dowód decyzyjny H2 na partii Żywego
+  Testera (seed 100, bot dominaria-brg): akt „Nieprzyjaciel zawiesza Mindstab"
+  w T12 PO zadaniu obrażeń w walce (Główna 2), transkrypt
+  `tools/table-tester/.arena/t3-s100.txt` (nie trafia do repo — TESTER_STOLU).
+
+
+
+- Zlecenie: „zrób 1 i 2 zgodnie z sugestią" — obie otwarte pozycje handoffu
+  2026-11-06-audyt-pr180. Plan: `docs/plans/PLAN_2026-11-07-bump-cr-i-ogloszenia.md`.
+  Commity: `a7cd367` (plan), `0acbc43` (CR bump), `05a2cf0` (F-OGŁ), docs
+  zamknięcia. Incydent: drugi reset workspace w PR #181 — odzyskany fetch +
+  `reset --hard FETCH_HEAD`, zero strat (drzewo miało wersje środkowe,
+  zdalny 7df963f kompletny).
+- **Bump pinu CR (decyzja właściciela, ADR 0030):** wydanie „effective as of
+  November 6, 2026" z mirrora nwgarne/mtg-data (sha256 `d7cdcc11…`; stare
+  wydanie pobrane z historii mirrora — sha256 zgodne z pinem `8d860e45…`).
+  Metoda: diff tekstów WSZYSTKICH 555 cytowanych numerów między wydaniami —
+  nie sam test istnienia, bo przesunięcie sekcji zostawia numery istniejące,
+  ale znaczące co innego. Zmiany wydania: NOWA sekcja 713 Meld, sekcje
+  713–733 przesunięte +1, restrukturyzacja 712 („nothing happens" →
+  701.27d/701.28d), Sagi 714→715, Przygody 715→716, Monarcha 725.4→726.4,
+  Inicjatywa 726→727, Merge 730→731, Dzień/Noc 731.2a→732.2a, Nielegalne
+  akcje 733.1→734.1; nowości: 701.72 Assimilate, 702.196 Beam me up, typy
+  Star Trek, „battlefront", 608.2g/603.7g. Renumeracja ~112 miejsc + 7 linii
+  ręcznych; strażnicy (para DFC, TABELA_701/702 + nowe numery, C1/C2 audytu
+  PR #134 — ban 712.5 przeniesiony do pary „transform↔712.5") doprowadzone
+  do nowego wydania; tabela istnienia: 570 numerów. Lekcja praktyczna: przy
+  bumpie CR porównywać TEKSTY wszystkich cytowanych reguł, nie tylko
+  istnienie numerów (strażnik istnienia przechodzi przez rozjazd klasy
+  „numer istnieje, znaczy co innego").
+- **F-OGŁ (ogłoszenia modala „Rozgrywka"):** linie „Mielisz …" z triggerów
+  rozstrzyganych w trakcie płatności kreatora ginęły — `session.apply`
+  czyścił bufor ogłoszeń przy KAŻDEJ komendzie, a płatność to sekwencja
+  (tapy → pass drenażu → commit): commit wycierał mielenia z drenażu. Fix:
+  opcja `paymentUnit` (jednostka ogłoszeń płatności; nested kontynuuje
+  jednostkę rodzica; zwykła komenda zamyka — samonaprawa po anulowaniu).
+  Piny F-OGŁ/1-2 RED→GREEN; re-run partii seed 4242 pokazuje w modalu
+  mielenia → rozstrzygnięcie CF → cycling → dobranie (kolejność CR 603.3).
+- Bramy: `npm test` **10 070/0** (baza 10 068 + 2 piny), `npm run test:all`
+  **10 339 pass / 0 fail / 0 skip**, build **78 modułów / 5 763,3 kB**; strażnicy
+  CR 42/42; budżet lektury zielony (lektury obowiązkowe nietknięte).
+
+## 2026-11-06 — audyt scalonego PR #180 i pętla jakości Żywym Testerem (PR #181, sesja arena/b2771170-mtg)
+
+- Zlecenie: „kontynuuj" wg `docs/plans/PLAN_2026-11-06-audyt-pr180.md` (ADR 0020:
+  audyt poprzedniego scalonego PR przed nową pracą). Audytowany **PR #180** — scalony
+  2026-11-06T18:30:47Z, 17 plików, +591/−65; baza sesji `d2e0d61` (= HEAD `main`).
+  Gałąź sesji `arena/b2771170-mtg`, PR #181. **Werdykt: POZYTYWNY** — pełny raport
+  `docs/audits/AUDYT_PR180_2026-11-06.md` (§1–8), mapa 17/17 wierszy zamknięta.
+- A-1 (skan „whenever you attack" raz na deklarację, CR 508.3d) potwierdzone
+  niezależnymi mutacjami (każda RED na drzewie #180, przywrócenie GREEN); A-2
+  dociągnięte komentarze — bez zmian kodu (dowód maszynowy diffu produkcji);
+  2D–2G pozytywne; regresja bota na próbce 10/10. Obserwacje z handoffu #180
+  rozstrzygnięte: Powerstone — fałszywy alarm, poprawka tylko w notach
+  katalogowych (`dc37ecf`); odcisk stanu bez wpływu; `commandForXSelection` —
+  świadoma architektura „konstruuj + waliduj" (zgłoszenie G #179). Mirror CR ma
+  nowsze wydanie („effective as of November 6, 2026") — teksty 508.3d i cytatów
+  audytu pobrane i zacytowane w raporcie; pin repo bez zmian (bump = decyzja,
+  ADR 0030).
+- **Pętla jakości 4B (Żywy Tester, dominaria-brg|ravnica-wur, seed 4242):** partia
+  wygrana przez gracza w 14. turach (krok 75/76), detektory 0 zgłoszeń, rc=0;
+  re-run po naprawie #2 identyczny wynikiem. Tarmogoyf tokenu Disy 6/7 dowiedziony
+  rekonstrukcją deterministyczną biblioteki (34/34 pozycji zużycia transkryptu;
+  6. typ = Enchantment z ukrytego mielenia E). Dwa błędy znalezione i naprawione
+  u root cause z RED→GREEN (szczegóły §8 raportu):
+  1. `8b3cbc0` — HELP `run-game.mjs` ogłaszał nieistniejącą domyślną talię
+     (stale po zmianie nazw batcha 72); fix: interpolacja z `parseArgs([])`
+     (jedno źródło) + pin M203/8 czytający wyjście `--help` (behawioralny).
+  2. `22230e5` — **kolejność stosu w kreatorze many przy komendach
+     natychmiastowych**: trigger z tapnięcia źródła podczas płatności (tu:
+     Chronic Flooding) rozstrzygał się PO komendzie (cycling dociągał kartę
+     PRZED mieleniem), wbrew CR 602.2a+b/603.3/117.5. Root cause:
+     `finishWizardPayment` drenował stos tylko przy nielegalności komendy
+     (szkic F-1 z audytu PR #171). Fix: drenaż wpisów nałożonych W TRAKCIE
+     płatności (`stackAtOpen` łapany przy otwarciu kreatora w `main.js`)
+     przed commitem — niezależnie od prędkości komendy; wpisy sprzed otwarcia
+     zostają pod komendą. Piny: `audyt-pr180-cf-cycling-kolejnosc-stosu.test.js`
+     (F-CYK/1 RED→GREEN + kontrola bez aury), 6 pinów PR #171 F-1 nietkniętych;
+     sandbox testu PR #177 deklaruje `session` (dopasowanie pinu do refaktoru,
+     L160).
+- Zdarzenie operacyjne: reset workspace w trakcie sesji — odzyskane proceduralnie
+  (fetch → `reset --hard`), zero strat (commity były wypchnięte przed resetem);
+  potwierdzenie zasady ADR 0020 C/D.
+- Bramy (drzewo końcowe): `npm test` **10 068 pass / 0 fail** (baza `d2e0d61`:
+  10 065 — przyrost = 3 nowe piny), `npm run test:all` **10 336 pass / 0 fail**,
+  `npm run build` **78 modułów / 5 761,4 kB**. Strażnik budżetu lektury zielony
+  (bez zmian w lekturach obowiązkowych; nowa wiedza mieszka w raporcie audytu
+  i komentarzach kodu, nie w LESSONS — budżet ~99,996k/100k). Szybki benchmark
+  NIE był uruchamiany (brak zmian bota/wyceny; ADR 0018).
+- Otwarte pozycje po sesji: (a) bump CR do wydania 2026-11-06 — decyzja
+  właściciela (ADR 0030), (b) kosmetyka prezentacji: linie „Mielisz …" z triggerów
+  rozstrzyganych w trakcie płatności kreatora nie trafiają do strumienia modala
+  „Rozgrywka" (ogon LOG-u tnie starsze wpisy) — warstwa ogłoszeń, nie reguły
+  (dowód zgodności stanu: rekonstrukcja biblioteki + re-run partii).
+
 ## 2026-11-06 — audyt scalonego PR #179 (sesja arena/8df1ec4d-mtg)
 
 - Zakres: pełny przegląd 223 plików scalonego PR #179 (baza `04ca8e9` → scalenie `7a18659`, = HEAD `main`): produkcja (26 src + 7 tools + README/package.json + 8 talii), 57 docs, 123 testy. Mapa `docs/audits/PR179_MAPA_PLIKOW_2026-11-06.md` zamknięta: **223/223 wierszy, 0 otwartych**. Plan: `docs/plans/PLAN_2026-11-06-audyt-pr179.md`.

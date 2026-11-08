@@ -3,7 +3,7 @@ import { tokenNameFromCardId } from '../engine/tokens.js';
 import { makeSimulate } from '../engine/lookahead.js';
 import { setupCardMatch } from '../cards/materialize.js';
 import { TOKEN_IMAGES, UNDERCITY_DUNGEON, DAY_NIGHT_TOKEN } from '../cards/card-data.js';
-import { parseReplay, playReplay, replayFromState, serializeReplay } from '../engine/replay.js';
+import { createReplay, parseReplay, playReplay, replayFromState, serializeReplay } from '../engine/replay.js';
 import { stateFingerprint } from '../engine/fingerprint.js';
 import { createHeuristicBot } from '../controllers/heuristic-bot.js';
 import { effectiveKeywords } from '../engine/permanents.js';
@@ -3533,6 +3533,15 @@ export function createSession(config) {
    * wystawieniu lądu, użyciu zdolności i zmianie strefy karty — nawet gdy
    * gracz nie ma żadnej możliwej odpowiedzi). Tylko `object_moved` jest
    * jednocześnie szumem logu — dostaje własny opis w noteBotMove.
+   *
+   * Zgłoszenie H (kontynuacja 2026-11-07): `card_suspended`/`card_plotted`
+   * to TEŻ zmiana strefy karty (ręka → exile), ale specjalne akcje idą
+   * przez ciche `moveObjectDirectly` (bez `object_moved`), więc ogólna
+   * reguła ich nie łapała. Skutek: ogłoszenie „zawiesza/plotuje X" czekało
+   * w buforze do następnego przystanku — zwykle granicy tury — i modal
+   * „Rozgrywka" pokazywał je W PODTRZYMANIU następnej tury (właściciel
+   * czytał to jako zawieszenie w upkeep). Pauza przy samym akcie daje
+   * ogłoszenie we właściwej fazie, z nagłówkiem „Faza: Główna …" tuż nad nim.
    */
   const BOT_PAUSE_EVENTS = new Set([
     'spell_cast', 'permanent_cast', 'aura_spell_cast',
@@ -3541,6 +3550,7 @@ export function createSession(config) {
     'object_moved', 'object_exiled', 'permanent_destroyed', 'creature_destroyed',
     'permanent_sacrificed', 'permanent_put_into_graveyard',
     'token_created', 'permanent_entered_battlefield',
+    'card_suspended', 'card_plotted',
   ]);
 
   // Uwaga C (2026-08-12): śledzimy ostatnią FAZĘ pokazaną w modalu ruchu bota,
@@ -3760,6 +3770,15 @@ export function createSession(config) {
   // synchroniczni (testy, narzędzia) zachowali dotychczasowy przebieg.
   const pauseOnBotMoves = config.pauseOnBotMoves === true;
   let awaitingBotAck = false;
+  // F-OGŁ (pozycja 2 z handoffu 2026-11-06-audyt-pr180): czy trwa JEDNOSTKA
+  // OGŁOSZEŃ płatności kreatora many. Płatność to SEKWENCJA komend człowieka
+  // (tap_for_mana × N → pass drenażu → commit), a polityka „jedna komenda =
+  // jedna jednostka modala Rozgrywka" czyściła bufor przy każdej z nich —
+  // drugie tapnięcie gubiło ogłoszenie triggera, commit wycierał skutki
+  // drenażu (mielenia z Chronic Flooding). Komendy z `paymentUnit` doklejają
+  // się do jednej jednostki; zamyka ją commit ('end') albo pierwsza zwykła
+  // komenda (samonaprawa po anulowaniu kreatora).
+  let wizardPaymentUnitOpen = false;
   let isBotAdvancing = false;
   // M261 (korekta właściciela 2026-08-31): silnik generuje w JEDNYM execute
   // cały strumień granicy tury (`turn_started` + untapy + upkeep + triggery).
@@ -3770,6 +3789,24 @@ export function createSession(config) {
   // z ruchu bota ma wejść do modala (jak wcześniej), a ogon z auto-passu
   // człowieka — nie (bramka noteBotMove dla zdarzeń spoza ruchu bota stoi).
   let deferredTurnTail = { botActing: false, events: [] };
+  /**
+   * Undo (zlecenie właściciela 2026-11-06): migawki „początku tury” — po
+   * jednej na turę, nagrywane w chwili obowiązkowej pauzy po nagłówku
+   * „Tura N — …” (M261). Migawka pamięta WSZYSTKO, co sesja wie o partii
+   * w tym punkcie: liczbę wykonanych komend (prefiks replayu — ADR 0005),
+   * treść logu, przebieg tur, bufor modala „Rozgrywka” (z nagłówkiem tury),
+   * odłożony ogon upkeep/draw (`deferredTurnTail`) i stan pomocniczych
+   * buforów. `undoToTurnStart()` odtwarza stan z ziarna + prefiksu komend
+   * (determinizm zapisu, ADR 0005) i przywraca resztę z migawki — gra stoi
+   * dokładnie tak, jak stała po raz pierwszy: otwarty panel „Rozgrywka”
+   * z „Tura N — …” i przyciskiem „Rozumiem”.
+   *
+   * JEDNA migawka na turę (guard numer+gracz): pauza nagłówka i ewentualna
+   * pauza własnego dobrania (M100/E8) to wciąż TEN SAM „początek tury N” —
+   * kolejne kliknięcia Undo mają schodzić do poprzednich tur, nie kręcić
+   * się w pętli w jednej.
+   */
+  const turnCheckpoints = [];
   // Uwaga D/E: prawda tylko w gałęzi BOTA w advance() — botMoves/pauza dotyczą
   // wyłącznie ruchu bota, nie auto-passu faz człowieka.
   let botActing = false;
@@ -3880,6 +3917,41 @@ export function createSession(config) {
   }
 
   /**
+   * Undo: zapisuje migawkę „początku tury”, jeżeli sesja właśnie stanęła
+   * w pauzie z nagłówkiem tury w buforze (`botPauseAtTurnBoundary`). Wołane
+   * z każdego miejsca, które uzbraja pauzę (`apply`, `advance`) — no-op,
+   * gdy pauza dotyczy zwykłego zagrania bota albo migawka tej tury już jest.
+   */
+  function noteTurnBoundaryPause() {
+    if (!awaitingBotAck) return;
+    if (!botMoves.some((m) => m.type === 'turn_started')) return;
+    const last = turnCheckpoints.at(-1);
+    if (last && last.turnNumber === state.turn.number
+      && last.activePlayerId === state.turn.activePlayerId) return;
+    turnCheckpoints.push({
+      turnNumber: state.turn.number,
+      activePlayerId: state.turn.activePlayerId,
+      commandsCount: state.commands.length,
+      log: log.slice(),
+      logTurns: logTurns.slice(),
+      turnHistory: turnHistory.slice(),
+      currentTurn: { ...currentTurn, lines: currentTurn.lines.slice() },
+      lastLoggedPhase,
+      reasoning: reasoning.slice(),
+      botMoves: botMoves.slice(),
+      deferredTurnTail: deferredTurnTail
+        ? { botActing: deferredTurnTail.botActing, events: deferredTurnTail.events.slice() }
+        : null,
+      stackObjects: new Set(stackObjects),
+      stunLockedObjectIds: new Set(stunLockedObjectIds),
+      lastBotPhaseKey,
+      pendingBotPhase: pendingBotPhase ? { ...pendingBotPhase } : null,
+      lastBotMoveWasSearchResolved,
+      awaitingArtAck,
+    });
+  }
+
+  /**
    * Prowadzi partię do przodu: ruchy bota i auto-przewijanie okien człowieka
    * bez realnej decyzji (sam pass, puste deklaracje, rozstrzyganie walki).
    * Zatrzymuje się na pierwszym z: koniec partii, okno decyzyjne człowieka
@@ -3905,6 +3977,7 @@ export function createSession(config) {
       // pętli, jeszcze przed następnym execute.)
       if (flushDeferredTurnTail() && pauseOnBotMoves) {
         awaitingBotAck = true;
+        noteTurnBoundaryPause();
         isBotAdvancing = false;
         return;
       }
@@ -3917,7 +3990,14 @@ export function createSession(config) {
         if (!result.ok) throw new Error(`Bot wybrał nielegalną komendę: ${result.events[0]?.reason}`);
         const significant = streamAutoEvents(result.events);
         botActing = false;
-        if (pauseOnBotMoves && significant) { awaitingBotAck = true; isBotAdvancing = false; return; }
+        if (pauseOnBotMoves && significant) {
+          awaitingBotAck = true;
+          // Undo: komenda bota potrafi sama otworzyć nową turę (pass bota
+          // kończący jego turę) — wtedy pauza niesie nagłówek „Tura N — Ty”.
+          noteTurnBoundaryPause();
+          isBotAdvancing = false;
+          return;
+        }
         continue;
       }
       const view = playerView(state, HUMAN_ID);
@@ -3980,6 +4060,9 @@ export function createSession(config) {
       const passSig = streamAutoEvents(pass.events);
       if (pauseOnBotMoves && passSig) {
         awaitingBotAck = true;
+        // Undo: auto-pass kończący turę człowieka otwiera turę bota —
+        // pauza z nagłówkiem „Tura N — Nieprzyjaciel” to początek tury N.
+        noteTurnBoundaryPause();
         isBotAdvancing = false;
         return;
       }
@@ -4168,7 +4251,7 @@ export function createSession(config) {
       return probeCommandEffect(state, cmd);
     },
     /** Wykonuje komendę człowieka przez protokół; zwraca { ok, reason?, botPause? }. */
-    apply(cmd, { holdPriority = false } = {}) {
+    apply(cmd, { holdPriority = false, paymentUnit = null } = {}) {
       // M90 (bug B, zgłoszenie właściciela 2026-08-14): stan sesji zmienia
       // WYŁĄCZNIE zaakceptowana komenda. Wcześniej `apply` czyścił bufor
       // modala i kasował pauzę bota PRZED `execute()` — gdy engine odrzucił
@@ -4203,13 +4286,19 @@ export function createSession(config) {
       // awaitingBotAck false); niepokazany zachowujemy i doklejamy do niego
       // skutek tej komendy — gracz dostanie wszystko jednym modalem.
       const hadPendingPause = awaitingBotAck;
+      // F-OGŁ: komenda płatności kreatora DOKLEJA się do otwartej jednostki
+      // ogłoszeń (paymentUnit: true w trakcie, 'end' na commicie) — bez
+      // resetu bufora. Pierwszy krok płatności (jednostka zamknięta) przechodzi
+      // przez zwykłe czyszczenie i JEDNOCZEŚNIE otwiera jednostkę.
+      const joinPaymentUnit = paymentUnit === 'end' || (paymentUnit === true && wizardPaymentUnitOpen);
       let currentTurnHeader = null;
-      if (!hadPendingPause) {
+      if (!hadPendingPause && !joinPaymentUnit) {
         currentTurnHeader = botMoves.find(
           (m) => m.type === 'turn_started' && m.text?.startsWith(`Tura ${state.turn.number} — `),
         );
         botMoves.length = 0;
       }
+      wizardPaymentUnitOpen = paymentUnit === true;
       // Konsument nie powinien aplikować komendy w trakcie pauzy (UI blokuje
       // ją modalem) — po UDANEJ komendzie niedokończoną pauzę zamykamy,
       // ale NIEpokazany bufor zostaje (wyżej) i gramy dalej.
@@ -4291,9 +4380,83 @@ export function createSession(config) {
       // dopiero po „Rozumiem" (continueBotPlay).
       if (pauseOnBotMoves && turnStartedNow) awaitingBotAck = true;
       else if (pauseOnBotMoves && ownDraw && !awaitingBotAck) awaitingBotAck = true;
+      // Undo: komenda gracza może sama domknąć jego turę — pauza po
+      // nagłówku nowej tury (M261) to punkt “początek tury N”.
+      noteTurnBoundaryPause();
       // M254/C: `artPause` mówi UI, że po tej komendzie czeka warstwa grafik
       // (nie otwieraj modala „Ruch bota" — gracz ogląda teraz ilustracje).
       return { ok: true, botPause: awaitingBotAck, artPause: awaitingArtAck, ...(internalError ? { internalError } : {}) };
+    },
+    /**
+     * Undo (zlecenie właściciela 2026-11-06): czy jest punkt “początek tury”,
+     * do którego można cofnąć. Migawki powstają tylko przy pauzie granicy
+     * (M261), więc bez `pauseOnBotMoves` cofanie nie ma punktu zaczepienia.
+     */
+    get canUndoTurn() { return turnCheckpoints.length > 0; },
+    /**
+     * Undo (zlecenie właściciela 2026-11-06, „Undo [←]”): cofa partiię do
+     * początku tury — otwartego panelu „Rozgrywka” z nagłówkiem
+     * „Tura N — Gracz X” i przyciskiem „Rozumiem”. Kolejne kliknięcia
+     * schodzą do początku poprzednich tur, aż do początku meczu (tura 1).
+     *
+     * Mechanika (ADR 0005): stan gry odtwarzamy z TE SAMEGO ziarna i
+     * prefiksu komend zapisanych w migawce — to ta sama gwarancja
+     * determinizmu co przy wznawianiu zapisu partii. Resztę sesji (log,
+     * przebieg tur, bufor modala, odłożony ogon upkeep) przywracamy
+     * 1:1 z migawki, więc gra STOI dokładnie tak, jak stała, gdy tura
+     * się otworzyła. Bot dostaje świeżą fabrykę z seedem przesuniętym
+     * o liczbę odtworzonych komend (ta sama konwencja co `resumeReplayText`)
+     * — cofnięta tura to alternatywna przyszłość, nie powtórka z gumy.
+     *
+     * Wyciszenia opcji (ignoredOptionKeys) i pamiątka kombinacji celów
+     * zostają: to decyzje gracza na PARTIĘ, a identyfikatory obiektów
+     * odtwarzają się deterministycznie (U, zgloszenie 2026-10-26).
+     */
+    undoToTurnStart() {
+      if (turnCheckpoints.length === 0) return { ok: false, reason: 'nothing-to-undo' };
+      const checkpoint = turnCheckpoints[turnCheckpoints.length - 1];
+      // Odtworzenie prefiksu na ŚWIEŻYM stanie — bieżąca partia pozostaje
+      // nietknięta, dopóki replay nie przejdzie w całości (fail-safe).
+      const prefix = state.commands.slice(0, checkpoint.commandsCount);
+      const fresh = setupCardMatch({ seed, players: names, decks, registry });
+      const played = playReplay(createReplay(seed, prefix), () => fresh, execute);
+      if (played.results.some((r) => !r.ok)) {
+        sessionLog('system', 'Nie udało się cofnąć — zapis partii nie odtwarza się 1:1.');
+        return { ok: false, reason: 'replay-failed' };
+      }
+      turnCheckpoints.pop();
+      state = played.state;
+      bot = botFactory(seed + 1 + prefix.length, botCtx);
+      log.length = 0; log.push(...checkpoint.log);
+      logTurns.length = 0; logTurns.push(...checkpoint.logTurns);
+      turnHistory.length = 0; turnHistory.push(...checkpoint.turnHistory);
+      currentTurn = { ...checkpoint.currentTurn, lines: checkpoint.currentTurn.lines.slice() };
+      lastLoggedPhase = checkpoint.lastLoggedPhase;
+      reasoning.length = 0; reasoning.push(...checkpoint.reasoning);
+      botMoves.length = 0; botMoves.push(...checkpoint.botMoves);
+      deferredTurnTail = checkpoint.deferredTurnTail
+        ? { botActing: checkpoint.deferredTurnTail.botActing, events: checkpoint.deferredTurnTail.events.slice() }
+        : { botActing: false, events: [] };
+      stackObjects.clear();
+      for (const id of checkpoint.stackObjects) stackObjects.add(id);
+      stunLockedObjectIds.clear();
+      for (const id of checkpoint.stunLockedObjectIds) stunLockedObjectIds.add(id);
+      lastBotPhaseKey = checkpoint.lastBotPhaseKey;
+      pendingBotPhase = checkpoint.pendingBotPhase ? { ...checkpoint.pendingBotPhase } : null;
+      lastBotMoveWasSearchResolved = checkpoint.lastBotMoveWasSearchResolved;
+      awaitingArtAck = checkpoint.awaitingArtAck === true;
+      botActing = false;
+      isBotAdvancing = false;
+      // Pauza granicy tury stoi — UI otworzy panel „Rozgrywka” z nagłówkiem
+      // „Tura N — …” i przyciskiem „Rozumiem” (jak przy zwykłym otwarciu tury).
+      awaitingBotAck = true;
+      sessionLog('system', `Cofnięto do początku tury ${checkpoint.turnNumber} — ${who(checkpoint.activePlayerId)}.`);
+      return {
+        ok: true,
+        turnNumber: checkpoint.turnNumber,
+        activePlayerId: checkpoint.activePlayerId,
+        undoStepsLeft: turnCheckpoints.length,
+      };
     },
     /** Sesja czeka na potwierdzenie istotnego zagraniu bota (klik gracza). */
     get botPausePending() { return awaitingBotAck; },
@@ -4314,6 +4477,23 @@ export function createSession(config) {
     continueArtPlay() {
       if (!awaitingArtAck) return { ok: true, artPause: false, botPause: awaitingBotAck };
       awaitingArtAck = false;
+      // Zgłoszenie J (właściciel, 2026-11-07): strumień granicy tury zaczyna się
+      // od zdarzeń DAY/NIGHT (transformacje DFC — `beginTurnStart` emituje je
+      // PRZED `turn_started`), więc warstwa grafik uzbraja się JESZCZE PRZED
+      // nagłówkiem nowej tury. Modal pauzy granicy (M261 — obowiązkowa) jest
+      // wtedy tłumiony bramką `artPause` w UI, a `advance()` kasuje
+      // `awaitingBotAck` NA WEJŚCIU — zamknięcie ilustracji zjadało pauzę
+      // granicy i gra przetaczała się prosto do Main1 bota (pierwszy stop =
+      // jego zagrywka). Warstwa grafik jest PREZENTACJĄ równoległą, nie
+      // potwierdzeniem pauzy granicy: gdy po zamknięciu ilustracji czeka
+      // niepotwierdzona pauza, której blok zawiera nagłówek tury (ta sama
+      // klasyfikacja co `botPauseAtTurnBoundary`), gra ma nadal STÁĆ — UI
+      // pokaże modal z nagłówkiem i czeka na „Rozumiem”. Pauza rzutu bez
+      // nagłówka tury (M254/C — warstwa zastępuje modal przy rzucie) dalej
+      // jest konsumowana przez obejrzenie ilustracji, bez zmian.
+      if (awaitingBotAck && botMoves.some((m) => m.type === 'turn_started')) {
+        return { ok: true, artPause: false, botPause: true };
+      }
       const internalError = advanceGuarded();
       return { ok: true, artPause: awaitingArtAck, botPause: awaitingBotAck, ...(internalError ? { internalError } : {}) };
     },

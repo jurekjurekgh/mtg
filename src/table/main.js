@@ -125,6 +125,8 @@ function bootstrapTable() {
   const el = (id) => document.getElementById(id);
   const els = {
     banner: el('banner'),
+    // Undo (zlecenie właściciela 2026-11-06): przycisk w górnej belce.
+    undoTurn: el('undo-turn'),
     stackZone: el('stack-zone'),
     bfEnemy: el('bf-enemy'),
     bfOwn: el('bf-own'),
@@ -206,6 +208,20 @@ function bootstrapTable() {
   let modalHoverKey = null;
   function modalHoverInfoByCardId(cardId) {
     if (!session) return null;
+    // I (zgłoszenie właściciela 2026-11-07): pseudo-id lochu — karta specjalna
+    // spoza rejestru. Ten sam druk, który podgląda panel Undercity
+    // (attachSpecialCardHover w renderUndercity), tylko kanałem modala
+    // wyboru (opcje „Podziemia — idź do: X”).
+    if (cardId === 'undercity') {
+      return {
+        name: UNDERCITY_DUNGEON.name,
+        colors: [], kind: 'card', types: ['Dungeon'], subtypes: [], keywords: [],
+        manaCost: null, power: undefined, toughness: undefined,
+        livePower: undefined, liveToughness: undefined,
+        spell: null, abilities: [], morph: null, set: null,
+        imageUri: UNDERCITY_DUNGEON.imageUri, artId: null, faceDown: false,
+      };
+    }
     const details = session.cardDetails(cardId);
     if (!details) return null;
     return {
@@ -1708,6 +1724,9 @@ function bootstrapTable() {
       cardIdOfOption: (option) => cardIdForChoiceOption(option),
       cardNameOfOption: (option) => {
         const cardId = cardIdForChoiceOption(option);
+        // I: pseudo-id lochu nie żyje w rejestrze — nazwa z karty specjalnej
+        // (etykieta przycisku podglądu na awaryjnej ścianie renderChoiceRequest).
+        if (cardId === 'undercity') return UNDERCITY_DUNGEON.name;
         return cardId && session ? (session.cardDetails(cardId)?.name ?? null) : null;
       },
       onResponse: (response) => {
@@ -1968,6 +1987,13 @@ function bootstrapTable() {
 
   function openCardFullscreenByCardId(cardId) {
     if (!session || !els.cardFullscreenBody) return;
+    // I (zgłoszenie właściciela 2026-11-07): pseudo-id lochu → pełny ekran
+    // Undercity (jak tapnięcie miniatury panelu). Ścieżka dotykowa modala
+    // wyboru trasy: brak kursora = brak hovera, tap w nazwę otwiera druk.
+    if (cardId === 'undercity') {
+      openUndercityFullscreen();
+      return;
+    }
     const details = session.cardDetails(cardId);
     if (!details) return;
     hideModal('context-menu');
@@ -2113,7 +2139,7 @@ function bootstrapTable() {
     // Obie strony są publiczne (CR 711/712). Dla takiej karty kliknięcie
     // ZAWSZE otwiera warstwę Działania z podglądem OBU stron — nawet bez
     // żadnych zdolności. Strefy spoza pola bitwy (grób/wygnanie/ręka) zachowują
-    // dotychczasowe zachowanie — tam DFC ma wyłącznie twarz przednią (CR 712.8a).
+    // dotychczasowe zachowanie — tam DFC ma wyłącznie twarz przednią (CR 712.6a).
     const viewEntry = view.zones.battlefield.find((o) => o.id === objectId);
     const otherSideId = viewEntry?.transformToCardId ?? null;
     const isDfc = Boolean(otherSideId);
@@ -2495,6 +2521,9 @@ function bootstrapTable() {
   }
 
   function rerender() {
+    // Undo: przycisk jest żywy tylko w trakcie partii z punktem zaczepienia
+    // (pauza granicy tury, M261). Bez sesji / bez migawek — wyłączony.
+    if (els.undoTurn) els.undoTurn.disabled = !session?.canUndoTurn;
     if (!session) return;
     updateTurnIndicator();
     // M386/A2 (zgłoszenie właściciela 2026-09-18, partia seed 596891): awaria
@@ -2700,6 +2729,29 @@ function bootstrapTable() {
     hideModal('bot-move');
     if (!session) return;
     session.continueBotPlay();
+    autosave();
+    rerender();
+    showBotMoves();
+  }
+
+  /**
+   * Undo (zlecenie właściciela 2026-11-06): przycisk [←] w górnej belce
+   * cofa partiię do początku tury. Sesja przywraca stan z migawki (ziarno +
+   * prefiks komend, ADR 0005) i STOI w pauzie granicy tury — więc zaraz po
+   * kliknięciu otwieramy panel „Rozgrywka” z nagłówkiem „Tura N — …”
+   * i przyciskiem „Rozumiem” (showBotMoves), dokładnie jak przy zwykłym
+   * otwarciu tury. Kolejne kliknięcia [←] schodzą o turę wcześniej, aż do
+   * początku meczu; dalej przycisk jest wyłączany (rerender).
+   */
+  function undoTurnClick() {
+    if (!session?.canUndoTurn) return;
+    const result = session.undoToTurnStart();
+    if (!result.ok) {
+      rerender();
+      return;
+    }
+    // Pełny bufor modala wraca — pokazujemy od nagłówka tury.
+    botMovesPainted = 0;
     autosave();
     rerender();
     showBotMoves();
@@ -3137,7 +3189,10 @@ function bootstrapTable() {
   function openNestedManaWizard(descriptor) {
     if (!els.manaWizardBody) return;
     if (manaWizardDescriptor) manaWizardParents.push(manaWizardDescriptor);
-    manaWizardDescriptor = descriptor;
+    // F-CYK (audyt PR #180): linia odcięcia dla drenażu triggerów z płatności
+    // w finishWizardPayment — wpisy dodane OD TEJ CHWILI są częścią płatności
+    // i mają rozstrzygnąć się PRZED komitowaną komendą (CR 603.3 + 117.5).
+    manaWizardDescriptor = { ...descriptor, stackAtOpen: session?.state?.zones?.stack?.length ?? 0 };
     refreshManaWizard();
     showModal('mana-wizard');
   }
@@ -3161,7 +3216,10 @@ function bootstrapTable() {
 
   function openManaWizard(descriptor) {
     if (!els.manaWizardBody) return;
-    manaWizardDescriptor = descriptor;
+    // F-CYK (audyt PR #180): jak w openNestedManaWizard — stackAtOpen oddziela
+    // triggery z tej płatności od wpisów, na które gracz ODPOWIADA (te zostają
+    // pod komendą; drenuje się tylko nadłożone w trakcie płatności).
+    manaWizardDescriptor = { ...descriptor, stackAtOpen: session?.state?.zones?.stack?.length ?? 0 };
     refreshManaWizard();
     showModal('mana-wizard');
   }
@@ -3226,7 +3284,11 @@ function bootstrapTable() {
         // Zdolność many jest tylko kolejnym krokiem wstrzymanej płatności.
         // Auto-pass sesji mógłby opuścić krok i wyczyścić pulę, zanim
         // nadrzędny kreator zdąży ją wykorzystać (także dla wyciszonej oferty).
-        runCommand: (cmd, options) => playDirect(cmd, nested ? { ...options, holdPriority: true } : options),
+        // F-OGŁ: commit kreatora podrzędnego KONTYNUUJE jednostkę ogłoszeń
+        // (paymentUnit: true nadpisuje 'end' z finishWizardPayment) — po nim
+        // rodzic dalej dopłaca i dopisuje do TEJ SAMEJ jednostki; zamyka ją
+        // dopiero commit kreatora nadrzędnego (opcje bez nadpisania).
+        runCommand: (cmd, options) => playDirect(cmd, nested ? { ...options, holdPriority: true, paymentUnit: true } : options),
         onCloseWizard: () => { if (!nested) closeManaWizard(); },
         onSyncUi: () => {
           autosave();
@@ -3250,10 +3312,19 @@ function bootstrapTable() {
       && source.command?.type === 'activate_ability' && source.command?.abilityIndex === selectedCost.abilityIndex
       && source.tapCostChoices?.length);
     if (selectedCost && !selectedSource) delete manaWizardDescriptor._tapCostSelection;
+    // L (zgłoszenie właściciela 2026-11-07, Nature's Embrace): aktywny wybór
+    // koloru grantu many (aura „{T}: Add two mana of any one color” na lądzie).
+    // Ten sam wzorzec invalidacji co _tapCostSelection — jeśli źródło zniknęło
+    // z bieżącej oferty (tapnięte/usunięte), selekcja wygasa zamiast renderować
+    // martwy widok.
+    const selectedGrant = manaWizardDescriptor._grantColorSelection;
+    const selectedGrantSource = selectedGrant && sources.find((source) => source.id === selectedGrant.objectId && source.grant);
+    if (selectedGrant && !selectedGrantSource) delete manaWizardDescriptor._grantColorSelection;
     renderManaWizard(els.manaWizardBody, {
       costStr: manaWizardDescriptor.costStr,
       tapCostSelection: selectedSource
         ? { source: selectedSource, choices: selectedSource.tapCostChoices.map(id => ({ id })) } : null,
+      grantColorSelection: selectedGrantSource ? { source: selectedGrantSource } : null,
       remainingTotal: progress.remainingTotal,
       requirements: progress.requirements,
       // G (zgłoszenie właściciela): brakujące KOLORY jadą do renderu — wiersz
@@ -3291,6 +3362,17 @@ function bootstrapTable() {
           refreshManaWizard();
           return;
         }
+        // L (zgłoszenie właściciela 2026-11-07, Nature's Embrace): wiersz
+        // grantu aury na lądzie („{T}: Add two mana of any one color")
+        // wymaga KOLORU od gracza. Deterministyczny tap_for_mana bez
+        // grantColor uruchomiłby własną (dominowaną) zdolność lądu — 1 manę
+        // pierwotnego koloru. Drugi stopień wybiera kolor; dopiero wtedy
+        // leci komenda z grantColor.
+        if (src.grant && !selectedCommand?.grantColor) {
+          manaWizardDescriptor._grantColorSelection = { objectId: src.id };
+          refreshManaWizard();
+          return;
+        }
         const plan = manaSourceTapPlan(src) ?? {
           command: { type: 'tap_for_mana', playerId: HUMAN_ID, objectId }, nested: false,
         };
@@ -3307,7 +3389,8 @@ function bootstrapTable() {
         }
         // Kolor tapniętego źródła trafia do KOLOROWEJ PULI (engine), więc pokrycie
         // kolorów liczy się samo z puli — bez śledzenia committed (cz. 8).
-        playDirect(plan.command, { holdPriority: true });
+        // F-OGŁ: tapnięcie źródła = krok płatności (jednostka ogłoszeń).
+        playDirect(plan.command, { holdPriority: true, paymentUnit: true });
         refreshManaWizard();
       },
       onSelectTapCost: (creatureId) => {
@@ -3320,11 +3403,31 @@ function bootstrapTable() {
           && source.command?.type === 'activate_ability' && source.command?.abilityIndex === selection.abilityIndex);
         const cmd = resolveManaSourceTapCost(latestSource, creatureId, session.view());
         delete manaWizardDescriptor._tapCostSelection;
-        if (cmd) playDirect(cmd, { holdPriority: true });
+        if (cmd) playDirect(cmd, { holdPriority: true, paymentUnit: true });
         refreshManaWizard();
       },
       onCancelTapCost: () => {
         if (manaWizardDescriptor) delete manaWizardDescriptor._tapCostSelection;
+        refreshManaWizard();
+      },
+      // L (zgłoszenie właściciela 2026-11-07, Nature's Embrace): kolor grantu
+      // many z aury („two mana of any one color”) — komenda tap_for_mana
+      // niesie grantColor; wybór ponawiamy na aktualnym stanie (fail-closed
+      // jak onSelectTapCost), bo ląd mógł zostać tapnięty w międzyczasie.
+      onSelectGrantColor: (color) => {
+        const selection = manaWizardDescriptor?._grantColorSelection;
+        if (!selection) return;
+        const latestSources = manaSourcesForPlayer(selfTapExclusionFor(manaWizardDescriptor.cmd));
+        const latestSource = latestSources.find((source) => source.id === selection.objectId && source.grant);
+        delete manaWizardDescriptor._grantColorSelection;
+        if (latestSource && ['W', 'U', 'B', 'R', 'G'].includes(color)) {
+          playDirect({ type: 'tap_for_mana', playerId: HUMAN_ID, objectId: latestSource.id, grantColor: color },
+            { holdPriority: true, paymentUnit: true });
+        }
+        refreshManaWizard();
+      },
+      onCancelGrantColor: () => {
+        if (manaWizardDescriptor) delete manaWizardDescriptor._grantColorSelection;
         refreshManaWizard();
       },
       onToggleDelve: (objectId, on) => {
@@ -3576,6 +3679,8 @@ function bootstrapTable() {
     //     zamkniecia mial jedna konsekwencje bez wzgledu na to, czy gracz
     //     trafil w tlo czy w X.
     const botMoveOk = el('bot-move-ok');
+    // Undo: jeden klik = jeden krok wstecz (do początku poprzedniej tury).
+    if (els.undoTurn) els.undoTurn.addEventListener('click', undoTurnClick);
     if (botMoveOk) botMoveOk.addEventListener('click', closeBotMoveModalResume);
     const botMoveClose = el('bot-move-close');
     if (botMoveClose) botMoveClose.addEventListener('click', closeBotMoveModalPause);

@@ -5,7 +5,7 @@
 // resolves\" nie zachodzą:
 // - rebound (CR 702.88a: „exile it as it resolves\") — dawniej fizzle
 //   wyganiał kartę z reboundReady (darmowy rzut w następnym upkeepie),
-// - przygoda (CR 715.3d) — dawniej fizzle wyganiał kartę „on an adventure\"
+// - przygoda (CR 716.3d) — dawniej fizzle wyganiał kartę „on an adventure\"
 //   (stwór do rzucenia z wygnania).
 // CR 702.34a (flashback): „exile this card instead of putting it anywhere
 // else any time it would leave the stack\" — także po KONTRZE (strażnik:

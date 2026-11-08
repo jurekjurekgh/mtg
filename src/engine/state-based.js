@@ -72,7 +72,7 @@ export function stateBasedActionsOpen(state) {
  * aura trafia do grobu (CR 704.5m).
  */
 /**
- * Zgłoszenie właściciela B2 (2026-09-10) — CR 714.4 (na liście akcji
+ * Zgłoszenie właściciela B2 (2026-09-10) — CR 715.4 (na liście akcji
  * stanowych jako 704.5s): „If the number of lore counters on a Saga permanent
  * with one or more chapter abilities is greater than or equal to its final
  * chapter number, and it isn't the source of a chapter ability that has

@@ -29,7 +29,10 @@ const CHOICE_TYPE_LABELS = Object.freeze({
   scry: 'Scry',
   surveil: 'Surveil — karty do grobu i kolejność na wierzchu',
   clash: 'Clash — wierzch albo spód biblioteki',
-  'room-target': 'Cel pokoju lochu Undercity',
+  // Zgłoszenie „J. Undercity” (2026-11-07): fallback nazywa czynność po
+  // polsku; realny tytuł (z pokojem i efektem) przychodzi z choiceGroupTitle
+  // jako introLabel — to mapa awaryjna, gdy go zabraknie.
+  'room-target': 'Wybór celu — pokój lochu Undercity',
   sacrifice: 'Poświęć stwora (własnego wyboru)',
   phyrexian: 'Płatność phyrexian many ({W/P}: mana albo 2 życia)',
   target: 'Cel',
@@ -62,6 +65,20 @@ const CHOICE_TYPE_LABELS = Object.freeze({
  */
 export function previewCardIdOfOption(option, resolveCardId, view = null) {
   if (!option || typeof option !== 'object' || typeof resolveCardId !== 'function') return null;
+  // I (zgłoszenie właściciela 2026-11-07): „Podziemia — idź do: X” — trasa
+  // wskazuje KARTĘ LOCHU Undercity: specjalną, spoza rejestru (jak Day/Night
+  // czy Poison Counter), więc `resolveCardId` jej nie zna. Zwracamy pseudo-id
+  // rozpoznawany przez warstwę stołu (main.js: hover info + pełny ekran) —
+  // hover na nazwie ścieżki pokazuje ten sam druk, co panel Undercity.
+  // Wcześnie, bo identyfikator nie przechodzi przez tłumacza kart.
+  if (option.type === 'resolve_undercity_route') return 'undercity';
+  // K (zgłoszenie właściciela 2026-11-07): kolejność zdolności — wybór dotyczy
+  // ŹRÓDŁA zdolności (cmd.cardId), a nie jej celu; lupa pokazuje kartę, której
+  // kolejność rozstrzygamy, zanim cele zaciemnią podgląd (polityka „cel przed
+  // źródłem” służy czarom, nie układaniu stosu).
+  if (option.type === 'resolve_trigger_order') {
+    return typeof option.cardId === 'string' ? resolveCardId(option.cardId) : null;
+  }
   const ordered = [
     // cele (zdolności, czary, decyzje wyboru celu)
     ...(Array.isArray(option.targets) ? option.targets : []),

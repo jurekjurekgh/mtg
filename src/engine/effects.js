@@ -59,6 +59,61 @@ export const UNDERCITY_ROOMS = Object.freeze([
   Object.freeze({ name: 'Throne of the Dead Three', effects: Object.freeze([Object.freeze({ type: 'reveal_top_put_creature', amount: 10, counters: '+1/+1', countersAmount: 3, hexproofUntilNextTurn: true })]), leadsTo: Object.freeze([]) }),
 ]);
 
+/**
+ * Polski opis efektu pokoju lochu dla etykiet UI — zgłoszenie „J. Undercity”
+ * (uwaga właściciela 2026-11-07): KAŻDA etykieta wyboru i działania pokoju
+ * musi nazywać POKÓJ i jego EFEKT (dotąd modal pokazywał „Wybierz: Cel
+ * pokoju lochu”, czyli ani o który pokój chodzi, ani co wybór zrobi).
+ * Tekst wyprowadzamy z DANYCH UNDERCITY_ROOMS (L41 — jedno źródło: nowy
+ * pokój nie może zostać z osobną, cicho rozjechaną kopią opisu); nieznany
+ * deskryptor spada na typ efektu, więc opis nigdy nie jest pusty.
+ */
+export function undercityRoomEffectText(roomName) {
+  const room = UNDERCITY_ROOMS.find((entry) => entry.name === roomName);
+  if (!room) return 'efekt pokoju lochu';
+  return room.effects.map(describeRoomEffectForUi).join('; ');
+}
+
+/** Opis JEDNEGO deskryptora efektu pokoju (dane → tekst, bez ręcznej kopii). */
+function describeRoomEffectForUi(effect) {
+  const amount = effect.amount ?? 1;
+  switch (effect.type) {
+    case 'search_library_to_hand':
+      return 'znajdź ląd podstawowy do ręki i przetasuj';
+    case 'add_counter':
+      return `${amount} ${polishPluralOf(amount, 'licznik', 'liczniki', 'liczników')} +1/+1 na wybranym stworze`;
+    case 'scry':
+      return `scry ${amount}`;
+    case 'lose_life':
+      return `wybrany gracz traci ${amount} ${amount === 1 ? 'punkt' : 'punktów'} życia`;
+    case 'goad':
+      return 'wybrany stwór musi atakować do końca tury (goad)';
+    case 'draw_cards':
+      return `dobierz ${amount} ${polishPluralOf(amount, 'kartę', 'karty', 'kart')}`;
+    case 'create_token': {
+      const pt = effect.power != null && effect.toughness != null ? ` ${effect.power}/${effect.toughness}` : '';
+      const keywords = effect.keywords ?? [];
+      const kw = keywords.length > 0 ? ` z ${keywords.join(' i ')}` : '';
+      return `stwórz token ${effect.name ?? 'Skarb'}${pt}${kw}`;
+    }
+    case 'reveal_top_put_creature':
+      return `odsłoń ${amount} ${polishPluralOf(amount, 'kartę', 'karty', 'kart')}, stwór spośród nich`
+        + ` z ${effect.countersAmount ?? 1} ${polishPluralOf(effect.countersAmount ?? 1, 'licznikiem', 'licznikami', 'licznikami')} +1/+1`
+        + (effect.hexproofUntilNextTurn ? ' i hexproof do twojej następnej tury' : '');
+    default:
+      return String(effect.type).replaceAll('_', ' ');
+  }
+}
+
+/** Polska odmiana liczebnika (1 kartę, 2 karty, 5 kart) — helper opisów pokoi. */
+function polishPluralOf(n, one, few, many) {
+  if (n === 1) return one;
+  const last = n % 10;
+  const last2 = n % 100;
+  if (last >= 2 && last <= 4 && (last2 < 12 || last2 > 14)) return few;
+  return many;
+}
+
 /** Wirtualne źródło efektów lochu (nie jest obiektem w strefie — jak emblem). */
 /** Karta-ląd (kind albo typ) — jedno miejsce prawdy dla efektów-reanimacji. */
 function isLandCard(object) {
@@ -2057,7 +2112,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
       ...(src.transformTo ? { transformTo: src.transformTo } : {}),
       // M264/2.3 (CR 707.8a): dwustronny token zna też front pary — inaczej
       // kopia TYLNEJ twarzy nie odróżnia się od zwykłego obiektu na tyle
-      // (MV 0 — CR 202.3b przez copyManaValueOf; reset K5 — CR 712.8a).
+      // (MV 0 — CR 202.3b przez copyManaValueOf; reset K5 — CR 712.6a).
       ...(src.transformTo && src.frontFaceId ? { frontFaceId: src.frontFaceId } : {}),
       // F3 (audyt PR106, CR 707.2 + 614.1d): kopia przejmuje kopiowalny
       // „enters tapped” oryginału — token wchodzi tapnięty (jak Static Net).
@@ -3973,7 +4028,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     // (bez crasha). Pełne B0 (seed 1025, random red vs heuristic green).
     if (!sourceObject || sourceObject.zone !== 'battlefield' || !sourceObject.transformTo) return;
     const target = sourceObject.transformTo;
-    // O-6 (audyt PR #134, CR 712.18): transform NIE tworzy nowego obiektu —
+    // O-6 (audyt PR #134, CR 712.15): transform NIE tworzy nowego obiektu —
     // trwające efekty (animacja, nadpisanie podtypów, modyfikatory, granty)
     // działają dalej na nowej stronie, a `transformTo` zapisuje opuszczaną
     // stronę WYDRUKOWANYMI cechami. Wcześniej cechy drugiej strony szły wprost
@@ -4478,7 +4533,7 @@ function markTemporaryExile(state, exileId, sourceObject) {
     return seen.length > 0;
   }
   if (effect.type === 'take_initiative') {
-    // Audyt PR #168/A-3 (CR 726.2 i CR 726.5): także OBECNY posiadacz może
+    // Audyt PR #168/A-3 (CR 727.2 i CR 727.5): także OBECNY posiadacz może
     // ponownie „take the initiative" i za każdym razem venture'uje. Nie
     // powstaje drugie oznaczenie; zmienia się tylko postęp w lochu.
     const playerId = effect.playerId ?? sourceObject.controllerId;
@@ -5914,7 +5969,7 @@ function markTemporaryExile(state, exileId, sourceObject) {
       enteredOnTurn: state.turn.number,
       // D4b (CR 613.7d): nowy obiekt na polu bitwy = nowy znacznik czasu.
       timestamp: nextTimestamp(state),
-      // Komplet charakterystyk drugiej strony (CR 712.8) — wspólny helper
+      // Komplet charakterystyk drugiej strony (CR 712.6) — wspólny helper
       // niesie też `kind`, którego wcześniej brakowało: strona zmieniająca
       // rodzaj permanentu (Incubator → Phyrexian) wracała z pola bitwy jako
       // obiekt o rodzaju strony przedniej.
@@ -6020,7 +6075,7 @@ function markTemporaryExile(state, exileId, sourceObject) {
     const typesAdd = effect.typesAdd ?? ['Artifact', 'Creature'];
     const types = [...new Set([...(target.types ?? []), ...typesAdd])];
     const subtypes = [...new Set([...(target.subtypes ?? []), ...(effect.subtypesAdd ?? [])])];
-    // O-6 (CR 712.18): warstwa animacji w zapisie cofnięcia — transform
+    // O-6 (CR 712.15): warstwa animacji w zapisie cofnięcia — transform
     // w miejscu nakłada ją na drugą stronę (`transformInPlaceFields`).
     const layer = mergedAnimationLayer(target, {
       power: effect.power ?? 0, toughness: effect.toughness ?? 0,

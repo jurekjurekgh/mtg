@@ -11,9 +11,9 @@ import { createHeuristicBot } from '../src/controllers/heuristic-bot.js';
 
 const REG = createCardRegistry();
 
-function newState() {
+function newState({ step = 'main' } = {}) {
   const state = createGameState({ seed: 42, players: [{ id: 'p1' }, { id: 'p2' }] });
-  state.turn = jumpToStep(state.turn, 'main', 'p1');
+  state.turn = jumpToStep(state.turn, step, 'p1');
   state.turn.activePlayerId = 'p1';
   state.turn.priorityPlayerId = 'p1';
   state.turn.number = 5;
@@ -64,7 +64,11 @@ for (const [id, want] of [['divest', -70], ['dreams-of-steel-and-oil', -70], ['m
   });
 }
 test('F-A2: mindstab w pustke woli suspend (emergentne, nie -70-rzut)', () => {
-  const s = newState(); handCard(s, 'rip', 'mindstab');
+  // H2 (zgłoszenie właściciela 2026-11-07): dodatni scoring suspend istnieje
+  // wyłącznie w Głównej 2 — dopiero tam „wola suspend" jest emergentna
+  // (w Głównej 1 bot po prostu czeka z maną na rozwój, patrz
+  // audyt-pmssb35-odroczenie.test.js, sekcja H2).
+  const s = newState({ step: 'main2' }); handCard(s, 'rip', 'mindstab');
   const { chosen } = scores(s, 'cast_spell(rip');
   assert.equal(chosen.type, 'suspend_card');
 });

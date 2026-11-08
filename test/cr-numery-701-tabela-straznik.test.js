@@ -56,7 +56,7 @@ const POMIN = new Set([
   'test/audyt-pr134-2026-09-24-cytaty-cr.test.js',
 ]);
 
-/** 701.<n> → nazwa akcji, CR 2026-09-25 (Reality Fracture). */
+/** 701.<n> → nazwa akcji, CR 2026-11-06 (bump: sekcja urosła o 701.72 Assimilate). */
 const TABELA_701 = {
   2: 'Activate', 3: 'Attach', 4: 'Behold', 5: 'Cast', 6: 'Counter', 7: 'Create',
   8: 'Destroy', 9: 'Discard', 10: 'Double', 11: 'Triple', 12: 'Exchange',
@@ -72,7 +72,7 @@ const TABELA_701 = {
   55: 'Face a Villainous Choice', 56: 'Time Travel', 57: 'Discover', 58: 'Cloak',
   59: 'Collect Evidence', 60: 'Suspect', 61: 'Forage', 62: 'Manifest Dread',
   63: 'Endure', 64: 'Harness', 65: 'Airbend', 66: 'Earthbend', 67: 'Waterbend',
-  68: 'Blight', 69: 'Heal', 70: 'Recruit', 71: 'Empower Jace',
+  68: 'Blight', 69: 'Heal', 70: 'Recruit', 71: 'Empower Jace', 72: 'Assimilate',
 };
 
 /** Polskie nazwy i odmiany, po których poznajemy akcję w komentarzu. */
@@ -163,7 +163,7 @@ export function znajdzRozjazdy701(linie, nazwaPliku = 'pamiec') {
       if (NUMERY_OGOLNE.has(n)) continue;
       if (WYJATKI_701.some((w) => w.wzorzec.test(linia))) continue;
       if (!(n in TABELA_701)) {
-        trafienia.push(`${nazwaPliku}:${i + 1} — 701.${n} nie istnieje w CR 2026-09-25 (sekcja 701 kończy się na 701.71)`);
+        trafienia.push(`${nazwaPliku}:${i + 1} — 701.${n} nie istnieje w CR 2026-11-06 (sekcja 701 kończy się na 701.72)`);
         continue;
       }
       const okno = linie.slice(Math.max(0, i - OKNO), i + OKNO + 1).join('\n');
@@ -190,7 +190,7 @@ function pliki() {
   return out.filter((p) => !POMIN.has(path.relative(ROOT, p))).sort();
 }
 
-test('CR 701.x: każdy cytat siedzi przy nazwie akcji z BIEŻĄCEGO wydania CR (2026-09-25)', () => {
+test('CR 701.x: każdy cytat siedzi przy nazwie akcji z BIEŻĄCEGO wydania CR (2026-11-06)', () => {
   const trafienia = [];
   for (const plik of pliki()) {
     const rel = path.relative(ROOT, plik);
@@ -225,7 +225,7 @@ test('CR 701.x: detektor łapie podstawione rozjazdy (dowód RED bez mutacji rep
 });
 
 test('CR 701.x: tabela i skan nie są puste (kontrola własna, L5)', () => {
-  assert.ok(Object.keys(TABELA_701).length >= 70, 'tabela 701.x ma 70 wpisów z CR 2026-09-25');
+  assert.ok(Object.keys(TABELA_701).length >= 71, 'tabela 701.x ma 71 wpisów z CR 2026-11-06 (701.2–701.72)');
   assert.ok(WYJATKI_701.every((w) => w.powod && w.powod.length > 10), 'każdy wyjątek ma powód');
   const lista = pliki();
   assert.ok(lista.filter((p) => p.includes(`${path.sep}src${path.sep}`)).length > 40, 'skanuje src/');

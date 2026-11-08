@@ -20,7 +20,7 @@ export function createCardInstance({ id, cardId, ownerId }) {
 
 /**
  * CR 202.3b (M258): koszt many (proxy MV) KOPII obiektu gry. Permanent z tyłem
- * karty dwustronnej w górę sam nosi koszt przedniej strony (712.8e — transform
+ * karty dwustronnej w górę sam nosi koszt przedniej strony (712.6d — transform
  * kosztu nie zmienia), ale jego kopia ma MV 0 („...the mana value of the copy
  * is 0"). Wykrywanie tyłu: cardId ≠ frontFaceId. Jedna reguła dla wszystkich
  * ścieżek kopiowania (token-kopia Cogworka, „enter as copy" Jwari, token_clone
@@ -126,7 +126,7 @@ export function createGameObject({ id, instanceId, cardId, controllerId, zone, p
     ward: ward ?? null,
     keywords: Object.freeze([...keywords]), subtypes: Object.freeze([...subtypes]),
     transformTo,
-    // M257/K5 (CR 712.8a): id twarzy PRZEDNIEJ pary transform — engine resetuje
+    // M257/K5 (CR 712.6a): id twarzy PRZEDNIEJ pary transform — engine resetuje
     // na nią DFC opuszczający pole bitwy tyłem (obrócony wilkołak na ręce).
     frontFaceId,
     // M158/Batch 39: tymczasowe nadpisanie podtypów + utrata keywordów (EOT).

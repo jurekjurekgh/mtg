@@ -1,7 +1,7 @@
 /**
  * Pin O-6 z audytu PR #134 (docs/audits/AUDYT_PR134_2026-09-24.md, §5/O-6).
  *
- * CR 712.18 (CR 2026-09-25, dosłownie): „When a double-faced permanent
+ * CR 712.15 (CR 2026-09-25, dosłownie): „When a double-faced permanent
  * transforms or converts, it doesn’t become a new object. Any effects that
  * applied to that permanent will continue to apply to it.”
  *
@@ -59,13 +59,13 @@ function wilkolak(state, id = 'w') {
 // pomiar w katalogu: druga strona 5/5 Werewolf), a Batch 59/G1.10 wprowadził
 // bramkę z rulingu MID 2021-09-24 — permanent daybound/nightbound obraca
 // WYŁĄCZNIE para tych zdolności. Flaga mówi „to ten legalny obrót"; reszta
-// ścieżki (transformInPlaceFields, CR 712.18) jest dokładnie ta sama.
+// ścieżki (transformInPlaceFields, CR 712.15) jest dokładnie ta sama.
 const transformuj = (state, id = 'w') => applyEffect(state, { type: 'transform', dayNightDriven: true }, state.objects.get(id), []);
 const animuj = (state, id = 'w') => animatePermanentUntilEndOfTurn(state, id, {
   power: 2, toughness: 2, typesAdd: ['Artifact', 'Creature'], retainTypes: true,
 });
 
-test('O-6/1: animacja PRZECHODZI przez transform w miejscu (CR 712.18)', () => {
+test('O-6/1: animacja PRZECHODZI przez transform w miejscu (CR 712.15)', () => {
   const state = gra();
   wilkolak(state);
   animuj(state);
@@ -110,7 +110,7 @@ test('O-6/3: powrotny transform przywraca WYDRUKOWANĄ przednią stronę (transf
   assert.deepEqual(o.subtypes, ['Human', 'Soldier', 'Werewolf']);
 });
 
-test('O-6/4: modyfikator +2/+2 do końca tury przechodzi przez transform (przykład z CR 712.18)', () => {
+test('O-6/4: modyfikator +2/+2 do końca tury przechodzi przez transform (przykład z CR 712.15)', () => {
   const state = gra();
   wilkolak(state);
   modifyStats(state, 'w', { power: 2, toughness: 2 });
