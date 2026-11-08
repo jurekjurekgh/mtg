@@ -125,3 +125,21 @@ test('CR/715: Saga dostaje licznik lore w precombat main (715.3c), nie „po kro
   assert.ok(!uzasadnienie.test(tekst),
     'licznik lore Sag to 715.3c (precombat main), nie 715.3b + „after your draw step”');
 });
+
+test('CR/732.2c: cytat stoi przy sprawdzeniu w untapie, nie przy wejściu (F-1 audytu #182)', () => {
+  const tekst = readFileSync('src/engine/triggers.js', 'utf8');
+  // Prawdziwy dom 732.2c („If it's neither day nor night, this check
+  // doesn't happen"): wczesny powrót w applyDayNightAtTurnStart.
+  const start = tekst.indexOf('export function applyDayNightAtTurnStart');
+  assert.ok(start >= 0, 'applyDayNightAtTurnStart istnieje');
+  const cialo = tekst.slice(start, tekst.indexOf('\n}\n', start) + 3);
+  assert.ok(cialo.includes('732.2c'), '732.2c cytowane w applyDayNightAtTurnStart');
+  // Blok ETB (designation=null) implementuje 702.145d/g (wejście ustawia
+  // dzień ALBO noc), nie regułę sprawdzenia w untapie.
+  const etb = tekst.indexOf('state.dayNight === null');
+  assert.ok(etb >= 0, 'blok ETB designation=null istnieje');
+  const okno = tekst.slice(Math.max(0, etb - 600), etb + 600);
+  assert.ok(!okno.includes('732.2c'), 'blok ETB nie cytuje 732.2c (to reguła untapu)');
+  assert.ok(okno.includes('702.145d') && okno.includes('702.145g'),
+    'blok ETB cytuje 702.145d (dzień) i 702.145g (noc)');
+});

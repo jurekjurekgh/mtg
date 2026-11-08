@@ -23,7 +23,7 @@
 ## 2026-11-08 — audyt scalonego PR #181, audyt bumpu CR i luka pokrycia Undo (PR #182, sesja arena/ac2d985a-mtg)
 
 - **Zakres:** ADR 0020 — audyt poprzedniego scalonego PR (#181: 88 plików,
-  +4636/−235, 23 commity, scalenie `5f8ede8`) + pętla jakości (ADR 0021).
+  +4636/−235, 24 commity, scalenie `5f8ede8`) + pętla jakości (ADR 0021).
   Plan: `docs/plans/PLAN_2026-11-08-audyt-pr181.md`.
 - **Audyt #181:** `docs/audits/AUDYT_PR181_2026-11-08.md` +
   `docs/audits/PR181_MAPA_PLIKOW_2026-11-08.md` (mapa **88/88**). Werdykt
@@ -19394,3 +19394,5 @@ Audyt #177 A79: Ward i ręczna mana Sciona, atomowość błędnej płatności; h
 - 2026-11-05 — Zgłoszenie D/10–11: K5 (kontrczary) zamknięte pomiarem bez luki; K6 — instant-tokeny we własnym podtrzymaniu trzymane (`tokenUpkeepHoldPenalty`), K6/1–K6/3 3/3 z mutacją, fast 9996/9996, test:all 10264/10264. Roadmapa audytu instantów K1–K6 domknięta.
 
 - 2026-11-05 — Zgłoszenie E (Inferno Titan): modal podziału obrażeń otwierał ptaszkowy kreator „do N celów” zamiast kreatora kwot (kolejność gałęzi w openChoiceRequest) — gracz mógł wybrać tylko 0 albo 3 cele, a podział był wymuszony 1/1/1. Gałąź damage_division przesunięta przed kreatory ptaszkowe; kreator podziału pozwala potwierdzić zero celów (trigger „up to”). Testy E/1–E/4 5/5 z mutacją, fast 10001/10001, test:all 10269/10269, build 77/5714,6 kB.
+
+- 2026-11-08 — Audyt PR #182 (sesja `arena/dbe29e6d-mtg`, PR #183): mapa 17/17 + raport; F-1 (komentarz ETB dnia/nocy → 702.145d/g, 732.2c przy `applyDayNightAtTurnStart` + pin), F-2 (4 korekty dokumentów #182: 24 commity, metoda mapowania, parafraza 732.2c, 712.6a), O-2 (glosa L14); E2: 3 partie Żywego Testera (0 zgłoszeń detektorów) znalazły E2/BM — Gruul Beastmaster pompował sam siebie (cel w schemacie czarów zamiast `trigger.requiresTarget`); naprawa + klasyfikator znaku dynamicznych kwot pumpa + 5 pinów; brama c5: 10139/10139, build 5802,6 kB.

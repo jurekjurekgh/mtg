@@ -4802,8 +4802,11 @@ export const REAL_CARDS = Object.freeze([
     abilities: [
       createAbility({
         type: ABILITY_TYPE.triggered,
-        trigger: { event: 'attacks' },
-        targets: [{ type: 'creature_you_control', notSelf: true }],
+        // E2 (Żywy Tester, audyt PR #182): cel MUSI mieszkać w
+        // `trigger.requiresTarget` — ability-level `targets:` na triggerze
+        // jest cicho ignorowane (tryFire czyta tylko requiresTarget) i pump
+        // spadał na źródło (samopompa zamiast „another target creature”).
+        trigger: { event: 'attacks', requiresTarget: { type: 'creature_you_control', notSelf: true } },
         effect: { type: 'pump', power: 'source_power', toughness: 0 },
       }),
     ],

@@ -1062,6 +1062,11 @@ obowiązywać, druga znikała razem z nią.
   warunkiem, a nadmiar nie jest jawną pozycją przydziału (silnik liczy go jako
   `remaining`), więc nikt go nie sprawdzał.
 
+**Wzorzec:** reguła B obowiązywała „przy okazji” reguły A. Kod nie był zły,
+był NIEDOSPECYFIKOWANY — w miejscu, gdzie testy przechodziły, bo szczęśliwa
+ścieżka pokrywała obie naraz. (Przeniesione z `docs/LESSONS.md` w passie
+kondensacyjnej 2026-11-08; odtworzone w audycie #182, O-2.)
+
 **Nie każdy trop to błąd:** crew/saddle przeszło 9 sprawdzeń (timing, stos,
 chore stwory, „other creatures", typ Artifact, cleanup) BEZ znalezisk — warto
 to zapisać, żeby następna sesja nie badała drugi raz. Pilnuj tylko, by narzędzie
