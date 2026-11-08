@@ -125,6 +125,8 @@ function bootstrapTable() {
   const el = (id) => document.getElementById(id);
   const els = {
     banner: el('banner'),
+    // Undo (zlecenie właściciela 2026-11-06): przycisk w górnej belce.
+    undoTurn: el('undo-turn'),
     stackZone: el('stack-zone'),
     bfEnemy: el('bf-enemy'),
     bfOwn: el('bf-own'),
@@ -2519,6 +2521,9 @@ function bootstrapTable() {
   }
 
   function rerender() {
+    // Undo: przycisk jest żywy tylko w trakcie partii z punktem zaczepienia
+    // (pauza granicy tury, M261). Bez sesji / bez migawek — wyłączony.
+    if (els.undoTurn) els.undoTurn.disabled = !session?.canUndoTurn;
     if (!session) return;
     updateTurnIndicator();
     // M386/A2 (zgłoszenie właściciela 2026-09-18, partia seed 596891): awaria
@@ -2724,6 +2729,29 @@ function bootstrapTable() {
     hideModal('bot-move');
     if (!session) return;
     session.continueBotPlay();
+    autosave();
+    rerender();
+    showBotMoves();
+  }
+
+  /**
+   * Undo (zlecenie właściciela 2026-11-06): przycisk [←] w górnej belce
+   * cofa partiię do początku tury. Sesja przywraca stan z migawki (ziarno +
+   * prefiks komend, ADR 0005) i STOI w pauzie granicy tury — więc zaraz po
+   * kliknięciu otwieramy panel „Rozgrywka” z nagłówkiem „Tura N — …”
+   * i przyciskiem „Rozumiem” (showBotMoves), dokładnie jak przy zwykłym
+   * otwarciu tury. Kolejne kliknięcia [←] schodzą o turę wcześniej, aż do
+   * początku meczu; dalej przycisk jest wyłączany (rerender).
+   */
+  function undoTurnClick() {
+    if (!session?.canUndoTurn) return;
+    const result = session.undoToTurnStart();
+    if (!result.ok) {
+      rerender();
+      return;
+    }
+    // Pełny bufor modala wraca — pokazujemy od nagłówka tury.
+    botMovesPainted = 0;
     autosave();
     rerender();
     showBotMoves();
@@ -3651,6 +3679,8 @@ function bootstrapTable() {
     //     zamkniecia mial jedna konsekwencje bez wzgledu na to, czy gracz
     //     trafil w tlo czy w X.
     const botMoveOk = el('bot-move-ok');
+    // Undo: jeden klik = jeden krok wstecz (do początku poprzedniej tury).
+    if (els.undoTurn) els.undoTurn.addEventListener('click', undoTurnClick);
     if (botMoveOk) botMoveOk.addEventListener('click', closeBotMoveModalResume);
     const botMoveClose = el('bot-move-close');
     if (botMoveClose) botMoveClose.addEventListener('click', closeBotMoveModalPause);
