@@ -29,29 +29,29 @@ Bez nowych kart (ADR 0029), pełnego B0 (ADR 0018), scalania i force push.
   ADR-y, LESSONS (2267 linii), ENVIRONMENT (225 linii); następnie #183
   (opis, REST, cały diff) i najnowszy handoff.
 - [x] Rozpoznanie i własne bramki bazowe.
-- [ ] Ten plan jako osobny commit, push gałęzi sesji i otwarcie jednego PR.
+- [x] Ten plan jako osobny commit, push gałęzi sesji i otwarcie jednego PR.
 
 ## E1. Audyt każdego pliku #183 względem jego bazy
 
-- [ ] Mapa **13/13** w `docs/audits/PR183_MAPA_PLIKOW_2026-11-08.md`:
+- [x] Mapa **13/13** w `docs/audits/PR183_MAPA_PLIKOW_2026-11-08.md`:
   zakres zmiany, sprawdzony kontrakt, werdykt i dowód. Nie zamykam
   wiersza samym uruchomieniem testów.
-- [ ] `card-data.js`: porównanie Beastmastera z lokalnym snapshotem Oracle
+- [x] `card-data.js`: porównanie Beastmastera z lokalnym snapshotem Oracle
   i jego rulingami; choice celu, `notSelf`, brak celu, X przy rozstrzyganiu,
   LKI oraz przypadek ujemnej mocy źródła. Sprawdzić cały łańcuch triggera,
   nie tylko obecność `requiresTarget`.
-- [ ] `effect-intent.js`: znak obu delt, liczniki i mnożniki, nieznane
+- [x] `effect-intent.js`: znak obu delt, liczniki i mnożniki, nieznane
   deskryptory; porównanie z konsumentami intencji i wyceny. Sprawdzić,
   czy klasyfikacja nie obiecuje zachowania, którego resolver nie wykonuje.
-- [ ] `triggers.js` i pin cytatu dnia/nocy: dosłowny tekst CR 732.2c,
+- [x] `triggers.js` i pin cytatu dnia/nocy: dosłowny tekst CR 732.2c,
   702.145d/g z wydania przypiętego w repo; mutacja komentarza ma dać RED.
-- [ ] Pozostałe 9 plików dokumentów/testów: spójność opisów z diffem,
+- [x] Pozostałe 9 plików dokumentów/testów: spójność opisów z diffem,
   zachowanie faktów przy kondensacji, liczby z REST, zakres twierdzeń
   i domknięcie zgłoszeń. Nie przepisywać historii w celu upiększenia raportu.
-- [ ] Nowe testy E2/BM-1…5 oraz CR/732.2c: odtworzyć RED przeciw konkretnym
+- [x] Nowe testy E2/BM-1…5 oraz CR/732.2c: odtworzyć RED przeciw konkretnym
   zmianom #183, przywrócić zielony kod. Kopie mutowanych plików zrobić
   przed edycją; po każdej mutacji sprawdzić zakres diffu i czystość po cofnięciu.
-- [ ] Raport `docs/audits/AUDYT_PR183_2026-11-08.md`: stan przed/po,
+- [x] Raport `docs/audits/AUDYT_PR183_2026-11-08.md`: stan przed/po,
   wynik każdego sprawdzenia, dowody mutacyjne, ograniczenia audytu.
   Znalezione błędy naprawić od razu, osobnymi commitami, bez zmiany ADR
   i bez nowych powodów `limitations`.
@@ -62,12 +62,11 @@ zielone na każdym opublikowanym przyroście.
 
 ## E2. Naprawy wynikające z audytu (przed dalszą pętlą)
 
-Kandydat do weryfikacji, jeszcze NIE potwierdzone znalezisko: resolver
-`source_power` zwraca efektywną moc bez dolnego zera, a ruling Beastmastera
-mówi, że ujemne X liczy się jako zero. Sprawdzić pełną ścieżką `execute`,
-odróżnić winę danych od resolvera i objąć właściwą rodzinę efektów.
+Potwierdzone F1/F2 reprodukcjami `.arena/repro-pr183.mjs` (raport §4/§5):
+ujemne `source_power` daje ujemną deltę, a dynamiczny pump nie dociera do
+oferty/wyceny celu. Naprawy poniżej, każda z pinami i mutacją.
 
-- [ ] Pobrać aktualne CR i rulingi dołączane do dowodu (ADR 0030); nie
+- [x] Pobrać aktualne CR i rulingi dołączane do dowodu (ADR 0030); nie
   cytować z pamięci. Jeśli źródło niedostępne, nie wdrażać zmiany regułowej.
 - [ ] Test odtwarzający błąd na zamrożonej bazie, dopiero potem chirurgiczna
   naprawa u źródła; pin legalnej dodatniej pompy i przypadku bez celu.
