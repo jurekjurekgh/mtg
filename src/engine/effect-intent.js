@@ -61,6 +61,35 @@ export function counterIsHostile(counter) {
 }
 
 /**
+ * E2 (Żywy Tester, audyt PR #182, Gruul Beastmaster): ZNAK delty P/T dla
+ * klasyfikacji intencji. Liczby wprost; DYNAMIKI po górnej granicy wiedzy
+ * statycznej (klasyfikator nie ma stanu gry — jak bot w PMSSB-71/F0, który
+ * `source_power` rozwiązuje względem definicji źródła):
+ * - 'source_power' — moc źródła (dodatnia w typowym stanie; debuff
+ *   spychający moc poniżej 0 to narożnik „KTÓRY własny”, nie „CZYJA strona”
+ *   — X=0 jest nieszkodliwym noopem, a spec celu i tak ogranicza wybór);
+ * - 'card_types_in_all_graveyards' — liczba typów kart ≥ 0 (Altar of the Goyf);
+ * - {kind:'permanent_count', multiplier} — liczba obiektów ≥ 0, więc znak =
+ *   znak mnożnika (mnożnik −2 to debuff = wrogi).
+ * Nieznana dynamika → ani ujemna, ani dodatnia: strażnik klasyfikacji
+ * zawoła wtedy o świadome rozszerzenie, zamiast cichej domyślności.
+ */
+function pumpDeltaIsNegative(value) {
+  if (value == null) return false;
+  if (typeof value === 'number') return value < 0;
+  if (value === 'source_power' || value === 'card_types_in_all_graveyards') return false;
+  if (value?.kind === 'permanent_count') return (value.multiplier ?? 1) < 0;
+  return false;
+}
+
+function pumpDeltaIsPositive(value) {
+  if (typeof value === 'number') return value > 0;
+  if (value === 'source_power' || value === 'card_types_in_all_graveyards') return true;
+  if (value?.kind === 'permanent_count') return (value.multiplier ?? 1) > 0;
+  return false;
+}
+
+/**
  * Pojedynczy efekt wrogi wobec swojego celu (M156 — wydzielone dla
  * strażnika klasyfikacji i triggerTargetEffectFriendly; JEDNA prawda,
  * nie trzy kopie — por. L41). Ujemny pump i wrogi licznik to efekty wrogie
@@ -70,10 +99,10 @@ export function triggerEffectIsHostile(effect) {
   if (!effect?.type) return false;
   if (effect.type === 'lose_life' && effect.scope === 'target') return true;
   if (HOSTILE_TRIGGER_TARGET_EFFECTS.has(effect.type)) return true;
-  if (effect.type === 'pump' && ((effect.power ?? 0) < 0 || (effect.toughness ?? 0) < 0)) return true;
+  if (effect.type === 'pump' && (pumpDeltaIsNegative(effect.power) || pumpDeltaIsNegative(effect.toughness))) return true;
   // Batch 52 (Fourth Bridge Prowler): ujemny buff „-1/-1 do końca tury" wobec
   // dowolnego stwora to efekt wrogi — ta sama reguła co ujemny pump (ADR 0002).
-  if (effect.type === 'buff_creature_until_end_of_turn' && ((effect.power ?? 0) < 0 || (effect.toughness ?? 0) < 0)) return true;
+  if (effect.type === 'buff_creature_until_end_of_turn' && (pumpDeltaIsNegative(effect.power) || pumpDeltaIsNegative(effect.toughness))) return true;
   if (effect.type === 'add_counter' && counterIsHostile(effect.counter)) return true;
   return false;
 }
@@ -174,8 +203,8 @@ export function triggerTargetEffectFriendly(ability) {
   // Przyjazny, gdy któryś efekt to pozytywny pump (power/toughness > 0) albo
   // licznik +1/+1 (counter zaczyna się od '+') — celujemy własny stwór.
   return effs.some((e) =>
-    (e?.type === 'pump' && (e.power ?? 0) >= 0 && (e.toughness ?? 0) >= 0
-      && (e.power ?? 0) + (e.toughness ?? 0) > 0)
+    (e?.type === 'pump' && !pumpDeltaIsNegative(e.power) && !pumpDeltaIsNegative(e.toughness)
+      && (pumpDeltaIsPositive(e.power) || pumpDeltaIsPositive(e.toughness)))
     || (e?.type === 'add_counter' && typeof e.counter === 'string' && e.counter.startsWith('+'))
     // Batch 66 (Cazur / Partner with): docelowy gracz przeszukuje WŁASNĄ
     // bibliotekę i bierze kartę do ręki — efekt jest przyjazny właśnie dla
@@ -195,8 +224,8 @@ export function triggerTargetEffectFriendly(ability) {
     // Batch 52: dodatni buff „+X/+Y do końca tury" wobec dowolnego stwora
     // jest przyjazny (ujemny klasyfikuje triggerEffectIsHostile powyżej).
     || (e?.type === 'buff_creature_until_end_of_turn'
-      && (e.power ?? 0) >= 0 && (e.toughness ?? 0) >= 0
-      && (e.power ?? 0) + (e.toughness ?? 0) > 0)
+      && !pumpDeltaIsNegative(e.power) && !pumpDeltaIsNegative(e.toughness)
+      && (pumpDeltaIsPositive(e.power) || pumpDeltaIsPositive(e.toughness)))
     // M407 (uwaga z gry — Shiva/Mesmerize): „Target creature can't be blocked
     // this turn" (deskryptor cant_be_blocked) to DAR przyjazny dla obdarowanego
     // — jak grant_keywords (M156/F1). Bez tej gałęzi friendly=false stawiało
