@@ -675,6 +675,18 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   // utraty ciała musi przebić koszt zaangażowania blokera (bez tego remis
   // z passem rozstrzygała kolejność ofert i bot przepuszczał cały atak).
   'blockFreeAbsorbBonus',
+  // N (zgłoszenie właściciela 2026-11-07): marża, którą wymiana „w górę TMC"
+  // (ginące blokery droższe od atakującego, licząc aury i equipment) musi
+  // przegrać z passem — po cofnięciu nagród wymiany zostają same koszty,
+  // marża zabezpiecza przed remisem rozstrzyganym kolejnością ofert.
+  'uphillTmcTradeMargin',
+  // O (zgłoszenie właściciela 2026-11-07, Lich's Caress): kara za drogi
+  // destroy/exile na cel TAŃSZY niż czar (TMC z aurami i equipmentem) — musi
+  // przebić bazę czaru (~50) i ridery, żeby trzymanie karty wygrywało z
+  // rzutem (skala jak leastPowerRemoveFizzlePenalty). Drugi próg: poniżej
+  // ilu kart w bibliotece trzymanie nie ma sensu (deck-out — trzeba domykać).
+  'removalCheapTargetPenalty',
+  'removalHoldLibraryFloor',
   // PMSSB-32 — produkcja many (`add_mana`). Audyt okien zdolności many:
   // kiedy mana realnie przesuwa próg opłacalności, a kiedy jest „na zapas”
   // (M128). Dwa nowe wymiary po pomiarze PRZED:
@@ -1321,6 +1333,13 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   satyrLookBase: 30,
   blockGoodTradePerPoint: 2,
   blockFreeAbsorbBonus: 1,
+  // N: 2 — wystarcza, bo po cofnięciu nagród wariant trzyma już
+  // −blockerValueLost − blockersUsed (zawsze < 0); marża tylko cementuje.
+  uphillTmcTradeMargin: 2,
+  // O: 90 — skala leastPowerRemoveFizzlePenalty (przebija bazę czaru + rider
+  // gain_life); biblioteka: 10 kart ≈ 10 tur do wyliczenia.
+  removalCheapTargetPenalty: 90,
+  removalHoldLibraryFloor: 10,
   // PMSSB-32 (wartości przemyślane, pomiar PRZED:
   // /home/user/scratch/pmssb32-mana-przed.mjs): nowe wymiary to DOPŁATY/KARY
   // nad starą arytmetyką (anty-over-fix — realne odblokowanie liczbowe z

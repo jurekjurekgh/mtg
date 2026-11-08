@@ -104,10 +104,15 @@ test('C2 Tiller of Flesh: czar celujący w GRACZA nie odpala incubate', () => {
   assert.equal(tiller('p2'), tiller('p2', { boardPayoffWeight: 0 }));
 });
 
-test('C3 Merciless Repurposing: czar liczy incubate 3 (PRZED 92, PO 120 = +30 −2 koszt przemiany)', () => {
+test('C3 Merciless Repurposing: czar liczy incubate 3 (+30 −2 koszt przemiany), cel TMC 6 = koszt czaru (O)', () => {
   const s = game();
   lands(s, 6, 'basic-swamp');
   put(s, 'h0', 'merciless-repurposing');
-  put(s, 'b', 'hill-giant', 'p2', 'battlefield', READY);
-  assert.equal(wynik(s, 'cast_spell(h0->b)'), 120);
+  // O (zgłoszenie właściciela 2026-11-07, Lich's Caress): twardy removal
+  // z ręki trzymamy na cele TMC ≥ kosztu czaru (tu MV 6) — hill giant (MV 4)
+  // dostałby karę „spalenia silnego czaru" (−12 zamiast rzutu), więc pin
+  // inkubate liczymy na celu spełniającym próg: stare 120 + M234 za TMC 6
+  // (removalTmcWeight 2 × +2) = 124.
+  put(s, 'b', 'hill-giant', 'p2', 'battlefield', { ...READY, manaCost: 6 });
+  assert.equal(wynik(s, 'cast_spell(h0->b)'), 124);
 });

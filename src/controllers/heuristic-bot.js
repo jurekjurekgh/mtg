@@ -5789,6 +5789,85 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     return out;
   };
   /**
+   * N (zgłoszenie właściciela 2026-11-07): TMC stwora RAZEM z przypiętymi
+   * aurami i equipmentem — waluta wymiany materialnej. Model właściciela:
+   * „Moja kreatura ma TMC 1, jego 3. Ta wymiana jest mało sensowna" —
+   * P+T (dotychczasowy `blockerValueLost`) to proxy, które licuje ciała,
+   * nie inwestycję: 3/1 za 3 many „kosztuje" 4, a token 1/1 „kosztuje" 2.
+   * Tokeny (manaCost 0) mają TMC z samych załączników — chump tokenem jest
+   * zawsze tani (PMSSB-31: „po to ma te małe token kreatury").
+   */
+  const tmcWithAttachmentsOf = (view, object) => {
+    if (!object) return 0;
+    let tmc = object.manaCost ?? cardDef(object.cardId)?.manaCost ?? 0;
+    for (const attached of view.zones?.battlefield ?? []) {
+      if (attached?.attachedTo !== object.id) continue;
+      if (attached.kind === 'aura' || attached.aura
+        || attached.equipment || (attached.subtypes ?? []).includes('Equipment')) {
+        tmc += attached.manaCost ?? cardDef(attached.cardId)?.manaCost ?? 0;
+      }
+    }
+    return tmc;
+  };
+  /**
+   * O (zgłoszenie właściciela 2026-11-07, Lich's Caress): twarde usuwanie
+   * z RĘKI (destroy/exile) trzymamy na cel WARTY czaru — model właściciela:
+   * „Bot używa jej przeciwko mojej kreaturze 1/1 o TMC 1 (token). To bez
+   * sensu. Marnuje silny czar na jakiś mój badziew. Proponowałbym trzymać
+   * takie czary na kreatury o TMC (z przypiętymi aurami i equipment)
+   * przynajmniej o TMC czaru."
+   *
+   * Wyjątki właściciela (usuwamy mimo niskiego TMC celu):
+   *  - presja niskiego życia (<10, ta sama granica co N — wymiana w górę
+   *    TMC w blokach), wtedy każde tempo się liczy;
+   *  - mało kart w bibliotece (deck-out — trzeba domykać partię, trzymanie
+   *    karty w ręce nie ratuje przed wyliczeniem);
+   *  - cel wyjątkowo zjadliwy: deathtouch, protekcja (Protection — ochrona
+   *    przed kolorami moich stworów, M234 `enemyCreatureUnbeatableInCombat`
+   *    — nie do przejścia w walce; UWAGA właściciela: ochrona przed kolorem
+   *    KARTY niszczącej i tak wyklucza cel z oferty — CR 702.16c — więc nie
+   *    psuje to reguły), ewazja, której moja plansza nie zablokuje („latanie
+   *    gdy bot nie ma latania" — latający zegar, którego nic nie dotknie).
+   *
+   * Bounce NIE podlega regule (własna ekonomika: cel wraca i kosztuje
+   * re-cast, wymiary PMSSB-1). Zdolności aktywowane też nie — nie wydają
+   * KARTY. Koszt progowy = TMC samego czaru (Lich's Caress: 5), więc tanie
+   * removaly praktycznie nie odczuwają reguły, a drogie przestają palić
+   * się o tokeny.
+   */
+  const HARD_REMOVAL_EFFECTS = new Set([
+    'destroy_permanent', 'destroy_if_least_power', 'exile_permanent', 'exile_target_creature',
+  ]);
+  const removalTargetEvadesMyBoard = (view, victim) => {
+    const blockers = myCreatures(view).filter((o) => !o.tapped);
+    // Bez ciał na stole niczego nie zablokuję — ale zwykły 1/1 nie jest
+    // „wyjątkowo zjadliwy"; liczy się sama ewazja (latanie/menace), nie pustka.
+    if (blockers.length === 0) {
+      const kw = victim.keywords ?? [];
+      return kw.includes('flying') || kw.includes('menace');
+    }
+    return !attackerCanBeBlocked(victim, blockers);
+  };
+  const hardRemovalHeldForWorthierTarget = (view, card, victim, effect) => {
+    if (!victim || victim.controllerId === view.playerId) return false;
+    // Właściciel: „trzymać takie czary na KREATURY" — lądy/artefakty mają
+    // własne ekonomiki (M247 czysty ląd, landDenial, ETB artefaktów), a Raze
+    // (niszczenie lądu za ląd) nie jest „paleniem silnego czaru".
+    if (victim.kind !== 'creature' && !(victim.types ?? []).includes('Creature')) return false;
+    if (!HARD_REMOVAL_EFFECTS.has(effect.type)) return false;
+    const spellCost = card?.manaCost ?? (card?.cardId ? cardDef(card.cardId)?.manaCost : 0) ?? 0;
+    if (spellCost <= 0) return false;
+    if (tmcWithAttachmentsOf(view, victim) >= spellCost) return false;
+    // Wyjątki właściciela — najtańsze najpierw.
+    if (myLife(view) < 10) return false;
+    if (myLibraryCount(view) <= P.removalHoldLibraryFloor) return false;
+    const kw = victim.keywords ?? [];
+    if (kw.includes('deathtouch')) return false;
+    if (enemyCreatureUnbeatableInCombat(view, victim)) return false;
+    if (removalTargetEvadesMyBoard(view, victim)) return false;
+    return true;
+  };
+  /**
    * G: „rynek inwestycji” celu bounce. Model właściciela (2026-10-29):
    * ranking permanentów wroga do zwrotu = TMC permanentu + TMC aur +
    * TMC equipmentów + premia za każdy pozytywny licznik. Wcześniej bounce
@@ -13316,22 +13395,33 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
                 score -= P.removalPureLandPenalty;
               } else {
                 const worth = (victim.power ?? 0) + (victim.toughness ?? 0);
-                // PMSSB-63/S: w wymianie ciał (exileSwap) wygnanie wartościowe jak
-                // Austere: karta wroga + jego ciało; baza removalu nie dotyczy, bo
-                // token zastępuje ciało (inaczej 1/1 za token 1/1 = +22).
-                if (exileSwap) score += P.massDestroyCardValue + massDestroyWorth(view, victim);
-                else score += P.removalEnemyBase + P.removalWorthWeight * worth;
-                // M234 — efektywność removalu: TMC (proxy zdolności) + cele „nie
-                // do przejścia" w walce (deathtouch, protekcja od mojego koloru).
-                score += enemyRemovalTargetBonus(view, victim);
-                // PMSSB-4/F-A1 (Divine Offering): MV-ofiary to tez zycie (wczesniej 0).
-                if (effect.type === 'destroy_artifact_gain_life_mana_value') score += gainLifeValue(view, victim.manaCost ?? 0);
-                // PMSSB-1/A: wymiary bounce (skala siły + cel) — tylko dla
-                // efektów odbijających, nie dla destroy/exile.
-                if (BOUNCE_STRENGTH.has(effect.type)) {
-                  score += bounceEffectStrengthBonus(effect.type);
-                  score += bounceTargetAdjustments(view, victim);
-                  bounceCastHadFoeTarget = true; // PMSSB-1/C (F1): timing raz na rzut
+                // O (zgłoszenie właściciela 2026-11-07, Lich's Caress): drogi
+                // destroy/exile na cel TAŃSZY niż czar (TMC z aurami i
+                // equipmentem) to spalenie karty — kara zamiast premii, musi
+                // przebić bazę czaru (~50) i ridery (gain_life), żeby pass
+                // (trzymanie karty w ręce) wygrywał. Wyjątki (presja życia,
+                // deck-out, cel zjadliwy) w `hardRemovalHeldForWorthierTarget`.
+                // Wymiana ciał (exileSwap) ma własną ekonomikę — nie ruszamy.
+                if (!exileSwap && hardRemovalHeldForWorthierTarget(view, card, victim, effect)) {
+                  score -= P.removalCheapTargetPenalty;
+                } else {
+                  // PMSSB-63/S: w wymianie ciał (exileSwap) wygnanie wartościowe jak
+                  // Austere: karta wroga + jego ciało; baza removalu nie dotyczy, bo
+                  // token zastępuje ciało (inaczej 1/1 za token 1/1 = +22).
+                  if (exileSwap) score += P.massDestroyCardValue + massDestroyWorth(view, victim);
+                  else score += P.removalEnemyBase + P.removalWorthWeight * worth;
+                  // M234 — efektywność removalu: TMC (proxy zdolności) + cele „nie
+                  // do przejścia" w walce (deathtouch, protekcja od mojego koloru).
+                  score += enemyRemovalTargetBonus(view, victim);
+                  // PMSSB-4/F-A1 (Divine Offering): MV-ofiary to tez zycie (wczesniej 0).
+                  if (effect.type === 'destroy_artifact_gain_life_mana_value') score += gainLifeValue(view, victim.manaCost ?? 0);
+                  // PMSSB-1/A: wymiary bounce (skala siły + cel) — tylko dla
+                  // efektów odbijających, nie dla destroy/exile.
+                  if (BOUNCE_STRENGTH.has(effect.type)) {
+                    score += bounceEffectStrengthBonus(effect.type);
+                    score += bounceTargetAdjustments(view, victim);
+                    bounceCastHadFoeTarget = true; // PMSSB-1/C (F1): timing raz na rzut
+                  }
                 }
               }
               // Usunięcie źródła linked-exile uruchamia również zwrot z LTB.
@@ -17082,6 +17172,64 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             for (const blockerId of blockerIds) {
               const blocker = objectOnBoard(view, blockerId);
               if (blocker && (hasKeyword(blocker, 'flying') || hasKeyword(blocker, 'reach'))) score += 4;
+            }
+          }
+          // N (zgłoszenie właściciela 2026-11-07): WYMIANA W GÓRĘ TMC.
+          // Bot (20 życia, bez presji) blokował 1/1 TMC 1 swoim 3/1 TMC 3
+          // — „obie giną, marnuje kreaturę i to ma być sens?". Model P+T
+          // (blockerValueLost) wyceniał ciała, nie inwestycję: killing-bonus
+          // za małego atakującego + wchłonięte obrażenia regularnie biły
+          // koszt droższego blokera (pomiar: 2/2 vs 3/1 → +3, blok!).
+          // Reguła właściciela: nieblokowanie, gdy wymiana dotyczy kreatury
+          // o WYŻSZYM TMC (z aurami i equipmentem), chyba że pod presją
+          // życia (<10) albo atak jest śmiertelny (lethalThreat — blok
+          // ratujący życie M146 musi działać zawsze).
+          // Mechanizm: cofamy składniki NAGRODY tej wymiany (wchłonięte
+          // obrażenia, killing-bonus, premia dobrej wymiany, premia za
+          // złapanie latającego) + marża — zostają koszty (−blockerValueLost,
+          // −blockersUsed), więc wariant spada pod pass (0) i przegrywa
+          // z wariantem bez tej wymiany (albo z passem). Świadomie NIE
+          // cofamy: bonusu dies→token (PMSSB-2/C — chump z tokenem-po-śmierci
+          // pozostaje dobry), kar B3/odbicia (i tak ujemne). Tokeny mają
+          // TMC 0 → nigdy nie uruchamiają veto (chump tokenem zawsze legalny).
+          if (myLife(view) >= 10 && !lethalThreat && (exchange.diedBlockerIds ?? []).length > 0) {
+            let dyingTmc = 0;
+            let anyOwn = false;
+            let diesToTokenInsurance = false;
+            for (const diedId of exchange.diedBlockerIds) {
+              const died = objectOnBoard(view, diedId);
+              if (!died || died.controllerId !== view.playerId) continue;
+              anyOwn = true;
+              dyingTmc += tmcWithAttachmentsOf(view, died);
+              // PMSSB-2/C (F8): ginący bloker z dies→token ma UBEZPIECZENIE
+              // — Dissenter zostawia Zombie, Patron Skarb. To nie „marnotrawstwo
+              // droższego blokera", tylko zaplanowana wymiana z odszkodowaniem
+              // (pin właściciela: „chump z Dissenterem JEST dobry").
+              for (const ability of cardDef(died.cardId)?.abilities ?? []) {
+                if (ability?.trigger?.event !== 'dies') continue;
+                const diesEffects = Array.isArray(ability.effect) ? ability.effect : [ability.effect];
+                if (diesEffects.some((e) => e?.type === 'create_token')) diesToTokenInsurance = true;
+              }
+            }
+            // Lustro wyjątku „zjadliwy" z O: zabicie LOTNIKA jest warte wymiany
+            // w górę TMC — reach/latanie blokera to jedyna odpowiedź na ewazję,
+            // której reszta planszy nie zablokuje (Snarespinner vs 3/2 flying).
+            const catchesFlyer = hasKeyword(attackerObj, 'flying')
+              && blockerObjs.some((b) => hasKeyword(b, 'flying') || hasKeyword(b, 'reach'));
+            const attackerTmc = tmcWithAttachmentsOf(view, attackerObj);
+            if (anyOwn && dyingTmc > attackerTmc && !diesToTokenInsurance && !catchesFlyer) {
+              let cancelled = absorbedDamage;
+              if (attackerDies) cancelled += attackerPower * 2 + attackerToughness;
+              if (blockerValueLost > 0 && absorbedDamage > blockerValueLost) {
+                cancelled += (absorbedDamage - blockerValueLost) * P.blockGoodTradePerPoint;
+              }
+              if (hasKeyword(attackerObj, 'flying')) {
+                for (const blockerId of blockerIds) {
+                  const blocker = objectOnBoard(view, blockerId);
+                  if (blocker && (hasKeyword(blocker, 'flying') || hasKeyword(blocker, 'reach'))) cancelled += 4;
+                }
+              }
+              score -= cancelled + P.uphillTmcTradeMargin;
             }
           }
         }
