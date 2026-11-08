@@ -13,7 +13,7 @@ Scalenie `9b9591c`, baza `12aac62`, head `95144f5`. REST: **13 plików, +562/−
 | `docs/plans/PLAN_2026-11-08b-audyt-pr182.md` | +88/−0 | E2/BM wykonane; bot-tie-audit jawnie odstąpiony, nie ukryte otwarte zobowiązanie. |
 | `docs/setup/HANDOFF_2026-11-08.md` | +18/−1 | §6 opisuje #183 i wymagania schema triggera; ostrzeżenie o równoległych edycjach i ulotności .arena zgodne z ENVIRONMENT. |
 | `src/cards/card-data.js` | +5/−2 | Cel przeniesiony do trigger.requiresTarget, notSelf zachowany; BM-1…4 RED na wersji sprzed PR, GREEN po. Oracle zgodny, ale pełny kontrakt ujawnia F1 (ujemne X) i F2 (oferta bez pumpa). |
-| `src/engine/effect-intent.js` | +35/−6 | Znak dynamicznych delt działa dla catálogo-wej rodziny; BM-5 RED na starej wersji. Komentarz o ujemnej mocy błędny (F1); bliźniaczy helper triggerTargetPowerPumpOf nie zna dynamik (F2). |
+| `src/engine/effect-intent.js` | +35/−6 | Znak dynamicznych delt działa dla catálogo-wej rodziny; BM-5 RED na starej wersji. Komentarz o ujemnej mocy błędny (F1); bliźniaczy helper triggerTargetPowerPumpOf nie znał dynamik (F2, naprawione w tej sesji). |
 | `src/engine/triggers.js` | +6/−2 | Wyłącznie komentarze: 732.2c przy untap, 702.145d/g przy ETB. Dosłowny CR pobrany, sha zgodny; CR/732.2c RED na starym komentarzu. |
 | `test/audyt-pr181-cytaty-cr-dzien-noc.test.js` | +18/−0 | Nowy test 5 pinuje właściwy dom cytatu; mutacja komentarza daje RED, przywrócenie GREEN. |
 | `test/zyjwy-tester-gruul-beastmaster.test.js` | +122/−0 | 5 pinów: wybór celu, autocel, brak celu, schema katalogu, znak dynamik. Mutacje karty 4 RED, intencji 1 RED. Luki F1/F2 poza ich zakresem — nowe piny w naprawach. |

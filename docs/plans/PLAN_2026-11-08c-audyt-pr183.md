@@ -70,8 +70,8 @@ oferty/wyceny celu. Naprawy poniżej, każda z pinami i mutacją.
   cytować z pamięci. Jeśli źródło niedostępne, nie wdrażać zmiany regułowej.
 - [x] F1: testy RED na bazie (4/6), wspólny resolver delty + clamp w botcie,
   GREEN 6/6; mutacje resolvera RED 3/6 i bota RED 1/6. Pełna brama + push.
-- [ ] F2: test odtwarzający brak `pump` w ofercie i zły wybór bota, naprawa
-  oferty przez ten sam resolver; mutacja RED → GREEN, pełna brama + push.
+- [x] F2: testy RED na bazie (6/7), resolver w ofercie jedno- i wielocelowej,
+  GREEN 7/7; mutacja oferty RED 4/7. Pełna brama + push.
 
 ## E3. Pętla jakości — inna ścieżka niż poprzednia sesja
 

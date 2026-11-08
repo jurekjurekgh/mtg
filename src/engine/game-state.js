@@ -36,7 +36,7 @@ import { applyDayNightAtTurnStart, applyDeferredTriggerEffects, resolveDelayedRe
 import { moveObjectDirectly, removeFromCombat } from './objects.js';
 import { detachAttachmentsFromHost, effectiveProtectionFromColors, effectiveProtectionQualities, isLegalAuraHost, isLegalAuraPlayerHost } from './attachments.js';
 import { createBattlefieldToken, elseEffectSummary, nextCopyNumber, TREASURE_TOKEN_EFFECT } from './tokens.js';
-import { queueSearchChoice, emitReflexiveSearch, dealNonCombatDamage, librarySearchMatches, revealTopGainLife, enterChosenUndercityRoom, resolveCraftExileOutcome, returnPermanentFromGraveyardOutcome, resolveDamageAmount } from './effects.js';
+import { queueSearchChoice, emitReflexiveSearch, dealNonCombatDamage, librarySearchMatches, revealTopGainLife, enterChosenUndercityRoom, resolveCraftExileOutcome, returnPermanentFromGraveyardOutcome, resolveDamageAmount, resolvePumpDelta } from './effects.js';
 import { changeLife, recordCardDrawn, payEnergyCounters } from './players.js';
 import { shuffle } from './shuffle.js';
 import { applyRoomTargetChoice, applyEffect, applyEnterCounters, drawPlayerCards, manifestCardFaceDown, counterStackObject, shouldAutoDiscard, discardCardsForced } from './effects.js';
@@ -8789,7 +8789,12 @@ export function playerView(state, playerId) {
     const triggerDebuff = triggerTargetDebuffOf(intentAbility);
     // B (Battle-Rattle Shaman): pump siły w komendzie (jak debuff) —
     // bot celuje stwora zdolnego do ataku, nie największego chorego.
-    const triggerPump = triggerTargetPowerPumpOf(intentAbility);
+    // Audyt PR #183/F2: dynamiczny pump siły (Beastmaster `source_power`)
+    // rozwiązuje TEN SAM resolver co efekt (resolvePumpDelta), na żywym
+    // źródle albo LKI — jak triggerDamageField niżej. Bez tego oferta nie
+    // miała `pump` i bot nie stosował polityki ataku (Shaman).
+    const triggerSourceObject = state.objects.get(triggerTargetHead.sourceId) ?? triggerTargetHead.sourceLki ?? null;
+    const triggerPump = triggerTargetPowerPumpOf(intentAbility, (value) => resolvePumpDelta(value, state, triggerSourceObject));
     // C (Academy Journeymage): flaga usunięcia celu (jak friendly —
     // zawsze bool): bot liczy zrywanie aur przyklejonych do celu.
     const triggerRemovesTarget = triggerTargetRemovesTargetOf(intentAbility);
@@ -8814,8 +8819,7 @@ export function playerView(state, playerId) {
       // oferta nie niosła `damage`, a bot omijał wspólną politykę obrażeń i
       // wybierał największe ciało. LKI źródła jak w legalTriggerTargetCandidates
       // (CR 603.10/608.2h) — refleks działa także po śmierci źródła.
-      const source = state.objects.get(triggerTargetHead.sourceId) ?? triggerTargetHead.sourceLki ?? null;
-      const amount = resolveDamageAmount(state, triggerDamageEffect, source, targetId, triggerTargetHead.extra ?? {});
+      const amount = resolveDamageAmount(state, triggerDamageEffect, triggerSourceObject, targetId, triggerTargetHead.extra ?? {});
       return Number.isFinite(amount) ? { damage: amount } : {};
     };
     // M157/F4(a): wielocelowy trigger (count > 1, „each of up to N") —
