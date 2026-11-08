@@ -3063,7 +3063,8 @@ function resolvePermanentSpell(state, stackId, object, before, riotChoices = nul
   for (const ability of object.grantedAbilitiesFromTurn ?? []) {
     if (ability) grantAbilitiesUntilEndOfTurn(state, newId, [ability]);
   }
-  // M68 (daybound, CR 708.9 — „Permanents enter the battlefield nightbound"):
+  // M68 (daybound, CR 702.145b — „If it is night and this permanent is
+  // represented by a double-faced card, it enters transformed"):
   // gdy jest NOC, permanent z daybound wchodzi od razu na nightbound stronę —
   // transform PRZED zdarzeniem wejścia, żeby triggery ETB odpalily się na
   // właściwej stronie (jak w MtG; transform in-place — id bez zmian).

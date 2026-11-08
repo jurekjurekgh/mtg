@@ -5078,7 +5078,8 @@ export const REAL_CARDS = Object.freeze([
  * Nie jest taliowalna; stół renderuje ją jako kartę-obserwator z zaznaczeniem
  * pokoju każdego gracza (M24).
  */
-// M68 — token „Day // Night" (TVOW 21): globalny znacznik dnia/nocy (CR 708.9),
+// M68 — token „Day // Night" (TVOW 21): globalny znacznik dnia/nocy
+// (CR 732.1 — „Day and Night”),
 // renderowany na stole jak karta lochu — front (Day) gdy dzień, back (Night)
 // gdy noc. Pobrane ze Scryfall przez fetch_page.
 export const DAY_NIGHT_TOKEN = Object.freeze({
@@ -9385,7 +9386,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
   }),
 
   // 3. Tireless Hauler // Dire-Strain Brawler (MID) — wilkołak
-  //    daybound/nightbound (wzorzec Ballista Watcher, M68/CR 708.9).
+  //    daybound/nightbound (wzorzec Ballista Watcher, M68/CR 702.145).
   defineCard({
     id: 'tireless-hauler', name: 'Tireless Hauler', set: 'MID',
     types: ['Creature'], subtypes: ['Human', 'Werewolf'], colors: ['G'],

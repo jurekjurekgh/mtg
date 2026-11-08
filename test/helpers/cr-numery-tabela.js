@@ -3,21 +3,26 @@
 //
 // Tabela ISTNIENIA numerów CYTOWANYCH: każdy cytat `CR <numer>` w `src/`,
 // `test/` i `tools/` musi tu być (strażnik: test/cr-numery-istnienie-straznik.test.js).
-// Zawiera TYLKO numery użyte w repo — nie pełny spis reguł CR.
+// Zawiera numery KIEDYKOLWIEK użyte w repo (nie pełny spis reguł CR).
 // Nowy numer dopisuj TYLKO po weryfikacji wobec dosłownego tekstu CR w BIEŻĄCYM
 // wydaniu (ADR 0030; L164 — masowe przenumerowanie bywa o wydanie do tyłu),
 // najlepiej przez `--zapisz` na świeżo pobranym pliku. Powód: audyt PR #135
 // znalazł 16 martwych numerów (F-1), których nie pilnowało nic.
 //
+// UWAGA (audyt PR #181): tabela NIE MALEJE sama — `--zapisz` dopisuje nowe
+// cytaty do już zweryfikowanych, więc po refaktorze numer może zostać jako
+// martwy wpis. To świadome: numer raz potwierdzony w wydaniu nie przestaje
+// istnieć, a skan cytatów pilnuje kierunku „każdy CYTAT jest w tabeli”.
+//
 // Wydanie CR: 2026-11-06
 // SHA-256 pliku CR: d7cdcc11f2b7ab88b1164791dd0cafb6bf0c4e1f0863e0ee6abca2d3a7fb7674
 // Źródło (ADR 0030): mirror nwgarne/mtg-data (rules/cr-raw.txt) — patrz docs/audits/AUDYT_PR135_2026-09-24b.md §0
-// Data pobrania: 2026-11-07
+// Data pobrania: 2026-11-08
 
 export const CR_WYDANIE = "2026-11-06";
 export const CR_SHA256 = "d7cdcc11f2b7ab88b1164791dd0cafb6bf0c4e1f0863e0ee6abca2d3a7fb7674";
 export const CR_ZRODLO = "mirror nwgarne/mtg-data (rules/cr-raw.txt) — patrz docs/audits/AUDYT_PR135_2026-09-24b.md §0";
-export const CR_DATA_POBRANIA = "2026-11-07";
+export const CR_DATA_POBRANIA = "2026-11-08";
 
 export const NUMERY = [
   // 1xx
@@ -500,6 +505,7 @@ export const NUMERY = [
   '702.138',
   '702.138a',
   '702.145',
+  '702.145b',
   '702.145c',
   '702.145d',
   '702.145g',
@@ -575,6 +581,7 @@ export const NUMERY = [
   '715.3',
   '715.3a',
   '715.3b',
+  '715.3c',
   '715.4',
   '716.2a',
   '716.3',
@@ -592,7 +599,10 @@ export const NUMERY = [
   '731.2a',
   '731.2b',
   '731.2c',
+  '732.1',
   '732.2a',
+  '732.2b',
+  '732.2c',
   '733.1',
   '734.1',
   // 8xx
