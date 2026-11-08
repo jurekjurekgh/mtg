@@ -20,6 +20,71 @@
 > nie trafiają do repozytorium".
 
 
+## 2026-11-08 — audyt scalonego PR #181, audyt bumpu CR i luka pokrycia Undo (PR #182, sesja arena/ac2d985a-mtg)
+
+- **Zakres:** ADR 0020 — audyt poprzedniego scalonego PR (#181: 88 plików,
+  +4636/−235, 23 commity, scalenie `5f8ede8`) + pętla jakości (ADR 0021).
+  Plan: `docs/plans/PLAN_2026-11-08-audyt-pr181.md`.
+- **Audyt #181:** `docs/audits/AUDYT_PR181_2026-11-08.md` +
+  `docs/audits/PR181_MAPA_PLIKOW_2026-11-08.md` (mapa **88/88**). Werdykt
+  **pozytywny**: Undo, L (Nature's Embrace), M (Basilisk Gate), N (blokowanie
+  TMC), O (Lich's Caress), H/H1/H2, I, J, J. Undercity, K, F-OGŁ, F-CYK —
+  logika i piny sprawdzone; brak przypadków po nazwie karty w core
+  (ADR 0002); progi wyceny w `heuristic-params.js` z wyjątkami
+  anty-over-fix. Braki procesowe #181 (Undo/L/M/N/O poza opisem PR i bez
+  handoffu) domknięte w tej sesji.
+- **Weryfikacja mutacyjna:** 8 mutacji pinów #181 (L, M, N, O, K, H, J, pin
+  CR) → wszystkie RED po cofnięciu naprawy, GREEN po przywróceniu. Dziewiąta
+  (MUT-UNDO) **nie zapaliła żadnego testu** — patrz niżej.
+- **Bump pinu CR (wydanie 2026-11-06, sha256 `d7cdcc11…`, źródło: mirror
+  `nwgarne/mtg-data` przez REST):** audyt **znaczenia** cytowań (nie tylko
+  istnienia numerów) znalazł **7 miejsc** z numerem istniejącym, ale
+  znaczącym co innego po przesunięciu sekcji 713–733 i restrukturyzacji 712:
+  dzień/noc 730→**732** (732.1/732.2/732.2a-c), 502.2, 702.145b/c, Sagi
+  714→**715** (715.3c), przygody 715→**716**, 712.8a→**712.6a**,
+  712.18→712.15, 726→727, 704.5s/aa. Commit **`cd47193`**: 6 plików `src/`,
+  nowy strażnik `test/audyt-pr181-cytaty-cr-dzien-noc.test.js` (4 testy;
+  `cytatyCr()`/`naruszeniaCytowan`, RED→GREEN potwierdzone mutacją), tabela
+  `tools/cr-numery.mjs` → **575** numerów (`--cr` → „WYNIK: OK”), poprawiony
+  nagłówek tabeli (unię z poprzednimi wydaniami robi `--zapisz` — świadomie).
+  `grep` starych numerów w `src/` → pusto; pozostawione `708.9`
+  (`objects.js:311`, `session.js`) to poprawne cytaty o zakrytych obiektach.
+- **Luka pokrycia Undo (MUT-UNDO) i naprawa:** usunięcie
+  `noteTurnBoundaryPause()` z końca `session.apply()` przechodziło cały
+  zestaw (10 131/10 131). Ta linia jest JEDYNYM źródłem migawki, gdy
+  `turn_started` przyjdzie w strumieniu KOMENDY GRACZA — sesja nie woła
+  wtedy `advance()`. Objaw: po mulliganie, w pauzie nagłówka „Tura 1”,
+  `canUndoTurn === false` → Undo nieaktywne na starcie meczu (wbrew
+  zleceniu „schodzimy aż do początku meczu”). Kod produkcyjny był poprawny;
+  dodano strażnika `test/zgloszenie-undo-granica-tury-z-komendy-gracza.test.js`
+  (pin stanu **w pauzie** + kontrakt „początek tury, którą gracz właśnie
+  zobaczył” i zejście kolejnym kliknięciem do poprzedniej tury); RED po
+  mutacji, GREEN na czystym kodzie. Lekcja: **dopisek do L13** (mutacja
+  „zielona” bywa brakiem pinu w oknie pauzy) + narracja w
+  `docs/LESSONS_PRZYPADKI.md`.
+- **Budżet lektury startowej:** po dodaniu dopisku przekroczony próg 100k
+  (~100,4k) — strażnik `dokumentacja-budzet-lektury` czerwony. Zgodnie z
+  AGENTS.md §0 wykonano **kondensację** (nie podniesienie progu):
+  `Przypadek:` skrócone w L14/L43/L111/L113/L156/L161/L167/L172 oraz
+  L188/L189/L190, reguła L137 scalona; zapas po passie ≈ **0,3k tokenów**
+  (stan nadal „na granicy” — kolejna lekcja wymaga kolejnej passy).
+- **Pętla jakości (Żywy Tester, ADR 0021):** 3 partie (theros|zendikar-rg
+  seed 8801 greedy; wiedzmin-bg|forgotten-realms-wug 7113 explorer;
+  dominaria-brg|forgotten-realms-br 5155 defensive), **0 zgłoszeń
+  detektorów**, transkrypty poza repo. Lektura ręczna: kreatory many,
+  modale celów i mulligan bez zastrzeżeń; suspend (Mindstab) schodzi
+  licznikami 4→3→2 we właściwej fazie; Nature's Embrace na lesie bota daje
+  manę kontrolerowi lądu (CR 113.8) — poprawnie. Brak nowych defektów
+  produktu do naprawy.
+- **Bramy:** `npm test` 10 133/0; `npm run test:all` **10 402/10 402/0/0**
+  (w tym progi `test/bot-benchmark.test.js`); `npm run build` 78 modułów /
+  5 800,5 kB; `cr-numery --cr` OK; golden `83ee50de…` zielony.
+- **Otwarte:** budżet lektury na granicy; suspend instant-speed do
+  uogólnienia przy pierwszej takiej karcie; `turnCheckpoints` bez capa
+  (obserwacja, decyzja właściciela); zgłoszenie J „granica tury bez DFC”
+  wstrzymane.
+
+
 ## 2026-11-07 — zgłoszenie „K“: kolejność równoczesnych zdolności — modal „wskaż kartę: ?” i brak skutku w etykiecie (PR #181, kontynuacja arena/b2771170-mtg)
 
 - **Zgłoszenie:** rozstrzyganie dwóch zdolności triggerowanych atakiem
