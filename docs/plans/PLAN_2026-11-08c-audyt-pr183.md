@@ -75,28 +75,39 @@ oferty/wyceny celu. Naprawy poniżej, każda z pinami i mutacją.
 
 ## E3. Pętla jakości — inna ścieżka niż poprzednia sesja
 
-- [ ] Skan kontraktu triggerów celowanych i dynamicznych delt P/T:
+- [x] Skan kontraktu triggerów celowanych i dynamicznych delt P/T:
   definicja → materializacja → wybór celu → resolver → intencja → wycena.
   Zero trafień nie jest dowodem poprawności; sprawdzić dodatnią kontrolę
   narzędzia i przeglądać ręcznie rodzinę znalezionych kandydatów.
-- [ ] Żywy Tester na zbudowanym artefakcie: partie innymi taliami/seedami
+  Wynik: 702 karty, 82 triggery celowane, 7 z pump/buffem, 1 dynamiczny
+  (Beastmaster); wrogi dynamiczny `permanent_count` tylko w aktywowanej
+  Bloodtithe Harvester (projekcja bota −4/−4 przy 2 tokenach Blood).
+- [x] Żywy Tester na zbudowanym artefakcie: partie innymi taliami/seedami
   niż a1–a3/b1–b3 z poprzednich sesji, z ręczną lekturą trzech osi z
   TESTER_STOLU. Najpierw instrukcja i walidacja argumentów narzędzia.
-- [ ] Ukierunkowany pomiar naprawionej rodziny; jeśli użyję audytu remisów,
-  policzyć rzeczywiste wystąpienia rodzin i nie traktować pustej próbki
-  jako wyniku (L179). Bez pełnego B0 i bez podnoszenia progów regresji.
-- [ ] Znalezione defekty: reprodukcja, fix, test i mutacja w osobnym
+  c1–c4: 0 zgłoszeń detektorów, 0 niewycenionych ruchów bota; okno ataku
+  Beastmastera nie wystąpiło w próbie (pin engine jest dowodem naprawy).
+- [x] Ukierunkowany pomiar naprawionej rodziny: skan katalogu + 13 nowych
+  pinów F1/F2 z mutacjami; żywa próba nie weszła w okno ataku Beastmastera,
+  więc nie jest dowodem naprawy (L179). Bez pełnego B0 i bez podnoszenia
+  progów regresji.
+- [x] Znalezione defekty: reprodukcja, fix, test i mutacja w osobnym
   przyroście. Braki sterownika naprawiać w sterowniku, nie omijać okna gry.
+  Nowych potwierdzonych defektów w pętli jakości nie znaleziono; obserwacje
+  narzędziowe/logowe zapisane w raporcie §7 jako tropy, nie naprawy.
 
 ## E4. Domknięcie i przekazanie
 
-- [ ] `npm run test:all` na zamrożonym finalnym drzewie, cichy log,
+- [x] `npm run test:all` na zamrożonym finalnym drzewie, cichy log,
   zachowany EXIT; build i końcowy szybki rdzeń. Wynik powiązać z HEAD.
-- [ ] Historia projektu, handoff tej sesji, podsumowanie wykonania planu,
+  Finalnie: **10421/10421, fail 0, 0 skipped**, EXIT 0 (~705 s), build
+  **78 modułów / 5804,1 kB**; szybki rdzeń zawarty w `test:all`.
+- [x] Historia projektu, handoff tej sesji, podsumowanie wykonania planu,
   kumulatywny opis PR z wynikami i ograniczeniami. Liczby odświeżać na końcu.
-- [ ] Budżet lektury: nowy wpis tylko z uczciwą kondensacją istniejącej
-  klasy i zachowaniem faktów w PRZYPADKI; progu nie podnosić.
-- [ ] Sprawdzić czysty stan, brak niewypchniętych commitów, opis i wątki PR.
+- [x] Budżet lektury: nowy wpis tylko z uczciwą kondensacją istniejącej
+  klasy i zachowaniem faktów w PRZYPADKI; progu nie podnosić. Bez nowego
+  wpisu — klasa opisana przez L41/L13/L21; próg niepodniesiony.
+- [x] Sprawdzić czysty stan, brak niewypchniętych commitów, opis i wątki PR.
   Nie scalać. W czacie przekazać stan, dowody i następne kroki.
 
 ## Kolejność publikacji i ryzyka
