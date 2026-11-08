@@ -23,7 +23,7 @@
 ## 2026-11-08 — audyt scalonego PR #181, audyt bumpu CR i luka pokrycia Undo (PR #182, sesja arena/ac2d985a-mtg)
 
 - **Zakres:** ADR 0020 — audyt poprzedniego scalonego PR (#181: 88 plików,
-  +4636/−235, 23 commity, scalenie `5f8ede8`) + pętla jakości (ADR 0021).
+  +4636/−235, 24 commity, scalenie `5f8ede8`) + pętla jakości (ADR 0021).
   Plan: `docs/plans/PLAN_2026-11-08-audyt-pr181.md`.
 - **Audyt #181:** `docs/audits/AUDYT_PR181_2026-11-08.md` +
   `docs/audits/PR181_MAPA_PLIKOW_2026-11-08.md` (mapa **88/88**). Werdykt

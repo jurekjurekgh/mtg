@@ -1,7 +1,7 @@
 # Mapa audytu scalonego PR #181 (2026-11-08)
 
 Źródło: pełna paginacja REST `pulls/181/files` (`gh api --paginate`, 88 plików) + `gh pr diff 181` rozdzielony kotwicą `^diff --git ` (88 bloków = 88 plików REST, bez zagnieżdżonych patchy; L190/ENVIRONMENT §3).
-Scalenie `5f8ede8` (= HEAD `main` w chwili startu sesji), baza `d2e0d61` (scalenie #180). Rozmiar: **88 plików, +4636/−235, 23 commity**.
+Scalenie `5f8ede8` (= HEAD `main` w chwili startu sesji), baza `d2e0d61` (scalenie #180). Rozmiar: **88 plików, +4636/−235, 24 commity**.
 
 **Stan: przegląd zakończony, 0 otwartych wierszy.** Bilans: **24 produkcyjne** (23 `src/` + 1 `tools/`) + **11 dokumentów** + **53 testy** (12 nowych plików + 41 zmienionych). Każdy wiersz ma jawny zakres i status; samo uruchomienie testu nie zamyka wiersza. To nie jest dowód wszystkich interakcji ani wszystkich konsumentów zmian produkcyjnych.
 
@@ -104,7 +104,7 @@ Piny nowych zachowań (**12 nowych plików**) + 41 plików zmienionych. W plikac
 
 | Plik | +/− | Stan audytu |
 |---|---|---|
-| `docs/PROJECT_HISTORY.md` | +304/−0 | wpis #181 (sesja, 23 commity, bramy, zamknięcie planów) |
+| `docs/PROJECT_HISTORY.md` | +304/−0 | wpis #181 (sesja, bramy, zamknięcie planów) |
 | `docs/audits/AUDYT_PR180_2026-11-06.md` | +232/−0 | NOWY: raport audytu #180 (mapa 17/17, weryfikacja mutacyjna, §8 pętla jakości) |
 | `docs/plans/PLAN_2026-11-06-audyt-pr180.md` | +133/−0 | NOWY: plan audytu #180 (etapy odhaczone) |
 | `docs/plans/PLAN_2026-11-07-bump-cr-i-ogloszenia.md` | +73/−0 | NOWY: plan bumpu CR + F-OGŁ |
