@@ -2581,6 +2581,8 @@ export function setDayNight(state, designation) {
  * `lastTurnSpellsCastByPlayer` musi już zawierać jego rzuty z tej tury.
  */
 export function applyDayNightAtTurnStart(state, previousActivePlayerId) {
+  // CR 732.2c: „If it's neither day nor night, this check doesn't happen” —
+  // przy nieustalonym oznaczeniu sprawdzenie w untapie się nie odbywa.
   if (state.dayNight !== 'day' && state.dayNight !== 'night') return [];
   const prevCasts = state.lastTurnSpellsCastByPlayer?.[previousActivePlayerId] ?? 0;
   if (state.dayNight === 'day' && prevCasts === 0) return setDayNight(state, 'night');
@@ -3543,8 +3545,10 @@ function processTriggersScan(state, recentEvents) {
           { enteredTapped: Boolean(ev.object.tapped) });
         return;
       }
-      // CR 732.2c / 702.145: daybound LUB nightbound przy designation=null
-      // ustawia dzień (setDayNight transformuje nightbound → daybound).
+      // CR 702.145d/702.145g: przy designation=null wejście daybound USTAWIA
+      // DZIEŃ, a wejście SAMOTNEGO nightbound (bez daybound na polu) USTAWIA
+      // NOC (setDayNight transformuje wtedy drugą stronę). Reguła SPRAWDZENIA
+      // w untapie („it remains neither”) tu nie ma zastosowania (F-1 audytu #182).
       // Przy ustalonej designation permanent wchodzi właściwą stroną —
       // także poza resolvePermanentSpell (reanimacja, search, bounce).
       // Cast w nocy już transformuje przed eventem, więc tu widzimy
