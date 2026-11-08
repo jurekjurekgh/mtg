@@ -52,24 +52,25 @@ pełnego B0 (ADR 0018), bez scalania i force push.
    Znalezione błędy → naprawa u root cause osobnym commitem (RED→
    GREEN, mutacja, bramy).
 
-## E2. Pętla jakości (ADR 0021 pkt 4) — innymi ścieżkami niż #182
+## E2. Pętla jakości (ADR 0021 pkt 4) — innymi ścieżkami niż #182 ✓
 
-- [ ] Żywy Tester: 2–4 partie na taliach/profilach INNYCH niż a1–a3
-  z #182 (tam: theros|zendikar-rg, wiedzmin-bg|forgotten-realms-wug,
-  dominaria-brg|forgotten-realms-br); lektura ręczna transkryptów
-  (L27: zero zgłoszeń ≠ OK); nowe klasy → detektory.
-- [ ] Polowanie CR innymi ścieżkami niż poprzednia sesja (tam:
-  dzień/noc, Sagi, Undo-pokrycie): kandydaci — suspend-timing
-  (ograniczony do Mindstab, bez nowej karty), checkpoint triggerów
-  (ADR 0032) w scenariuszach wielo-triggerowych, ward drugi przebieg.
-- [ ] `bot-tie-audit` na próbce (remisy rozróżnialne), jeśli czas
-  pozwoli; BEZ pełnego B0.
+- [x] Żywy Tester: 3 partie (b1 innistrad-brg|ixalan explorer s1207,
+  b2 srodziemie|ravnica-bg hoarder s4181, b3 lorwyn|the-edge impatient
+  s927) — 0 zgłoszeń detektorów × 3, pełna wycena bota; lektura ręczna
+  osiami. Znalezisko: **E2/BM** (Gruul Beastmaster, samopompa —
+  naprawione + 5 pinów). Tropy odrzucone: Harvester X=0 (klik drivera),
+  Mosquito Guard (klik drivera), podpisy showcase (I1), Seer CLU, Slabs.
+- [x] Polowanie CR (checkpoint triggerów, APNAP, ward): brak nowych
+  tropów (pokryte pinami #182 + E2/BM).
+- [ ] `bot-tie-audit` na próbce — ODSTĄPIONE (czas poszedł w E2/BM:
+  naprawa + klasyfikator + weryfikacja żywa); BEZ pełnego B0 (planowo).
 
-## E3. Domknięcie
+## E3. Domknięcie ✓
 
-- [ ] `docs/PROJECT_HISTORY.md` + `docs/setup/HANDOFF_2026-11-08b.md`;
-- [ ] opis PR kumulatywnie; bramy końcowe (`test:all`, build);
-- [ ] budżet lektury: żadnych nowych lekcji bez passy kondensacyjnej.
+- [x] `docs/PROJECT_HISTORY.md` + §6 `docs/setup/HANDOFF_2026-11-08.md`
+  (dopisek do pliku z tego samego dnia, nie nowy plik);
+- [x] opis PR kumulatywnie; bramy końcowe (`npm test` + build, c5);
+- [x] budżet lektury: zero nowych lekcji (decydowano w §5 raportu).
 
 ## Kolejność commitów
 
