@@ -597,6 +597,25 @@ export function resolveDamageAmount(state, effect, sourceObject, targetId = null
 }
 
 /**
+ * Audyt PR #183/F1: wspólna delta P/T efektu pump/buff dla JEDNEGO obiektu
+ * (CR 107.1b). `source_power` to WYNIK EFEKTU, więc ujemna moc źródła daje
+ * zero — nie wolno clampować samego `effectivePower` (ujemna moc permanentu
+ * jest legalną cechą gry). Ruling Gruul Beastmaster, RNA 2019-01-25:
+ * „If Gruul Beastmaster’s power is negative as its triggered ability
+ * resolves, X is considered to be 0.” Ten sam resolver używa oferta celu
+ * (game-state), żeby bot nie wyceniał innej kwoty niż silnik (L41).
+ * Jawne liczby ujemne (debuff) i `permanent_count.multiplier` przechodzą
+ * bez zmian — to nie jest obliczenie X z mocy źródła.
+ */
+export function resolvePumpDelta(value, state, sourceObject, fallback = 0) {
+  const counted = countedEffectValue(value, state.zones.battlefield.map(id => state.objects.get(id)), sourceObject?.controllerId);
+  if (counted != null) return counted;
+  if (value === 'source_power') return Math.max(0, effectivePower(sourceObject, state) ?? 0);
+  if (value === 'card_types_in_all_graveyards') return allGraveyardsCardTypeCount(state);
+  return value ?? fallback;
+}
+
+/**
  * Zbiór stworów objętych masowym buffem „do końca tury" — ustalany W CHWILI
  * ROZSTRZYGNIĘCIA efektu (CR 611.2c: „the set of objects a continuous effect
  * affects is determined when that effect begins"). `opponent` przełącza między
@@ -2014,15 +2033,8 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     if (!pumpTarget || pumpTarget.zone !== 'battlefield' || pumpTarget.kind !== 'creature') return;
     // Dynamiczna wartość „source_power" (np. Jyoti: pump wg mocy źródła).
     // Altar of the Goyf: pump wg liczby typów kart we wszystkich grobach.
-    const dynt = (v, fallback) => {
-      const counted = countedEffectValue(v, state.zones.battlefield.map(id => state.objects.get(id)), sourceObject.controllerId);
-      if (counted != null) return counted;
-      if (v === 'source_power') return effectivePower(sourceObject, state);
-      if (v === 'card_types_in_all_graveyards') return allGraveyardsCardTypeCount(state);
-      return v ?? fallback;
-    };
-    let power = dynt(effect.power, 0);
-    let toughness = dynt(effect.toughness, 0);
+    let power = resolvePumpDelta(effect.power, state, sourceObject);
+    let toughness = resolvePumpDelta(effect.toughness, state, sourceObject);
     // M177/A (You're Not Alone): „If you control three or more creatures,
     // it gets +4/+4 instead” — warunek liczony przy ROZSTRZYGANIU (CR 608.2),
     // bonus ZASTĘPUJE bazową kwotę („instead”), nie sumuje się.
@@ -3063,15 +3075,8 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     const targetId = targets[0] ?? context?.attackerId ?? sourceObject.id;
     const target = state.objects.get(targetId);
     if (!target || target.zone !== 'battlefield' || target.kind !== 'creature') return; // CR 608.2b
-    const dyn = (v, fb) => {
-      const counted = countedEffectValue(v, state.zones.battlefield.map(id => state.objects.get(id)), sourceObject.controllerId);
-      if (counted != null) return counted;
-      if (v === 'card_types_in_all_graveyards') return allGraveyardsCardTypeCount(state);
-      if (v === 'source_power') return effectivePower(sourceObject, state);
-      return v ?? fb;
-    };
-    const power = dyn(effect.power, 0);
-    const toughness = dyn(effect.toughness, 0);
+    const power = resolvePumpDelta(effect.power, state, sourceObject);
+    const toughness = resolvePumpDelta(effect.toughness, state, sourceObject);
     const keywords = Object.freeze([...(effect.keywords ?? [])]);
     state.untilEndOfTurnBuffs = [
       ...(state.untilEndOfTurnBuffs ?? []),
@@ -3351,8 +3356,8 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     // Wzmocnienie wszystkich land creatures kontrolera źródła do końca tury
     // (Jyoti: „land creatures you control get +X/+X until end of turn, where
     // X is Jyoti's power"). Land creature = kind creature + typ Land.
-    const power = effect.power === 'source_power' ? effectivePower(sourceObject, state) : (effect.power ?? 0);
-    const toughness = effect.toughness === 'source_power' ? effectivePower(sourceObject, state) : (effect.toughness ?? 0);
+    const power = resolvePumpDelta(effect.power, state, sourceObject);
+    const toughness = resolvePumpDelta(effect.toughness, state, sourceObject);
     const buffed = [];
     for (const object of landCreaturesYouControl(state, sourceObject.controllerId)) {
       modifyStats(state, object.id, { power, toughness });

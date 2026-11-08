@@ -1133,7 +1133,7 @@ function pumpDelta(view, effect, source = null) {
     if (counted != null) return counted;
     if (typeof v === 'number') return v;
     if (v === 'card_types_in_all_graveyards') return cardTypesInAllGraveyardsFromView(view);
-    if (v === 'source_power') return source?.power ?? 0;
+    if (v === 'source_power') return Math.max(0, source?.power ?? 0); // CR 107.1b: wynik efektu, nie cecha źródła (audyt #183/F1)
     if (v === 'oil_counters') return source?.counters?.oil ?? 0;
     // card_types_in_all_graveyards_plus_1 (Tarmogoyf CDA) w pumpach do końca
     // tury nie występuje w katalogu; gdyby wystąpił — łatwo dodać w tym miejscu.

@@ -68,9 +68,10 @@ oferty/wyceny celu. Naprawy poniżej, każda z pinami i mutacją.
 
 - [x] Pobrać aktualne CR i rulingi dołączane do dowodu (ADR 0030); nie
   cytować z pamięci. Jeśli źródło niedostępne, nie wdrażać zmiany regułowej.
-- [ ] Test odtwarzający błąd na zamrożonej bazie, dopiero potem chirurgiczna
-  naprawa u źródła; pin legalnej dodatniej pompy i przypadku bez celu.
-- [ ] Mutacja naprawy: RED → GREEN; pełny szybki rdzeń + build, commit + push.
+- [x] F1: testy RED na bazie (4/6), wspólny resolver delty + clamp w botcie,
+  GREEN 6/6; mutacje resolvera RED 3/6 i bota RED 1/6. Pełna brama + push.
+- [ ] F2: test odtwarzający brak `pump` w ofercie i zły wybór bota, naprawa
+  oferty przez ten sam resolver; mutacja RED → GREEN, pełna brama + push.
 
 ## E3. Pętla jakości — inna ścieżka niż poprzednia sesja
 
