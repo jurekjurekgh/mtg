@@ -216,6 +216,12 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   // martwych parametrów zatruwa tablicę tune-card.mjs — wycinane u korzenia.
   'drawCardValue',           // wartość jednej dobranej karty (dawniej *6)
   'instantDrawFoeEndBonus', // PMSSB-3/F2: premia za instant-draw na EOT wroga (lustro M211/A1, 10)
+  // Zgłoszenie właściciela 2026-11-08e (Inspiration): czysty instant-draw
+  // dla siebie, rzucany z ręki, czeka na end step przeciwnika i nie wydaje
+  // many kontestowanej przez inny rzucalny czar. Kara przebija bazę/dobór
+  // (skala rodziny D); ×0 = zachowanie sprzed zgłoszenia. Poza klasą:
+  // additionalCost (Village Rites), mieszane ridery, zdolności/triggery.
+  'instantDrawHoldPenalty',
   // PMSSB-15 (audyt taktyczny prewencji/fog, prevent_*): okna wartości
   // fog —właściciel (zgłoszenie B): „preventować u stworów które by lethal
   // dostały albo u siebie jeśli któryś z kreatur przeciwnika go zrani" +
@@ -1000,6 +1006,8 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   // PMSSB-3/F2: instant-draw na EOT przeciwnika (lustro M211/A1-scry: ta sama
   // racja fizzle-many; wartosc jak okno-scry, wlasne pokretlo).
   instantDrawFoeEndBonus: 10,
+  // Zgłoszenie właściciela 2026-11-08e (Inspiration): patrz klucze wyżej.
+  instantDrawHoldPenalty: 120,
   // PMSSB-15 (wartości przemyślane, pomiar PRZED: /tmp/pmssb15-prewencja-przed.mjs):
   // bazy (ownTurn −300 / wasted −75 / chip 15) = wartości HISTORYCZNE rodzin
   // M91/M236 — anty-over-fix: najsłabszy realny wariant zachowuje starą cenę;

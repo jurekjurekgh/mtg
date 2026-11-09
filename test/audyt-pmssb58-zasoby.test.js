@@ -4,6 +4,7 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {game,put,creature,lands,token,decide,score,variant,run,pass,settle,choices,registry,
   addMana,SPAWN_TOKEN_EFFECT,playerView} from './helpers/pmssb58.js';
+import {addObject} from '../src/engine/game-state.js';
 import {DEFAULT_HEURISTIC_PARAMS} from '../src/controllers/heuristic-params.js';
 
 function lootScene(card='basic-forest', {lib=24, source='token_blood', step='end', landCount=6}={}) {
@@ -138,7 +139,15 @@ test('58/A15: Blood nie znika na loot, gdy tylko pełny zapas pozwala na korzyst
 
 function spawnCombat(life=3,{flying=false,trample=false,blocked=false,other=false}={}){
   const s=game({step:'declare_attackers',active:'p2',priority:'p2'});s.players[0].life=life;
-  lands(s,3,'basic-island');const spawn=token(s,SPAWN_TOKEN_EFFECT);put(s,'draw','inspiration','p1','hand');
+  lands(s,3,'basic-island');const spawn=token(s,SPAWN_TOKEN_EFFECT);
+  // L181 / zgłoszenie 2026-11-08e: Inspiration jest odtąd TRZYMANE do end
+  // stepu przeciwnika, więc nie jest nośnikiem „biblioteczny instant rzucalny
+  // w walce” dla polityki mana-sacrifice. Syntetyczny instant surveil+draw
+  // (mieszany rider, poza klasą hold) izoluje ten wymiar bez zmiany exact
+  // pinów (OFF +6, lethal <0).
+  addObject(s,{id:'draw',instanceId:'i-draw',cardId:'synthetic-mana-spell',controllerId:'p1',ownerId:'p1',
+    zone:'hand',kind:'spell',manaCost:4,types:['Instant'],colors:[],abilities:[],keywords:[],subtypes:[],
+    spell:{timing:'instant',targets:[],effects:[{type:'surveil',amount:2},{type:'draw_cards',amount:1}]}});
   creature(s,'atk','p2',{power:3,toughness:3,keywords:[...(flying?['flying']:[]),...(trample?['trample']:[])]});
   if(other)creature(s,'other','p1',{power:0,toughness:4});
   run(s,choices(s).find(c=>c.type==='declare_attackers'&&c.attackerIds?.includes('atk')));

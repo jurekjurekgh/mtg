@@ -6922,6 +6922,65 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     .some((c) => UNLOCK_CAST_TYPES.has(c.type) && c.objectId === card.id);
 
   /**
+   * Zgłoszenie właściciela 2026-11-08e (Inspiration): czysty instantowy
+   * dobór dla siebie, rzucany z ręki, ma okno „darmowej many” w end stepie
+   * przeciwnika (CR 117.1a — instant w każdym priorytecie; CR 513.1 — end
+   * step; CR 500.5/106.4 — pula próżnieje na końcu kroku/fazy, a lądy
+   * odtapują się dopiero w moim untap, CR 502.3). Rzucenie go we własnym
+   * upkeepie „jak tylko mana z untapu” wydaje zasób potrzebny na czary
+   * tej tury (sorcery/stwór tylko we własnej mainie, CR 307.1).
+   *
+   * Klasa po deskryptorze (ADR 0002), nie po nazwie karty: cała treść
+   * wariantu to `draw_cards` z odbiorcą = bot, timing instant, BEZ kosztu
+   * dodatkowego (Village Rites ma własną ekonomię ofiary) i bez mieszanych
+   * riderów (Curate/Withstand/… — okno należy do efektu głównego).
+   * `draw_cards_both_players` jest prezentem dla wroga, nie doborem dla
+   * siebie. Zdolności aktywowane, triggery i darmowe rzuty są poza klasą
+   * (L41: nie płacą kosztu opportunities z ręki; ich piny zostają).
+   */
+  const isPureInstantSelfDraw = (view, spell, effects, cmd) => {
+    if (spell?.timing !== 'instant' || spell?.additionalCost) return false;
+    if (!Array.isArray(effects) || effects.length === 0) return false;
+    return effects.every((effect) => {
+      if (effect?.type !== 'draw_cards') return false;
+      const amount = Number.isInteger(effect.amount) ? effect.amount : 1;
+      if (!(amount > 0)) return false;
+      if (effect.applyTo === 'target') {
+        return cmd.targets?.[effect.targetIndex ?? 0] === view.playerId;
+      }
+      return true;
+    });
+  };
+
+  /**
+   * Mana kontestowana: w tym samym kroku istnieje INNA legalna oferta
+   * rzutu (auto-płatność/filtry bota jak przy wyborze komendy, L48), a
+   * suma kosztów przekracza dostępną manę. Bez tego dobór zjada budżet
+   * czaru, który bot chce rzucić w tej turze. Przy dość manie na oba
+   * rzuty nie ma fikcyjnego konfliktu (exact pin PMSSB3 main = 11).
+   */
+  const instantDrawManaContested = (view, cmd, card) => {
+    const cost = card?.manaCost ?? 0;
+    if (!(cost > 0)) return false;
+    const available = manaAvailableNow(view);
+    if (available < cost) return false;
+    return botCommandCandidates(view).some((other) => {
+      if (!UNLOCK_CAST_TYPES.has(other.type) || other.objectId === cmd.objectId) return false;
+      const otherCard = handCard(view, other.objectId) ?? zoneCard(view, other.objectId);
+      const otherCost = otherCard?.manaCost ?? 0;
+      return otherCost > 0 && available < cost + otherCost;
+    });
+  };
+
+  const instantDrawHoldDelta = (view, spell, effects, cmd, card) => {
+    if (!isPureInstantSelfDraw(view, spell, effects, cmd)) return 0;
+    if (!myTurn(view) && view.turn.step === 'end') return 0;
+    const ownMain = myTurn(view) && ['main1', 'main2', 'main'].includes(view.turn.step);
+    if (ownMain && !instantDrawManaContested(view, cmd, card)) return 0;
+    return -(P.instantDrawHoldPenalty ?? 0);
+  };
+
+  /**
    * PMSSB-32/A3 (F6, klasa L1): czy DESKRYPTOR karty wymaga wybrania celu?
    * Wycena rzutu bierze cel z komendy (`cmd.targets[0]`), więc komenda
    * syntetyczna bez celu jest dla czarów z celem bezwartościowa — Shock bez
@@ -14679,6 +14738,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           && scoredEffects.some((e) => e?.type === 'create_token' || e?.type === 'create_copy_token')) {
           score -= P.tokenUpkeepHoldPenalty ?? 0;
         }
+        // Zgłoszenie właściciela 2026-11-08e (Inspiration): instant-draw
+        // czeka na EOT przeciwnika / nie wydaje many kontestowanej przez
+        // inny czar. Premia `instantDrawFoeEndBonus` wyżej zostaje bez zmian.
+        score += instantDrawHoldDelta(view, spell, effects, cmd, card);
         return finish(score);
       }
       case 'activate_ability': {
