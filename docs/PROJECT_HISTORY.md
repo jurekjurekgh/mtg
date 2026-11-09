@@ -20,6 +20,45 @@
 > nie trafiają do repozytorium".
 
 
+## 2026-11-08 — zgłoszenie P: Twiddle jako combat trick + hold w upkeepie (PR #184, kontynuacja arena/76d4141f-mtg)
+
+- **Zakres:** polityka bota dla tap/untap po deskryptorze (ADR 0002), bez
+  nowych kart (ADR 0029), bez pełnego B0 (ADR 0018). Cztery okna
+  właściciela: tap blokera po własnej deklaracji, untap własnego
+  atakującego przed deklaracją, tap groźnego atakującego przed deklaracją
+  wroga, untap własnego blokera po deklaracji wroga (lethal). Dopisek
+  właściciela: bot nie rzuca Twiddle we własnym podtrzymaniu „jak tylko ma
+  manę” — trzyma na okno walki.
+- **Naprawa:** `tapTimingBonus` uznaje zadeklarowanych atakujących za
+  potencjał ataku, premiuje groźnego blokera, karze własny upkeep/draw;
+  tura wroga przed deklaracją wymaga potencjału ataku celu (wyjątek: cel
+  już tapnięty dla O/lock). `untapTargetValue` wymaga blokowalności po
+  deklaracji wroga, premiuje lethal/przeżycie, a przed własną deklaracją
+  okno ofensywne. Flaga `castingSpell` odróżnia rzut czaru z ręki od
+  triggera/aktywacji — kara okna nie remisuje celów darmowego triggera
+  (M314/L41/L169). `resolve_optional_spell_effect` świadomie zostaje
+  płaskie ±8 (FixA-T6).
+- **Piny:** `test/zgloszenie-p-twiddle-combat-trick.test.js` 13 testów
+  (P/1–P/11, w tym P/1e pełne execute i P/11 anty-over-fix triggera).
+  RED przed fixem, GREEN po; mutacje mP1–mP7 RED na końcowym kodzie,
+  źródło przywrócone bitowo. Stare Twiddle/M146/FixA/K/O/M314/batch28
+  118/118 w plikach celowanych.
+- **Golden-master:** pierwszy full `test:all` po `d221fac` RED 2 (dryf
+  śladu). `--dump` przed/po (L176) zlokalizował pierwszą różnicę w
+  `resolve_trigger_target` Veterana; naprawa P/11 przywróciła fixture
+  **bez regeneracji**.
+- **Bramy:** szybka #2 10164/10164 → `d221fac`; szybka #3 10165/10165,
+  build 78 / 5810,3 kB → `92e4f9f`; finalnie `npm run test:all`
+  **10434/10434, fail 0, 0 skipped**, build **78 / 5810,3 kB**;
+  `cr-numery` OK (CR 2026-11-06, sha zgodny z pinem); strażnicy
+  dokumentacji 38/38.
+- **Dokumentacja:** plan
+  `docs/plans/PLAN_2026-11-08d-twiddle-bot.md`, raport
+  `docs/audits/ZGLOSZENIE_P_TWIDDLE_COMBAT_TRICK_2026-11-08.md`, handoff
+  §8, opis PR #184. Budżet lektury niepodniesiony; bez nowego wpisu
+  LESSONS (klasa L41/L169/L183). Bez scalania.
+
+
 ## 2026-11-08 — audyt scalonego PR #181, audyt bumpu CR i luka pokrycia Undo (PR #182, sesja arena/ac2d985a-mtg)
 
 - **Zakres:** ADR 0020 — audyt poprzedniego scalonego PR (#181: 88 plików,
