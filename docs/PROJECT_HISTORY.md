@@ -20,6 +20,40 @@
 > nie trafiają do repozytorium".
 
 
+## 2026-11-09 — zgłoszenie właściciela RT: Renegade Tactics i jałowy cantrip (PR #184, kontynuacja arena/76d4141f-mtg)
+
+- **Zakres:** wyłącznie wycena bota (`heuristic-bot.js` + `heuristic-params.js`).
+  Silnik, protokół, stół i katalog bez zmian; bez nowych kart (ADR 0029),
+  bez pełnego B0 (ADR 0018), bez scalania.
+- **Objaw:** bot rzuca Renegade Tactics przy pustym stole wroga — „tylko
+  po to, żeby dobrać kartę”, marnując potencjał ridera `cant_block`.
+- **Diagnoza (sonda na prawdziwej karcie):** kształt `cant_block+draw_cards`
+  dostawał `spellBase` 50 + draw ~6 − 20 = **36 > pass 0**, mimo że rider
+  nie usuwał żadnego blokera (cel własny/tapnięty/już z zakazem, main2,
+  brak ataku, choroba przywołania, 0 mocy, ewazja). Bliźniak
+  `activate_ability` miał ten sam fallback; `resolve_hand_free_cast` nie
+  wyceniał ridera wcale (45 > skip 4). Okno ataku duplikowane inline (L41).
+- **Naprawa generyczna (ADR 0002):** `cantBlockTargetValue` +
+  `cantBlockCantripHoldPenalty` (nowe pokrętło **120**, ×0 = stan sprzed
+  zgłoszenia) dla kształtu złożonego wyłącznie z `cant_block+draw_cards`,
+  gdy cel nie jest realnym blokerem w oknie `attackWindowAttackerIds`
+  (CR 509.1b). Jedna miara w cast/activate; kara także w oknach, których
+  odmowa zachowuje kartę (ręka/discover). Epic/suspend/rebound bez kary —
+  odmowa traci kartę, więc dobór jest odzyskiem (anty-over-fix).
+- **Piny/mutacje:** RT/1–21 RED **13/8** → GREEN **21/21**; mRT1–mRT8
+  wszystkie RED ze świadkami (mRT4 → RT/13, różnicowanie celów). Prefiks
+  RT, bo U zajęte. Pozytywy Batch60 zostają: realny bloker 62, killer 71
+  > chump 59; cel własny nadal legalny (Oracle „target creature”).
+- **Bramy:** `3b4af41` plan (push przed kodem), `fae5ffb` fix; szybka
+  **10231/10231**, build **78 / 5822,4 kB**, `test:all` **10500/10500
+  fail 0 skipped 0** (~457 s), golden **4/4** bez regeneracji, strażnicy
+  docs/CR **96/96**, `cr-numery` OK (576). Raport:
+  `docs/audits/ZGLOSZENIE_RT_RENEGADE_TACTICS_CANTRIP_2026-11-09.md`,
+  plan `docs/plans/PLAN_2026-11-09-renegade-tactics-cantrip.md`, handoff §12.
+- Bez scalania; następna sesja: kolejka właściciela (ADR 0021), po
+  scaleniu #184 audyt #184 wg ADR 0020.
+
+
 ## 2026-11-09 — zgłoszenie właściciela FJ: Fiery Justice i netto obrażeń/życia (PR #184, kontynuacja arena/76d4141f-mtg)
 
 - **Zakres:** wyłącznie wycena bota (`src/controllers/heuristic-bot.js`).

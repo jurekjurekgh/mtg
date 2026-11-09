@@ -169,7 +169,7 @@ RED przed fixem, GREEN po fixie; świadki mutacji:
 - mRT1: usunięcie kary z `cast_spell` → RT/1–9 RED.
 - mRT2: usunięcie bramki kształtu (kara dla każdego `cant_block`) → RT/17 RED.
 - mRT3: pominięcie guardów celu (tapped/cantBlock/własny) → RT/3/4/1 RED.
-- mRT4: okno tylko declared-attack w casterze → RT/12 RED.
+- mRT4: okno tylko declared-attack w casterze → RT/13 RED (killer > chump; caster nadal rzuca, ale traci różnicowanie celów).
 - mRT5: usunięcie kary z `resolve_hand_free_cast` → RT/10 RED.
 - mRT6: usunięcie kary z `activate_ability` → RT/16 RED.
 - mRT7: odcięcie pokrętła (stała 120 zamiast `P.…`) → RT/20 RED.
@@ -189,10 +189,11 @@ GREEN, `git status` czysty po przywróceniu (L34). Mutacja GREEN bez
    GREEN RT **21/21**, sąsiednie **148/148** + Inspiration **16/16**,
    golden **4/4** bez regeneracji, `npm test` **10231/10231**, build
    **78 / 5822,4 kB** → commit/push.
-5. [ ] Mutacje mRT1–8 ze świadkami → raport.
-6. [ ] `npm run test:all` (cicho, log + exit), build, strażnicy docs/CR,
-   `cr-numery --cr`.
-7. [ ] Raport `docs/audits/ZGLOSZENIE_RT_RENEGADE_TACTICS_CANTRIP_2026-11-09.md`,
+5. [x] Mutacje mRT1–8 ze świadkami → wszystkie RED, GREEN po przywróceniu 21/21 (`.arena/mut-rt-summary.log`).
+6. [x] `npm run test:all` **10500/10500 fail 0 skipped 0** (~457 s), build
+   **78 / 5822,4 kB**, strażnicy docs/CR **96/96**, `cr-numery --cr` OK
+   (576 numerów, 6621 cytatów).
+7. [x] Raport `docs/audits/ZGLOSZENIE_RT_RENEGADE_TACTICS_CANTRIP_2026-11-09.md`,
    plan [x], HISTORY, HANDOFF §12, kumulatywny PATCH PR #184 (REST).
 
 ## Ryzyka i pułapki
@@ -211,3 +212,15 @@ GREEN, `git status` czysty po przywróceniu (L34). Mutacja GREEN bez
 - **Sonda:** flagi bojowe ustawiać po `addObject`; scena G (concede) była
   artefaktem harnessu, nie dowodem.
 - Reset workspace: backup → fetch → `reset --mixed FETCH_HEAD`; bez force.
+
+## Podsumowanie wykonania
+
+Zamknięte w PR #184: plan `3b4af41`, fix+piny `fae5ffb`, dokumentacja
+końcowa + PATCH PR. Bot trzyma Renegade Tactics, gdy rider `cant_block`
+nie kupuje realnego blokera (pass zamiast rzutu za 36 pkt), nadal zdejmuje
+realnego blokera (62 pkt) i wybiera killera ponad chumpa (71 > 59).
+Darmowy rzut z ręki i Discover odmawiają przy jałowym riderze; Epic
+Experiment nadal odzyskuje kartę doborem. Piny RT/1–21 RED 13/8 → GREEN
+21/21; mutacje mRT1–8 RED ze świadkami; `npm test` 10231/10231,
+`test:all` 10500/10500, build 78/5822,4 kB, golden 4/4 bez regeneracji.
+Bez zmian silnika/katalogu/stołu, bez merge/main/force, bez pełnego B0.
