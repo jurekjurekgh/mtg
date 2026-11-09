@@ -73,12 +73,17 @@ export function untappedLandSourcesOf(view, playerId) {
     // więc wiersz grantu ją zastępuje. Tapnięcie wiersza najpierw pyta
     // o KOLOR grantu (engine: tap_for_mana z grantColor).
     const grant = object.manaGrant ?? 0;
+    // KV: koszt alternatywny tapnięcia (inne zdolności z {T}) jedzie z
+    // wierszem do solwera wariantów. Pole tylko gdy niepuste — wiersz
+    // zwykłego lądu zostaje bez zmian (świadek L/2 porównuje deepEqual).
+    const altTap = alternativeTapCostSignature(object);
+    const alt = altTap ? { altTap } : {};
     if (grant > 0) {
-      out.push({ id: object.id, cardId: object.cardId, colors: [...COLOR_ORDER], amount: grant, grant: true });
+      out.push({ id: object.id, cardId: object.cardId, colors: [...COLOR_ORDER], amount: grant, grant: true, ...alt });
       continue;
     }
     const src = object.manaSource ?? getSourceForObject(object);
-    out.push({ id: object.id, cardId: object.cardId, colors: src.colors ?? [], amount: src.amount ?? 1 });
+    out.push({ id: object.id, cardId: object.cardId, colors: src.colors ?? [], amount: src.amount ?? 1, ...alt });
   }
   return out;
 }
@@ -99,6 +104,64 @@ function isManaAbility(ability) {
   if (!ability || ability.type !== 'activated') return false;
   const effects = Array.isArray(ability.effect) ? ability.effect : [ability.effect];
   return effects.some((e) => e?.type === 'add_mana');
+}
+
+/** Kanoniczny klucz deskryptora: klucze sortowane, pola puste pomijane.
+ * Determinizm (ADR 0005) i odporność na różnice pełny stan vs widok
+ * (playerView robi JSON-copy, więc gubi `undefined`). */
+function stableDescriptorKey(value) {
+  if (Array.isArray(value)) return `[${value.map(stableDescriptorKey).join(',')}]`;
+  if (value && typeof value === 'object') {
+    const keys = Object.keys(value).filter((k) => value[k] != null).sort();
+    return `{${keys.map((k) => `${k}:${stableDescriptorKey(value[k])}`).join(',')}}`;
+  }
+  return JSON.stringify(value) ?? 'null';
+}
+
+/**
+ * KV (zgłoszenie właściciela 2026-11-09, Kishla Village): sygnatura
+ * ALTERNATYWNYCH użyć tapnięcia tego permanentu.
+ *
+ * Objaw: „1 Swamp, 4 Foresty i Kishla Village, rzucam czar za {4}{B} —
+ * powinienem dostać kreator z wyborem, co tapnąć na 4 bezbarwne; nie
+ * dostaję, auto-płatność tapuje Swamp i 4 Foresty”. Kishla BYŁA na liście
+ * źródeł ({G}, amount 1) — gubił ją dopiero klucz kształtu płatności w
+ * `countPaymentVariants`, który sklejał „4 Foresty” i „3 Foresty + Kishla”
+ * w jeden wariant, bo profil many jest identyczny.
+ *
+ * Reguła: dwa źródła są zamienne tylko wtedy, gdy tapnięcie kosztuje to
+ * samo. Kishla ma `{T}: Add {G}` ORAZ `{3}{G}, {T}: Surveil 2` — tapnięcie
+ * na manę zabiera surveil w tej turze (CR 602.1a: „The activation cost is
+ * everything before the colon (:). An ability’s activation cost must be
+ * paid by the player who is activating it.”). Forest nie traci nic, więc
+ * to są DWIE decyzje gracza, a wybór źródeł należy do gracza (CR 601.2g:
+ * „If the total cost includes a mana payment, the player then has a chance
+ * to activate mana abilities (see rule 605, “Mana Abilities”). Mana
+ * abilities must be activated before costs are paid.”).
+ *
+ * Zakres (anty-over-fix): liczą się WYŁĄCZNIE zdolności aktywowane z `{T}`
+ * w koszcie, które NIE są zdolnościami many (CR 605.1a — surveil nie
+ * produkuje many). Własna zdolność `{T}: Add …` jest tym samym wierszem
+ * źródła, nie alternatywą; konwerter z kosztem many ma już osobny wiersz
+ * (M405/B). Bez tego każdy ląd dostawałby inny klucz i kreator otwierałby
+ * się zawsze. Dwa identyczne lądy i dwie kopie tej samej karty mają tę
+ * samą sygnaturę → jeden kształt (świadkowie A/2, M202/O, KV/7–KV/9).
+ *
+ * Czytane z deskryptorów (ADR 0002), nie z nazwy/ID karty. Źródło prawdy
+ * to `activatableAbilities` z widoku (ta sama lista, po której indeksuje
+ * silnik — L48) z fallbackiem na `abilities` pełnego obiektu.
+ */
+export function alternativeTapCostSignature(object) {
+  const abilities = object?.activatableAbilities ?? object?.abilities;
+  if (!Array.isArray(abilities)) return '';
+  const keys = [];
+  for (const ability of abilities) {
+    if (ability?.type !== 'activated') continue;
+    if (!ability.cost?.tap) continue;
+    if (isManaAbility(ability)) continue;
+    keys.push(stableDescriptorKey({ cost: ability.cost, effect: ability.effect ?? null }));
+  }
+  return keys.sort().join('|');
 }
 
 /**
@@ -158,11 +221,18 @@ export function manaSourcesOf(view, playerId, abilityInfo, { excludeSourceId = n
       // deterministycznego tap_for_mana bez grantColor.
       grant: s.grant || undefined,
       spendOnly,
+      // KV: patrz alternativeTapCostSignature — klucz kształtu płatności
+      // musi rozróżnić ląd z dodatkowym użyciem {T}.
+      ...(s.altTap ? { altTap: s.altTap } : {}),
       command: { type: 'tap_for_mana', playerId, objectId: s.id },
     };
   });
   if (typeof abilityInfo !== 'function') return sources;
   const seen = new Set(land.map((s) => s.id));
+  // KV: wiersze nie-lądowe czytają sygnaturę z tego samego widoku co lądy
+  // (jedna reguła kosztu alternatywnego, L28/L41).
+  const battlefieldById = new Map((view?.zones?.battlefield ?? []).map((o) => [o.id, o]));
+  const altTapOf = (objectId) => alternativeTapCostSignature(battlefieldById.get(objectId));
   const tapCostGroups = new Map();
   for (const cmd of view?.legalCommands ?? []) {
     if (cmd.type !== 'activate_ability') continue;
@@ -179,8 +249,10 @@ export function manaSourcesOf(view, playerId, abilityInfo, { excludeSourceId = n
       const key = `${cmd.objectId}:${cmd.abilityIndex}`;
       let group = tapCostGroups.get(key);
       if (!group) {
+        const groupAlt = altTapOf(cmd.objectId);
         group = { id: cmd.objectId, cardId: info.cardId, colors: info.colors ?? [],
           amount: info.amount ?? 1, kind: 'ability', spendOnly: info.spendOnly ?? null,
+          ...(groupAlt ? { altTap: groupAlt } : {}),
           command: cmd, tapCostChoices: [], tapCostCommands: [] };
         tapCostGroups.set(key, group);
         sources.push(group);
@@ -214,6 +286,7 @@ export function manaSourcesOf(view, playerId, abilityInfo, { excludeSourceId = n
     const addsNewColors = (info.colors ?? []).some((c) => !costColors.includes(c));
     if (produkcja - activationGeneric <= 0 && !addsNewColors) continue;
     seen.add(cmd.objectId);
+    const abilityAlt = altTapOf(cmd.objectId);
     sources.push({
       id: cmd.objectId, cardId: info.cardId, colors: info.colors ?? [], amount: produkcja,
       activationCost: costMana > 0
@@ -221,6 +294,7 @@ export function manaSourcesOf(view, playerId, abilityInfo, { excludeSourceId = n
         : null,
       kind: 'ability',
       spendOnly: info.spendOnly ?? null,
+      ...(abilityAlt ? { altTap: abilityAlt } : {}),
       command: { type: 'activate_ability', playerId, objectId: cmd.objectId, abilityIndex: cmd.abilityIndex },
     });
   }
@@ -701,10 +775,21 @@ export function countPaymentVariants(sources, poolMana, totalNeeded, requirement
   // jest ten sam wybór — tapnięty STWÓR nie zaatakuje ani nie zablokuje
   // w tej turze, więc przy tym samym profilu many gracz ma dwie realne
   // decyzje i kreator musi się otworzyć. Dwa LĄDY o tym samym profilu
-  // zostają jednym kształtem (są zamienne).
+  // i tym samym koszcie alternatywnym zostają jednym kształtem (są
+  // zamienne) — drugi warunek dopisany przez KV poniżej.
+  // KV (zgłoszenie właściciela 2026-11-09, Kishla Village): klucz niesie też
+  // KOSZT ALTERNATYWNY tapnięcia. Kishla Village i Forest produkują identyczne
+  // {G}, ale Kishla ma dodatkowo `{3}{G}, {T}: Surveil 2` — tapnięcie jej na
+  // manę zabiera surveil w tej turze, tapnięcie Forestu nie zabiera nic. Bez
+  // tego członu „Swamp + 4 Foresty” i „Swamp + 3 Foresty + Kishla” sklejały się
+  // w jeden kształt → 1 wariant → kreator się nie otwierał i automat tapował
+  // pierwsze źródła z kolei (CR 601.2g — wybór należy do gracza). Dwa lądy
+  // o tym samym profilu I tym samym koszcie alternatywnym zostają jednym
+  // kształtem (A/2, M202/O).
   const variantKey = (subset) => subset
     .map((s) => `${s.kind ?? 'land'}:${[...s.colors].sort().join('')}#${s.amount ?? 1}#`
-      + (s.activationCost ? `${s.activationCost.generic}:${[...(s.activationCost.colors ?? [])].sort().join('')}` : '-'))
+      + (s.activationCost ? `${s.activationCost.generic}:${[...(s.activationCost.colors ?? [])].sort().join('')}` : '-')
+      + `#${s.altTap ?? ''}`)
     .sort()
     .join('|');
   // Pula sama wystarcza (suma + kolory) → dokładnie 1 wariant („zapłać
