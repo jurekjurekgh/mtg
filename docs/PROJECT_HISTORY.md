@@ -20,6 +20,40 @@
 > nie trafiają do repozytorium".
 
 
+## 2026-11-08 — zgłoszenie właściciela: Inspiration — instant-draw na EOT przeciwnika (PR #184, kontynuacja arena/76d4141f-mtg)
+
+- **Zakres:** polityka bota po deskryptorze (ADR 0002) dla czystego
+  instantowego doboru dla siebie, rzucanego z ręki. Bez nowych kart
+  (ADR 0029), bez pełnego B0 (ADR 0018), bez scalania. Problem: bot rzucał
+  Inspiration we własnym podtrzymaniu „jak tylko ma manę z untapu”,
+  wydając zasób potrzebny na inne czary tej tury.
+- **Naprawa:** `isPureInstantSelfDraw` + `instantDrawHoldDelta` w gałęzi
+  `cast_spell`; parametr `instantDrawHoldPenalty=120`. End step
+  przeciwnika bez kary (istniejące `+instantDrawFoeEndBonus` zostaje);
+  własna main bez kary, chyba że mana jest kontestowana przez inny
+  rzucalny czar (`manaAvailableNow < kosztDoboru + kosztInnegoCzaru`);
+  pozostałe okna kara. Poza klasą: `additionalCost` (Village Rites),
+  mieszane ridery (Curate), `draw_cards_both_players`, zdolności,
+  triggery, darmowe rzuty (L41).
+- **Piny:** `test/zgloszenie-inspiration-instant-draw-timing.test.js`
+  16/16 (ID/1–ID/16), RED 7 przed fixem; mutacje mID1–mID6 RED, źródło
+  przywrócone bitowo. Exact piny PMSSB3/A4 (main 11, EOT 21, foe −13,
+  Reunion 17, lib5 pass), Village Rites 8, Curate 44, Scholar 4/14
+  zielone.
+- **L181:** PMSSB-58 A16/A17/A18 używały Inspiration jako nośnika
+  „biblioteczny instant rzucalny w walce”; po naprawie Inspiration jest
+  trzymane do EOT, więc nośnik zmieniony na syntetyk `surveil+draw`
+  (poza klasą hold). Exact piny mana-sacrifice zachowane (OFF +6,
+  lethal <0). CR 513.1 zweryfikowane i dopisane do tabeli (575→576).
+- **Bramy:** szybka 10181/10181, build 78 / 5813,9 kB → `49f9a30`;
+  finalnie `npm run test:all` **10450/10450, fail 0, 0 skipped**
+  (~673 s); golden-master 4/4 bez regeneracji (fixture nietknięty);
+  `cr-numery` OK; budżet lektury niepodniesiony.
+- **Dokumentacja:** plan `docs/plans/PLAN_2026-11-08e-inspiration-bot.md`,
+  raport `docs/audits/ZGLOSZENIE_INSPIRATION_INSTANT_DRAW_2026-11-08.md`,
+  handoff §9, opis PR #184. Bez nowego wpisu LESSONS (klasa L41/L181/L183).
+
+
 ## 2026-11-08 — zgłoszenie P: Twiddle jako combat trick + hold w upkeepie (PR #184, kontynuacja arena/76d4141f-mtg)
 
 - **Zakres:** polityka bota dla tap/untap po deskryptorze (ADR 0002), bez
