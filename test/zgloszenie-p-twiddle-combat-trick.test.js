@@ -6,19 +6,26 @@
 // 4) po deklaracji przeciwnika — odkręcić własnego blokera (lethal).
 //
 // CR (mirror nwgarne/mtg-data, wydanie 2026-11-06):
-// - 509.1a: „The chosen creatures must be untapped and they can't also be
+// - 509.1a: „The chosen creatures must be untapped and they can’t also be
 //   battles.” (tapnięty nie blokuje)
-// - 506.4: tapnięcie po deklaracji nie wycofuje stwora z walki;
-// - 510.1b: lethal-first przy przydziale obrażeń blokera;
+// - 506.4b: „Tapping or untapping a creature that’s already been declared as
+//   an attacker or blocker doesn’t remove it from combat and doesn’t prevent
+//   its combat damage.”
+// - 510.1d: „A blocking creature assigns combat damage to the creatures it’s
+//   blocking.” + 120.6: lethal = damage marked ≥ toughness.
 // - 302.6: choroba przywołania / tap symbol ogranicza atak i aktywacje.
 // Polityka jest generyczna po deskryptorze tap/untap (ADR 0002), nie po
-// nazwie Twiddle. Nośniki stworów syntetyczne (ADR 0029).
+// nazwie Twiddle. Nośniki stworów syntetyczne (ADR 0029); P/11 używa
+// istniejących kart katalogu jako nośnika triggera (bez nowych kart).
 //
-// Mutacje:
+// Mutacje (końcowy kod, logi .arena/mut-final2-*):
 //  mP1: pushPotential ignoruje zadeklarowanych atakujących → P/1, P/1e RED;
-//  mP2: untap po własnej deklaracji dalej płaski → P/1, P/2 RED;
-//  mP3: untap po deklaracji wroga bez blokowalności/lethal → P/6, P/7 RED;
-//  mP4: tap wroga przed deklaracją bez potencjału ataku → P/5, P/5b RED.
+//  mP2: untap czaru po własnej deklaracji dalej płaski → P/2 RED;
+//  mP3: untap po deklaracji wroga bez blokowalności → P/6, P/7 RED;
+//  mP4: tap wroga przed deklaracją bez potencjału ataku → P/5, P/5b RED;
+//  mP5: brak kary we własnym upkeep/draw → P/9 RED;
+//  mP6: kara okna obejmuje też darmowy trigger → P/11 RED;
+//  mP7: rzut czaru nie przekazuje castingSpell → P/2, P/4, P/10 RED.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createGameState, addObject, execute, playerView } from '../src/engine/game-state.js';
@@ -207,4 +214,39 @@ test('P/10: we WŁASNYM podtrzymaniu bot nie odkręca własnego stwora „bo tap
   blank(state, 'enemy', 'p2', { power: 2, toughness: 2 });
   const { choice } = choose(state);
   assert.ok(!isTwiddle(choice), `odkręcenie w upkeepie bez okna ataku: ${JSON.stringify(choice)}`);
+});
+
+// P/11 — anty-over-fix wspólnej miary (L41/L169): kara „trzymaj kartę” po
+// własnej deklaracji dotyczy RZUTU czaru z ręki (Twiddle), nie darmowego
+// triggera/aktywacji. Trigger „untap another target creature you control”
+// (Tenth District Veteran) po ataku nadal ma wybrać najlepszego tapniętego
+// stwora, a nie remisować wszystkie cele na −4 i brać pierwszego z brzegu.
+// Nośniki z istniejącego katalogu (bez nowych kart, ADR 0029).
+function putReal(state, id, cardId, controllerId, extra = {}) {
+  const def = REGISTRY.get(cardId);
+  assert.ok(def, `${cardId} w rejestrze`);
+  addObject(state, {
+    id, instanceId: `i-${id}`, cardId, controllerId, ownerId: controllerId, zone: 'battlefield',
+    ...gameObjectDataOf(def), types: def.types ?? [], keywords: def.keywords ?? [], subtypes: def.subtypes ?? [],
+  });
+  state.objects.set(id, Object.freeze({ ...state.objects.get(id), summoningSickness: false, ...extra }));
+}
+
+test('P/11: darmowy trigger untap po własnej deklaracji nie remisuje tapniętych celów (L169)', () => {
+  const state = game('declare_attackers', 'p1');
+  putReal(state, 'vet', 'tenth-district-veteran', 'p1');
+  putReal(state, 'warden', 'ghost-warden', 'p1', { tapped: true });
+  blank(state, 'flyer', 'p1', { power: 2, toughness: 2, tapped: true, keywords: ['flying'] });
+  blank(state, 'standing', 'p1', { power: 5, toughness: 5, tapped: false });
+  declare(state, 'p1', ['vet']);
+  const view = playerView(state, 'p1');
+  assert.ok(view.pendingTriggerTarget, 'trigger celu untap istnieje');
+  const bot = createHeuristicBot({ seed: 3 });
+  const choice = bot.chooseCommand(view, {});
+  assert.equal(choice.type, 'resolve_trigger_target');
+  const options = bot.trace().at(-1).options.filter((o) => o.cmd.startsWith('resolve_trigger_target('));
+  const score = (id) => options.find((o) => o.cmd === `resolve_trigger_target(${id})`)?.score;
+  assert.ok(score('flyer') > score('warden'), `większy tapnięty cel bije mniejszego: flyer=${score('flyer')} warden=${score('warden')}`);
+  assert.ok(score('warden') > score('standing'), `tapnięty cel bije nietapniętego: warden=${score('warden')} standing=${score('standing')}`);
+  assert.equal(choice.targetId, 'flyer', 'wybrany najlepszy tapnięty cel, nie pierwszy z remisu');
 });

@@ -6598,10 +6598,16 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
    * i aktywacja), a trigger `self_becomes_tapped` nie miał jej WCALE i wyceniał
    * cel gałęzią wrogą („odkręć ląd przeciwnika"). Wartość ma wyłącznie własny
    * TAPNIĘTY stwór (wraca bloker/atakujący); ląd i tak odkręca się w untap
-   * step, a cudzy permanent to pomoc wrogowi (kara 25). L41: ta sama liczba
-   * w trzech ścieżkach (czar, aktywacja, trigger).
+   * step, a cudzy permanent to pomoc wrogowi (kara 25). L41: ta sama miara
+   * walki w trzech ścieżkach (czar, aktywacja, trigger).
+   *
+   * Zgłoszenie P: `castingSpell` dokłada kontekst KOSZTU KARTY Z RĘKI —
+   * czar trzymamy na okno ataku/bloku, natomiast trigger/aktywacja nadal
+   * wybiera najlepszego tapniętego stwora (bloker na turę wroga / zdolność
+   * z kosztem tap, M314). Bez tego rozróżnienia kara okna remisowała cele
+   * darmowego triggera Veteran na −4 (L169: remis = brak wymiaru).
    */
-  const untapTargetValue = (view, victim) => {
+  const untapTargetValue = (view, victim, { castingSpell = false } = {}) => {
     if (!victim) return 0;
     if (victim.controllerId !== view.playerId) return -25; // odkręcanie wroga — zawsze złe
     const isLand = victim.kind === 'land' || (victim.types ?? []).includes('Land');
@@ -6612,20 +6618,25 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     const attackers = combat?.attackers ?? [];
     const kw = victim.keywords ?? [];
     if (myTurn(view)) {
-      // Zgłoszenie P: po WŁASNEJ deklaracji odkręcenie nie dokłada ataku
-      // (stwór już zaatakował albo nie został zadeklarowany) ani bloku
-      // (przeciwnik nie atakuje w naszej turze). Płaska premia kazała botowi
-      // odkręcać własnego atakującego zamiast tapować blokera.
-      if (combat?.attackingPlayerId === view.playerId && attackers.length > 0) return -4;
+      // Zgłoszenie P: „trzymaj kartę na okno walki” dotyczy RZUTU czaru
+      // z ręki (castingSpell), nie darmowego triggera/aktywacji już na stosie.
+      // Po WŁASNEJ deklaracji czar nie dokłada ataku ani bloku w tej walce —
+      // kara. Trigger/aktywacja (np. Veteran „untap another target creature”)
+      // nadal wybiera najlepszego tapniętego stwora: odkręcenie przygotowuje
+      // blokerę na turę wroga / zdolność z kosztem tap (M314, L41/L169).
+      if (combat?.attackingPlayerId === view.playerId && attackers.length > 0) {
+        return castingSpell ? -4 : base;
+      }
       const canAttackAfter = (!victim.summoningSickness || kw.includes('haste'))
         && victim.cantAttackStatic !== true && victim.detained !== true
         && !kw.includes('defender') && (victim.power ?? 0) > 0;
       const offensiveWindow = !combat && ['precombat_main', 'combat'].includes(view.turn.phase);
-      return canAttackAfter && offensiveWindow ? base : -4;
+      if (castingSpell) return canAttackAfter && offensiveWindow ? base : -4;
+      return base;
     }
     // Zgłoszenie P: po deklaracji PRZECIWNIKA odkręcenie ma wartość tylko
     // wtedy, gdy stwór może zablokować któregoś atakującego (CR 509.1b).
-    // Premia za lethal (CR 510.1b), przeżycie i zatrzymane obrażenia —
+    // Premia za lethal (CR 510.1d + 120.6), przeżycie i zatrzymane obrażenia —
     // ten sam model walki co pump/debuff (L41).
     if (combat && combat.attackingPlayerId !== view.playerId && attackers.length > 0) {
       if (victim.cantBlock) return -4;
@@ -13901,7 +13912,9 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             if (isSavageLikeSpell(spell)) {
               // Brak dodatkowej punktacji — cały efekt savage wyceniony razem
             } else {
-            score += untapTargetValue(view, objectOnBoard(view, cmd.targets?.[effect.targetIndex ?? 0]) ?? target);
+            // Zgłoszenie P: czar z ręki trzymamy na okno walki (castingSpell);
+            // trigger/aktywacja tej samej miary nie dostają kary za okno.
+            score += untapTargetValue(view, objectOnBoard(view, cmd.targets?.[effect.targetIndex ?? 0]) ?? target, { castingSpell: true });
             }
           }
           if (effect.type === 'incubate') score += incubateValue(effect); // PMSSB-38
