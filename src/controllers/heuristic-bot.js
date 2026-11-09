@@ -6194,10 +6194,39 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       // nic. Kara jest surowa także dla sorcery-speed (canWait=false):
       // trzymanie karty z ręki bije zagranie, które nic nie zmienia.
       const combatant = target.kind === 'creature' || (target.types ?? []).includes('Creature');
-      const pushPotential = (view.zones?.battlefield ?? []).some((o) => o.controllerId === view.playerId
+      // Zgłoszenie P (Twiddle): PO deklaracji atakujący są tapnięci, więc
+      // `canAttackNowGlobal` ich nie widzi. Zadeklarowany atak to REALNY
+      // potencjał ataku (CR 508) — inaczej bot tapował własnego atakującego
+      // zamiast blokera, albo uznawał zdjęcie blokera za marnotrastwo.
+      const battlefield = view.zones?.battlefield ?? [];
+      const declaredMyAttackers = (view.combat?.attackingPlayerId === view.playerId ? attackers : [])
+        .map((id) => battlefield.find((o) => o.id === id))
+        .filter((o) => o && o.controllerId === view.playerId);
+      const pushPotential = declaredMyAttackers.length > 0 || battlefield.some((o) => o.controllerId === view.playerId
         && (o.kind === 'creature' || (o.types ?? []).includes('Creature'))
         && canAttackNowGlobal(o) && !(o.keywords ?? []).includes('defender') && (o.power ?? 0) > 0);
       if (!combatant || !pushPotential) return canWait ? -20 : -10;
+      // Zgłoszenie P (dopisek właściciela): bot rzucał Twiddle w swoim
+      // podtrzymaniu „jak tylko ma manę”. Tap/untap to combat trick —
+      // we własnym upkeep/draw nie ma jeszcze okna ataku ani bloku, więc
+      // trzymamy kartę na beginning_of_combat / deklaracje.
+      if (['upkeep', 'draw'].includes(step)) return canWait ? -20 : -10;
+      if (declaredMyAttackers.length > 0) {
+        // Cel musi móc blokować któregoś zadeklarowanego atakującego
+        // (CR 509.1b) i być dla niego groźny — ten sam model walki co
+        // reszta bota (simulateCombat, CR 510). Tapnięcie „kogoś, kto i tak
+        // nie zablokuje” nie kupuje nic.
+        if (target.cantBlock) return canWait ? -12 : -6;
+        const blockable = declaredMyAttackers.filter((a) => attackerCanBeBlocked(a, [target]));
+        if (blockable.length === 0) return canWait ? -12 : -6;
+        let threat = 0;
+        for (const a of blockable) {
+          const out = simulateCombat(duelStats(a), [duelStats(target)]);
+          if (out.attackerDies) threat = Math.max(threat, 10 + 2 * combatPower(a));
+          else if (!out.deadBlockers.includes(target.id)) threat = Math.max(threat, 4);
+        }
+        return 6 + threat;
+      }
       if (['beginning_of_combat', 'declare_attackers'].includes(step)) return 6;
       // M202/F (uwaga właściciela, Twiddle): `step === 'main'` obejmuje ZARÓWNO
       // fazę PRZED walką, jak i PO walce — TURN_STEPS ma dwa kroki o nazwie
@@ -6219,6 +6248,21 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     // atakuje), ale przy blokadzie odkręcania traci CAŁĄ następną turę —
     // premia okna należy mu się tak samo, inaczej groźny, tapnięty stwór
     // wypadał w rankingu poniżej nietapniętego drobiazgu (zgłoszenie O).
+    // Zgłoszenie P: przed deklaracją przeciwnika tapujemy POTENCJALNEGO
+    // atakującego, nie obrońcę/chorego stwora. Ląd zostaje denial many
+    // (M202/F, T/3) — on nie atakuje, ale tapnięcie odbiera manę.
+    const isLand = target.kind === 'land' || (target.types ?? []).includes('Land');
+    const combatant = target.kind === 'creature' || (target.types ?? []).includes('Creature');
+    const preAttack = attackers.length === 0 && ['upkeep', 'draw', 'main1', 'beginning_of_combat'].includes(step);
+    if (preAttack && combatant && !isLand) {
+      const kw = target.keywords ?? [];
+      const canAttack = !target.tapped && (!target.summoningSickness || kw.includes('haste'))
+        && target.cantAttackStatic !== true && target.detained !== true
+        && !kw.includes('defender') && (target.power ?? 0) > 0;
+      // Cel już tapnięty zostawiamy istniejącej logice O/lock (_tapnięta
+      // groźna kreatura_ przy „tap + nie odkręcaj” nadal jest lepszym celem).
+      if (!canAttack && !target.tapped) return canWait ? -20 : -10;
+    }
     if (['upkeep', 'draw'].includes(step)) return 14;
     // M202/F: jak wyżej — tylko faza PRZED walką (po walce już zaatakował).
     if (view.turn.phase === 'precombat_main' && step === 'main1' && attackers.length === 0) return 12;
@@ -6559,11 +6603,51 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
    */
   const untapTargetValue = (view, victim) => {
     if (!victim) return 0;
+    if (victim.controllerId !== view.playerId) return -25; // odkręcanie wroga — zawsze złe
     const isLand = victim.kind === 'land' || (victim.types ?? []).includes('Land');
-    if (victim.controllerId === view.playerId) {
-      return (!isLand && victim.tapped) ? 8 + 2 * (victim.power ?? 0) : -4;
+    const isCreature = victim.kind === 'creature' || (victim.types ?? []).includes('Creature');
+    if (isLand || !isCreature || !victim.tapped) return -4;
+    const base = 8 + 2 * (victim.power ?? 0);
+    const combat = view.combat ?? null;
+    const attackers = combat?.attackers ?? [];
+    const kw = victim.keywords ?? [];
+    if (myTurn(view)) {
+      // Zgłoszenie P: po WŁASNEJ deklaracji odkręcenie nie dokłada ataku
+      // (stwór już zaatakował albo nie został zadeklarowany) ani bloku
+      // (przeciwnik nie atakuje w naszej turze). Płaska premia kazała botowi
+      // odkręcać własnego atakującego zamiast tapować blokera.
+      if (combat?.attackingPlayerId === view.playerId && attackers.length > 0) return -4;
+      const canAttackAfter = (!victim.summoningSickness || kw.includes('haste'))
+        && victim.cantAttackStatic !== true && victim.detained !== true
+        && !kw.includes('defender') && (victim.power ?? 0) > 0;
+      const offensiveWindow = !combat && ['precombat_main', 'combat'].includes(view.turn.phase);
+      return canAttackAfter && offensiveWindow ? base : -4;
     }
-    return -25; // odkręcanie wroga — zawsze złe
+    // Zgłoszenie P: po deklaracji PRZECIWNIKA odkręcenie ma wartość tylko
+    // wtedy, gdy stwór może zablokować któregoś atakującego (CR 509.1b).
+    // Premia za lethal (CR 510.1b), przeżycie i zatrzymane obrażenia —
+    // ten sam model walki co pump/debuff (L41).
+    if (combat && combat.attackingPlayerId !== view.playerId && attackers.length > 0) {
+      if (victim.cantBlock) return -4;
+      const prospective = { ...victim, tapped: false };
+      const battlefield = view.zones?.battlefield ?? [];
+      let best = -4;
+      for (const aid of attackers) {
+        const attacker = battlefield.find((o) => o.id === aid);
+        if (!attacker || !attackerCanBeBlocked(attacker, [prospective])) continue;
+        const out = simulateCombat(duelStats(attacker), [duelStats(prospective)]);
+        // Bazowa wartość odkręcenia zostaje (K/8: zwykły blok = 8+2·moc).
+        // Dodatkowa premia tylko za WYNIK ponad bazę: lethal po stronie
+        // atakującego albo przeżycie blokera. Chump-block bez zabicia
+        // atakującego nie dostaje premii (nie zmienia exact pinu K/8).
+        let value = base;
+        if (out.attackerDies) value += 18 + 2 * combatPower(attacker);
+        else if (!out.deadBlockers.includes(victim.id)) value += 6;
+        best = Math.max(best, value);
+      }
+      return best;
+    }
+    return base;
   };
 
   /**
@@ -11935,6 +12019,9 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         if (!target) return finish(-1);
         const mine = target.controllerId === view.playerId;
         const effectType = cmd.effectType ?? view.pendingOptionalSpellEffect?.effectType ?? null;
+        // Zgłoszenie P: okno trzymamy w WYCENIE RZUTU (tapTimingBonus /
+        // untapTargetValue), nie w samej decyzji „you may” po już rzuceniu
+        // czarze — tap wrogi / untap własny pozostaje dodatni względem odmowy.
         if (effectType === 'tap_permanent') return finish(mine ? -8 : 8);
         if (effectType === 'untap_permanent') return finish(mine ? 8 : -8);
         return finish(2);
