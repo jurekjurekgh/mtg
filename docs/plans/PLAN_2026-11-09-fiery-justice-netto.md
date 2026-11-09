@@ -151,23 +151,23 @@ zmienia tej arytmetyki.
 
 ## Etapy i kryteria ukończenia
 
-- [ ] **E1 Plan** (ten plik) + strażnicy dokumentacji → commit + push
+- [x] **E1 Plan** (ten plik) + strażnicy dokumentacji → commit + push
       **przed** jakąkolwiek zmianą `src/`.
-- [ ] **E2 Piny FJ/** (`test/zgloszenie-fj-fiery-justice-netto.test.js`):
+- [x] **E2 Piny FJ/** (`test/zgloszenie-fj-fiery-justice-netto.test.js`):
       RED przed fixem na scenach A/D/E i darmowym rzucie z ręki;
       kontrole anty-over-fix (B/C/F/G, consume-spirit, czysty burn)
       GREEN przed i po. Kryterium: fail dokładnie na pinach zgłoszenia.
-- [ ] **E3 Fix** w `heuristic-bot.js` (helper + 4 wołania) → piny FJ
+- [x] **E3 Fix** w `heuristic-bot.js` (helper + 4 wołania) → piny FJ
       GREEN, sąsiednie pliki Fiery/bot GREEN, `node --check`.
-- [ ] **E4 Mutacje** mFJ1–mFJ6: helper→0, brak agregacji podziału,
+- [x] **E4 Mutacje** mFJ1–mFJ6: helper→0, brak agregacji podziału,
       pominięcie `targetIndex`, `gain_life` kontrolera jako offset celu,
       brak wołania w free-cast, próg letal od surowego amount. Każda
       mutacja RED na konkretnym pinie; źródło przywrócone bitowo
       (`sha256sum -c`).
-- [ ] **E5 Bramy**: `npm test` (szybki rdzeń) + `npm run build` → commit
+- [x] **E5 Bramy**: `npm test` (szybki rdzeń) + `npm run build` → commit
       + push; finalnie `npm run test:all` (fail 0, skipped 0).
       Golden-master bez `--write` (L176); przy dryfie wyłącznie `--dump`.
-- [ ] **E6 Dokumentacja**: raport `docs/audits/ZGLOSZENIE_FJ_FIERY_JUSTICE_NETTO_2026-11-09.md`,
+- [x] **E6 Dokumentacja**: raport `docs/audits/ZGLOSZENIE_FJ_FIERY_JUSTICE_NETTO_2026-11-09.md`,
       plan `[x]` + „Wykonanie”, `PROJECT_HISTORY.md`, HANDOFF §11,
       strażnicy dokumentacji/CR/card-agnostic, `cr-numery --cr` OK.
       PR #184 PATCH (tytuł/body). Bez scalania.
@@ -195,3 +195,28 @@ zmienia tej arytmetyki.
    życiem bota (anty-over-fix pin).
 - **Ciche testy**: wszystkie przebiegi `> .arena/*.log 2>&1`, exit code,
    `grep '^not ok'`; zakaz `tee`/pełnego `cat`.
+
+## Wykonanie
+
+- Commity: `b69636e` (plan), `6c215e4` (fix + piny FJ/1–FJ/14),
+  dokumentacja finalna.
+- RED: `.arena/fj-red.log` — 6/14 fail (FJ/2, FJ/3, FJ/4, FJ/8, FJ/9,
+  FJ/12); kontrole anty-over-fix GREEN od startu.
+- GREEN: `.arena/fj-green.log` 14/14; `.arena/fj-neighbours.log`
+  **132/132** (8 plików Fiery/bot + FJ); `.arena/fj-golden.log` **4/4**
+  (fixture nietknięty, bez `--write`).
+- Mutacje: `.arena/fj-mutations.log` — mFJ1–mFJ6 **wszystkie RED**
+  (mFJ3 → FJ/13, mFJ4 → FJ/11, mFJ5 → FJ/9; pozostałe → 6 pinów
+  zgłoszenia). Źródło przywrócone bitowo: `sha256sum -c
+  .arena/fj-source.sha256` → OK.
+- Bramy: `npm test` **10210/10210 fail 0 skipped 0** (~165 s,
+  `.arena/fj-fast.log`); build **78 / 5821,5 kB** (`.arena/fj-build.log`);
+  `npm run test:all` **10479/10479 fail 0 skipped 0** (~532 s,
+  `.arena/fj-test-all.log`).
+- Strażnicy dokumentacji/CR/card-agnostic: **94/94**
+  (`.arena/fj-docs-guards.log`); `cr-numery --cr` **OK** (576 numerów,
+  6617 cytatów, bez regeneracji).
+- Raport: `docs/audits/ZGLOSZENIE_FJ_FIERY_JUSTICE_NETTO_2026-11-09.md`.
+- CR: mirror `nwgarne/mtg-data` 2026-11-06, SHA-256
+  `d7cdcc11f2b7ab88b1164791dd0cafb6bf0c4e1f0863e0ee6abca2d3a7fb7674`;
+  ruling WotC 2017-03-14 ze snapshotu `docs/cards/scryfall-fiery-justice.json`.

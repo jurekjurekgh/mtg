@@ -20,6 +20,35 @@
 > nie trafiają do repozytorium".
 
 
+## 2026-11-09 — zgłoszenie właściciela FJ: Fiery Justice i netto obrażeń/życia (PR #184, kontynuacja arena/76d4141f-mtg)
+
+- **Zakres:** wyłącznie wycena bota (`src/controllers/heuristic-bot.js`).
+  Silnik, protokół, stół i katalog kart bez zmian; bez nowych kart
+  (ADR 0029), bez pełnego B0 (ADR 0018), bez scalania.
+- **Objaw:** bot rzuca Fiery Justice w przeciwnika; ten traci 5 życia
+  i odzyskuje 5 — „kompletnie bezsensowne zmarnowanie tej karty”.
+- **Diagnoza (sonda headless):** nogi jednego rozstrzygnięcia wyceniane
+  niezależnie. `damageTargetValue` płacił twarzy `6+40*pct` / 1000 za
+  „dobicie”, `friendlyMisaimPenalty` karal tylko 35 za `gain_life_target`,
+  a baza ~50 zostawała (rider wyklucza `isDamageOnly`). Pusty stół:
+  50+16−35=31 > pass; wróg 5 życia: 50+1000−35=1015 (fałszywy letal,
+  silnik poprawnie 5−5+5=5). Darmowy rzut z ręki: 45−35=10 > skip 4.
+- **Naprawa generyczna (ADR 0002):** `sameResolutionLifeGain` czyta
+  zysk życia tego samego gracza z deskryptora (`gain_life_target` po
+  `targetIndex`, `gain_life` kontrolera); `damageTargetValue` liczy
+  netto i próg dobicia od netto (CR 119.3/608.2c/704.3/704.5a);
+  `dividedDamageValue` agreguje porcje i jest jedną miarą dla cast_spell
+  oraz okien darmowych (L41). Ruling WotC 2017-03-14 pinowany.
+- **Piny/mutacje:** FJ/1–FJ/14 (RED 6 → GREEN 14); mFJ1–mFJ6 wszystkie
+  RED. Prefiks FJ, bo T zajęte (atak 0/1, 2026-10-26).
+- **Bramy:** `b69636e` plan, `6c215e4` fix; szybka **10210/10210**,
+  build **78 / 5821,5 kB**, `test:all` **10479/10479 fail 0 skipped 0**
+  (~532 s), golden **4/4** bez regeneracji, strażnicy **94/94**,
+  `cr-numery` OK (576). Raport:
+  `docs/audits/ZGLOSZENIE_FJ_FIERY_JUSTICE_NETTO_2026-11-09.md`.
+- Bez scalania; następna sesja: kolejka właściciela (ADR 0021), po
+  scaleniu #184 audyt #184 wg ADR 0020.
+
 ## 2026-11-09 — zgłoszenie właściciela KV: Kishla Village i kreator many (PR #184, kontynuacja arena/76d4141f-mtg)
 
 - **Zakres:** wyłącznie warstwa stołu (`src/table/mana-wizard.js`).
