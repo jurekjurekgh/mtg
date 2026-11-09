@@ -222,6 +222,12 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   // (skala rodziny D); ×0 = zachowanie sprzed zgłoszenia. Poza klasą:
   // additionalCost (Village Rites), mieszane ridery, zdolności/triggery.
   'instantDrawHoldPenalty',
+  // Zgłoszenie U/RT (2026-11-09, Renegade Tactics): cantrip z riderem
+  // cant_block nie może sam nieść rzutu, gdy rider nie usuwa realnego
+  // blokera w oknie ataku (CR 509.1b). Kara przebija spellBase+draw;
+  // ×0 = zachowanie sprzed zgłoszenia. Wspólna dla cast/activate i okien
+  // alternative-cost, w których odmowa zachowuje kartę (ręka/discover).
+  'cantBlockCantripHoldPenalty',
   // PMSSB-15 (audyt taktyczny prewencji/fog, prevent_*): okna wartości
   // fog —właściciel (zgłoszenie B): „preventować u stworów które by lethal
   // dostały albo u siebie jeśli któryś z kreatur przeciwnika go zrani" +
@@ -1008,6 +1014,7 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   instantDrawFoeEndBonus: 10,
   // Zgłoszenie właściciela 2026-11-08e (Inspiration): patrz klucze wyżej.
   instantDrawHoldPenalty: 120,
+  cantBlockCantripHoldPenalty: 120, // zgłoszenie U/RT: patrz klucze wyżej
   // PMSSB-15 (wartości przemyślane, pomiar PRZED: /tmp/pmssb15-prewencja-przed.mjs):
   // bazy (ownTurn −300 / wasted −75 / chip 15) = wartości HISTORYCZNE rodzin
   // M91/M236 — anty-over-fix: najsłabszy realny wariant zachowuje starą cenę;

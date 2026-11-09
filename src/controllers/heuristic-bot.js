@@ -10541,6 +10541,40 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   };
 
   /**
+   * RT (zgłoszenie U, Renegade Tactics): JEDNA miara celu i okna dla
+   * każdego „target creature can't block this turn” (L41: cast_spell,
+   * activate_ability i okna alternative-cost czytają ten sam predykat).
+   * null = rider jałowy: cel własny/tapnięty/już z zakazem albo nie jest
+   * realnym blokerem żadnego MOJEGO atakującego w tej turze (CR 509.1b).
+   * Okno z attackWindowAttackerIds — main1/BoC z ciałem zdolnym do ataku
+   * albo już zadeklarowany mój atak; main2/tura wroga = null.
+   */
+  const cantBlockTargetValue = (view, victim, attackerIds) => {
+    if (!victim || victim.controllerId === view.playerId || victim.tapped || victim.cantBlock) return null;
+    return cantBlockRemovalValue(view, victim, attackerIds);
+  };
+
+  /**
+   * RT: kształt „cant_block + draw_cards” (i nic więcej) to cantrip z
+   * riderem bojowym. Gdy rider nie kupuje realnego usunięcia blokera,
+   * sam dobór nie może nieść rzutu ponad pass — kara strategii przebija
+   * spellBase(50)+draw(~6). Dodatkowe payloady (damage/removal/…) mają
+   * własną wycenę i NIE są objęte tą karą (anty-over-fix). Okna, w których
+   * odmowa bezpowrotnie traci kartę (Epic/suspend/rebound), nie wołają tej
+   * kary — tam dobór jest odzyskiem, nie przepaleniem potencjału.
+   */
+  const CANT_BLOCK_CANTRIP_EFFECTS = new Set(['cant_block', 'draw_cards']);
+  function cantBlockCantripHoldPenalty(view, effects, cmd) {
+    const list = (effects ?? []).filter(Boolean);
+    const rider = list.find((e) => e?.type === 'cant_block');
+    if (!rider || !list.some((e) => e?.type === 'draw_cards')) return 0;
+    if (!list.every((e) => CANT_BLOCK_CANTRIP_EFFECTS.has(e?.type))) return 0;
+    const victim = objectOnBoard(view, (cmd.targets ?? [])[rider.targetIndex ?? 0]);
+    return cantBlockTargetValue(view, victim, attackWindowAttackerIds(view)) == null
+      ? P.cantBlockCantripHoldPenalty : 0;
+  }
+
+  /**
    * PMSSB-40 (F2): payoff triggera „target creature can't block this turn"
    * (Goblin Battle Jester). Ten sam predykat okna co ścieżka rzutu (M221/A +
    * Batch60 — L41): efekt jest wart tyle, ile bloker, którego usuwa z planu
@@ -13760,35 +13794,18 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
               if (lethal) score += 50; // D1: premia lethal
             }
           }
-          // Batch60 (Renegade Tactics): BLIŹNIAK gałęzi cant_block ze ścieżki
-          // zdolności AKTYWOWANYCH (L41) — w cast_spell jej nie było, więc
-          // Renegade szedł wyłącznie wartością cantripa, a cel „can't block”
-          // remisował (generyczny hostile rozstrzygał byle jak). Wartość
-          // za usunięcie PRAWDZIWEGO blokera liczy cantBlockRemovalValue
-          // (followup/2: jakość bloku, nie płaskie +8): zadeklarowany atak (jak
-          // w bliźniaku) ALBO okno przed atakiem (sorcery w main1/BoC musi
-          // zadziałać PRZED deklaracją — gałąź aktywowana tego okna nie zna,
-          // bo zdolności-instanty czekają na combat). Kara −20 różnicuje cele
-          // (28 pkt między kluczowym blokerem a bezużytecznym celem); samego
-          // rzutu nie topi (cantrip za 1 manę i tak grywalny).
+          // RT (zgłoszenie U, Renegade Tactics): bliźniak activate_ability
+          // czyta TĘ SAMĄ miarę celu i okno attackWindowAttackerIds (L41).
+          // Dawniej inline duplikat okna + fallback −20 zostawiał cantrip
+          // ponad passem przy jałowym riderze (50+6−20=36). Kara hold
+          // schodzi pod pass, gdy cant_block nie usuwa realnego blokera;
+          // realny bloker (Batch60 E/H) zachowuje dodatnią wycenę.
           if (effect.type === 'cant_block') {
-            const victim = target ?? (cmd.targets?.[0] ? objectOnBoard(view, cmd.targets[0]) : null);
-            const combat = view.combat ?? null;
-            const victimIsEnemy = Boolean(victim) && victim.controllerId !== view.playerId;
-            const victimCouldBlock = victimIsEnemy && !victim.tapped && !victim.cantBlock;
-            const declaredAttack = Boolean(combat) && combat.attackingPlayerId === view.playerId
-              && (combat.attackers ?? []).length > 0;
-            const preAttackWindow = !declaredAttack && myTurn(view)
-              && ['main1', 'beginning_of_combat'].includes(view.turn.step)
-              && myCreatures(view).some((c) => canAttackNow(c) && combatPower(c) > 0);
-            let removalValue = null;
-            if (victimCouldBlock && (declaredAttack || preAttackWindow)) {
-              const ids = declaredAttack
-                ? (combat.attackers ?? [])
-                : myCreatures(view).filter((c) => canAttackNow(c) && combatPower(c) > 0).map((c) => c.id);
-              removalValue = cantBlockRemovalValue(view, victim, ids);
-            }
+            const slot = (cmd.targets ?? [])[effect.targetIndex ?? 0];
+            const victim = slot ? objectOnBoard(view, slot) : target;
+            const removalValue = cantBlockTargetValue(view, victim, attackWindowAttackerIds(view));
             score += removalValue ?? -20;
+            score -= cantBlockCantripHoldPenalty(view, effects, cmd);
           }
           // Batch60 (Timely Interference, kicked): BLIŹNIAK gałęzi
           // blocks_if_able ze ścieżki AKTYWOWANEJ (L41) — w cast_spell jej nie
@@ -15241,27 +15258,18 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             && (effect.scope ?? 'each_opponent') === 'each_opponent') {
             score += opponentLifeEffectValue(view, effect);
           }
-          // M221/A (zgłoszenie właściciela, Panic Spellbomb): „{T}, poświęć:
-          // docelowy stwór nie może blokować w tej turze" to COMBAT TRICK
-          // ofensywny — ma sens WYŁĄCZNIE, gdy bot realnie atakuje w tej turze
-          // i cel MÓGŁBY zablokować któregoś z jego atakujących. Bot wystawiał
-          // Spellbomba i w tej samej głównej fazie (bez ani jednego atakującego)
-          // poświęcał go, zabierając blok mojemu stworowi — efekt jałowy. Bez
-          // własnej deklaracji ataku `cant_block` niczego nie kupuje (L42:
-          // efekt „do końca tury" wyceniamy z oknem; L3: kara przebija bazę +2).
-          // Reguła generyczna po TYPIE efektu i STANIE walki z PlayerView
-          // (ADR 0002/0017), nie po nazwie karty.
+          // M221/A + RT (L41): TA SAMA miara celu i okna co cast_spell.
+          // Zdolność-instant może zdjąć blokera także w main1/BoC przed
+          // deklaracją (attackWindowAttackerIds), nie tylko po ataku;
+          // bez realnego blokera fallback −20 + kara cantripu trzyma pod
+          // passem. Panic Spellbomb (sam cant_block, bez draw) nie łapie
+          // kary kształtu — jego −20 wystarcza jak dotąd.
           if (effect.type === 'cant_block') {
-            const victim = target ?? (cmd.targets?.[0] ? objectOnBoard(view, cmd.targets[0]) : null);
-            const combat = view.combat ?? null;
-            const botAttacks = Boolean(combat) && combat.attackingPlayerId === view.playerId
-              && (combat.attackers ?? []).length > 0;
-            const victimIsEnemy = Boolean(victim) && victim.controllerId !== view.playerId;
-            const victimCouldBlock = victimIsEnemy && !victim.tapped && !victim.cantBlock;
-            const removalValue = (botAttacks && victimCouldBlock)
-              ? cantBlockRemovalValue(view, victim, combat.attackers ?? [])
-              : null;
+            const slot = (cmd.targets ?? [])[effect.targetIndex ?? 0];
+            const victim = slot ? objectOnBoard(view, slot) : target;
+            const removalValue = cantBlockTargetValue(view, victim, attackWindowAttackerIds(view));
             score += removalValue ?? -20;
+            score -= cantBlockCantripHoldPenalty(view, effects, cmd);
           }
           // Batch60 (Timely Interference, kicked — „blocks this turn if
           // able"): wymuszony blok WROGA opłaca się, gdy bot atakuje i któryś
@@ -17884,7 +17892,11 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         if (!xCardCastAllowed(view, found ?? foundDef, cmd, true)) return finish(NEVER);
         if (found?.spell ?? (foundDef?.spell && !foundDef?.aura)) {
           const spellCard = found?.spell ? found : foundDef;
-          return finish(freeCastVariantScore(view, freeCastVariantEffects(spellCard, cmd), cmd, 60));
+          const foundEffects = freeCastVariantEffects(spellCard, cmd);
+          // RT: alternatywa „weź do ręki” zachowuje potencjał ridera —
+          // jałowy cantrip nie może wygrywać z zachowaniem karty (L41).
+          return finish(freeCastVariantScore(view, foundEffects, cmd, 60)
+            - cantBlockCantripHoldPenalty(view, foundEffects, cmd));
         }
         const auraDef = found?.aura ? found : foundDef;
         if (auraDef?.aura && (cmd.targets ?? []).length > 0) {
@@ -18476,7 +18488,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // Darmowy rzut nie pobiera kosztu many — koszt dodatkowy (ofiara)
         // nadal jest realny, więc kara za niego siedzi w gałęzi kosztu
         // (jak w oknie Vaana), nie w bazie.
-        return finish(freeCastVariantScore(view, effects, cmd, 45));
+        // RT: odmowa zachowuje kartę w ręce — jałowego ridera nie niesie
+        // sam cantrip (ta sama kara co cast_spell, L41).
+        const freeScore = freeCastVariantScore(view, effects, cmd, 45);
+        return finish(freeScore - cantBlockCantripHoldPenalty(view, effects, cmd));
       }
       case 'resolve_grave_free_cast': {
         // M174/E (Halo Forager) — STAGED: X → karta → cele (zgłoszenie sekcja A).

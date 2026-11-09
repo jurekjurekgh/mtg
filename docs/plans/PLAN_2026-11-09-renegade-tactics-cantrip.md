@@ -183,11 +183,12 @@ GREEN, `git status` czysty po przywróceniu (L34). Mutacja GREEN bez
 
 1. [x] Rozpoznanie read-only: karta/Oracle/ruling, CR, skan katalogu,
    sonda A–L + Epic/Discover, istniejące piny, kolizja prefiksu U.
-2. [ ] Ten plan + `npm test`/build bazy → commit/push **przed** kodem.
-3. [ ] Piny RT/1–21 → RED (liczba fail zapisana w logu).
-4. [ ] Fix params + bot (predykat, kara, bliźniaki, granica okien) →
-   GREEN RT, sąsiednie batch60/M221/PMSSB-40/FJ/ID, golden 4/4 bez
-   regeneracji, `npm test` + build → commit/push.
+2. [x] Ten plan + `npm test`/build bazy → commit/push **przed** kodem (`3b4af41`; baza 10210/10210, build 5821,5 kB).
+3. [x] Piny RT/1–21 → RED **13 fail / 8 pass** (`.arena/rt-pins-red.log`); zielone od startu: anty-over-fixy i legalność.
+4. [x] Fix params + bot (predykat, kara, bliźniaki, granica okien) →
+   GREEN RT **21/21**, sąsiednie **148/148** + Inspiration **16/16**,
+   golden **4/4** bez regeneracji, `npm test` **10231/10231**, build
+   **78 / 5822,4 kB** → commit/push.
 5. [ ] Mutacje mRT1–8 ze świadkami → raport.
 6. [ ] `npm run test:all` (cicho, log + exit), build, strażnicy docs/CR,
    `cr-numery --cr`.
