@@ -140,10 +140,52 @@ mirror `nwgarne/mtg-data`, plik `.arena/cr-current.txt`):
 
 ## Kryteria ukończenia
 
-- [ ] Plan wypchnięty przed kodem źródeł.
-- [ ] Piny KV RED → GREEN, anty-over-fix zielone od startu.
-- [ ] Fix generyczny (bez nazwy/ID karty w kodzie), osobny commit + push.
-- [ ] Mutacje mKV1–mKV6 RED, źródło przywrócone bitowo.
-- [ ] `npm test` fail 0 + `npm run build` OK na przyroście.
-- [ ] `npm run test:all` fail 0.
-- [ ] Docs: plan „Wykonanie”, raport, historia, handoff, PR #184 PATCH.
+- [x] Plan wypchnięty przed kodem źródeł.
+- [x] Piny KV/1–KV/15 RED (9 fail) → GREEN (15/15), anty-over-fix
+      KV/7, KV/8 zielone od startu.
+- [x] Fix generyczny (bez nazwy/ID karty w kodzie), osobny commit + push.
+- [x] Mutacje mKV1–mKV7 RED, źródło przywrócone bitowo
+      (`sha256 31cccda4…`).
+- [x] `npm test` **10196/10196** + `npm run build` **78 / 5818,6 kB**
+      na przyroście (`3903740`, push).
+- [x] `npm run test:all` **10465/10465, fail 0, 0 skipped** (~632 s).
+- [x] Docs: plan „Wykonanie”, raport, historia, handoff, PR #184 PATCH.
+
+## Wykonanie
+
+- **Commity:** `ee6ee3d` (plan, push przed kodem), `3903740`
+  (`src/table/mana-wizard.js` +89/−4, piny KV/1–KV/15), dokumentacja
+  finalna.
+- **Diagnoza zmierzona, nie zgadywana:** Kishla była widziana jako źródło
+  {G} na każdym poziomie (`getSourceForObject`, `playerView.manaSource`,
+  `manaSourcesOf`). Zawodził dopiero KLUCZ kształtu płatności w
+  `countPaymentVariants` — profil `land:G#1#-` jest identyczny dla
+  Forestu i Kishli, więc dwa różne podzbiory źródeł sklejały się w jeden
+  wariant. Sonda: `.arena/s-probe-1.log` (przed) i `.arena/s-probe-2.log`
+  (po) — `1 → 2` warianty, `false → true` bramki, `null → deskryptor`
+  routera; scena kontrolna bez Kishli bez zmian (`1 / false / null`).
+- **Fix:** `alternativeTapCostSignature` (deskryptory, ADR 0002) +
+  `altTap` na wierszach źródeł + człon klucza wariantu. Kanoniczny klucz
+  (`stableDescriptorKey`) sortuje pola i pomija `null`/`undefined`, więc
+  pełny stan i widok dają tę samą sygnaturę (L41), a kolejność zdolności
+  w danych nie zmienia decyzji (ADR 0005).
+- **RED:** `.arena/kv-red.log` — 9 fail / 4 pass. Świadomie wołanie nowej
+  funkcji przez namespace modułu, żeby brak eksportu dawał fail PINU,
+  a nie jeden `SyntaxError` importu maskujący pozostałych świadków.
+- **GREEN:** `.arena/kv-green.log` 15/15; sąsiedkie piny kreatora
+  `.arena/kv-neighbours.log` **127/127** (A, M202/O, M311, Mana Cylix,
+  hybrid, Dismal Backwater, Nature's Embrace, A19/A20/A86, batch66).
+- **Mutacje:** `.arena/mutate-kv.py`, logi `.arena/mut-mkv1…7.log`,
+  podsumowanie `.arena/kv-mutations.log`. Pierwsze przejście: mKV2
+  (sygnatura stała) i mKV5 (brak sortowania) były **GREEN — brak świadka**;
+  dopisane KV/14 (różne alternatywy = różne kształty) i KV/15 (kolejność
+  wielu alternatyw bez znaczenia) zabiły obie. Drugie przejście: wszystkie
+  7 RED, źródło przywrócone bitowo.
+- **Bramki:** `.arena/kv-fast-2.log` **10196/10196 fail 0 skipped 0**
+  (~205 s); `.arena/kv-build-2.log` **78 modułów / 5818,6 kB**;
+  `.arena/kv-test-all.log` **10465/10465 fail 0 skipped 0** (~632 s);
+  `.arena/kv-docs-guards.log` **94/94**; `cr-numery` **OK** (tabela 576,
+  bez regeneracji — 601.2g, 602.1a, 605.1a już były).
+- **Bez zmian:** silnik, protokół, kontrolery, katalog kart, golden-master
+  bota (fixture nietknięty), progi regresji, budżet lektury.
+- **Raport:** `docs/audits/ZGLOSZENIE_KV_KISHLA_KREATOR_MANY_2026-11-09.md`.

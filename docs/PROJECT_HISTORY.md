@@ -20,6 +20,42 @@
 > nie trafiają do repozytorium".
 
 
+## 2026-11-09 — zgłoszenie właściciela KV: Kishla Village i kreator many (PR #184, kontynuacja arena/76d4141f-mtg)
+
+- **Zakres:** wyłącznie warstwa stołu (`src/table/mana-wizard.js`).
+  Silnik, protokół, kontrolery i katalog kart bez zmian; bez nowych kart
+  (ADR 0029), bez pełnego B0 (ADR 0018), bez scalania.
+- **Objaw:** „1 swamp, 4 foresty i Kishla Village, rzucam czar za 4B —
+  powinienem dostać mana wizard z wyborem co tapnąć na 4 colorless; nie
+  dostaję, auto-płatność tapuje swamp i 4 foresty”.
+- **Diagnoza (sonda na prawdziwej sesji stołu):** Kishla BYŁA pełnoprawnym
+  źródłem {G} (`getSourceForObject`, `playerView.manaSource`,
+  `manaSourcesOf`). Zawodził klucz kształtu płatności w
+  `countPaymentVariants`: profil `land:G#1#-` identyczny dla Forestu
+  i Kishli sklejał „Swamp + 4 Foresty” z „Swamp + 3 Foresty + Kishla”
+  w jeden wariant → `shouldOpenManaWizard` false → auto-pay.
+- **Naprawa generyczna (ADR 0002):** `alternativeTapCostSignature` czyta
+  z deskryptorów zdolności aktywowane z `{T}` w koszcie, które nie są
+  zdolnościami many (CR 605.1a), i buduje kanoniczną sortowaną sygnaturę
+  (ADR 0005). Wiersze źródeł niosą `altTap`, klucz wariantu go używa.
+  Kishla ma `{3}{G}, {T}: Surveil 2`, więc tapnięcie na manę zabiera
+  surveil (CR 602.1a) — to inna decyzja niż Forest, a wybór należy do
+  gracza (CR 601.2g). Anty-over-fix: dwa identyczne lądy i dwie kopie
+  tej samej karty zostają jednym kształtem (A/2, M202/O).
+- **Dowody:** piny KV/1–KV/15 RED 9 fail → GREEN 15/15; mutacje
+  mKV1–mKV7 wszystkie RED (pierwsze przejście ujawniło brak świadka dla
+  mKV2/mKV5 → dopisane KV/14, KV/15); źródło przywrócone bitowo;
+  sąsiedkie piny kreatora 127/127.
+- **Bramy:** `ee6ee3d` plan (push przed kodem), `3903740` fix;
+  `npm test` **10196/10196 fail 0**, build **78 / 5818,6 kB**;
+  `npm run test:all` **10465/10465 fail 0 skipped 0** (~632 s);
+  strażnicy docs/CR/generyczności **94/94**; `cr-numery` OK (tabela 576,
+  bez regeneracji); golden-master bez regeneracji.
+- **Raport:** `docs/audits/ZGLOSZENIE_KV_KISHLA_KREATOR_MANY_2026-11-09.md`,
+  plan `docs/plans/PLAN_2026-11-09-kishla-kreator-many.md`,
+  handoff §10.
+
+
 ## 2026-11-08 — zgłoszenie właściciela: Inspiration — instant-draw na EOT przeciwnika (PR #184, kontynuacja arena/76d4141f-mtg)
 
 - **Zakres:** polityka bota po deskryptorze (ADR 0002) dla czystego
