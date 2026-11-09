@@ -7677,15 +7677,21 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     + P.removalWorthWeight * ((t.power ?? 0) + (t.toughness ?? 0))
     + enemyRemovalTargetBonus(view, t);
 
-  const damageTargetValue = (view, targetId, amount, scaling = false) => {
+  const damageTargetValue = (view, targetId, amount, scaling = false, lifeRecovered = 0) => {
     const amt = Number.isInteger(amount) ? amount : 0;
+    const recovered = Number.isInteger(lifeRecovered) && lifeRecovered > 0 ? lifeRecovered : 0;
     const foe = enemy(view);
     if (targetId === view.playerId) return -60 - 2 * amt;   // w SIEBIE — zakaz
     if (foe && targetId === foe.id) {
-      if (amt <= 0) return -60;
+      // FJ (Fiery Justice, CR 119.3/608.2c): życie odzyskane w TYM SAMYM
+      // rozstrzygnięciu przez tego samego gracza zmniejsza netto obrażeń.
+      // SBA (CR 704.3/704.5a) sprawdza życie dopiero po całym rozstrzygnięciu,
+      // więc „dobicie” wolno ogłosić wyłącznie od netto, nie od surowej kwoty.
+      const net = amt - recovered;
+      if (net <= 0) return -60;
       const foeLife = foe.life ?? 20;
-      if (amt >= foeLife) return 1000;                      // dobicie gracza
-      const pct = amt / foeLife;
+      if (net >= foeLife) return 1000;                      // dobicie gracza (netto)
+      const pct = net / foeLife;
       if (scaling) {
         // Skalujący: wart tylko przy ≥25% życia (inaczej trzymaj na dobicie).
         return pct >= 0.25 ? Math.round(10 + 40 * pct) : -60;
@@ -7735,6 +7741,53 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     }
     return -80;
   };
+
+  /**
+   * FJ (zgłoszenie właściciela 2026-11-09, Fiery Justice): zysk życia TEGO
+   * SAMEGO gracza w jednej liście efektów rozstrzygnięcia. Czyta deskryptor
+   * (ADR 0002): `gain_life_target` po `targetIndex` (domyślnie 0, jak silnik
+   * effects.js), `gain_life` gdy odbiorcą jest kontroler źródła. X rozwiązany
+   * z komendy. Zero nazw/ID kart. CR 119.3/608.2c: later text modifies the
+   * meaning of earlier text — wycena czyta całe rozstrzygnięcie.
+   */
+  const sameResolutionLifeGain = (view, effects, cmd, targetId) => {
+    if (targetId == null) return 0;
+    let gain = 0;
+    for (const effect of effects ?? []) {
+      if (!effect) continue;
+      const raw = effect.amount === 'X' ? (cmd?.xValue ?? 0) : effect.amount;
+      const amount = Number.isInteger(raw) ? raw : 0;
+      if (amount <= 0) continue;
+      if (effect.type === 'gain_life_target') {
+        const slot = (cmd?.targets ?? [])[effect.targetIndex ?? 0] ?? null;
+        if (slot === targetId) gain += amount;
+      } else if (effect.type === 'gain_life' && targetId === view.playerId) {
+        gain += amount;
+      }
+    }
+    return gain;
+  };
+
+  /**
+   * FJ/L41: jedna miara podziału obrażeń dla `cast_spell` i okien darmowych.
+   * Agreguje porcje per cel i przekazuje netto życia tego samego gracza
+   * (`sameResolutionLifeGain`). Bez podziału — kara jak dotąd (−60).
+   */
+  function dividedDamageValue(view, effect, cmd, effects) {
+    if (effect?.type !== 'damage_divided_among_targets') return 0;
+    const division = cmd?.damageDivision ?? [];
+    if (division.length === 0) return -60;
+    const totals = new Map();
+    for (const entry of division) {
+      const amount = Number.isInteger(entry?.amount) ? entry.amount : 0;
+      totals.set(entry.id, (totals.get(entry.id) ?? 0) + amount);
+    }
+    let score = 0;
+    for (const [id, amount] of totals) {
+      score += damageTargetValue(view, id, amount, false, sameResolutionLifeGain(view, effects, cmd, id));
+    }
+    return score;
+  }
 
   /**
    * D (uwaga właściciela 2026-10-27c, Cuombajj Witches „{T}: deals 1 damage to
@@ -8997,7 +9050,8 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     const inertCmd = withoutManaCost ? { ...cmd, xValue: 0 } : cmd;
     if (effects.length > 0 && allEffectsInertNow(view, effects, inertCmd)) return -40;
     let score = base - freeCastTargetPenalty(view, effects, cmd);
-    for (const effect of effects) score += wrapTargetsValue(view, effect, cmd) + fogWindowValue(view, effect);
+    for (const effect of effects) score += wrapTargetsValue(view, effect, cmd) + fogWindowValue(view, effect)
+      + dividedDamageValue(view, effect, cmd, effects); // FJ/L41: netto podziału jak w cast_spell
     // Etap F/4b: koszt dodatkowy płaci się także przy rzucie bez kosztu many
     // (CR 601.2h), a oferta enumeruje JEGO warianty — bez wyceny bot brałby
     // pierwszą ofiarę / pierwszą parę kart z brzegu. Ofiara: wartość ciała
@@ -9026,6 +9080,9 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     for (const effect of effects ?? []) {
       const type = effect?.type;
       if (['damage', 'discard_cards', 'destroy_permanent', 'exile_permanent', 'mill_cards'].includes(type)) score += 15;
+      // FJ/L41: podział obrażeń wyceniany netto (życie tego samego gracza),
+      // ta sama miara co cast_spell i freeCastVariantScore.
+      if (type === 'damage_divided_among_targets') score += dividedDamageValue(view, effect, cmd, effects);
       if (['draw_cards', 'gain_life'].includes(type)) score += 5;
       // O (L41): darmowy rzut „up to N” zwrotu z grobu nie może remisować
       // między wariantem z celami a jałowym — zrealizowany zwrot to karta
@@ -13853,9 +13910,9 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           // nic nie rozdziela. Życie dla przeciwnika wycenia kara
           // `gain_life_target` powyżej (jedno źródło, bez podwójnego liczenia).
           if (effect.type === 'damage_divided_among_targets') {
-            const division = cmd.damageDivision ?? [];
-            for (const entry of division) score += damageTargetValue(view, entry.id, entry.amount, false);
-            if (division.length === 0) score -= 60;
+            // FJ: netto obrażeń vs życie tego samego gracza w całym czarze
+            // (CR 119.3/608.2c) — wspólna miara z oknami darmowymi (L41).
+            score += dividedDamageValue(view, effect, cmd, scoredEffects);
           }
           if (effect.type === 'damage') {
             // M237/4 (model właściciela) — JEDNO źródło prawdy wyceny obrażeń
@@ -13906,7 +13963,8 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
               amount = effect.amountIfAddendum;
             }
             const scaling = Boolean(spell?.xCost); // Consume Spirit itp. — X z maną
-            if (slot != null) score += damageTargetValue(view, slot, amount, scaling);
+            if (slot != null) score += damageTargetValue(view, slot, amount, scaling,
+              sameResolutionLifeGain(view, scoredEffects, cmd, slot));
             else score -= 60; // efekt obrażeń bez celu — nic nie robi
             // Batch60-followup/1 (ograniczenie 1: model TRZYMANIA removalu pod
             // Addendum): poza własną main czar bije słabiej (3 zamiast 5).
@@ -13920,7 +13978,8 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             if (slot != null && Number.isInteger(effect.amountIfAddendum)
               && effect.amountIfAddendum > amount && !addendumNow
               && holdForAddendumSafe(view)) {
-              const currentValue = damageTargetValue(view, slot, amount, scaling);
+              const currentValue = damageTargetValue(view, slot, amount, scaling,
+                sameResolutionLifeGain(view, scoredEffects, cmd, slot));
               let bestHold = null;
               for (const o of view.zones.battlefield ?? []) {
                 if (o.controllerId === view.playerId || o.kind !== 'creature' || !o.tapped) continue;
