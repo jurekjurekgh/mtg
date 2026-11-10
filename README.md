@@ -43,7 +43,7 @@ Ani kontroler, ani UI nie modyfikują stanu gry bezpośrednio. Szczegóły:
 ## Dokumentacja
 
 - [Karta projektu](docs/PRODUCT.md) · [Architektura](docs/ARCHITECTURE.md) · [Roadmapa](docs/ROADMAP.md) · [Milestone'y](docs/ENGINE_MILESTONES.md)
-- [Jak grać na stole](docs/setup/TESTER_STOLU.md) · [Ilustracje kart](docs/setup/ILUSTRACJE_KART.md) · [Dźwięki kart](docs/setup/DZWIEKI_KART.md)
+- [Ilustracje kart](docs/setup/ILUSTRACJE_KART.md) · [Dźwięki kart](docs/setup/DZWIEKI_KART.md) · [Narzędzia audytu stołu](docs/setup/TESTER_STOLU.md)
 - [Historia projektu (dziennik sesji)](docs/PROJECT_HISTORY.md) · [Lekcje](docs/LESSONS.md) · [Rejestr decyzji](docs/decisions/README.md)
 - [Zasady współpracy](CONTRIBUTING.md) · [Workflow](docs/WORKFLOW.md) · [Bezpieczeństwo](SECURITY.md) · [Instrukcja dla agentów](AGENTS.md)
 
