@@ -550,6 +550,10 @@ export function proliferatePlanOf(commands) {
   for (const cmd of list) {
     for (const id of cmd.targetIds ?? []) if (!targets.includes(id)) targets.push(id);
   }
+  // Zgłoszenie V: widełki zostają na rozpiętości ziaren, bo ziarno „pełne"
+  // ma tu WSZYSTKICH kandydatów (proliferate = dowolna liczba, CR 701.34).
+  // Naprawa dotyczyła braku KOMENDY dla wyboru spoza ziaren, nie widełek —
+  // mutant tej linii przechodził GREEN, więc zmiany nie ma.
   return {
     type: 'resolve_proliferate',
     targets,
@@ -613,6 +617,11 @@ export function upToTargetsPlanOf(commands) {
   const options = commands ?? [];
   const list = options.filter((cmd) => Array.isArray(cmd?.targetIds));
   if (list.length !== options.length || list.length < 2) return null;
+  // Zgłoszenie V (2026-11-09): widełki zostają na rozpiętości ziaren, bo
+  // ziarno zachłanne ma dokładnie `count` celów (przy „up to two" = 2), więc
+  // górna granica jest poprawna. Mutant poszerzania widełek (limit z
+  // deskryptora, liczenie kandydatów) przechodził GREEN — czyli nie był
+  // potrzebny do naprawy; defektem był brak KOMENDY, nie widełki.
   const sizes = list.map((cmd) => cmd.targetIds.length);
   const minTargets = Math.min(...sizes);
   const maxTargets = Math.max(...sizes);
