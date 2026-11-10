@@ -18,6 +18,37 @@
 > wpisach są więc historyczne — pliki nadal istnieją w historii gita, ale nie
 > w drzewie. Obowiązująca reguła: `docs/setup/TESTER_STOLU.md` → „Transkrypty
 > nie trafiają do repozytorium".
+## 2026-11-09 — zgłoszenie właściciela: README jako wizytówka, nie dziennik (PR #184, kontynuacja arena/76d4141f-mtg)
+
+- **Objaw:** „strona główna repozytorium to jakiś śmietnik z wklejoną historią
+  wyjętą ze środka projektu; to ma być krótka wizytówka, lista decków, a nie
+  dziennik prac". Pomiar: 353 linie / 51,6 kB, z tego 111 linii (72% pliku,
+  37,3 kB) jedna sekcja `## Status` — narracja sesji PR #120–#183 z punktem
+  zaczepienia z 2026-11-02 (PR #178, sześć PR-ów w tyle).
+- **Naprawa:** README **353 → 151 linii / 7,8 kB**. Zostają: nagłówek
+  z trzema liczbami katalogu (639 supported / 54 tokeny / 9 back, czytane
+  z rejestru przez strażnika), „Jak zagrać" (Pages + plik), tabela warstw,
+  dokumentacja (linki), **tabele talii bez zmian wiersz po wierszu**,
+  uruchomienie z cichym logiem, zasady zmian, licencja.
+- **Przeniesienia (nic nie zginęło):** narracja statusu → wpis-archiwum
+  w `docs/PROJECT_HISTORY.md` (dosłowny zrzut w `<details>`); instrukcja
+  dźwięków `snd/` (33 linie) → `docs/setup/DZWIEKI_KART.md`; akapity
+  milestone'ów/mechanik już były w `docs/ENGINE_MILESTONES.md` (56/56
+  numerów M, 24/24 PR-y, 25/25 liczb z bloku); „Najbliższy etap" z liczbami
+  → jedno zdanie o najnowszym handoffie (L92).
+- **Strażnicy:** nowy `test/readme-wizytowka.test.js` (4 testy: liczby
+  katalogu == nagłówek, brak martwych odsyłaczy względnych, brak numerów
+  PR/milestone'ów i sekcji „Status", limit 20 kB, sekcje wizytówki) + pin
+  A47 przeniesiony z README do historii projektu (trzy pliki audytu #177
+  muszą istnieć i być przywołane). Mutacja: stary README → 4 RED, powrót →
+  GREEN.
+- **Bramy:** `npm test` **10235/10235**, `npm run test:all` **10504/10504**
+  fail 0 skipped 0 (~592 s), build **78 / 5822,4 kB**.
+  Commity: `e10a37b` plan, `37770a3` README+strażnicy+archiwum,
+  `692ccd0` dźwięki jako osobny dokument.
+- Plan: `docs/plans/PLAN_2026-11-09-readme-wizytowka.md`, handoff §13.
+  Bez zmian silnika/kart/stołu; bez scalania.
+
 
 ## 2026-11-09 — archiwum: blok „Status" usunięty z README (wizytówka zamiast dziennika)
 
