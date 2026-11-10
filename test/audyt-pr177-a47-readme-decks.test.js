@@ -1,4 +1,13 @@
-// Verify the README rows touched by PR #177 and Batch 72 against generated decks.
+// Verify the deck rows (README) touched by PR #177 and Batch 72 against
+// generated decks, and that the audit trail of #177 does not rot away.
+//
+// 2026-11-09 (zgłoszenie właściciela „README to śmietnik z historią"): README
+// przestał być dziennikiem sesji — narracja o PR #177 przeniosła się do
+// `docs/PROJECT_HISTORY.md`. Ten pin pilnuje więc tego samego, co wcześniej,
+// tylko w miejscu, gdzie odsyłacze teraz żyją: raport/plan/handoff audytu #177
+// muszą istnieć ORAZ być przywołane w historii projektu. Nie osłabiamy
+// wymagania — zmieniamy adres, bo zmienił się nośnik (L56: dokument, który
+// znika z drzewa bez śladu, to utrata dowodu).
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -17,8 +26,14 @@ test('A47: wiersze zmienionych talii zgadzają się z prawdziwymi plikami',()=>{
   assert.deepEqual(advertised,[total,basic,total-basic],name);
  }
 });
-test('A47: odsyłacze do raportu audytu w README istnieją lokalnie',()=>{
+test('A47: odsyłacze do raportu audytu #177 żyją w historii projektu',()=>{
+ // README (2026-11-09) jest wizytówką: bez dziennika sesji i bez datowanych
+ // odsyłaczy. Ślad audytu #177 trzyma `docs/PROJECT_HISTORY.md`, a pliki
+ // muszą istnieć na dysku — inaczej historia wskazuje donikąd.
+ const historia=fs.readFileSync('docs/PROJECT_HISTORY.md','utf8');
  for(const path of ['docs/setup/HANDOFF_2026-11-01-audyt-pr177.md','docs/plans/PLAN_2026-11-01-audyt-pr177.md','docs/audits/AUDYT_PR177_2026-11-01.md']){
-  assert.ok(readme.includes(`](${path})`),path);assert.ok(fs.existsSync(path),path);
+  assert.ok(historia.includes(path),`historia nie przywołuje ${path}`);
+  assert.ok(fs.existsSync(path),path);
  }
+ assert.ok(!/\bPR #177[^\n]*\(docs\//.test(readme),'README nie jest dziennikiem — bez odsyłaczy sesyjnych');
 });
