@@ -1577,9 +1577,17 @@ export function activateAbility(state, playerId, objectId, abilityIndex, attacke
         grantedFromEquipment: grantedFromEquipmentArg ?? false,
       };
       state.turn.priorityPlayerId = opponentId;
+      // Zgłoszenie Y/b (log właściciela): „Gdy bot używa tej zdolności to nie
+      // wiadomo do kogo strzela — nie ma tej informacji w Rozgrywce do czasu
+      // aż wybiorę swój cel". Kolejność jest POPRAWNA (aktywujący wskazuje
+      // pierwszy, CR 601.2c) — brakowało JAWNOŚCI: zdarzenie niosło tylko
+      // „przeciwnik wskazuje drugi cel", bez celu już wskazanego. Oba cele są
+      // publiczne, zanim ktokolwiek dostanie priorytet, więc nazywamy cel
+      // aktywującego wprost; bez tego gracz wybiera w ciemno.
       const e = event('opponent_target_required', {
         playerId: opponentId, activatingPlayerId: playerId,
         sourceId: objectId, cardId: object.cardId ?? null,
+        activatingTargetId: Array.isArray(targets) && targets.length > 0 ? targets[0] : null,
       });
       state.events.push(e);
       return e;

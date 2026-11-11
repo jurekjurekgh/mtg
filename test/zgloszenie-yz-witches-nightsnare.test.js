@@ -20,7 +20,7 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { put, game, playerView, addMana } from './helpers/pmssb58.js';
+import { put, game, playerView, addMana, execute } from './helpers/pmssb58.js';
 import { BOT_ID, HUMAN_ID, createSession } from '../src/table/session.js';
 import { parseDeckText } from '../src/cards/deck-text.js';
 import { createHeuristicBot } from '../src/controllers/heuristic-bot.js';
@@ -94,6 +94,33 @@ test('Y/4: wróg 1/1 — chip dobija natychmiast, bot aktywuje (kontrola)', () =
   const { dec } = scenaWitches({ p: 1, t: 1, bloker: null });
   assert.equal(dec.type, 'activate_ability', `dobijający chip jest wart aktywacji: ${JSON.stringify(dec)}`);
   assert.deepEqual(dec.targets?.[0], 'atk');
+});
+
+test('Y/5: log nazywa cel BOTA, zanim gracz wybierze swój (oba cele jawne)', () => {
+  // Zgłoszenie Y(b) właściciela: „Gdy bot używa tej zdolności to nie wiadomo do
+  // kogo strzela — nie ma tej informacji w Rozgrywce do czasu aż wybiorę swój
+  // cel". Kolejność w silniku jest poprawna (CR 601.2c: aktywujący wskazuje
+  // pierwszy, oba cele jawne zanim ktokolwiek dostanie priorytet) — brakowało
+  // jawności w logu. Zdarzenie `opponent_target_required` musi nieść cel
+  // aktywującego, a opis nazwać go PRZED wezwaniem gracza do wyboru.
+  const s = game({ step: 'main2', active: 'p2' });
+  put(s, 'witches', 'cuombajj-witches', 'p2', 'battlefield', { summoningSickness: false });
+  put(s, 'atk', 'segmented-krotiq', 'p1', 'battlefield', { summoningSickness: false, power: 1, toughness: 1 });
+  s.combat = {
+    attackers: ['atk'], attackingPlayerId: 'p2', defendingPlayerId: 'p1',
+    blockers: new Map(), blockedAttackers: new Set(), unblockedAttackers: ['atk'],
+  };
+  const aktywacja = playerView(s, 'p2').legalCommands.find(
+    (c) => c.type === 'activate_ability' && c.objectId === 'witches');
+  assert.ok(aktywacja, 'bot ma ofertę aktywacji');
+  const r = execute(s, { ...aktywacja, targets: ['atk'] });
+  assert.equal(r.ok, true, JSON.stringify(r.events?.[0] ?? {}));
+  const zdarzenie = r.events.find((e) => e.type === 'opponent_target_required');
+  assert.ok(zdarzenie, `zdarzenie wezwania istnieje: ${JSON.stringify(r.events.map((e) => e.type))}`);
+  assert.equal(zdarzenie.activatingTargetId, 'atk',
+    `zdarzenie niesie JAWNY cel aktywującego: ${JSON.stringify(zdarzenie)}`);
+  // Decyzja o drugim celu należy do GRACZA i jest nierozstrzygnięta.
+  assert.equal(s.pendingOpponentTarget?.playerId, 'p1', 'drugi cel wskazuje gracz');
 });
 
 // ---------- Z ----------

@@ -110,10 +110,26 @@ start (`isDamageOnly`) jest już ujemny (Keep Out: −1). Zdolność takiej pod�
 nie miała, więc 0 wygrywało. Stąd fix MUSI być zawężony do zdolności: nadanie
 −80 czarom czerwieniło `uwaga-m-keepout-chip` (−81 ≠ −1).
 
-### Y(b) — DO DECYZJI WŁAŚCICIELA
+### Y(b) — NAPRAWIONE (decyzja właściciela: tak)
 
-Bez zmian w kodzie. Kolejność UI zgodna z CR; brakuje jedynie jawnej informacji
-„bot wybrał cel X" **przed** wyborem gracza. Propozycja w planie pierwotnym.
+Właściciel potwierdził cytatem z zasad: *„oba cele są wybierane w momencie
+aktywacji zdolności, ale kontroler zdolności zawsze deklaruje swój cel jako
+pierwszy... Oba cele są jawne jeszcze przed tym, jak ktokolwiek dostanie
+priorytet"*. Czyli oczekiwanie z audytu („nie ma tej informacji w Rozgrywce")
+było uzasadnione: kolejność w silniku była poprawna, ale log milczał.
+
+Fix generyczny (ADR 0002, zero nazw kart w warstwie opisu):
+
+1. `src/engine/abilities.js` — zdarzenie `opponent_target_required` niesie
+   `activatingTargetId` = cel już wskazany przez aktywującego (publiczny od
+   razu, więc nie ujawnia nic ukrytego).
+2. `src/table/session.js` — opis nazywa OBA fakty w jednym zdaniu:
+   **„Cuombajj Witches: Nieprzyjaciel wskazuje Segmented Krotiq, wskazujesz
+   drugi cel obrażeń"**. Gdy zdarzenie nie ma celu (starsze zapisy), zostaje
+   dotychczasowe zdanie — brak regresji.
+
+Pin: **Y/5** (`activatingTargetId === 'atk'`, decyzja o drugim celu u gracza).
+Mutant **mY5** (usunięcie pola ze zdarzenia) → RED na Y/5.
 
 ### Z — NIE BŁĄD, pin regresyjny
 
@@ -123,12 +139,14 @@ czeka na zgodę właściciela.
 
 ### Bramy i mutacje (stan po fixie)
 
-- `npm test` **10256/10256** (0 fail, 0 skipped)
-- `npm run test:all` **10525/10525** (0 fail, 0 skipped, 0 todo)
-- `npm run build` **79 modułów / 5833,1 kB**
+- `npm test` **10257/10257** (0 fail, 0 skipped)
+- `npm run test:all` **10526/10526** (0 fail, 0 skipped, 0 todo)
+- `npm run build` **79 modułów / 5834,2 kB**
 - Sąsiedzi: Keep Out 6/6, Cuombajj (audyt-pr177 a44/d, cel-nazwany) 14/14,
   M202/I 2/2, W/X 8/8, PMSSB 18/18
-- Mutanty (`.arena/mutate-yz.py`): **mY1 → RED na Y/1**, **mY2 → RED na Y/2**
-  (+ anti-over-fix Keep Out); GREEN po przywróceniu 11/11.
+- Mutanty: **mY1 → RED na Y/1**, **mY2 → RED na Y/2** (+ anti-over-fix Keep
+  Out), **mY5 → RED na Y/5**; GREEN po przywróceniu.
+- Skrypt mutatora: `.arena/mutate-yz.py` (mY1, mY2) — `mY5` wykonany ręcznie
+  w turze, bo `.arena/` nie jest utrwalane między turami.
 
-Piny: `test/zgloszenie-yz-witches-nightsnare.test.js` (Y/1–Y/4, Z/1).
+Piny: `test/zgloszenie-yz-witches-nightsnare.test.js` (Y/1–Y/5, Z/1).
