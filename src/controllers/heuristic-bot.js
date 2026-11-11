@@ -4833,6 +4833,54 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
    * bestow, epsilon gęstości), a ryzyko deck-outu dotyczy wariantu jako
    * takiego, nie gałęzi, którą wycena poszła.
    */
+  /**
+   * Zgłoszenie właściciela 2026-11-08 (Roiling Regrowth, deck zendikar-rg):
+   * „Użycie jej powoduje wyjęcie lądów z talii i uszczuplenie jej. Czyli
+   * library draining. Bot nie powinien jej rzucać mając mniej niż 10 kart
+   * na ręku. (...) Dodatkowo bot nie powinien jej rzucać jeśli w bibliotece
+   * nie ma przynajmniej 2 lądów, a przed chwilą to zrobił mając 0 lądów
+   * w bibliotece — marnotrawstwo many i poświęcanego lądu."
+   *
+   * Dwa niezależne powody, dwa niezależne mechanizmy:
+   *  1. DRENAŻ (liczba kart) — twarde weto jak `lootCastVeto` /
+   *     `symmetricDrainVeto`, ten sam próg 10 kart. Sam podatek
+   *     `libraryDrainTax` (drabina thin 60 + 6/kartę) NIE wystarczał: przy
+   *     zdrowej bibliotece wynosi 0, a rzut z 2 kartami w ręce przegrywał
+   *     z passem dopiero losowo.
+   *  2. BRAK CELU (skład biblioteki) — kara w WYCENIE, nie weto: bot legalnie
+   *     nie zna zawartości własnej biblioteki (`playerView` oznacza ją jako
+   *     `hidden`), więc może wnioskować tylko z kart JAWNYCH — pola bitwy,
+   *     ręki, grobu i wygnania (to samo źródło, co `thinLibraryByPublicZones`).
+   *     Gdy z jawnych stref wynika, że w bibliotece nie ma dwóch lądów,
+   *     efekt nie daje nic i karta jest marnotrawstwem many oraz
+   *     poświęcanego lądu.
+   *
+   * Klasa po TYPIE EFEKTU (ADR 0002), nie po nazwie karty: ta sama mechanika
+   * obsługuje Springbloom Druid („you may sacrifice a land").
+   */
+  const SPRINGBLOOM_MIN_LIBRARY = 10;
+  const SPRINGBLOOM_BASIC_LANDS = 2;
+
+  /**
+   * Weto rzutu — DWIE niezależne przesłanki właściciela, obie twarde:
+   *  (1) DRENAŻ: biblioteka < 10 kart (ten sam próg co loot/symetryczny mill);
+   *  (2) BRAK CELU: wg jawnych stref w bibliotece zostało < 2 lądów, więc
+   *      „Sacrifice a land. Search your library for up to two basic land
+   *      cards" nie znajdzie kompletu i karta jest marnotrawstwem many oraz
+   *      poświęcanego lądu. `searchTargetsRemaining` daje DOLNĄ granicę
+   *      (biblioteka bota jest `hidden`, talia znana z `ownDeck`); `null` =
+   *      talia nieznana → nie zgadujemy i nie wetujemy (anty-over-fix).
+   */
+  function springbloomDrainVeto(view, cmd) {
+    if (!LIBRARY_DRAIN_CAST_TYPES.has(cmd?.type)) return false;
+    const karta = handCard(view, cmd.objectId) ?? zoneCard(view, cmd.objectId);
+    if (!karta || springbloomEffects(karta).length === 0) return false;
+    if (myLibraryCount(view) < SPRINGBLOOM_MIN_LIBRARY) return true;
+    const cel = searchTargetsRemaining(view, { allTypes: ['Basic', 'Land'] });
+    if (cel != null && cel < SPRINGBLOOM_BASIC_LANDS) return true;
+    return false;
+  }
+
   const libraryDrainTax = (view, cmd) => {
     if (cmd?.type === 'tap_for_mana') return tapMillPenalty(view, tapLibraryLoss(view, cmd.objectId));
     // Aktywacja za manę: ten sam auto-tap (zdolność bywa warta mniej niż karty
@@ -7873,6 +7921,33 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       .reduce((sum, o) => sum + combatPower(o), 0);
   };
   const cardDef = (cardId) => (cardId ? registry.get(cardId) : undefined);
+
+  /**
+   * Czy dowolna zdolność/efekt karty to `springbloom_sacrifice_search`
+   * (Roiling Regrowth, Springbloom Druid). MUSI stać za `cardDef` — stała
+   * `const` zdefiniowana wyżej sięgałaby w TDZ i po cichu zwracała 0 efektów
+   * (zmierzone: weto nie odpalało, bo `cardDef` było `undefined`).
+   * Widok projektu je rękę z `spell: null` (deskryptor idzie z rejestru),
+   * więc rejestr jest PIERWSZYM źródłem, nie fallbackiem.
+   */
+  const springbloomEffects = (entry) => {
+    const out = [];
+    const zbierz = (value) => {
+      if (!value) return;
+      for (const eff of (Array.isArray(value) ? value : [value])) {
+        if (eff?.type === 'springbloom_sacrifice_search') out.push(eff);
+      }
+    };
+    const def = entry?.cardId ? cardDef(entry.cardId) : undefined;
+    // `spell` to OBIEKT { timing, targets, effects }, nie tablica efektów —
+    // czytamy `effects` (pierwsza wersja iterowała po samym obiekcie, więc
+    // `eff.type` było `undefined` i helper zawsze zwracał 0 efektów).
+    zbierz(def?.spell?.effects);
+    zbierz(entry?.spell?.effects);
+    for (const ability of (def?.abilities ?? entry?.abilities) ?? []) zbierz(ability?.effect);
+    return out;
+  };
+
 
   const protectionColorsOf = (object) => [...new Set(
     (object?.protection ?? []).flatMap((quality) => Array.isArray(quality?.colors) ? quality.colors : []),
@@ -12039,6 +12114,9 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     // „utkniętego na pipach” materiału do odrzucenia albo przy cienkiej
     // bibliotece (Izzet Charm — patrz `lootCastVeto`).
     if (lootCastVeto(view, cmd)) return finish(NEVER);
+    // Zgłoszenie właściciela 2026-11-08 (Roiling Regrowth): tutor poświęcający
+    // ląd drenuje bibliotekę — przy <10 kartach nie rzucamy (jak loot).
+    if (springbloomDrainVeto(view, cmd)) return finish(NEVER);
     // M111: TRYB modalnego triggera („At the beginning of your upkeep,
     // choose one —" Etherwrought Page). Widok niesie tylko nazwy trybów,
     // więc treść bierzemy z rejestru po cardId (jak przy czarach) i wyceniamy
