@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "overallHash": "30cfe49d417ea76a67897c049155b23ef501d11dabf998f729be668b3fd1582b",
+  "overallHash": "95f3692a4fc89914d356d4e9dda85427060b0e07a7d41b6388bc11ba954eac62",
   "matches": [
     {
       "pair": "ravnica-wur|innistrad-wu",
@@ -27,7 +27,7 @@
     {
       "pair": "ravnica-wur|innistrad-wu",
       "seed": 1001,
-      "hash": "c010edb0b594d1fc3acbfbe8d85bbb364e335c0137aa48de6ee840cd1098b4ba",
+      "hash": "8216bb2382bafa5b81f123b030217abc611d3766b89a606f2e11e001d536c346",
       "decisions": 256,
       "scoreSum": 1963.8357,
       "chosenKinds": {
@@ -49,9 +49,9 @@
     {
       "pair": "dominaria-brg|mirrodin-wu",
       "seed": 1000,
-      "hash": "de161760bbe36138ab4ad802236d9053128d12d0f626bf0aa4101e10c640f834",
+      "hash": "3fd17375f15c8becc31a71a583b4040056be84b4274665f5abfff55caff916e9",
       "decisions": 203,
-      "scoreSum": 3048.1072,
+      "scoreSum": 3046.3063,
       "chosenKinds": {
         "activate_ability": 1,
         "attack": 4,
@@ -70,21 +70,25 @@
     {
       "pair": "dominaria-brg|mirrodin-wu",
       "seed": 1001,
-      "hash": "d1262d9b104ac7c8cc849ea4c01b3ed177de5a79a2c0843bba981cf1502ccbec",
-      "decisions": 285,
-      "scoreSum": 3307.1953,
+      "hash": "0105ff9e50f6eccb9a7c112874421b95bd920a48ecf66c65f8501346f2918ac1",
+      "decisions": 356,
+      "scoreSum": 3980.2998,
       "chosenKinds": {
-        "activate_ability": 1,
-        "attack": 8,
+        "activate_ability": 3,
+        "attack": 9,
         "block": 10,
         "cast_flashback": 1,
-        "cast_permanent": 5,
+        "cast_permanent": 8,
         "cast_spell": 5,
-        "pass_priority": 233,
-        "play_land": 8,
-        "resolve_combat": 12,
+        "pass_priority": 290,
+        "play_land": 9,
+        "resolve_combat": 14,
+        "resolve_damage_assignment": 1,
         "resolve_mulligan_choice": 1,
-        "resolve_reveal_exile_hand": 1
+        "resolve_reveal_exile_hand": 1,
+        "resolve_suspend_cast": 1,
+        "resolve_trigger_target": 2,
+        "suspend_card": 1
       }
     },
     {
@@ -109,7 +113,7 @@
     {
       "pair": "tarkir-bg|warhammer-ubr",
       "seed": 1001,
-      "hash": "029cbd03600e899104a9d08500361c5e406a5d565c36cb3b03d6432fff4ad331",
+      "hash": "b1df564150bef8b18762108bfd3e59e27288ef5367ca941abedf7724141c74dd",
       "decisions": 164,
       "scoreSum": 2503.0099,
       "chosenKinds": {

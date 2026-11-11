@@ -1,4 +1,5 @@
 import { assertNoCombinationRows } from './no-combination-rows.js';
+import { builtTargetSetCommand } from './target-set-commands.js';
 import { blockingRequirementCount } from '../engine/permanents.js';
 import { choiceResponse } from '../protocol/types.js';
 import { installPressActivation } from './gestures.js';
@@ -1509,7 +1510,20 @@ export function renderMultiTargetWizard(host, { view, session, plan, commands, s
           : slots
           ? commandForSlots()
           : plan.targetIdsMode
-            ? commandForTargetIdsSelection(commands, [...chosen], { type: plan.type ?? null })
+            // Zgłoszenie V (2026-11-09): wybór gracza nie musi mieć gotowej
+            // komendy w ofercie — silnik publikuje ZIARNA (reprezentantów
+            // klas zbiorów), a sam waliduje każdy legalny podzbiór w
+            // `execute`, bez znaczników (pin E/4). Kreator oddaje więc
+            // ofertę, gdy istnieje, a poza nią buduje komendę
+            // z szablonu grupy (jedna reguła: `builtTargetSetCommand`, L41).
+            ? (chosen.size >= plan.minTargets && chosen.size <= plan.maxTargets
+              // Liczba celów to jedyna rzecz, którą kreator wie z góry (z
+              // planu = Oracle/deskryptor). Wybór poza widełkami nie ma
+              // komendy — „Zatwierdź" gaśnie, jak przy trzech celach „up to
+              // two" (pin B1/3). Którzy KANDYDACI są legalni: nadal wyłącznie
+              // silnik (L48) — UI nie filtruje nielegalności.
+              ? builtTargetSetCommand(commands, [...chosen], { type: plan.type ?? null })
+              : null)
             : singleMode
               // Pusty wybór (nic nie zaznaczono) NIE jest odmową — odmowę
               // zaznacza się jawnym wierszem (NONE_PICK). Bez tej straży

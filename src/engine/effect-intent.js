@@ -182,13 +182,26 @@ export function triggerTargetDamageEffectOf(ability) {
   const effs = Array.isArray(ability?.effect) ? ability.effect : (ability?.effect ? [ability.effect] : []);
   return effs.find((e) => e?.type === 'damage') ?? null;
 }
-export function triggerTargetPowerPumpOf(ability) {
+export function triggerTargetPowerPumpOf(ability, resolveValue = null) {
   const effs = Array.isArray(ability?.effect) ? ability.effect : (ability?.effect ? [ability.effect] : []);
   for (const e of effs) {
-    if ((e?.type === 'pump' || e?.type === 'buff_creature_until_end_of_turn')
-      && (e.power ?? 0) > 0 && (e.toughness ?? 0) >= 0) {
-      return { power: e.power ?? 0, toughness: e.toughness ?? 0 };
+    if (e?.type !== 'pump' && e?.type !== 'buff_creature_until_end_of_turn') continue;
+    // Audyt PR #183/F2: bez resolvera zachowujemy stary kontrakt LICZBOWY
+    // (helper jest czysty i nie ma stanu gry). Z resolverem ofertowym
+    // rozpoznajemy też dynamiki po znaku statycznym, a kwotę rozwiązuje
+    // TEN SAM resolver co rozstrzygnięcie efektu (L41). `source_power`
+    // rozwiązane do zera nie jest sygnałem dodatniego pumpa siły.
+    if (!resolveValue) {
+      if ((e.power ?? 0) > 0 && (e.toughness ?? 0) >= 0) {
+        return { power: e.power ?? 0, toughness: e.toughness ?? 0 };
+      }
+      continue;
     }
+    if (!pumpDeltaIsPositive(e.power) || pumpDeltaIsNegative(e.toughness)) continue;
+    const power = resolveValue(e.power ?? 0);
+    const toughness = resolveValue(e.toughness ?? 0);
+    if (!Number.isFinite(power) || !Number.isFinite(toughness) || power <= 0 || toughness < 0) return null;
+    return { power, toughness };
   }
   return null;
 }

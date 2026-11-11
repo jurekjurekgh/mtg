@@ -2412,8 +2412,16 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
       case 'land_type_choice_required': return `${whoN(e.playerId)} wybiera podstawowy typ lądu${e.sourceCardId ? ` (${nameOf(e.sourceCardId)})` : ''}`;
       case 'land_type_choice_resolved': return `${nameOfObject(e.targetId)} staje się typem ${e.landType} do końca tury`;
       // M116 (Cuombajj Witches): drugi cel wskazuje PRZECIWNIK (CR 601.2c).
-      case 'opponent_target_required':
-        return `${nameOf(e.cardId)}: ${whoN(e.playerId)} wskazuje drugi cel obrażeń`;
+      // Y/b (zgłoszenie właściciela 2026-11-11): aktywujący wskazuje SWÓJ cel
+      // PIERWSZY i jest on jawny, zanim przeciwnik wybierze — log musi to
+      // powiedzieć, inaczej gracz decyduje nie wiedząc, gdzie już poleciał
+      // pierwszy punkt obrażeń. Bez `activatingTargetId` (starsze zdarzenia)
+      // zostaje dotychczasowe zdanie.
+      case 'opponent_target_required': {
+        const pierwszy = e.activatingTargetId ? ` ${nameOfObject(e.activatingTargetId)}` : '';
+        return `${nameOf(e.cardId)}: ${whoN(e.activatingPlayerId)} wskazuje${pierwszy}, `
+          + `${whoN(e.playerId)} wskazuje drugi cel obrażeń`;
+      }
       case 'opponent_target_resolved':
         return `${nameOf(e.cardId)}: ${whoN(e.playerId)} wskazuje ${nameOfObject(e.targetId)}`;
       // M110 (storm): wybór nowych celów dla kopii (CR 702.40a/706.10c).

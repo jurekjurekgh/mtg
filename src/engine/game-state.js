@@ -36,7 +36,7 @@ import { applyDayNightAtTurnStart, applyDeferredTriggerEffects, resolveDelayedRe
 import { moveObjectDirectly, removeFromCombat } from './objects.js';
 import { detachAttachmentsFromHost, effectiveProtectionFromColors, effectiveProtectionQualities, isLegalAuraHost, isLegalAuraPlayerHost } from './attachments.js';
 import { createBattlefieldToken, elseEffectSummary, nextCopyNumber, TREASURE_TOKEN_EFFECT } from './tokens.js';
-import { queueSearchChoice, emitReflexiveSearch, dealNonCombatDamage, librarySearchMatches, revealTopGainLife, enterChosenUndercityRoom, resolveCraftExileOutcome, returnPermanentFromGraveyardOutcome, resolveDamageAmount } from './effects.js';
+import { queueSearchChoice, emitReflexiveSearch, dealNonCombatDamage, librarySearchMatches, revealTopGainLife, enterChosenUndercityRoom, resolveCraftExileOutcome, returnPermanentFromGraveyardOutcome, resolveDamageAmount, resolvePumpDelta } from './effects.js';
 import { changeLife, recordCardDrawn, payEnergyCounters } from './players.js';
 import { shuffle } from './shuffle.js';
 import { applyRoomTargetChoice, applyEffect, applyEnterCounters, drawPlayerCards, manifestCardFaceDown, counterStackObject, shouldAutoDiscard, discardCardsForced } from './effects.js';
@@ -3053,6 +3053,10 @@ export function execute(state, input) {
     if (cmd.type !== 'resolve_proliferate') return reject('proliferate_unresolved');
     if (cmd.playerId !== state.pendingProliferate.playerId) return reject('proliferate_not_your_decision');
     const pending = state.pendingProliferate;
+    // Zgłoszenie V (CR 701.34): proliferate wskazuje DOWOLNY podzbiór
+    // kandydatów z licznikami; walidacja niżej jest kompletna (przynależność
+    // do listy kandydatów) i nie potrzebuje oferty — ta, jak w triggerze
+    // wielocelowym, niesie tylko ziarna dla botów i prezentacji.
     const chosen = Array.isArray(cmd.targetIds) ? cmd.targetIds : [];
     const chosenSet = new Set(chosen);
     if (chosen.some((id) => !pending.candidateIds.includes(id))) {
@@ -5282,6 +5286,19 @@ export function execute(state, input) {
     const multiCount = Number.isInteger(multiSpec?.count) && multiSpec.count > 1 ? multiSpec.count : 1;
     if (multiCount > 1 && Array.isArray(cmd.targetIds)) {
       const chosenList = [...new Set(cmd.targetIds)];
+      // Zgłoszenie V (2026-11-09, CR 601.2c/608.2b): gracz wskazuje DOWOLNY
+      // legalny podzbiór kandydatów o dozwolonym rozmiarze — i tylko to
+      // sprawdzamy. Walidacja niżej jest KOMPLETNA (rozmiar ≤ count, zero
+      // tylko przy upTo, kandydaci z listy), więc nie potrzebuje listy oferty:
+      // ta niesie od PR #179 jedynie ZIARNA (zachłanny + singletony + pusto)
+      // i gdybyśmy wymagali członkostwa w niej, „up to two" znów byłoby
+      // martwe (20 z 21 par bez komendy — objaw zgłoszenia).
+      //
+      // Próba bramkowania tego znacznikiem `constructedTargetSet` (UI znaczy
+      // swój wybór) została ODRZUCONA: pin `zgloszenie-e-inferno-podzial` E/4
+      // wymaga, by silnik przyjmował legalny zbiór bez żadnych znaczników —
+      // to jest kontrakt protokołu i właściciela („silnik ma walidować
+      // wybraną kombinację, nie enumerować komplet").
       if (chosenList.length > multiCount) return reject('illegal_trigger_target');
       if (chosenList.length === 0 && !multiSpec.upTo) return reject('illegal_trigger_target');
       if (chosenList.some((id) => !legal.includes(id))) return reject('illegal_trigger_target');
@@ -8384,6 +8401,9 @@ export function playerView(state, playerId) {
     // „prezentacja = enumeracja" kolejność jest wprost z `variants`.
     const ordered = variants;
     for (const chosen of ordered) {
+      // Zgłoszenie V: ziarna (pełny/singletony/pusty), nie komplet podzbiorów —
+      // wybór gracza buduje kreator, a `execute` waliduje każdy podzbiór
+      // kandydatów (CR 701.34) niezależnie od tej listy.
       legalCommands.push(command('resolve_proliferate', playerId, chosen.length > 0 ? { targetIds: chosen } : {}));
     }
   } else if (state.status === 'active' && !blockedByOthersDecision && activeModalTrigger) {
@@ -8789,7 +8809,12 @@ export function playerView(state, playerId) {
     const triggerDebuff = triggerTargetDebuffOf(intentAbility);
     // B (Battle-Rattle Shaman): pump siły w komendzie (jak debuff) —
     // bot celuje stwora zdolnego do ataku, nie największego chorego.
-    const triggerPump = triggerTargetPowerPumpOf(intentAbility);
+    // Audyt PR #183/F2: dynamiczny pump siły (Beastmaster `source_power`)
+    // rozwiązuje TEN SAM resolver co efekt (resolvePumpDelta), na żywym
+    // źródle albo LKI — jak triggerDamageField niżej. Bez tego oferta nie
+    // miała `pump` i bot nie stosował polityki ataku (Shaman).
+    const triggerSourceObject = state.objects.get(triggerTargetHead.sourceId) ?? triggerTargetHead.sourceLki ?? null;
+    const triggerPump = triggerTargetPowerPumpOf(intentAbility, (value) => resolvePumpDelta(value, state, triggerSourceObject));
     // C (Academy Journeymage): flaga usunięcia celu (jak friendly —
     // zawsze bool): bot liczy zrywanie aur przyklejonych do celu.
     const triggerRemovesTarget = triggerTargetRemovesTargetOf(intentAbility);
@@ -8814,8 +8839,7 @@ export function playerView(state, playerId) {
       // oferta nie niosła `damage`, a bot omijał wspólną politykę obrażeń i
       // wybierał największe ciało. LKI źródła jak w legalTriggerTargetCandidates
       // (CR 603.10/608.2h) — refleks działa także po śmierci źródła.
-      const source = state.objects.get(triggerTargetHead.sourceId) ?? triggerTargetHead.sourceLki ?? null;
-      const amount = resolveDamageAmount(state, triggerDamageEffect, source, targetId, triggerTargetHead.extra ?? {});
+      const amount = resolveDamageAmount(state, triggerDamageEffect, triggerSourceObject, targetId, triggerTargetHead.extra ?? {});
       return Number.isFinite(amount) ? { damage: amount } : {};
     };
     // M157/F4(a): wielocelowy trigger (count > 1, „each of up to N") —
@@ -8832,6 +8856,11 @@ export function playerView(state, playerId) {
       // wariant pusty („up to") na końcu; resztę zestawów kontroler
       // konstruuje z deskryptora, a execute waliduje — bez ucinania.
       for (const targetIds of triggerTargetSeedSubsets(legal, multiCountOffer, Boolean(multiSpecOffer.upTo))) {
+        // Zgłoszenie V (2026-11-09): to ZIARNA (reprezentanci klas zbiorów),
+        // nie pełna enumeracja — wybór gracza buduje kreator
+        // (`src/table/target-set-commands.js`), a `execute` waliduje każdy
+        // legalny podzbiór niezależnie od tej listy. Nie doklejać tu
+        // znaczników: kontrakt `execute` jest czysto legalnościowy (pin E/4).
         legalCommands.push(command('resolve_trigger_target', playerId, { targetIds: [...targetIds], friendly: triggerFriendly, removesTarget: triggerRemovesTarget, ...(triggerDebuff ? { debuff: triggerDebuff } : {}), ...(triggerPump ? { pump: triggerPump } : {}), ...(triggerEvasionGrant ? { evasionGrant: true } : {}) }));
       }
     } else {

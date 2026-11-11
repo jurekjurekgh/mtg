@@ -53,6 +53,11 @@ test('F1/2: reguła jest wołana przez wspólną funkcję (kotwica, nie pusty sk
   // M179/E: +2 wywołania dla Treasure auto-tap (pip i obrona w głąb, L48).
   const wywolania = [...kod().matchAll(/unitCoversAnyRequirement\(/g)].length;
   // Audyt PR #177: +1 w doborze kolorów Converge (ochrona kolorów).
+  // Zgłoszenie 2026-11-11 (tapowanie nadmiarowego koloru): +1 wywołanie było
+  // w `jedynyPlaconyCzar` (rozpoznanie płaconego czaru z ręki, bez
+  // `legalSpellCasts` — cykl importów resources↔spells). Ostateczna wersja
+  // rozpoznaje płacony czar po `purpose.castInstanceId` (to samo źródło prawdy
+  // co reszta pliku, L688), więc ten fallback usunięto i wywołań jest znów 20.
   assert.equal(wywolania, 20,
     `oczekiwane 20 wywołań unitCoversAnyRequirement w ${PLIK} (pomiar audytu PR #146 + M179/E + audyt PR #177); `
     + 'nowe miejsce = świadoma aktualizacja kotwicy');
