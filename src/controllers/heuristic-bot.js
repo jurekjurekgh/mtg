@@ -7865,18 +7865,29 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     // bezpieczeństwa zostawiamy bramkę „zero netto" tam, gdzie rider zjada
     // CAŁĄ porcję I nic nie ginie — wtedy czar realnie nie robi nic
     // (FJ/2..4, FJ/8: pusty stół albo stwór przeżywa).
+    const foe = enemy(view);
     const zabijaCokolwiek = totals.size > 1
-      && [...totals].some(([id, amount]) => id !== enemy(view)?.id
+      && [...totals].some(([id, amount]) => id !== foe?.id
         && id !== view.playerId && damageIsLethal(view, id, amount));
     let score = 0;
     for (const [id, amount] of totals) {
       const recovered = sameResolutionLifeGain(view, effects, cmd, id);
-      const jestTwarzaWroga = id === enemy(view)?.id;
-      // Twarz wroga: rider jest stały, więc wartość liczmy bez niego — chyba
-      // że nic nie ginie (wtedy porcja twarzy to czysta strata i zostaje
-      // dotychczasowa kara).
-      const potracRider = jestTwarzaWroga && !zabijaCokolwiek ? recovered : 0;
-      score += damageTargetValue(view, id, amount, false, potracRider);
+      const jestTwarzaWroga = id === foe?.id;
+      if (jestTwarzaWroga && zabijaCokolwiek && recovered > 0 && amount > 0) {
+        // Audyt PR #184 / F-1 (CR 704.3 / 704.5a + ruling WotC 2017-03-14):
+        // SBA sprawdza życie dopiero PO całym rozstrzygnięciu, więc dobicie
+        // (+1000) wolno ogłosić wyłącznie dla `amount >= foeLife + recovered`
+        // (`amount - recovered >= foeLife`). Gdy porcja nie dobija gracza,
+        // ale w podziale ginie stwór (`zabijaCokolwiek`), nadwyżka na twarz
+        // zbija pulę życia po stałym riderze (`foeLife + recovered`) zamiast
+        // dostawać karę −60 za „pusty czar”.
+        const effectiveFoeLife = Math.max(1, (foe.life ?? 20) + recovered);
+        score += amount >= effectiveFoeLife
+          ? 1000
+          : Math.round(6 + 40 * (amount / effectiveFoeLife));
+        continue;
+      }
+      score += damageTargetValue(view, id, amount, false, recovered);
     }
     return score;
   }
