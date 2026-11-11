@@ -102,3 +102,41 @@ małych stworów, gdzie dziś działa poprawnie.
 3. Poprawki w `heuristic-bot.js` + ewentualny parametr w `heuristic-params.js`.
 4. Mutacje, sąsiedzi (M146/Batch 69/D-instant/pumpBite/K6), `npm test`, build.
 5. Dokumentacja (HISTORY, handoff), PR #184.
+
+---
+
+## WYNIK po logu właściciela (seed 424051) — KOREKTA DIAGNOZY POCZĄTKOWEJ
+
+Plan wyżej powstał z moich sond. **Log właściciela pokazał, że dwie diagnozy
+były złe** — zapis, żeby nikt ich nie „dokończył":
+
+- W: nie chodziło o remis „2/4 vs 2/1". Prawdziwa przyczyna: `widokDlaWycenyAtaku`
+  powstawał WYŁĄCZNIE w fazie walki (`phase === 'combat'`), a Basilisk Gate to
+  zdolność sorcery-speed, więc jedyne legalne okno (Główna 1) dostawało `null`
+  i wycena spadała na słaby `attackIntendsCreature` → wszystkie warianty 3 pkt.
+  Dodatkowo `zamiarAtakuWybranego` pytał o maksima dwóch RÓŻNYCH rodzin
+  podzbiorów (prawda dla niemal każdego stwora) — teraz pyta o jeden zwycięski plan.
+- X: nie chodziło o 20/20. Prawdziwa przyczyna: smok **4/4** z „can't attack
+  unless defending player controls a creature with flying", życie **5** →
+  `closesGame` (4+1 ≥ 5) liczone słabym `canAttackNow` (tylko tap/choroba)
+  zdejmowało karę. To samo słabe kryterium w `counterLethalClockBonus`.
+
+### Zmierzone i WYCOFANE (regresje moich własnych poprawek)
+
+- Kara proporcjonalna do ciała — czerwieniła pin **D/5** (zgłoszenie D:
+  „2/2 z licznikami domyka grę przy życiu 4 — wolno rzucić przed atakiem")
+  i **PMSSB-23/C4**. Kara zostaje stała.
+- Wymuszenie `phase: 'combat'` w widoku sondy — mutant GREEN, nie wnosiło nic.
+- Pin „20/20 w podtrzymaniu" — usunięty: nie było takiego przypadku u
+  właściciela, a jest sprzeczny z D/5.
+
+**Otwarta klasa (do decyzji właściciela, NIE naprawiana):** stała kara
+`counterInstantHoldPenalty` vs liniowa premia `counterHostValue` — przy ciele
+≥ 19/19 (lub przy liczniku domykającym grę) trik może wyjść na plus poza walką.
+Nie dotyczy zgłoszenia X (smok 4/4) i koliduje z D/5, więc wymaga osobnej decyzji.
+
+### Bramy końcowe
+
+`npm test` **10251/10251**, `npm run test:all` **10520/10520** (fail 0, 0 skipped),
+build **79 modułów / 5832,2 kB**. Piny W/1–W/4, X/1–X/4 8/8; mutacje
+mW1/mW3/mX1/mX3 → RED na wskazanych pinach.
