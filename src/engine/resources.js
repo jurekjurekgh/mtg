@@ -695,6 +695,40 @@ function recordManaColorsSpentOnCast(state, purpose, spentColors) {
   }));
 }
 
+/** Karty nie-lądowe w ręce gracza (kolejność zachowana — determinizm ADR 0005). */
+function kartyNieLadoweWReke(state, playerId) {
+  return (state.zones.hand ?? [])
+    .map((id) => state.objects.get(id))
+    .filter((o) => o && o.zone === 'hand' && o.controllerId === playerId
+      && !(o.types ?? []).includes('Land'));
+}
+
+/**
+ * Kolory, których potrzebuje NAJBLIŻSZY rzucalny czar z ręki (poza płaconym
+ * właśnie `payingCardId`). Zgłoszenie właściciela 2026-11-11: „Wystarczyło
+ * rzucając pierwszy niebieski czar użyć many białej, a nie niebieskiej, skoro
+ * wiedział, że kolejny czar będzie tej many potrzebował." — decyduje
+ * NAJBLIŻSZA potrzeba, nie suma zapasu. Przy 3 wyspach i 2 przyszłych {U}
+ * wyspy NIE są nadmiarem: następny czar zużyje jedną z nich.
+ *
+ * Liczymy tylko czary realnie rzucalne (produkująca mana ≥ koszt) — inaczej
+ * kolor „potrzebny" na czar, którego nigdy nie rzucimy, blokowałby regułę.
+ * Kolejność ręki zachowana (determinizm, ADR 0005).
+ */
+export function koloryNastepnegoCzaru(state, playerId, payingCardId = null) {
+  const kolory = new Set();
+  for (const card of kartyNieLadoweWReke(state, playerId)) {
+    if (payingCardId && card.cardId === payingCardId) continue;
+    if ((card.manaCost ?? 0) <= 0) continue;
+    if (producibleMana(state, playerId, null, { kind: 'cast', cardId: card.cardId }) < (card.manaCost ?? 0)) continue;
+    let pips = [];
+    try { pips = coloredPipsOf(card.cardId) ?? []; } catch { pips = []; }
+    for (const unit of pips) for (const c of unit) kolory.add(c);
+    break; // tylko NAJBLIŻSZY czar
+  }
+  return kolory;
+}
+
 /**
  * `purpose` opisuje, NA CO idzie mana (M201, znalezisko #3). Domyślnie pusty =
  * płatność NIE jest rzutem czaru, więc mana ograniczona drukiem jest dostępna
@@ -884,6 +918,35 @@ export function spendMana(state, playerId, amount, requirements = [], purpose = 
     const reqColors = new Set(requirements.flat());
     const reqUnits = singleColorRequirements(reqColors);
     const sources = untappedLandManaSources(state, playerId).slice();
+    // ── Zgłoszenie właściciela 2026-11-11 (tapowanie nadmiarowej many) ──────
+    // „Niepotrzebnie tapuje manę niebieską, której potem mu brakuje na inny
+    // czar (...). Wystarczyło rzucając pierwszy niebieski czar użyć many
+    // białej, a nie niebieskiej, skoro wiedział, że kolejny czar będzie tej
+    // many potrzebował."
+    //
+    // To faza SUMY: pipy rozlicza osobna faza wyżej, więc część GENERYCZNĄ
+    // wolno zapłacić źródłem dowolnego koloru. Reguła wybiera takie, którego
+    // kolor NIE jest potrzebny w żadnym rzucalnym czarze z ręki — przepalenie
+    // go nic nie kosztuje i zostawia nietknięte źródła przyszłych potrzeb.
+    //
+    // Ranking liczymy RAZ, PRZED sortowaniem. Wcześniejsza wersja czytała
+    // `untappedLandManaSources` WEWNĄTRZ komparatora, a sort tapuje źródła
+    // w trakcie — dostawała niespójne odpowiedzi i gubiła rzuty
+    // (golden-master dominaria-brg@1000: cast 6→5).
+    const payingObj = purpose?.cardId
+      ? state.objects.get(purpose.cardId)
+      : purpose?.castInstanceId
+        ? [...state.objects.values()].find((o) => o.instanceId === purpose.castInstanceId) ?? null
+        : null;
+    const paying = payingObj?.cardId ?? purpose?.card?.cardId ?? null;
+    const nastepny = koloryNastepnegoCzaru(state, playerId, paying);
+    // 0 = bezpieczny płatnik (kolor nie jest potrzebny następnemu czarowi),
+    // 1 = kolor, który następny czar zużyje — takie źródło zostawiamy nietknięte.
+    const bezpieczne = new Map();
+    for (const src of sources) {
+      const colors = getSourceForObject(src, state)?.colors ?? [];
+      bezpieczne.set(src.id, colors.some((c) => nastepny.has(c)) ? 1 : 0);
+    }
     sources.sort((a, b) => {
       const ca = getSourceForObject(a, state)?.colors ?? [];
       const cb = getSourceForObject(b, state)?.colors ?? [];
@@ -893,6 +956,14 @@ export function spendMana(state, playerId, amount, requirements = [], purpose = 
       // NIEpasujący (ten sam kształt co błąd F6 z PR #145).
       const am = unitCoversAnyRequirement(ca, reqUnits) ? 0 : 1;
       const bm = unitCoversAnyRequirement(cb, reqUnits) ? 0 : 1;
+      // Bezpieczny płatnik (kolor niepotrzebny następnemu czarowi) idzie
+      // PIERWSZY — także przed źródłem pokrywającym bieżący pip. Faza SUMY
+      // płaci część GENERYCZNĄ; pip rozliczy faza wyżej ze źródła, które
+      // zostanie. Bez tego `am !== bm` (pokrywający najpierw) wygrywało
+      // i rzut {1}{U} brał dwie wyspy zamiast Plains.
+      const ea = bezpieczne.get(a.id) ?? 0;
+      const eb = bezpieczne.get(b.id) ?? 0;
+      if (ea !== eb) return ea - eb;
       if (am !== bm) return am - bm;
       // B (Chronic Flooding): kolor równy — najpierw źródła, których tapnięcie
       // nie miele biblioteki kontrolera (wybór źródła jest dowolny, CR 601.2h).

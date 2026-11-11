@@ -123,6 +123,30 @@ import {
  *     została odwrócona. Dowód przełączenia okna (main1→pasowanie/main2→
  *     suspend) żyje w test/audyt-pmssb35-odroczenie.test.js, sekcja H2,
  *     i w partii t3 Żywego Testera (seed 4242). Świadoma regeneracja.
+ *   - 83ee50de… → 95f3692a… (zgłoszenie 2026-11-11: auto-tap nie przepala
+ *     many koloru potrzebnego NASTĘPNEMU czarowi). Właściciel: „Niepotrzebnie
+ *     tapuje manę niebieską, której potem mu brakuje na inny czar (...).
+ *     Wystarczyło rzucając pierwszy niebieski czar użyć many białej, a nie
+ *     niebieskiej." Fix w `resources.js`: faza SUMY sortuje źródła po tym, czy
+ *     ich kolor występuje w pipach najbliższego rzucalnego czaru z ręki (poza
+ *     czarem właśnie płaconym) — bezpieczne (niepotrzebne później) idą
+ *     pierwsze, także przed źródłami pokrywającymi bieżący pip, bo fazę pipów
+ *     rozlicza osobna faza. Zmierzona różnica per partia (decisions, scoreSum,
+ *     cast_permanent):
+ *       ravnica-wur|innistrad-wu@1000: 235→235, 2825.82→2825.82, 5→5 (hash
+ *         identyczny — brak zmiany),
+ *       ravnica-wur|innistrad-wu@1001: 256→256, 1963.8357→1963.8357, 4→4,
+ *         zmienił się wyłącznie zbiór ofert (niewybrane warianty),
+ *       dominaria-brg|mirrodin-wu@1000: 203→203, 3048.1072→3046.3063, 6→6,
+ *       dominaria-brg|mirrodin-wu@1001: 285→356, 3307.1953→3980.2998, 5→8,
+ *       tarkir-bg|warhammer-ubr@1000: 174→174, 2531.0099→2531.0099, 5→5,
+ *       tarkir-bg|warhammer-ubr@1001: 164→164, 2503.0099→2503.0099, 5→5.
+ *     Kluczowa partia @1001 rzuca TRZY czary więcej (5→8): bot nie marnuje
+ *     już kolorów na generic i stać go na kolejne karty — to poprawa siły gry,
+ *     nie dryf wyceny; @1000 zachowuje liczbę decyzji i czarów z bazy
+ *     (scoreSum drga o 1.8 pkt na wycenie tapowanych źródeł). Zachowanie
+ *     z zgłoszenia pinują M/1–M/4 w test/zgloszenie-tapowanie-many-nadmiar.test.js.
+ *     Świadoma regeneracja.
  */
 
 test('golden-master: ślad bota == zamrożony fixture (bit w bit)', () => {
