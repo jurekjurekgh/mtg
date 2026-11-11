@@ -11,15 +11,12 @@
 // shuffle.” To TUTOR — karta opuszcza bibliotekę bezpowrotnie (CR 701.23),
 // więc każde użycie przybliża deck-out (CR 121.4, 704.5b).
 //
-// Dwa niezależne zarzuty, dwa niezależne mechanizmy w `heuristic-bot.js`:
-//   R/1–R/2  DRENAŻ — twarde weto `springbloomDrainVeto` przy < 10 kartach
-//            (ten sam próg i ten sam kształt co `lootCastVeto`,
-//            `SYMMETRIC_DRAIN_MIN_LIBRARY`).
-//   R/3–R/5  BRAK CELU — kara w WYCENIE (`springbloomSacrificeSearchValue`):
-//            bot nie zna zawartości własnej biblioteki (`playerView` oznacza ją
-//            jako `hidden`), więc wnioskuje z kart JAWNYCH przez
-//            `searchTargetsRemaining` i odpuszcza tylko przy 0 (nie może się
-//            mylić).
+// Dwa niezależne zarzuty właściciela w `springbloomDrainVeto` (`heuristic-bot.js`):
+//   R/1–R/2  DRENAŻ — twarde weto przy < 10 kartach w bibliotece
+//            (ten sam próg i kształt co `lootCastVeto`, `SYMMETRIC_DRAIN_MIN_LIBRARY`).
+//   R/3–R/5  BRAK CELU — twarde weto przy < 2 basic landach pozostałych wg
+//            `searchTargetsRemaining` (bot nie zna zawartości ukrytej biblioteki,
+//            więc wnioskuje wyłącznie ze stref jawnych i znanego `ownDeck`).
 //
 // Klasa po TYPIE EFEKTU (`springbloom_sacrifice_search`), nie po nazwie karty
 // (ADR 0002) — ta sama mechanika obsługuje Springbloom Druid.
@@ -116,4 +113,72 @@ test('R/6: weto nie dotyka innych czarów — karta bez tej mechaniki ocenia si�
   assert.ok(etykieta, `oferta innego czaru: ${JSON.stringify([...scores])}`);
   assert.ok(scores.get(etykieta) > 0,
     `cienka biblioteka nie wetuje zwykłego czaru: ${scores.get(etykieta)}`);
+});
+
+// ── Audyt PR #184 / F-4: odmowa w oknie *_cast i spójność resolve_springbloom ─
+
+test('R/7 (Audyt PR #184 / F-4a): odmowa resolve_exile_cast (cast: false) na Roiling Regrowth NIE dostaje NEVER i nie remisuje z rzutem', () => {
+  const s = game({ lib: 0 });
+  lands(s, 4, 'basic-forest');
+  put(s, 'roiling', 'roiling-regrowth', 'p1', 'exile');
+  for (let i = 0; i < 6; i += 1) put(s, `lib-x-${i}`, 'highland-game', 'p1', 'library');
+  s.pendingExileCast = { playerId: 'p1', objectId: 'roiling', cardId: 'roiling-regrowth' };
+
+  const { cmd, scores } = decide(s);
+  const skipScore = scores.get('resolve_exile_cast(skip)');
+  const castKey = [...scores.keys()].find((k) => k.startsWith('resolve_exile_cast(') && k !== 'resolve_exile_cast(skip)');
+  assert.ok(castKey, `oferta rzutu z wygnania istnieje: ${JSON.stringify([...scores])}`);
+  assert.ok(scores.get(castKey) <= -900, `wariant rzutu przy 6 kartach w bibliotece jest wetowany: ${scores.get(castKey)}`);
+  assert.ok(skipScore > -900, `odmowa (cast: false) NIE jest wetowana na NEVER: ${skipScore}`);
+  assert.notEqual(skipScore, scores.get(castKey), 'odmowa i rzut nie mogą remisować na NEVER');
+  assert.equal(cmd.cast, false, `bot wybiera odmowę: ${JSON.stringify(cmd)}`);
+});
+
+test('R/8 (Audyt PR #184 / F-4a): odmowa resolve_exile_cast (cast: false) na Duskmantle Seer również nie wpada w weto NEVER', () => {
+  const s = game({ lib: 20 });
+  lands(s, 4, 'basic-island');
+  lands(s, 2, 'basic-swamp');
+  s.players.find((p) => p.id === 'p1').life = 10;
+  s.players.find((p) => p.id === 'p2').life = 20;
+  put(s, 'seer', 'duskmantle-seer', 'p1', 'exile');
+  s.pendingExileCast = { playerId: 'p1', objectId: 'seer', cardId: 'duskmantle-seer' };
+
+  const { cmd, scores } = decide(s);
+  const skipScore = scores.get('resolve_exile_cast(skip)');
+  const castKey = [...scores.keys()].find((k) => k.startsWith('resolve_exile_cast(') && k !== 'resolve_exile_cast(skip)');
+  assert.ok(castKey);
+  assert.ok(scores.get(castKey) <= -900, `rzut Seera przy 10 vs 20 życia jest wetowany: ${scores.get(castKey)}`);
+  assert.ok(skipScore > -900, `odmowa (cast: false) nie dostaje NEVER: ${skipScore}`);
+  assert.equal(cmd.cast, false);
+});
+
+test('R/9 (Audyt PR #184 / F-4b): opcjonalne resolve_springbloom (Springbloom Druid po blinku/reanimacji) wybiera skip przy <10 kartach lub <2 basic landach', () => {
+  // 1) Cienka biblioteka (6 kart)
+  const sThin = game({ lib: 0 });
+  lands(sThin, 2, 'basic-forest');
+  put(sThin, 'druid', 'springbloom-druid', 'p1', 'battlefield');
+  for (let i = 0; i < 6; i += 1) put(sThin, `lib-l-${i}`, 'basic-forest', 'p1', 'library');
+  sThin.pendingSpringbloom = {
+    controllerId: 'p1', sourceId: 'druid', cardId: 'springbloom-druid',
+    landIds: ['land-0', 'land-1'], mandatory: false, restorePriorityTo: 'p1',
+  };
+  const dThin = decide(sThin);
+  assert.equal(dThin.cmd.type, 'resolve_springbloom');
+  assert.equal(dThin.cmd.skip, true, `przy 6 kartach w bibliotece Druid nie poświęca lądu: ${JSON.stringify(dThin.cmd)}`);
+
+  // 2) Zdrowa biblioteka (20 kart), ale wg ownDeck w bibliotece został tylko 1 basic land (< 2)
+  const sNoBasic = game({ lib: 0 });
+  lands(sNoBasic, 3, 'basic-forest');
+  put(sNoBasic, 'druid', 'springbloom-druid', 'p1', 'battlefield');
+  put(sNoBasic, 'lib-l-0', 'basic-forest', 'p1', 'library');
+  for (let i = 0; i < 19; i += 1) put(sNoBasic, `lib-x-${i}`, 'highland-game', 'p1', 'library');
+  sNoBasic.pendingSpringbloom = {
+    controllerId: 'p1', sourceId: 'druid', cardId: 'springbloom-druid',
+    landIds: ['land-0', 'land-1'], mandatory: false, restorePriorityTo: 'p1',
+  };
+  const dNoBasic = decide(sNoBasic, {
+    ownDeck: [...Array(4).fill('basic-forest'), ...Array(19).fill('highland-game'), 'springbloom-druid'],
+  });
+  assert.equal(dNoBasic.cmd.type, 'resolve_springbloom');
+  assert.equal(dNoBasic.cmd.skip, true, `przy <2 basic landach w bibliotece Druid nie marnuje lądu: ${JSON.stringify(dNoBasic.cmd)}`);
 });
