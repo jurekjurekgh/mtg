@@ -130,10 +130,13 @@ były złe** — zapis, żeby nikt ich nie „dokończył":
 - Pin „20/20 w podtrzymaniu" — usunięty: nie było takiego przypadku u
   właściciela, a jest sprzeczny z D/5.
 
-**Otwarta klasa (do decyzji właściciela, NIE naprawiana):** stała kara
-`counterInstantHoldPenalty` vs liniowa premia `counterHostValue` — przy ciele
-≥ 19/19 (lub przy liczniku domykającym grę) trik może wyjść na plus poza walką.
-Nie dotyczy zgłoszenia X (smok 4/4) i koliduje z D/5, więc wymaga osobnej decyzji.
+**Klasa „stała kara vs liniowa premia od ciała” — DECYZJA WŁAŚCICIELA
+(2026-11-11): NIE NAPRAWIAĆ.** Kara `counterInstantHoldPenalty` zostaje stała
+(120), a premia `counterHostValue` liniowa. Ciało ≥ 19/19 to scenariusz
+nierealny w praktyce (właściciel: „możemy go pominąć”) i naprawa kolidowałaby
+z pinem D/5 zgłoszenia D. **Nie „poprawiaj” tego z dobrej woli** — zmiana
+wymaga nowej decyzji właściciela, nie zgłoszenia z gry. Zgłoszenie X było o
+stworze BEZ MOŻLIWOŚCI ataku (4/4 z „can't attack”) i to jest naprawione.
 
 ### Bramy końcowe
 

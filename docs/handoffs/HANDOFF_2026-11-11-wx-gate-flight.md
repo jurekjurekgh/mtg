@@ -42,9 +42,11 @@ cantAttackStatic/detained). Po: karta −46, bot passuje; w oknie walki rzuca.
 3. **Pin „20/20 w podtrzymaniu"** — usunięty: u właściciela nie wystąpił, a jest
    sprzeczny z D/5.
 
-**Otwarta klasa dla właściciela:** stała kara vs liniowa premia od ciała.
-Przy ciele ≥ 19/19 (albo przy liczniku domykającym grę) trik może wyjść na plus
-poza walką. To NIE jest zgłoszenie X i koliduje z D/5 — wymaga decyzji.
+**Klasa „stała kara vs liniowa premia od ciała” — ZAMKNIĘTA decyzją
+właściciela (2026-11-11): NIE NAPRAWIAĆ.** Kara zostaje stała (120), premia
+liniowa; ciało ≥ 19/19 uznane za scenariusz nierealny („możemy go pominąć”).
+Naprawa kolidowałaby dodatkowo z pinem D/5. Nie wracać bez nowej decyzji
+właściciela.
 
 ## Bramy
 
