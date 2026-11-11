@@ -5242,7 +5242,13 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       // a różnica między 12 a wygraną partią jest cała.
       const foe = enemy(view);
       const atakuje = (view.combat?.attackers ?? []).includes(host.id);
-      if (foe && (atakuje || canAttackNow(host))
+      // Zgłoszenie X (log właściciela, tura 17): bonus „licznik domyka grę"
+      // liczył `canAttackNow` (tylko tap/choroba), więc smok 4/4 z „can't
+      // attack unless defending player controls a creature with flying"
+      // dostawał +50 za atak, którego nie może wykonać. `canCreatureAttackNow`
+      // czyta pełny kontrakt (cantAttackStatic/detained/tap/choroba) — ta sama
+      // definicja co deklaracja atakujących (L41).
+      if (foe && (atakuje || canCreatureAttackNow(host))
         && (host.power ?? 0) + (delta.power ?? 0) >= (foe.life ?? 20)
         && attackHitsFace(view, host)) value += P.counterLethalClockBonus;
       if (pumpImprovesOutcome(view, host, {}, delta)) value += P.counterCombatBonus;
@@ -11801,10 +11807,26 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
    * atakującego.
    */
   function widokDlaWycenyAtaku(view, legal) {
-    const przedDeklaracja = view.turn?.phase === 'combat'
-      && view.turn.step !== 'declare_attackers'
-      && !(view.legalCommands ?? []).some((c) => c.type === 'declare_attackers');
+    // Zgłoszenie W (log właściciela, tura 17): widok sondy powstał wyłącznie
+    // dla FAZY WALKI („przed deklaracją atakujących"), więc w Głównej 1 —
+    // jedynym oknie zdolności „activate only as a sorcery" (Basilisk Gate) —
+    // zwracał `null`. Wycena bramy spadała wtedy na słaby
+    // `attackIntendsCreature` („istnieje jakikolwiek opłacalny zestaw z tym
+    // stworem"), prawdziwy dla każdego stwora, i wszystkie warianty celu
+    // remisowały (3/3/3 — dokładnie z logu). Plan ataku jest funkcją STANU,
+    // nie fazy: tę samą deklarację bot wykona w walce tej tury, więc można ją
+    // policzyć już teraz. Warunek: moja tura i brak trwającej walki (w walce
+    // deklaracja jest niedostępna, a wynik liczy się z `view.combat`).
+    const mojaTura = view.turn?.activePlayerId === view.playerId;
+    const bezWalki = !view.combat;
+    const brakDeklaracji = !(view.legalCommands ?? []).some((c) => c.type === 'declare_attackers');
+    const przedDeklaracja = brakDeklaracji && (view.turn?.phase === 'combat' || (mojaTura && bezWalki));
     if (!przedDeklaracja) return null;
+    // UWAGA: `phase` zostaje z widoku macierzystego. Sprawdzian mutantem:
+    // wymuszenie `phase: 'combat'` NIE zmieniało planu w main1 (35 pkt
+    // [druid,angel] w obu wariantach), więc nie było potrzebne — a zbędna
+    // zmiana fazy to fałszywy stan, na którym ktoś w przyszłości zbuduje
+    // wniosek. Plan ataku to funkcja `turn.step` i stołu, nie etykiety fazy.
     return {
       ...view,
       turn: { ...view.turn, step: 'declare_attackers', stepIndex: KROK_DECLARATION },
@@ -11869,16 +11891,34 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     if (!legal.includes(objectId)) return false;
     const widok = widokDlaWycenyAtaku(view, legal);
     if (!widok) return attackIntendsCreature(view, objectId);
-    const zbiorZ = podzbioryAtakujacych(legal).filter((set) => set.includes(objectId));
-    const zbiorBez = podzbioryAtakujacych(legal).filter((set) => !set.includes(objectId));
     attackIntentEval = true;
     try {
-      const naj = (zbiory) => zbiory.reduce((m, set) => Math.max(m, scoreCommand(widok, {
-        type: 'declare_attackers', playerId: view.playerId, attackerIds: set,
-      })), -Infinity);
-      const z = naj(zbiorZ);
-      if (z <= 0) return false;
-      return z > naj(zbiorBez);
+      // Zgłoszenie W (log właściciela, tura 17): dotąd porównywaliśmy MAKSIMA
+      // dwóch RÓŻNYCH rodzin podzbiorów — „najlepszy z tym stworem" vs
+      // „najlepszy bez niego". To nie jest pytanie „czy ten stwór jest
+      // w planie ataku", tylko „czy istnieje JAKIŚ opłacalny plan z nim"
+      // (prawda dla niemal każdego stwora). Pomiar na stole z logu
+      // (Druid 1/1+liczniki, Anioł 3/3, Ettercap 2/5): wszystkie trzy warianty
+      // bramy = 3 pkt i wybór padał na pierwszego z enumeracji — dokładnie
+      // „buffuje kreaturę, która potem nie atakuje".
+      //
+      // Poprawnie: pytamy o JEDEN plan — ten, który polityka ataku NAPRAWDĘ
+      // wybierze (argmax po wszystkich podzbiorach). Stwór jest „w planie"
+      // wtedy i tylko wtedy, gdy należy do tego zwycięskiego zbioru. Remis
+      // wartości rozstrzygamy deterministycznie (większy zbiór, potem porządek
+      // `legal`), żeby odpowiedź nie zależała od kolejności enumeracji.
+      const oferta = ofertaAtakow(widok, legal);
+      let najlepszy = null;
+      for (const cmd of oferta) {
+        const wart = scoreCommand(widok, cmd);
+        if (!Number.isFinite(wart) || wart <= 0) continue;
+        const zbior = cmd.attackerIds ?? [];
+        if (najlepszy == null || wart > najlepszy.wart
+          || (wart === najlepszy.wart && zbior.length > najlepszy.zbior.length)) {
+          najlepszy = { wart, zbior };
+        }
+      }
+      return Boolean(najlepszy) && najlepszy.zbior.includes(objectId);
     } finally {
       attackIntentEval = false;
     }
@@ -14725,8 +14765,20 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // zdolności aktywowane zostają przy wycenie M429.
         if (spell?.timing === 'instant' && friendlyStatCounterTarget) {
           const trickTarget = friendlyStatCounterTarget;
+          // Zgłoszenie X (log właściciela, tura 17): trzeci wyjątek „licznik
+          // domyka grę W TYM ATAKU" (`closesGame`) MUSI zostać — pin
+          // zgłoszenia D/5 (`test/zgloszenie-d-dragonscale-okno.test.js`)
+          // wymaga rzutu przed atakiem, gdy licznik realnie kończy partię
+          // w tej turze (2/2 + liczniki = 4 obrażenia przy życiu wroga 4).
+          // Defekt był w WARUNKU, nie w wyjątku: `canAttackNow` sprawdza tylko
+          // tapnięcie i chorobę, więc smok 4/4 z „can't attack unless
+          // defending player controls a creature with flying" przy życiu 5
+          // wychodził 4+1 ≥ 5 i trik szedł +124 w PODTRZYMANIU, choć ten stwór
+          // nie może zaatakować. `canCreatureAttackNow` czyta pełny kontrakt
+          // (cantAttackStatic/detained/tap/choroba) — L41: ta sama definicja
+          // co przy deklaracji atakujących.
           const foe = enemy(view);
-          const closesGame = Boolean(foe) && canAttackNow(trickTarget)
+          const closesGame = Boolean(foe) && canCreatureAttackNow(trickTarget)
             && (trickTarget.power ?? 0) + friendlyStatCounterAmount >= (foe.life ?? 20)
             && attackHitsFace(view, trickTarget);
           const enemyDeclaredAttackers = Boolean(view.combat)
@@ -14736,6 +14788,13 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           const surpriseBlocker = enemyDeclaredAttackers
             && (!trickTarget.tapped || spellUntapsFriendlyCreature);
           if (!combatTrickWindow(view, trickTarget) && !surpriseBlocker && !closesGame) {
+            // Kara STAŁA, jak dotąd. Wersja proporcjonalna (max z motywacją
+            // z ciała) została ZMIERZONA jako regresja: łamała pin D/5 i
+            // PMSSB-23/C4, bo obniżała wartość licznika zamiast tylko
+            // wymuszać okno. Duże ciało nadal może „wykupić" złe okno — to
+            // osobna klasa (stała kara vs liniowa premia), świadomie NIE
+            // naprawiana tutaj: zgłoszenie X dotyczyło stwora BEZ MOŻLIWOŚCI
+            // ataku, a nie rozmiaru kary.
             score -= P.counterInstantHoldPenalty ?? 0;
           }
         }
