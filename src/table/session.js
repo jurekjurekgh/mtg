@@ -1171,17 +1171,24 @@ export function odmienNaDrugaOsobe(text, humanName = PLAYER_NAMES[HUMAN_ID]) {
  * tam gracz widzi swoje karty i tak ma zostać (decyzja właściciela).
  */
 export function describeGameEvent(e, helpers, names = PLAYER_NAMES, { drugaOsoba = true, fogOfWar = false } = {}) {
-  const opis = describeGameEventRaw(e, helpers, names, { fogOfWar });
+  const opis = describeGameEventRaw(e, helpers, names, { drugaOsoba, fogOfWar });
   if (typeof opis !== 'string') return opis;
   return drugaOsoba ? odmienNaDrugaOsobe(opis, names[HUMAN_ID]) : opis;
 }
 
-function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = false } = {}) {
+function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { drugaOsoba = true, fogOfWar = false } = {}) {
   const { nameOf, nameOfObject } = helpers;
   // Rozpoznanie „cel to gracz" — sesja przekazuje isPlayer (lookup state),
   // a testy mogą polegać na mapie imion (oba stołowe słowniki mapują p1/p2).
   const isPlayer = helpers.isPlayer ?? ((id) => names[id] != null);
   const whoN = (id) => names[id] ?? id;
+  /** Biernik celu we „<kto> wskazuje <kogo>": „Ciebie" zamiast mianownika „Ty" w trybie 2. osoby. */
+  const celWskazania = (targetId, actorId) => {
+    if (!isPlayer(targetId)) return nameOfObject(targetId);
+    if (targetId === actorId) return 'siebie';
+    if (drugaOsoba && targetId === HUMAN_ID) return 'Ciebie';
+    return whoN(targetId);
+  };
   /**
    * M201/F: prefiks „<Nazwa karty>: ” z DANYCH zdarzenia. Mechaniki bywają
    * nazwane po pierwszej karcie, która je wprowadziła (springbloom, reveal
@@ -2418,12 +2425,14 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
       // pierwszy punkt obrażeń. Bez `activatingTargetId` (starsze zdarzenia)
       // zostaje dotychczasowe zdanie.
       case 'opponent_target_required': {
-        const pierwszy = e.activatingTargetId ? ` ${nameOfObject(e.activatingTargetId)}` : '';
-        return `${nameOf(e.cardId)}: ${whoN(e.activatingPlayerId)} wskazuje${pierwszy}, `
+        if (!e.activatingTargetId || !e.activatingPlayerId) {
+          return `${nameOf(e.cardId)}: ${whoN(e.playerId)} wskazuje drugi cel obrażeń`;
+        }
+        return `${nameOf(e.cardId)}: ${whoN(e.activatingPlayerId)} wskazuje ${celWskazania(e.activatingTargetId, e.activatingPlayerId)}, `
           + `${whoN(e.playerId)} wskazuje drugi cel obrażeń`;
       }
       case 'opponent_target_resolved':
-        return `${nameOf(e.cardId)}: ${whoN(e.playerId)} wskazuje ${nameOfObject(e.targetId)}`;
+        return `${nameOf(e.cardId)}: ${whoN(e.playerId)} wskazuje ${celWskazania(e.targetId, e.playerId)}`;
       // M110 (storm): wybór nowych celów dla kopii (CR 702.40a/706.10c).
       case 'copy_targets_required':
         return `Storm (${nameOf(e.cardId)}): ${whoN(e.playerId)} wybiera cele dla ${(e.copyIds ?? []).length} ${polishPlural((e.copyIds ?? []).length, 'kopii', 'kopii', 'kopii')}`;
