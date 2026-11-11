@@ -203,6 +203,33 @@ test('FJ/7: jeden 3/3 wroga — bot dobija stwora, życie wroga rośnie o nadwy�
   assert.ok(lifeOf(s, 'p2') >= 20, 'przeciwnik dostaje życie z ridera, ale stwór ginie');
 });
 
+test('FJ/7b: 1/3 wroga — bot dzieli 3 w stwora i 2 w twarz (oszczędza życie wroga)', () => {
+  // Zgłoszenie właściciela 2026-11-08 (log partii, „BEZ SENSU"):
+  //   „Bot rzuca Fiery Justice i zamiast podzielić to na moba (jego
+  //    toughness), a reszta w przeciwnika, to ładuje całość w moba, który
+  //    jest 1/3. Zabija moba i daje przeciwnikowi 5 życia. Gdyby 3 walnął
+  //    w moba i 2 w przeciwnika, przeciwnik zyskałby tylko 3 życia."
+  //
+  // Rider („Target opponent gains 5 life") działa niezależnie od podziału,
+  // więc jest KOSZTEM STAŁYM — każdy wariant oddaje te 5 życia. Obrażenia
+  // przeniesione na twarz ratują życie 1:1, więc podział 3 + 2 kończy na
+  // +3 zamiast +5. Wcześniej `damageTargetValue` karał porcję twarzy netto
+  // (−60 za netto ≤ 0), co czyniło JAKIEKOLWIEK dotknięcie twarzy gorszym
+  // od przepalenia całej puli w stwora.
+  const s = scene({ foeLife: 20, foeBodies: [[1, 3]] });
+  const { cmd } = choose(s);
+  assert.equal(cmd.type, 'cast_spell', `bot rzuca: ${JSON.stringify(cmd)}`);
+  const div = cmd.damageDivision ?? [];
+  const wStwora = div.find((d) => d.id === 'foe-0')?.amount ?? 0;
+  const wTwarz = div.find((d) => d.id === 'p2')?.amount ?? 0;
+  assert.equal(wStwora, 3, `dokładnie toughness w stwora: ${JSON.stringify(div)}`);
+  assert.equal(wTwarz, 2, `reszta w twarz: ${JSON.stringify(div)}`);
+  run(s, cmd);
+  settle(s);
+  assert.ok(inZone(s, 'foe-0', 'graveyard'), '1/3 ginie');
+  assert.equal(lifeOf(s, 'p2'), 23, '20 + 5 (rider) − 2 (obrażenia) = 23, nie 25');
+});
+
 test('FJ/8: 6/6 wroga — chip 5 poza walką nie zabija, bot nie marnuje czaru', () => {
   const s = scene({ foeLife: 20, foeBodies: [[6, 6, { manaCost: 6 }]] });
   const { cmd, options } = choose(s);

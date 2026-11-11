@@ -7849,9 +7849,34 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       const amount = Number.isInteger(entry?.amount) ? entry.amount : 0;
       totals.set(entry.id, (totals.get(entry.id) ?? 0) + amount);
     }
+    // FJ v2 (zgłoszenie właściciela 2026-11-08, „BEZ SENSU"): rider
+    // „Target opponent gains N life" działa NIEZALEŻNIE od podziału — każdy
+    // wariant czaru oddaje wrogowi te N życia, więc jest to KOSZT STAŁY
+    // rozliczany wyżej (`friendlyMisaimPenalty`). `damageTargetValue` liczy
+    // z kolei NETTO porcji, czyli karze za SAMO dotknięcie twarzy: porcja
+    // [2 w twarz] przy riderze +5 dostawała −60 jak „zero netto", więc bot
+    // wolał nie dotykać twarzy wcale i oddawał przeciwnikowi pełne 5 życia
+    // zamiast 3 (zmierzone: [5 w 1/3] = 36 vs [3 w 1/3 + 2 w twarz] = −24).
+    //
+    // Poprawna ekonomia: netto życia wroga po rozstrzygnięciu = rider N
+    // − suma obrażeń w twarz. Każdy punkt przeniesiony ze stwora na twarz
+    // oszczędza więc dokładnie 1 życie, które rider i tak odda. Liczymy
+    // więc porcje twarzy BEZ potrącania ridera (rider = koszt stały), a dla
+    // bezpieczeństwa zostawiamy bramkę „zero netto" tam, gdzie rider zjada
+    // CAŁĄ porcję I nic nie ginie — wtedy czar realnie nie robi nic
+    // (FJ/2..4, FJ/8: pusty stół albo stwór przeżywa).
+    const zabijaCokolwiek = totals.size > 1
+      && [...totals].some(([id, amount]) => id !== enemy(view)?.id
+        && id !== view.playerId && damageIsLethal(view, id, amount));
     let score = 0;
     for (const [id, amount] of totals) {
-      score += damageTargetValue(view, id, amount, false, sameResolutionLifeGain(view, effects, cmd, id));
+      const recovered = sameResolutionLifeGain(view, effects, cmd, id);
+      const jestTwarzaWroga = id === enemy(view)?.id;
+      // Twarz wroga: rider jest stały, więc wartość liczmy bez niego — chyba
+      // że nic nie ginie (wtedy porcja twarzy to czysta strata i zostaje
+      // dotychczasowa kara).
+      const potracRider = jestTwarzaWroga && !zabijaCokolwiek ? recovered : 0;
+      score += damageTargetValue(view, id, amount, false, potracRider);
     }
     return score;
   }
