@@ -7683,7 +7683,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     + P.removalWorthWeight * ((t.power ?? 0) + (t.toughness ?? 0))
     + enemyRemovalTargetBonus(view, t);
 
-  const damageTargetValue = (view, targetId, amount, scaling = false, lifeRecovered = 0) => {
+  const damageTargetValue = (view, targetId, amount, scaling = false, lifeRecovered = 0, chipPenalty = 0) => {
     const amt = Number.isInteger(amount) ? amount : 0;
     const recovered = Number.isInteger(lifeRecovered) && lifeRecovered > 0 ? lifeRecovered : 0;
     const foe = enemy(view);
@@ -7743,7 +7743,20 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     // isDamageOnly w cast_spell). Bez możliwości dobicia chip to 0,
     // poza walką CZYSTA STRATA — zakaz.
     if (combatTrickWindow(view, t)) {
-      return damageChipEnablesKill(view, t, amt) ? lethalEnemyCreatureValue(view, t) : 0;
+      // Zgłoszenie Y/a (log właściciela, Cuombajj Witches): dla AKTYWOWANEJ
+      // ZDOLNOŚCI chip, który nie dobija, jest STRATĄ i musi być ujemny.
+      // Powód: baza zdolności to 2, więc 0 remisuje z passem i wygrywa
+      // pierwszy z enumeracji — bot tapował Witches na 3/4, która po 1 dmg
+      // dalej żyła („zmarnowana zdolność, a jeszcze sam dostał 1 dmg"), choć
+      // poza walką ta sama scena dawała −80 i bot passował. Zdolność nie ma
+      // podłogi `isDamageOnly` (ta istnieje tylko dla czarów — Keep Out:
+      // karta+mana warte −1), więc karę musi dostać tutaj. CZARY zachowują 0
+      // (chipPenalty=0): tam start jest już ujemny, a dobicie sprawdza
+      // `damageChipEnablesKill` wyżej.
+      if (damageChipEnablesKill(view, t, amt)) return lethalEnemyCreatureValue(view, t);
+      // Czar: 0 (start `isDamageOnly` już ujemny — patrz wyżej). Zdolność:
+      // kara −80, bo inaczej 0 remisuje z passem (baza 2) i zdolność wygrywa.
+      return chipPenalty ? -chipPenalty : 0;
     }
     return -80;
   };
@@ -15859,7 +15872,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
               // albo dociśnięcie gracza przy niskim życiu.
               const scaling = Boolean(ability?.cost?.sacrificeSelf || ability?.cost?.sacrifice
                 || ability?.opponentChoosesTarget);
-              if (slot != null) score += damageTargetValue(view, slot, amount, scaling);
+              if (slot != null) score += damageTargetValue(view, slot, amount, scaling, 0, 80);
             }
           }
           // Batch60 (Xu-Ifit, Osteoharmonist — {T}: reanimuj stwora z własnego

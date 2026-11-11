@@ -81,3 +81,54 @@ w silniku i logice.
    czy mam czym dobić po bloku).
 4. Mutacje, sąsiedzi (Keep Out, Cuombajj D-pin, Blazing Torch), bramy.
 5. Decyzje właściciela: Y(b) jawność celu w logu, Z kosmetyka sformułowania.
+
+
+---
+
+## WYNIK (wdrożone)
+
+### Y(a) — NAPRAWIONE
+
+Fix generyczny (ADR 0002, bez nazwy karty): `damageTargetValue` dostał szósty
+parametr `chipPenalty`. W oknie walki chip, który NIE dobija
+(`damageChipEnablesKill`), zwraca `-chipPenalty` dla zdolności i `0` dla czarów.
+`activate_ability` przekazuje `80` (kara jak poza walką). To jest różnica, która
+naprawia zgłoszenie: baza wyceny zdolności to 2, więc `0` **remisuje z passem**
+i wygrywa pierwszy z enumeracji — dlatego bot tapował Witches na 3/4.
+
+| scena | przed | po |
+|---|---|---|
+| walka, 3/4 atakujący, brak blokerów | **0 → aktywuje ✘** | **−60 → pass ✔** |
+| walka, 2/2 atakujący + bloker 1/1 | — | **+18 → aktywuje ✔** |
+| walka, wróg 1/1 (dobija) | +38 → aktywuje | **+38 → aktywuje ✔** |
+| poza walką, 3/4 | −80 → pass | **−80 → pass ✔** |
+
+**Dlaczego pierwotnie nie działało tylko w walce:** poza walką ta sama scena
+szła do `return -80` (gałąź końcowa), która jest wystarczająco niska. W oknie
+walki gałąź `combatTrickWindow` zwracała `0` — zaprojektowane dla CZARÓW, gdzie
+start (`isDamageOnly`) jest już ujemny (Keep Out: −1). Zdolność takiej podłogi
+nie miała, więc 0 wygrywało. Stąd fix MUSI być zawężony do zdolności: nadanie
+−80 czarom czerwieniło `uwaga-m-keepout-chip` (−81 ≠ −1).
+
+### Y(b) — DO DECYZJI WŁAŚCICIELA
+
+Bez zmian w kodzie. Kolejność UI zgodna z CR; brakuje jedynie jawnej informacji
+„bot wybrał cel X" **przed** wyborem gracza. Propozycja w planie pierwotnym.
+
+### Z — NIE BŁĄD, pin regresyjny
+
+`Z/1` pilnuje, że log Nightsnare ma właściwe podmioty: rzuca BOT, rękę odsłania
+GRACZ, przy rezygnacji bota GRACZ odrzuca 2 karty. Kosmetyka („w efekcie") —
+czeka na zgodę właściciela.
+
+### Bramy i mutacje (stan po fixie)
+
+- `npm test` **10256/10256** (0 fail, 0 skipped)
+- `npm run test:all` **10525/10525** (0 fail, 0 skipped, 0 todo)
+- `npm run build` **79 modułów / 5833,1 kB**
+- Sąsiedzi: Keep Out 6/6, Cuombajj (audyt-pr177 a44/d, cel-nazwany) 14/14,
+  M202/I 2/2, W/X 8/8, PMSSB 18/18
+- Mutanty (`.arena/mutate-yz.py`): **mY1 → RED na Y/1**, **mY2 → RED na Y/2**
+  (+ anti-over-fix Keep Out); GREEN po przywróceniu 11/11.
+
+Piny: `test/zgloszenie-yz-witches-nightsnare.test.js` (Y/1–Y/4, Z/1).
