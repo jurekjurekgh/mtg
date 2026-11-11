@@ -129,3 +129,97 @@ test('M/4: anti-over-fix — bez przyszłych czarów w tym kolorze nie ma nadmia
   assert.ok(ior, 'oferta istnieje');
   assert.ok(execute(s, ior).ok, 'płatność przechodzi bramkę kolorów');
 });
+
+// ── Audyt PR #184 / F-2: brzegowe błędy `koloryNastepnegoCzaru` i `spendMana` ─
+
+test('M/5 (Audyt PR #184 / F-2a): droższy czar w ręce (MV 5), na który NIE starczy many po bieżącym rzucie, nie zasłania Jwari', () => {
+  // 3 Island + 1 Plains + Holdout Settlement = 5 many łącznie (Coralhelm Guide
+  // wymaga {4}{U}, nie produkuje many). Po opłaceniu Ior ({1}{U}, koszt 2)
+  // zostają 3 many — za mało na Angel of the Dawn ({4}{W}, koszt 5), ale w sam
+  // raz na Jwari ({U}{U}, koszt 2). Przed naprawą `producibleMana` liczyła 5
+  // bez odjęcia płaconych właśnie 2 many, wybierała Angel ('W'), robiła
+  // `break;` i tapowała drugą Wyspę zamiast Plains.
+  const s = game({ step: 'main1', active: 'p2' });
+  for (const [id, cid] of [['isl1', 'basic-island'], ['isl2', 'basic-island'], ['isl3', 'basic-island'], ['pl1', 'basic-plains']]) {
+    put(s, id, cid, 'p2', 'battlefield');
+  }
+  put(s, 'hs', 'holdout-settlement', 'p2', 'battlefield');
+  put(s, 'coral', 'coralhelm-guide', 'p2', 'battlefield');
+  put(s, 'ior', 'ior-ruin-expedition', 'p2', 'hand');
+  put(s, 'angel', 'angel-of-the-dawn', 'p2', 'hand');
+  put(s, 'jwari', 'jwari-shapeshifter', 'p2', 'hand');
+  const p = s.players.find((x) => x.id === 'p2');
+  p.mana = 0;
+  p.manaPool = {};
+
+  const ior = playerView(s, 'p2').legalCommands.find((c) => c.type.startsWith('cast_') && c.objectId === 'ior');
+  assert.ok(ior && execute(s, ior).ok);
+  rozstrzygnij(s);
+  assert.equal(wolne(s, 'basic-plains'), 0, 'Plains opłaca część generyczną (Angel of the Dawn i tak nie wejdzie za pozostałe 3 many)');
+  assert.equal(wolne(s, 'basic-island'), 2, 'dwie Wyspy zostają na Jwari {U}{U}');
+});
+
+test('M/6 (Audyt PR #184 / F-2b): czar w brakującym kolorze ({1}{R} bez źródeł {R}) nie blokuje ochrony {U} dla kolejnego czaru', () => {
+  // 3 Island + 1 Plains (brak źródeł {R}). W ręce przed Jwari leży Impact
+  // Tremors ({1}{R}, MV 2). Suma many starcza (4 - 2 >= 2), ale brak {R} czyni
+  // go nierzucalnym — nie może zatrzymać pętli przez `break;` na kolorze 'R'.
+  const s = game({ step: 'main1', active: 'p2' });
+  for (const [id, cid] of [['isl1', 'basic-island'], ['isl2', 'basic-island'], ['isl3', 'basic-island'], ['pl1', 'basic-plains']]) {
+    put(s, id, cid, 'p2', 'battlefield');
+  }
+  put(s, 'ior', 'ior-ruin-expedition', 'p2', 'hand');
+  put(s, 'tremors', 'impact-tremors', 'p2', 'hand');
+  put(s, 'jwari', 'jwari-shapeshifter', 'p2', 'hand');
+  const p = s.players.find((x) => x.id === 'p2');
+  p.mana = 0;
+  p.manaPool = {};
+
+  const ior = playerView(s, 'p2').legalCommands.find((c) => c.type.startsWith('cast_') && c.objectId === 'ior');
+  assert.ok(ior && execute(s, ior).ok);
+  rozstrzygnij(s);
+  assert.equal(wolne(s, 'basic-plains'), 0, 'Plains tapnięty pod generic');
+  const jwari = playerView(s, 'p2').legalCommands.find((c) => c.type.startsWith('cast_') && c.objectId === 'jwari');
+  assert.ok(jwari, 'Jwari {U}{U} pozostaje rzucalny z dwóch wolnych Wysp');
+});
+
+test('M/7 (Audyt PR #184 / F-2c): druga kopia tej samej karty w ręce (custom deck ADR 0012) nie jest pomijana po cardId', () => {
+  // 2 Island + 2 Plains i dwie kopie Ior Ruin Expedition ({1}{U}) w ręce.
+  // Pomijanie po `card.cardId === payingCardId` wycinało OBIE kopie, przez co
+  // pierwszy rzut tapował dwie Wyspy i druga kopia traciła dostęp do {U}.
+  const s = game({ step: 'main1', active: 'p2' });
+  for (const [id, cid] of [['isl1', 'basic-island'], ['isl2', 'basic-island'], ['pl1', 'basic-plains'], ['pl2', 'basic-plains']]) {
+    put(s, id, cid, 'p2', 'battlefield');
+  }
+  put(s, 'ior1', 'ior-ruin-expedition', 'p2', 'hand');
+  put(s, 'ior2', 'ior-ruin-expedition', 'p2', 'hand');
+  const p = s.players.find((x) => x.id === 'p2');
+  p.mana = 0;
+  p.manaPool = {};
+
+  const pierwszy = playerView(s, 'p2').legalCommands.find((c) => c.type.startsWith('cast_') && c.objectId === 'ior1');
+  assert.ok(pierwszy && execute(s, pierwszy).ok);
+  rozstrzygnij(s);
+  assert.equal(wolne(s, 'basic-island'), 1, 'jedna Wyspa zostaje dla drugiej kopii {1}{U}');
+  const drugi = playerView(s, 'p2').legalCommands.find((c) => c.type.startsWith('cast_') && c.objectId === 'ior2');
+  assert.ok(drugi && execute(s, drugi).ok, 'druga kopia Ior Ruin Expedition również się rzuca');
+});
+
+test('M/8 (Audyt PR #184 / F-2): bezbarwny czar w ręce przed kolorowym nie gasi ochrony koloru przez puste `break;`', () => {
+  const s = game({ step: 'main1', active: 'p2' });
+  for (const [id, cid] of [['isl1', 'basic-island'], ['isl2', 'basic-island'], ['isl3', 'basic-island'], ['pl1', 'basic-plains']]) {
+    put(s, id, cid, 'p2', 'battlefield');
+  }
+  put(s, 'ior', 'ior-ruin-expedition', 'p2', 'hand');
+  put(s, 'feather', 'angels-feather', 'p2', 'hand');
+  put(s, 'jwari', 'jwari-shapeshifter', 'p2', 'hand');
+  const p = s.players.find((x) => x.id === 'p2');
+  p.mana = 0;
+  p.manaPool = {};
+
+  const ior = playerView(s, 'p2').legalCommands.find((c) => c.type.startsWith('cast_') && c.objectId === 'ior');
+  assert.ok(ior && execute(s, ior).ok);
+  rozstrzygnij(s);
+  assert.equal(wolne(s, 'basic-plains'), 0, 'bezbarwny czar {2} nie ma preferencji koloru — ochrona {U} przechodzi do Jwari');
+  assert.equal(wolne(s, 'basic-island'), 2);
+});
+
