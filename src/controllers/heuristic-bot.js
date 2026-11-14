@@ -1585,8 +1585,8 @@ function effectIsInertNow(view, effect, cmd) {
       // graveyard onto the battlefield". Cel jawny w komendzie znaczy, że
       // w chwili decyzji istnieje (późniejszy fizzle to normalne ryzyko).
       if ((cmd?.targets ?? []).length > 0) return false;
-      return !(view.zones.graveyard ?? []).some((o) => o.controllerId !== view.playerId
-        && (o.kind === 'creature' || (o.types ?? []).includes('Creature')));
+      return !(view.zones.graveyard ?? []).some((o) =>
+        o.kind === 'creature' || (o.types ?? []).includes('Creature'));
     }
     // PMSSB-6/F-A2: rip w pustą rękę = fizzle (silnik wraca bez efektu —
     // effects.js:6380/6464; karta i mana w błoto). Cel: cmd.targets[0]
@@ -3188,7 +3188,12 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       ? [{ power: def.power ?? 0, toughness: def.toughness ?? 0, keywords: def.keywords ?? [] }]
       : [];
     const victims = [...own, ...entering];
-    if (victims.length === 0) return 80;
+    // PMSSB-89 Gap #2 (Spring-Loaded Sawblades): brak WSZELKICH ofiar
+    // (pusty stół, albo entering nie jest stworem a spec ogranicza do wrogów)
+    // oznacza, że trigger ETB nie ma legalnego celu i fizzluje — nie ma
+    // żadnego samobójstwa, kary nie ma. Kara 80 dotyczy tylko gdy entrando-
+    // ping może trafić we własne ciało (np. Forge Devil na pustym stole).
+    if (victims.length === 0) return 0;
     const burns = (o) => dmg > 0
       && (o.damage ?? 0) + dmg >= (o.toughness ?? 0)
       && !hasKeyword(o, 'indestructible'); // CR 702.12b — nie ginie
@@ -16830,6 +16835,14 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             const fetchedLand = { kind: 'land', types: ['Land'], id: '__landcycle__', controllerId: view.playerId };
             score += cardKeepValue(view, fetchedLand) - cardKeepValue(view, cycled);
           }
+        }
+        // PMSSB-89 Gap #4: reanimate_under_your_control jako aktywowana zdolność
+        // (Necrosavant z grobu) — wartość przywróconego ciała (patrz cast_permanent).
+        if (abilityEffectTypes.includes('reanimate_under_your_control')) {
+          const bestInGraveyard = view.zones.graveyard
+            .filter((o) => o.kind === 'creature' || (o.types ?? []).includes('Creature'))
+            .reduce((max, o) => Math.max(max, (o.power ?? 0)), 0);
+          if (bestInGraveyard > 0) score += 2 * bestInGraveyard;
         }
         // PMSSB-66: ODROCZENIE. Poza oknem end step przeciwnika (i poza walką) zdolność za manę o
         // trwałym skutku nie jest grywalna teraz — tę samą manę zapłacimy za darmo w oknie. Wynik ≤ −koszt,

@@ -63,7 +63,7 @@ export function probePlummet(setup = () => {}) {
   const view = playerView(state, 'p1');
   const castOffer = view.legalCommands.find((c) => c.type === 'cast_spell' && c.objectId === 'plummet-hand');
   const result = trace(state);
-  const castScore = optionScore(result.options, (o) => cmdKey(o.cmd).startsWith('cast_spell(plummet-hand'));
+  const castScore = optionScore(result.options, (o) => cmdKey(o).startsWith('cast_spell(plummet-hand'));
   const chosen = result.choice ? cmdKey(result.choice) : '(none)';
   return { cardId: 'plummet', hasCastOffer: Boolean(castOffer), castScore, chosen };
 }
@@ -77,7 +77,7 @@ export function probeGetThePoint(setup = () => {}) {
   const view = playerView(state, 'p1');
   const castOffer = view.legalCommands.find((c) => c.type === 'cast_spell' && c.objectId === 'gtp-hand');
   const result = trace(state);
-  const castScore = optionScore(result.options, (o) => cmdKey(o.cmd).startsWith('cast_spell(gtp-hand'));
+  const castScore = optionScore(result.options, (o) => cmdKey(o).startsWith('cast_spell(gtp-hand'));
   const chosen = result.choice ? cmdKey(result.choice) : '(none)';
   return { cardId: 'get-the-point', hasCastOffer: Boolean(castOffer), castScore, chosen };
 }
@@ -103,7 +103,7 @@ export function probeMightBeyondReason(setup = () => {}) {
   const view = playerView(state, 'p1');
   const castOffer = view.legalCommands.find((c) => c.type === 'cast_spell' && c.objectId === 'mbr-hand');
   const result = trace(state);
-  const castScore = optionScore(result.options, (o) => cmdKey(o.cmd).startsWith('cast_spell(mbr-hand'));
+  const castScore = optionScore(result.options, (o) => cmdKey(o).startsWith('cast_spell(mbr-hand'));
   const chosen = result.choice ? cmdKey(result.choice) : '(none)';
   return { cardId: 'might-beyond-reason', hasCastOffer: Boolean(castOffer), castScore, chosen };
 }
@@ -136,9 +136,9 @@ export function probeSpringLoadedSawblades(setup = () => {}) {
   richMana(state, 'p1');
   setup(state);
   const view = playerView(state, 'p1');
-  const castOffer = view.legalCommands.find((c) => c.type === 'cast_spell' && c.objectId === 'sls-hand');
+  const castOffer = view.legalCommands.find((c) => c.type === 'cast_permanent' && c.objectId === 'sls-hand');
   const result = trace(state);
-  const castScore = optionScore(result.options, (o) => cmdKey(o.cmd).startsWith('cast_spell(sls-hand'));
+  const castScore = optionScore(result.options, (o) => cmdKey(o).startsWith('cast_permanent(sls-hand'));
   const chosen = result.choice ? cmdKey(result.choice) : '(none)';
   return { cardId: 'spring-loaded-sawblades', hasCastOffer: Boolean(castOffer), castScore, chosen };
 }
@@ -156,10 +156,10 @@ export function probeLeoninLightbringer(setup = () => {}) {
 
 export function probeNecrosavant(setup = () => {}) {
   const state = stateAt();
-  put(state, 'necro-bf', 'necrosavant', 'p1', 'battlefield');
+  put(state, 'necro-grave', 'necrosavant', 'p1', 'graveyard'); // fromGraveyard ability — musi być w grobie
   richMana(state, 'p1');
+  put(state, 'sac-victim', 'leonin-lightbringer', 'p1', 'battlefield'); // creature do poświęcenia jako koszt
   setup(state);
-  put(state, 'target', 'leonin-lightbringer', 'p1', 'graveyard');
   const result = trace(state);
   const chosen = result.choice ? cmdKey(result.choice) : '(none)';
   return { cardId: 'necrosavant', chosen };
