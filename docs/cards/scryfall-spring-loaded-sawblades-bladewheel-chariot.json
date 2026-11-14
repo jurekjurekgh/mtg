@@ -1,0 +1,37 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Spring-Loaded+Sawblades&set=lci&format=json",
+  "print": "lci",
+  "name": "Spring-Loaded Sawblades // Bladewheel Chariot",
+  "mana_cost": "{1}{W}",
+  "cmc": 2,
+  "type_line": "Artifact // Artifact — Vehicle",
+  "oracle_text": "Flash\nWhen this artifact enters, it deals 5 damage to target tapped creature an opponent controls.\nCraft with artifact {3}{W} ({3}{W}, Exile this artifact, Exile another artifact you control or an artifact card from your graveyard: Return this card transformed under its owner's control. Craft only as a sorcery.)\n\n// Bladewheel Chariot (back face):\n// Tap two other untapped artifacts you control: This Vehicle becomes an artifact creature until end of turn.\n// Crew 1 (Tap any number of creatures you control with total power 1 or more: This Vehicle becomes an artifact creature until end of turn.)",
+  "colors": ["W"],
+  "set": "lci",
+  "set_name": "The Lost Caverns of Ixalan",
+  "collector_number": "36",
+  "rarity": "uncommon",
+  "image_uris": { "large": "https://cards.scryfall.io/large/front/2/4/24417388-f2bb-4783-bdce-264774531838.jpg?1783913808", "normal": "https://cards.scryfall.io/normal/front/2/4/24417388-f2bb-4783-bdce-264774531838.jpg?1783913808" },
+  "card_faces": [
+    {
+      "name": "Spring-Loaded Sawblades",
+      "mana_cost": "{1}{W}",
+      "type_line": "Artifact",
+      "oracle_text": "Flash\nWhen this artifact enters, it deals 5 damage to target tapped creature an opponent controls.\nCraft with artifact {3}{W} ({3}{W}, Exile this artifact, Exile another artifact you control or an artifact card from your graveyard: Return this card transformed under its owner's control. Craft only as a sorcery.)",
+      "colors": ["W"],
+      "image_uris": { "large": "https://cards.scryfall.io/large/front/2/4/24417388-f2bb-4783-bdce-264774531838.jpg?1783913808" }
+    },
+    {
+      "name": "Bladewheel Chariot",
+      "mana_cost": "",
+      "type_line": "Artifact — Vehicle",
+      "oracle_text": "Tap two other untapped artifacts you control: This Vehicle becomes an artifact creature until end of turn.\nCrew 1 (Tap any number of creatures you control with total power 1 or more: This Vehicle becomes an artifact creature until end of turn.)",
+      "colors": ["W"],
+      "color_indicator": ["W"],
+      "power": "5",
+      "toughness": "5",
+      "image_uris": { "large": "https://cards.scryfall.io/large/back/2/4/24417388-f2bb-4783-bdce-264774531838.jpg?1783913808" }
+    }
+  ],
+  "pobrano": "2026-11-11"
+}

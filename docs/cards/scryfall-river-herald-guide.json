@@ -1,0 +1,18 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=River+Herald+Guide&set=lci&format=json",
+  "print": "lci",
+  "name": "River Herald Guide",
+  "mana_cost": "{2}{G}",
+  "cmc": 3,
+  "type_line": "Creature — Merfolk Scout",
+  "oracle_text": "Vigilance\nWhen this creature enters, it explores. (Reveal the top card of your library. Put that card into your hand if it's a land. Otherwise, put a +1/+1 counter on this creature, then put the card back or put it into your graveyard.)",
+  "power": "3",
+  "toughness": "1",
+  "colors": ["G"],
+  "set": "lci",
+  "set_name": "The Lost Caverns of Ixalan",
+  "collector_number": "209",
+  "rarity": "common",
+  "image_uris": { "large": "https://cards.scryfall.io/large/front/9/e/9ea7e323-f329-4928-b25a-c0b44c5ac058.jpg?1783913740", "normal": "https://cards.scryfall.io/normal/front/9/e/9ea7e323-f329-4928-b25a-c0b44c5ac058.jpg?1783913740" },
+  "pobrano": "2026-11-11"
+}
