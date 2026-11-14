@@ -733,7 +733,7 @@ function playMatch(seed, deckA, deckB, makeBotA = (s) => createHeuristicBot({ se
   });
 }
 
-const REAL3 = parseDeckText(fs.readFileSync('decks/dominaria-brg.txt', 'utf8'), REGISTRY).cardIds;
+const REAL3 = parseDeckText(fs.readFileSync('decks/dominaria-wrg.txt', 'utf8'), REGISTRY).cardIds;
 const REAL2 = parseDeckText(fs.readFileSync('decks/warhammer-ubr.txt', 'utf8'), REGISTRY).cardIds;
 
 test('pełna partia na talii Batchu 3 jest deterministyczna i bez odrzuceń', () => {
