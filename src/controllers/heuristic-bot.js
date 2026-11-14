@@ -13759,6 +13759,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         let tokenCastHadCreatureEffect = false; // PMSSB-2/B (F1): timing raz na rzut
         let friendlyStatCounterTarget = null; // zgłoszenie D: cel trwałego licznika statystyk na własnym stworze
         let friendlyStatCounterAmount = 0;    // zgłoszenie D: suma takich liczników na tym celu
+        let hasOnlyPermanentStatCounters = true; // PMSSB-89: tylko add_counter ze statami na własnym stworze — nie combat-trick
         let spellUntapsFriendlyCreature = false; // zgłoszenie D: odkręcenie własnego stwora (blokujący-niespodzianka)
         let spellMakesTokens = false; // PMSSB-2/C (F7): tie-break kosztem (dowolny token)
         for (const effect of scoredEffects) {
@@ -14834,6 +14835,8 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
               && (friendlyStatCounterTarget == null || friendlyStatCounterTarget.id === counterRecipient.id)) {
               friendlyStatCounterTarget = counterRecipient;
               friendlyStatCounterAmount += Math.max(1, effect.amount ?? 1);
+            } else {
+              hasOnlyPermanentStatCounters = false; // add_counter bez stat-delta na własnym stworze = nie tylko trwały buff
             }
           }
           // PMSSB-23/F3: rider rozlania liczników (wcześniej 0 pkt).
@@ -14854,6 +14857,9 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           // `searchRiderValue` (L41).
           if (SEARCH_LIBRARY_EFFECT_TYPES.has(effect.type)) {
             score += searchRiderValue(view, effect);
+          }
+          if (effect.type !== 'add_counter') {
+            hasOnlyPermanentStatCounters = false; // efekt inny niż trwały licznik = combat-trick lub utility
           }
         }
         // PMSSB-61/F4 (L41): dobór kontrolera czaru wyzwala istniejące
@@ -14906,7 +14912,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // przeciwnik nie wiedział; (3) licznik domyka grę w tym ataku (zegar
         // jak `counterLethalClockBonus`). Sorcery nie wchodzi (`spell.timing`),
         // zdolności aktywowane zostają przy wycenie M429.
-        if (spell?.timing === 'instant' && friendlyStatCounterTarget) {
+        if (spell?.timing === 'instant' && friendlyStatCounterTarget && !hasOnlyPermanentStatCounters) {
           const trickTarget = friendlyStatCounterTarget;
           // Zgłoszenie X (log właściciela, tura 17): trzeci wyjątek „licznik
           // domyka grę W TYM ATAKU" (`closesGame`) MUSI zostać — pin
