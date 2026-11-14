@@ -21,9 +21,10 @@
 1x Sentry Bot
 1x Zombie Boa
 1x Captivating Gyre
+1x Necrosavant
 1x Sifter Wurm
-2x Plains
+1x Plains
 4x Island
-2x Swamp
+3x Swamp
 1x Mountain
-2x Forest
+3x Forest

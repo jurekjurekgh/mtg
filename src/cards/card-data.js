@@ -5070,6 +5070,211 @@ export const REAL_CARDS = Object.freeze([
     abilities: [],
     support: { status: 'token', limitations: ['token — nie można umieścić w talii; tworzony przez Heron-Blessed Geist'] },
   }),
+
+  // ===== Batch 73 (2026-11-11, kolekcja 645–655) =====
+  // 1. Plummet (M20) — Instant {1}{G}, Destroy target creature with flying.
+//    Kolekcja poz. 655. (kolekcja właściciela, poz. 655).
+  defineCard({
+    id: 'plummet', name: 'Plummet', set: 'M20', artId: 655,
+    types: ['Instant'], colors: ['G'], manaCost: 2,
+    oracleText: 'Destroy target creature with flying.',
+    imageUri: 'https://cards.scryfall.io/large/front/4/a/4a1a0c7b-ce1c-4284-9362-04b21861f69d.jpg?1783932960',
+    spell: {
+      timing: 'instant',
+      targets: [{ type: 'creature_with_keyword', keyword: 'flying' }],
+      effects: [{ type: 'destroy_permanent' }],
+    },
+    plan: 'Ixalan',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 2. Get the Point (RNA) — Instant {3}{B}{R}, Destroy target creature. Scry 1.
+  // 647.
+  defineCard({
+    id: 'get-the-point', name: 'Get the Point', set: 'RNA', artId: 647,
+    types: ['Instant'], colors: ['B', 'R'], manaCost: 5,
+    oracleText: 'Destroy target creature. Scry 1.',
+    imageUri: 'https://cards.scryfall.io/large/front/8/2/821c4ab5-eb75-445a-bbec-e50af54dba7a.jpg?1783933649',
+    spell: {
+      timing: 'instant',
+      targets: [{ type: 'creature' }],
+      effects: [{ type: 'destroy_permanent' }, { type: 'scry', amount: 1 }],
+    },
+    plan: 'Ravnica',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 3. Messenger's Speed (THS) — Enchantment — Aura {R}. Enchanted creature has trample and haste.
+  //    Aura grantuje keywordy przez `aura.keywords` (wzorzec Infectious Bloodlust).
+  // 646.
+  defineCard({
+    id: "messengers-speed", name: "Messenger's Speed", set: 'THS', artId: 646,
+    types: ['Enchantment'], subtypes: ['Aura'], colors: ['R'], manaCost: 1,
+    oracleText: 'Enchant creature\nEnchanted creature has trample and haste.',
+    imageUri: 'https://cards.scryfall.io/large/front/9/3/93d7f033-217f-4fb3-a57b-e32291257ec8.jpg?1783939759',
+    aura: { keywords: ['trample', 'haste'] },
+    plan: 'Theros',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 4. River Herald Guide (LCI) — Creature — Merfolk Scout {2}{G} 3/1.
+  //    Vigilance + gdy wchodzi na pole bitwy: explores (wybór gracza: ląd do ręki, inaczej +1/+1 counter).
+  // 652.
+  defineCard({
+    id: 'river-herald-guide', name: 'River Herald Guide', set: 'LCI', artId: 652,
+    types: ['Creature'], subtypes: ['Merfolk', 'Scout'], colors: ['G'], manaCost: 3,
+    power: 3, toughness: 1,
+    oracleText: 'Vigilance\nWhen this creature enters, it explores. (Reveal the top card of your library. Put that card into your hand if it is a land. Otherwise, put a +1/+1 counter on this creature, then put the card back or put it into your graveyard.)',
+    imageUri: 'https://cards.scryfall.io/large/front/9/e/9ea7e323-f329-4928-b25a-c0b44c5ac058.jpg?1783913740',
+    keywords: ['vigilance'],
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield' },
+        effect: { type: 'explore' },
+      }),
+    ],
+    plan: 'Ixalan',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 5. Might Beyond Reason (SOI) — Instant {3}{G}, Delirium: 2× +1/+1 counter, przy delirium (4+ typów w grobie) 3 łącznie.
+//    Kolekcja poz. 645.
+  defineCard({
+    id: 'might-beyond-reason', name: 'Might Beyond Reason', set: 'SOI', artId: 645,
+    types: ['Instant'], colors: ['G'], manaCost: 4,
+    oracleText: 'Put two +1/+1 counters on target creature.\nDelirium — Put three +1/+1 counters on that creature instead if there are four or more card types among cards in your graveyard.',
+    imageUri: 'https://cards.scryfall.io/large/front/5/a/5a274689-82f1-488a-baf8-cd8ef3477b72.jpg?1783937725',
+    spell: {
+      timing: 'instant',
+      targets: [{ type: 'creature' }],
+      effects: [
+        { type: 'add_counter', counter: '+1/+1', amount: 2 },
+        { type: 'add_counter', counter: '+1/+1', amount: 1, condition: { delirium: true } },
+      ],
+    },
+    plan: 'Teenage Mutant Ninja Turtles',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 6. Spring-Loaded Sawblades (LCI) — Artifact {1}{W}, Flash, ETB: 5 dmg do tapped créature wroga, Craft {3}{W}.
+//    Kolekcja poz. 649.
+  defineCard({
+    id: 'spring-loaded-sawblades', name: 'Spring-Loaded Sawblades', set: 'LCI', artId: 649,
+    types: ['Artifact'], colors: ['W'], manaCost: 2,
+    oracleText: "Flash\nWhen this artifact enters, it deals 5 damage to target tapped creature an opponent controls.\nCraft with artifact {3}{W} ({3}{W}, Exile this artifact, Exile another artifact you control or an artifact card from your graveyard: Return this card transformed under its owner's control. Craft only as a sorcery.)",
+    imageUri: 'https://cards.scryfall.io/large/front/2/4/24417388-f2bb-4783-bdce-264774531838.jpg?1783913808',
+    keywords: ['flash'],
+    transformTo: 'bladewheel-chariot',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield', requiresTarget: { type: 'creature', qualifier: { tapped: true, controller: 'opponent' } } },
+        effect: { type: 'damage', amount: 5 },
+      }),
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        keyword: 'craft',
+        cost: { mana: 3, colors: ['W'] },
+        timing: 'sorcery',
+        effect: { type: 'craft_transform' },
+      }),
+    ],
+    plan: 'Forgotten Realms',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 7. Bladewheel Chariot (LCI) — tył TDFC: Artifact — Vehicle 5/5, Crew 1, tap dwa inne artefakty → stwór.
+//    Kolekcja poz. 650.
+  defineCard({
+    id: 'bladewheel-chariot', name: 'Bladewheel Chariot', set: 'LCI', artId: 650,
+    types: ['Artifact'], subtypes: ['Vehicle'], colors: ['W'],
+    oracleText: 'Tap two other untapped artifacts you control: This Vehicle becomes an artifact creature until end of turn.\nCrew 1 (Tap any number of creatures you control with total power 1 or more: This Vehicle becomes an artifact creature until end of turn.)',
+    imageUri: 'https://cards.scryfall.io/large/back/2/4/24417388-f2bb-4783-bdce-264774531838.jpg?1783913808',
+    power: 5, toughness: 5,
+    plan: 'Forgotten Realms',
+    support: { status: 'back', limitations: ['Tył karty dwustronnej (Spring-Loaded Sawblades) — nie do talii ani kreatora; do gry trafia wyłącznie przez transform frontu'] },
+  }),
+
+  // 8. Leonin Lightbringer (ONE) — Creature — Cat Rebel {2}{W} 3/2, Ward {2}, as long as equipped → +1/+1.
+//    Kolekcja poz. 651.
+  defineCard({
+    id: 'leonin-lightbringer', name: 'Leonin Lightbringer', set: 'ONE', artId: 651,
+    types: ['Creature'], subtypes: ['Cat', 'Rebel'], colors: ['W'], manaCost: 3,
+    power: 3, toughness: 2,
+    oracleText: 'Ward {2} (Whenever this creature becomes the target of a spell or ability an opponent controls, counter it unless that player pays {2}.)\nAs long as this creature is equipped, it gets +1/+1.',
+    imageUri: 'https://cards.scryfall.io/large/front/9/6/96ae13df-670e-49a0-99b0-baf908ac9eb4.jpg?1783918079',
+    keywords: ['ward'],
+    ward: 2,
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.static,
+        condition: { equipped: true },
+        pump: { power: 1, toughness: 1 },
+      }),
+    ],
+    plan: 'Mirrodin',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 9. Necrosavant (DMR) — Creature — Zombie Giant {3}{B}{B}{B} 5/5, {3}{B}{B}, poświęć stwora: wróć z grobu na pole bitwy, tylko w swój upkeep.
+//    Kolekcja poz. 653.
+  defineCard({
+    id: 'necrosavant', name: 'Necrosavant', set: 'DMR', artId: 653,
+    types: ['Creature'], subtypes: ['Zombie', 'Giant'], colors: ['B'], manaCost: 6,
+    power: 5, toughness: 5,
+    oracleText: '{3}{B}{B}, Sacrifice a creature: Return this card from your graveyard to the battlefield. Activate only during your upkeep.',
+    imageUri: 'https://cards.scryfall.io/large/front/8/7/87ce2548-38d3-4763-960a-d5d802094a0c.jpg?1783918475',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        fromGraveyard: true,
+        cost: { mana: 3, colors: ['B', 'B'], sacrificeCreature: true },
+        effect: { type: 'reanimate_under_your_control' },
+      }),
+    ],
+    plan: 'Arcavios',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 10. Kessig Flamebreather (VOW) — Creature — Human Shaman {1}{R} 1/3, gdy rzucasz czar niebędący stworem: 1 dmg do każdego przeciwnika.
+//    Kolekcja poz. 654.
+  defineCard({
+    id: 'kessig-flamebreather', name: 'Kessig Flamebreather', set: 'VOW', artId: 654,
+    types: ['Creature'], subtypes: ['Human', 'Shaman'], colors: ['R'], manaCost: 2,
+    power: 1, toughness: 3,
+    oracleText: 'Whenever you cast a noncreature spell, this creature deals 1 damage to each opponent.',
+    imageUri: 'https://cards.scryfall.io/large/front/3/0/303ad78a-b02a-44dc-afe6-7f95781a5062.jpg?1783924832',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'you_cast_noncreature_spell' },
+        effect: { type: 'damage', amount: 1, toEachOpponent: true },
+      }),
+    ],
+    plan: 'Innistrad',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 11. Seton's Desire (DMR) — Enchantment — Aura {2}{G}, +2/+2, Threshold (7+ w grobie → wszystkie stworzenia zdolne do blokowania zaklętego muszą blokować).
+//    Kolekcja poz. 648.
+  defineCard({
+    id: 'setons-desire', name: "Seton's Desire", set: 'DMR', artId: 648,
+    types: ['Enchantment'], subtypes: ['Aura'], colors: ['G'], manaCost: 3,
+    oracleText: 'Enchant creature\nEnchanted creature gets +2/+2.\nThreshold — As long as there are seven or more cards in your graveyard, all creatures able to block enchanted creature do so.',
+    imageUri: 'https://cards.scryfall.io/large/front/7/2/72c7f922-c334-4a75-9f5a-e68595049318.jpg?1783918436',
+    aura: { pump: { power: 2, toughness: 2 } },
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.static,
+        condition: { minGraveyardCards: 7 },
+        effect: { type: 'must_block_enchanted' },
+      }),
+    ],
+    plan: 'Dominaria',
+    support: { status: 'supported', limitations: [] },
+  }),
+
 ]);
 
 

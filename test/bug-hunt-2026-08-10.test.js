@@ -199,6 +199,10 @@ const KNOWN_KEYWORDS = new Set([
   // Batch 69: myriad (CR 702.116, Gnoll War Band — trigger ataku, 1:1 w 1v1)
   // i riot (CR 702.136a, Gruul Beastmaster — statyczny wybór przed wejściem, bez triggera).
   'myriad', 'riot',
+  // CR 702.21: Ward — już w engine (wardAmountOf, trigger ward).
+  'ward',
+  // CR 702.102a: Crew (Vehicles) — deskryptor na tylnej twarzy TDFC.
+  'crew',
 ]);
 
 test('Sherlock strażnik: każdy keyword w registry to mały snake_case z listy obsługiwanych', () => {

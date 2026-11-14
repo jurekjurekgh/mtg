@@ -692,4 +692,15 @@ export const MANA_COSTS = {
   "pheres-band-centaurs": "{4}{G}",
   "shining-aerosaur": "{4}{W}",
   "lichs-caress": "{3}{B}{B}",
+  // Batch 73 (kolekcja 645–655)
+  "get-the-point": "{3}{B}{R}",
+  "setons-desire": "{2}{G}",
+  "kessig-flamebreather": "{1}{R}",
+  "leonin-lightbringer": "{2}{W}",
+  "might-beyond-reason": "{3}{G}",
+  "messengers-speed": "{R}",
+  "necrosavant": "{3}{B}{B}{B}",
+  "plummet": "{1}{G}",
+  "river-herald-guide": "{2}{G}",
+  "spring-loaded-sawblades": "{1}{W}",
 };
