@@ -50,103 +50,144 @@ function cmdKey(cmd) {
   return String(cmd);
 }
 
-function probe(cardId, handId, setup = () => {}) {
+function richMana(state, playerId) {
+  for (const c of ['W', 'U', 'B', 'R', 'G']) addMana(state, playerId, 10, { colors: [c] });
+}
+
+export function probePlummet(setup = () => {}) {
   const state = stateAt();
-  put(state, handId, cardId, 'p1', 'hand');
+  put(state, 'plummet-hand', 'plummet', 'p1', 'hand');
+  richMana(state, 'p1');
+  setup(state);
+  put(state, 'target', 'illusory-demon', 'p2', 'battlefield'); // flying target
+  const view = playerView(state, 'p1');
+  const castOffer = view.legalCommands.find((c) => c.type === 'cast_spell' && c.objectId === 'plummet-hand');
+  const result = trace(state);
+  const castScore = optionScore(result.options, (o) => cmdKey(o.cmd).startsWith('cast_spell(plummet-hand'));
+  const chosen = result.choice ? cmdKey(result.choice) : '(none)';
+  return { cardId: 'plummet', hasCastOffer: Boolean(castOffer), castScore, chosen };
+}
+
+export function probeGetThePoint(setup = () => {}) {
+  const state = stateAt();
+  put(state, 'gtp-hand', 'get-the-point', 'p1', 'hand');
+  richMana(state, 'p1');
+  setup(state);
+  put(state, 'target', 'leonin-lightbringer', 'p2', 'battlefield');
+  const view = playerView(state, 'p1');
+  const castOffer = view.legalCommands.find((c) => c.type === 'cast_spell' && c.objectId === 'gtp-hand');
+  const result = trace(state);
+  const castScore = optionScore(result.options, (o) => cmdKey(o.cmd).startsWith('cast_spell(gtp-hand'));
+  const chosen = result.choice ? cmdKey(result.choice) : '(none)';
+  return { cardId: 'get-the-point', hasCastOffer: Boolean(castOffer), castScore, chosen };
+}
+
+export function probeMessengersSpeed(setup = () => {}) {
+  const state = stateAt();
+  put(state, 'ms-hand', "messengers-speed", 'p1', 'hand');
+  richMana(state, 'p1');
+  setup(state);
+  put(state, 'target', 'leonin-lightbringer', 'p1', 'battlefield');
+  const result = trace(state);
+  const chosen = result.choice ? cmdKey(result.choice) : '(none)';
+  return { cardId: "messengers-speed", chosen };
+}
+
+export function probeMightBeyondReason(setup = () => {}) {
+  const state = stateAt();
+  put(state, 'mbr-hand', 'might-beyond-reason', 'p1', 'hand');
+  richMana(state, 'p1');
+  setup(state);
+  put(state, 'body', 'leonin-lightbringer', 'p1', 'battlefield'); // 3/2 body
+  put(state, 'target', 'kessig-flamebreather', 'p1', 'battlefield'); // target to pump
+  const view = playerView(state, 'p1');
+  const castOffer = view.legalCommands.find((c) => c.type === 'cast_spell' && c.objectId === 'mbr-hand');
+  const result = trace(state);
+  const castScore = optionScore(result.options, (o) => cmdKey(o.cmd).startsWith('cast_spell(mbr-hand'));
+  const chosen = result.choice ? cmdKey(result.choice) : '(none)';
+  return { cardId: 'might-beyond-reason', hasCastOffer: Boolean(castOffer), castScore, chosen };
+}
+
+export function probeRiverHeraldGuide(setup = () => {}) {
+  const state = stateAt();
+  put(state, 'rhg-hand', 'river-herald-guide', 'p1', 'hand');
+  richMana(state, 'p1');
+  setup(state);
+  for (let i = 0; i < 5; i += 1) put(state, `lib-${i}`, 'basic-forest', 'p1', 'library');
+  const result = trace(state);
+  const chosen = result.choice ? cmdKey(result.choice) : '(none)';
+  return { cardId: 'river-herald-guide', chosen };
+}
+
+export function probeSetonsDesire(setup = () => {}) {
+  const state = stateAt();
+  put(state, 'sd-hand', 'setons-desire', 'p1', 'hand');
+  richMana(state, 'p1');
+  setup(state);
+  put(state, 'target', 'leonin-lightbringer', 'p1', 'battlefield');
+  const result = trace(state);
+  const chosen = result.choice ? cmdKey(result.choice) : '(none)';
+  return { cardId: 'setons-desire', chosen };
+}
+
+export function probeSpringLoadedSawblades(setup = () => {}) {
+  const state = stateAt();
+  put(state, 'sls-hand', 'spring-loaded-sawblades', 'p1', 'hand');
+  richMana(state, 'p1');
   setup(state);
   const view = playerView(state, 'p1');
-  const castOffer = view.legalCommands.find((c) => c.type === 'cast_spell' && c.objectId === handId);
+  const castOffer = view.legalCommands.find((c) => c.type === 'cast_spell' && c.objectId === 'sls-hand');
   const result = trace(state);
-  const castScore = optionScore(result.options, (o) => {
-    const k = cmdKey(o.cmd);
-    return k.startsWith(`cast_spell(${handId}`);
-  });
+  const castScore = optionScore(result.options, (o) => cmdKey(o.cmd).startsWith('cast_spell(sls-hand'));
   const chosen = result.choice ? cmdKey(result.choice) : '(none)';
-  return { cardId, hasCastOffer: Boolean(castOffer), castScore, chosen };
+  return { cardId: 'spring-loaded-sawblades', hasCastOffer: Boolean(castOffer), castScore, chosen };
 }
 
-function probeBattlefield(cardId, bfId, setup = () => {}) {
+export function probeLeoninLightbringer(setup = () => {}) {
   const state = stateAt();
-  put(state, bfId, cardId, 'p1', 'battlefield');
+  put(state, 'll-bf', 'leonin-lightbringer', 'p1', 'battlefield');
+  richMana(state, 'p1');
   setup(state);
+  put(state, 'target', 'kessig-flamebreather', 'p2', 'battlefield');
   const result = trace(state);
   const chosen = result.choice ? cmdKey(result.choice) : '(none)';
-  return { cardId, chosen };
+  return { cardId: 'leonin-lightbringer', chosen };
 }
 
-console.log('=== PMSSB-89 — Batch 73 scoring probe ===\n');
+export function probeNecrosavant(setup = () => {}) {
+  const state = stateAt();
+  put(state, 'necro-bf', 'necrosavant', 'p1', 'battlefield');
+  richMana(state, 'p1');
+  setup(state);
+  put(state, 'target', 'leonin-lightbringer', 'p1', 'graveyard');
+  const result = trace(state);
+  const chosen = result.choice ? cmdKey(result.choice) : '(none)';
+  return { cardId: 'necrosavant', chosen };
+}
 
-// 1. Plummet — destroy flying creature
-const p1 = probe('plummet', 'plummet-hand', (s) => {
-  put(s, 'target', 'leonin-lightbringer', 'p2', 'battlefield');
-  addMana(s, 'p1', 2, { colors: ['G'] });
-});
-console.log('Plummet (destroy flying):', JSON.stringify({ hasCastOffer: p1.hasCastOffer, castScore: p1.castScore, chosen: p1.chosen }));
+export function probeKessigFlamebreather(setup = () => {}) {
+  const state = stateAt();
+  put(state, 'kf-bf', 'kessig-flamebreather', 'p1', 'battlefield');
+  richMana(state, 'p1');
+  setup(state);
+  put(state, 'target', 'leonin-lightbringer', 'p2', 'battlefield');
+  const result = trace(state);
+  const chosen = result.choice ? cmdKey(result.choice) : '(none)';
+  return { cardId: 'kessig-flamebreather', chosen };
+}
 
-// 2. Get the Point — deal 2 damage to any target
-const p2 = probe('get-the-point', 'gtp-hand', (s) => {
-  put(s, 'target', 'leonin-lightbringer', 'p2', 'battlefield');
-  addMana(s, 'p1', 2, { colors: ['R'] });
-});
-console.log('Get the Point (damage 2 any target):', JSON.stringify({ hasCastOffer: p2.hasCastOffer, castScore: p2.castScore, chosen: p2.chosen }));
+if (import.meta.url === process.argv[1]) {
+  console.log('=== PMSSB-89 — Batch 73 scoring probe ===\n');
 
-// 3. Messenger's Speed — aura +1/+1 and haste (trample)
-const p3 = probe("messengers-speed", 'ms-hand', (s) => {
-  put(s, 'target', 'leonin-lightbringer', 'p1', 'battlefield');
-  addMana(s, 'p1', 1, { colors: ['R'] });
-});
-console.log("Messenger's Speed (aura +1/+1 haste/trample):", JSON.stringify({ hasCastOffer: p3.hasCastOffer, castScore: p3.castScore, chosen: p3.chosen }));
-
-// 4. Might Beyond Reason — +X/+X where X = greatest power among creatures you control
-const p4 = probe('might-beyond-reason', 'mbr-hand', (s) => {
-  put(s, 'body', 'leonin-lightbringer', 'p1', 'battlefield');
-  addMana(s, 'p1', 3, { colors: ['G'] });
-});
-console.log('Might Beyond Reason (+X/+X board pump):', JSON.stringify({ hasCastOffer: p4.hasCastOffer, castScore: p4.castScore, chosen: p4.chosen }));
-
-// 5. River Herald Guide — explore
-const p5 = probe('river-herald-guide', 'rhg-hand', (s) => {
-  for (let i = 0; i < 5; i += 1) put(s, `lib-${i}`, 'basic-forest', 'p1', 'library');
-  addMana(s, 'p1', 1, { colors: ['G'] });
-});
-console.log('River Herald Guide (explore):', JSON.stringify({ hasCastOffer: p5.hasCastOffer, castScore: p5.castScore, chosen: p5.chosen }));
-
-// 6. Seton's Desire — aura +2/+2 and ward {2}
-const p6 = probe('setons-desire', 'sd-hand', (s) => {
-  put(s, 'target', 'leonin-lightbringer', 'p1', 'battlefield');
-  addMana(s, 'p1', 3, { colors: ['G', 'W'] });
-});
-console.log('Seton\'s Desire (aura +2/+2 ward {2}):', JSON.stringify({ hasCastOffer: p6.hasCastOffer, castScore: p6.castScore, chosen: p6.chosen }));
-
-// 7. Spring-Loaded Sawblades — DFC craft/transform (front face is artifact creature)
-const p7 = probe('spring-loaded-sawblades', 'sls-hand', (s) => {
-  addMana(s, 'p1', 4, { colors: ['W'] });
-});
-console.log('Spring-Loaded Sawblades (craft DFC):', JSON.stringify({ hasCastOffer: p7.hasCastOffer, castScore: p7.castScore, chosen: p7.chosen }));
-
-// 8. Leonin Lightbringer — {W},{T} tap target creature
-const p8 = probeBattlefield('leonin-lightbringer', 'll-bf', (s) => {
-  put(s, 'target', 'kessig-flamebreather', 'p2', 'battlefield');
-  addMana(s, 'p1', 1, { colors: ['W'] });
-});
-console.log('Leonin Lightbringer ({W},{T} tap target):', JSON.stringify({ chosen: p8.chosen }));
-
-// 9. Necrosavant — reanimate from graveyard with minGraveyardCards
-const p9 = probeBattlefield('necrosavant', 'necro-bf', (s) => {
-  put(s, 'target', 'leonin-lightbringer', 'p1', 'graveyard');
-  addMana(s, 'p1', 5, { colors: ['B'] });
-});
-console.log('Necrosavant (reanimate minGraveyardCards):', JSON.stringify({ chosen: p9.chosen }));
-
-// 10. Kessig Flamebreather — {1}{R},{T} deal 2 damage
-const p10 = probeBattlefield('kessig-flamebreather', 'kf-bf', (s) => {
-  put(s, 'target', 'leonin-lightbringer', 'p2', 'battlefield');
-  addMana(s, 'p1', 2, { colors: ['R'] });
-});
-console.log('Kessig Flamebreather ({1}{R},{T} damage 2):', JSON.stringify({ chosen: p10.chosen }));
-
-console.log('\n=== Probe complete ===');
-console.log('Interpretation:');
-console.log('- castScore null = bot does not offer to cast the card (scoring gap)');
-console.log('- chosen not starting with cast_spell = bot passes instead of casting');
-console.log('- castScore very low = bot undervalues the card');
+  console.log('Plummet (destroy flying):', JSON.stringify(probePlummet()));
+  console.log('Get the Point (destroy any creature + scry):', JSON.stringify(probeGetThePoint()));
+  console.log("Messenger's Speed (aura +1/+1 haste/trample):", JSON.stringify(probeMessengersSpeed()));
+  console.log('Might Beyond Reason (+X/+X board pump):', JSON.stringify(probeMightBeyondReason()));
+  console.log('River Herald Guide (explore):', JSON.stringify(probeRiverHeraldGuide()));
+  console.log("Seton's Desire (aura +2/+2 ward {2}):", JSON.stringify(probeSetonsDesire()));
+  console.log('Spring-Loaded Sawblades (craft DFC):', JSON.stringify(probeSpringLoadedSawblades()));
+  console.log('Leonin Lightbringer ({W},{T} tap target):', JSON.stringify(probeLeoninLightbringer()));
+  console.log('Necrosavant (reanimate minGraveyardCards):', JSON.stringify(probeNecrosavant()));
+  console.log('Kessig Flamebreather ({1}{R},{T} damage 2):', JSON.stringify(probeKessigFlamebreather()));
+  console.log('\n=== Probe complete ===');
+}
