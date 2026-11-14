@@ -2,7 +2,7 @@
 
 ## Trigger / acceptance
 
-Batch 73 dodaje 11 kart realnych (kolekcja 645–655) z nowymi deskryptorami i mechanikami, których bot jeszcze nie wycenia: `must_block_enchanted` (ward na aurze Seton's Desire), `equipped: true` / crew (Spring-Loaded Sawblades ↔ Bladewheel Chariot DFC), Craft + Transform (DFC), Explore (River Herald Guide), warunek `minGraveyardCards` (Necrosavant reanimacja z cmentarza). Owner wymaga 직접nej oceny scoringu bota dla każdej nowej ścieżki decyzyjnej przed zamknięciem batcha (ADR 0018: pełne B0 tylko na komendę, ale PMSSB jest obowiązkowe dla każdej nowej mechaniki — Krok 7 HOW_TO_ADD_CARD).
+Batch 73 dodaje 11 kart realnych (kolekcja 645–655) z nowymi deskryptorami i mechanikami, których bot jeszcze nie wycenia: `must_block_enchanted` (ward na aurze Seton's Desire), `equipped: true` / crew (Spring-Loaded Sawblades ↔ Bladewheel Chariot DFC), Craft + Transform (DFC), Explore (River Herald Guide), warunek `minGraveyardCards` (Necrosavant reanimacja z cmentarza). Owner wymaga bezpośredniej oceny scoringu bota dla każdej nowej ścieżki decyzyjnej przed zamknięciem batcha (ADR 0018: pełne B0 tylko na komendę, ale PMSSB jest obowiązkowe dla każdej nowej mechaniki — Krok 7 HOW_TO_ADD_CARD).
 
 ## Card inventory
 
