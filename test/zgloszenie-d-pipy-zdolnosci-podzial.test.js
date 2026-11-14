@@ -62,16 +62,16 @@ test('D/2: karta bezkolorowa z pipami idzie na stronę, która może je zapłaci
   assert.equal(withPips.a.length + withPips.b.length, w.length + g.length + fillers.length);
 });
 
-test('D/3: realny generator — Simian Simulacrum w Dominaria (BRG), nie w (WU)', () => {
+test('D/3: realny generator — Simian Simulacrum w Dominaria (WRG), nie w (UB)', () => {
   const files = buildDecks(registry);
-  const dominariaWu = files.get('dominaria-wu');
-  const dominariaBrg = files.get('dominaria-brg');
-  assert.ok(dominariaWu && dominariaBrg,
-    'zgłoszenie D nie przemianowuje talii: strony Dominarii to nadal WU i BRG');
-  assert.match(dominariaBrg, /1x Simian Simulacrum/,
-    'karta z unearth {2}{G}{G} trafia do talii, która ma zieleń');
-  assert.doesNotMatch(dominariaWu, /Simian Simulacrum/,
-    'i NIE zostaje w talii bez zielonych źródeł (zgłoszenie właściciela)');
+  const dominariaUb = files.get('dominaria-ub');
+  const dominariaWrg = files.get('dominaria-wrg');
+  assert.ok(dominariaUb && dominariaWrg,
+    'podział Dominarii: strony to UB i WRG');
+  assert.match(dominariaWrg, /1x Simian Simulacrum/,
+    'karta z unearth {2}{G}{G} trafia do talii, która ma zieleń (WRG)');
+  assert.doesNotMatch(dominariaUb, /Simian Simulacrum/,
+    'i NIE zostaje w talii bez zieleni (UB)');
   // Mirrodin: Trigon of Corruption ({B} w koszcie zdolności) po stronie z B.
   assert.match(files.get('mirrodin-brg'), /1x Trigon of Corruption/);
   assert.doesNotMatch(files.get('mirrodin-wu'), /Trigon of Corruption/);
@@ -80,8 +80,8 @@ test('D/3: realny generator — Simian Simulacrum w Dominaria (BRG), nie w (WU)'
   // dopisuje basic landy pod pipy, a te nie liczą się do progu).
   const nonland = (text) => parseDeckText(text, registry).cardIds
     .filter((cardId) => !cardId.startsWith('basic-')).length;
-  assert.ok(nonland(dominariaWu) >= MIN_NONLAND, `dominaria-wu ma ${nonland(dominariaWu)} kart nielandowych`);
-  assert.ok(nonland(dominariaBrg) >= MIN_NONLAND, `dominaria-brg ma ${nonland(dominariaBrg)} kart nielandowych`);
+  assert.ok(nonland(dominariaUb) >= MIN_NONLAND, `dominaria-ub ma ${nonland(dominariaUb)} kart nielandowych`);
+  assert.ok(nonland(dominariaWrg) >= MIN_NONLAND, `dominaria-wrg ma ${nonland(dominariaWrg)} kart nielandowych`);
 });
 
 test('Scion Summoner: koszt rzucenia {G} kieruje bezkolorowy wypełniacz do Zendikar RG', () => {
