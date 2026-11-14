@@ -12,11 +12,12 @@
 1x News Helicopter
 1x Slithering Cryptid
 1x Cazur, Ruthless Stalker
+1x Might Beyond Reason
 1x Rumbling Rockslide
 1x Spinewoods Paladin
 1x Annie Flash, the Veteran
-2x Plains
+1x Plains
 1x Island
-1x Swamp
+2x Swamp
 2x Mountain
 2x Forest

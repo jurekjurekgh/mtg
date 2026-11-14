@@ -1420,6 +1420,9 @@ export const IDEMPOTENT_EOT_EFFECTS = new Set([
   'attack_as_though_no_defender_until_end_of_turn',
   'lock_untap', 'dont_untap_next_untap_step', 'tap_permanent', 'untap_permanent',
   'set_saddled',
+  // Batch 73 (Necrosavant): reanimacja z grobu — ponowna aktywacja tej samej
+  // karty nie zmienia stanu (już na polu bitwy), więc idempotentne.
+  'reanimate_under_your_control',
   // Batch 66 (Rakish Revelers): dwukrotne nadanie tej samej tap-zdolności
   // many temu samemu landowi nie daje dodatkowej produkcji (land może być
   // tapnięty tylko raz); czas linkowany nie zmienia idempotencji grantu.
@@ -4739,8 +4742,17 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       : (ability.effect ? [ability.effect] : []);
     return effects.some((effect) => effect?.type === SYMMETRIC_UPKEEP_REVEAL_EFFECT);
   });
+  // Audyt PR #184 / F-4a (L41): warianty ODMOWY w oknach `*_cast`
+  // (`resolve_exile_cast` / `resolve_madness_cast` z `cast: false` oraz
+  // `resolve_grave_free_cast` / `resolve_hand_free_cast` z `decline: true`)
+  // niosą ten sam `type` i często ten sam `objectId`/`cardId`, ale NIE rzucają
+  // karty — weto rzutu na `NEVER` (-Infinity) nie może ich obejmować, bo wtedy
+  // odmowa remisuje z rzutem na `-Infinity`.
+  const isLibraryDrainCastCommand = (cmd) => LIBRARY_DRAIN_CAST_TYPES.has(cmd?.type)
+    && cmd.cast !== false && cmd.decline !== true;
+
   const symmetricUpkeepRevealCastVeto = (view, cmd) => {
-    if (!LIBRARY_DRAIN_CAST_TYPES.has(cmd?.type)) return false;
+    if (!isLibraryDrainCastCommand(cmd)) return false;
     const card = handCard(view, cmd.objectId) ?? zoneCard(view, cmd.objectId);
     const def = card?.cardId ? cardDef(card.cardId) : undefined;
     if (!isSymmetricUpkeepRevealCard(def)) return false;
@@ -4790,7 +4802,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   const LOOT_MIN_LIBRARY = 10;
   const LOOT_BEHIND_BAND_MAX = 20;
   function lootCastVeto(view, cmd) {
-    if (!LIBRARY_DRAIN_CAST_TYPES.has(cmd?.type)) return false;
+    if (!isLibraryDrainCastCommand(cmd)) return false;
     const card = handCard(view, cmd.objectId) ?? zoneCard(view, cmd.objectId);
     if (!card) return false;
     // Efekty WYBRANEGO wariantu (tryb modalny niesie własne) — ta sama
@@ -4841,19 +4853,20 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
    * nie ma przynajmniej 2 lądów, a przed chwilą to zrobił mając 0 lądów
    * w bibliotece — marnotrawstwo many i poświęcanego lądu."
    *
-   * Dwa niezależne powody, dwa niezależne mechanizmy:
-   *  1. DRENAŻ (liczba kart) — twarde weto jak `lootCastVeto` /
-   *     `symmetricDrainVeto`, ten sam próg 10 kart. Sam podatek
-   *     `libraryDrainTax` (drabina thin 60 + 6/kartę) NIE wystarczał: przy
-   *     zdrowej bibliotece wynosi 0, a rzut z 2 kartami w ręce przegrywał
-   *     z passem dopiero losowo.
-   *  2. BRAK CELU (skład biblioteki) — kara w WYCENIE, nie weto: bot legalnie
-   *     nie zna zawartości własnej biblioteki (`playerView` oznacza ją jako
-   *     `hidden`), więc może wnioskować tylko z kart JAWNYCH — pola bitwy,
-   *     ręki, grobu i wygnania (to samo źródło, co `thinLibraryByPublicZones`).
-   *     Gdy z jawnych stref wynika, że w bibliotece nie ma dwóch lądów,
-   *     efekt nie daje nic i karta jest marnotrawstwem many oraz
-   *     poświęcanego lądu.
+   * Dwie niezależne przesłanki właściciela, obie jako twarde weto rzutu
+   * (`springbloomDrainVeto`) i odmowa poświęcenia w opcjonalnym ETB
+   * (`resolve_springbloom`, L41):
+   *  1. DRENAŻ (liczba kart) — próg 10 kart jak `lootCastVeto` /
+   *     `symmetricDrainVeto`. Sam podatek `libraryDrainTax` (drabina thin
+   *     60 + 6/kartę) NIE wystarczał: przy zdrowej bibliotece wynosi 0,
+   *     a rzut przegrywał z passem dopiero losowo.
+   *  2. BRAK CELU (skład biblioteki) — twarde weto przy < 2 basic landach:
+   *     bot legalnie nie zna zawartości własnej biblioteki (`playerView`
+   *     oznacza ją jako `hidden`), więc wnioskuje tylko z kart JAWNYCH
+   *     (pola bitwy, ręki, grobu, wygnania) i znanego `ownDeck` przez
+   *     `searchTargetsRemaining`. Gdy zostało < 2 basic landów, efekt nie
+   *     znajdzie kompletu i karta jest marnotrawstwem many oraz poświęcanego
+   *     lądu; `null` (nieznana talia) nie wetuje (anty-over-fix).
    *
    * Klasa po TYPIE EFEKTU (ADR 0002), nie po nazwie karty: ta sama mechanika
    * obsługuje Springbloom Druid („you may sacrifice a land").
@@ -4862,23 +4875,26 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   const SPRINGBLOOM_BASIC_LANDS = 2;
 
   /**
-   * Weto rzutu — DWIE niezależne przesłanki właściciela, obie twarde:
-   *  (1) DRENAŻ: biblioteka < 10 kart (ten sam próg co loot/symetryczny mill);
-   *  (2) BRAK CELU: wg jawnych stref w bibliotece zostało < 2 lądów, więc
-   *      „Sacrifice a land. Search your library for up to two basic land
-   *      cards" nie znajdzie kompletu i karta jest marnotrawstwem many oraz
-   *      poświęcanego lądu. `searchTargetsRemaining` daje DOLNĄ granicę
-   *      (biblioteka bota jest `hidden`, talia znana z `ownDeck`); `null` =
-   *      talia nieznana → nie zgadujemy i nie wetujemy (anty-over-fix).
+   * Wspólny predykat (L41) dla rzutu (`springbloomDrainVeto`) i opcjonalnej
+   * decyzji ETB (`resolve_springbloom`). W syntetycznych testach jednostkowych
+   * bez talii (obie biblioteki puste i `ownDeck` nieznane — patrz A8) `resolve`
+   * zachowuje bazowe porównanie straty lądów (`allowEmptyTestLibrary`).
    */
-  function springbloomDrainVeto(view, cmd) {
-    if (!LIBRARY_DRAIN_CAST_TYPES.has(cmd?.type)) return false;
-    const karta = handCard(view, cmd.objectId) ?? zoneCard(view, cmd.objectId);
-    if (!karta || springbloomEffects(karta).length === 0) return false;
-    if (myLibraryCount(view) < SPRINGBLOOM_MIN_LIBRARY) return true;
+  function springbloomShouldDecline(view, { allowEmptyTestLibrary = false } = {}) {
     const cel = searchTargetsRemaining(view, { allTypes: ['Basic', 'Land'] });
+    if (allowEmptyTestLibrary && (view.zones.library ?? []).length === 0 && cel == null) {
+      return false;
+    }
+    if (myLibraryCount(view) < SPRINGBLOOM_MIN_LIBRARY) return true;
     if (cel != null && cel < SPRINGBLOOM_BASIC_LANDS) return true;
     return false;
+  }
+
+  function springbloomDrainVeto(view, cmd) {
+    if (!isLibraryDrainCastCommand(cmd)) return false;
+    const karta = handCard(view, cmd.objectId) ?? zoneCard(view, cmd.objectId);
+    if (!karta || springbloomEffects(karta).length === 0) return false;
+    return springbloomShouldDecline(view);
   }
 
   const libraryDrainTax = (view, cmd) => {
@@ -4948,7 +4964,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       if (drain > 0) return libraryLossPenalty(view, drain);
       return 0;
     }
-    if (!LIBRARY_DRAIN_CAST_TYPES.has(cmd?.type)) return 0;
+    if (!isLibraryDrainCastCommand(cmd)) return 0;
     const karta = handCard(view, cmd.objectId) ?? zoneCard(view, cmd.objectId);
     const def = karta?.cardId ? cardDef(karta.cardId) : undefined;
     const repeat = repeatLibraryDrain(def);
@@ -7865,18 +7881,29 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     // bezpieczeństwa zostawiamy bramkę „zero netto" tam, gdzie rider zjada
     // CAŁĄ porcję I nic nie ginie — wtedy czar realnie nie robi nic
     // (FJ/2..4, FJ/8: pusty stół albo stwór przeżywa).
+    const foe = enemy(view);
     const zabijaCokolwiek = totals.size > 1
-      && [...totals].some(([id, amount]) => id !== enemy(view)?.id
+      && [...totals].some(([id, amount]) => id !== foe?.id
         && id !== view.playerId && damageIsLethal(view, id, amount));
     let score = 0;
     for (const [id, amount] of totals) {
       const recovered = sameResolutionLifeGain(view, effects, cmd, id);
-      const jestTwarzaWroga = id === enemy(view)?.id;
-      // Twarz wroga: rider jest stały, więc wartość liczmy bez niego — chyba
-      // że nic nie ginie (wtedy porcja twarzy to czysta strata i zostaje
-      // dotychczasowa kara).
-      const potracRider = jestTwarzaWroga && !zabijaCokolwiek ? recovered : 0;
-      score += damageTargetValue(view, id, amount, false, potracRider);
+      const jestTwarzaWroga = id === foe?.id;
+      if (jestTwarzaWroga && zabijaCokolwiek && recovered > 0 && amount > 0) {
+        // Audyt PR #184 / F-1 (CR 704.3 / 704.5a + ruling WotC 2017-03-14):
+        // SBA sprawdza życie dopiero PO całym rozstrzygnięciu, więc dobicie
+        // (+1000) wolno ogłosić wyłącznie dla `amount >= foeLife + recovered`
+        // (`amount - recovered >= foeLife`). Gdy porcja nie dobija gracza,
+        // ale w podziale ginie stwór (`zabijaCokolwiek`), nadwyżka na twarz
+        // zbija pulę życia po stałym riderze (`foeLife + recovered`) zamiast
+        // dostawać karę −60 za „pusty czar”.
+        const effectiveFoeLife = Math.max(1, (foe.life ?? 20) + recovered);
+        score += amount >= effectiveFoeLife
+          ? 1000
+          : Math.round(6 + 40 * (amount / effectiveFoeLife));
+        continue;
+      }
+      score += damageTargetValue(view, id, amount, false, recovered);
     }
     return score;
   }
@@ -13732,6 +13759,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         let tokenCastHadCreatureEffect = false; // PMSSB-2/B (F1): timing raz na rzut
         let friendlyStatCounterTarget = null; // zgłoszenie D: cel trwałego licznika statystyk na własnym stworze
         let friendlyStatCounterAmount = 0;    // zgłoszenie D: suma takich liczników na tym celu
+        let hasOnlyPermanentStatCounters = true; // PMSSB-89: tylko add_counter ze statami na własnym stworze — nie combat-trick
         let spellUntapsFriendlyCreature = false; // zgłoszenie D: odkręcenie własnego stwora (blokujący-niespodzianka)
         let spellMakesTokens = false; // PMSSB-2/C (F7): tie-break kosztem (dowolny token)
         for (const effect of scoredEffects) {
@@ -14807,6 +14835,8 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
               && (friendlyStatCounterTarget == null || friendlyStatCounterTarget.id === counterRecipient.id)) {
               friendlyStatCounterTarget = counterRecipient;
               friendlyStatCounterAmount += Math.max(1, effect.amount ?? 1);
+            } else {
+              hasOnlyPermanentStatCounters = false; // add_counter bez stat-delta na własnym stworze = nie tylko trwały buff
             }
           }
           // PMSSB-23/F3: rider rozlania liczników (wcześniej 0 pkt).
@@ -14827,6 +14857,9 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           // `searchRiderValue` (L41).
           if (SEARCH_LIBRARY_EFFECT_TYPES.has(effect.type)) {
             score += searchRiderValue(view, effect);
+          }
+          if (effect.type !== 'add_counter') {
+            hasOnlyPermanentStatCounters = false; // efekt inny niż trwały licznik = combat-trick lub utility
           }
         }
         // PMSSB-61/F4 (L41): dobór kontrolera czaru wyzwala istniejące
@@ -14879,7 +14912,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // przeciwnik nie wiedział; (3) licznik domyka grę w tym ataku (zegar
         // jak `counterLethalClockBonus`). Sorcery nie wchodzi (`spell.timing`),
         // zdolności aktywowane zostają przy wycenie M429.
-        if (spell?.timing === 'instant' && friendlyStatCounterTarget) {
+        if (spell?.timing === 'instant' && friendlyStatCounterTarget && !hasOnlyPermanentStatCounters) {
           const trickTarget = friendlyStatCounterTarget;
           // Zgłoszenie X (log właściciela, tura 17): trzeci wyjątek „licznik
           // domyka grę W TYM ATAKU" (`closesGame`) MUSI zostać — pin
@@ -18543,8 +18576,13 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // A8 (audyt PR #100): KTÓRY ląd oddać — bez `landLossValue` każdy
         // kandydat dostawał 40 i wybór był kolejnością ofert (nie remistem
         // danych, tylko ślepotą wyceny — klasa L132).
+        // Audyt PR #184 / F-4b (L41): ten sam próg drenażu (<10 kart) i braku
+        // celu (<2 basic landów wg ownDeck) co przy rzucie — opcjonalny ETB
+        // (Springbloom Druid po blinku/reanimacji) wybiera `skip` (10 > <=-20),
+        // a przy obowiązkowym poświęceniu lądy zachowują porządek `-landLossValue`.
         if (cmd.sacrificeLandId == null) return finish(10);
-        return finish(40 - landLossValue(view, cmd.sacrificeLandId));
+        const base = springbloomShouldDecline(view, { allowEmptyTestLibrary: true }) ? -20 : 40;
+        return finish(base - landLossValue(view, cmd.sacrificeLandId));
       }
       case 'resolve_damage_division': {
         // M166/D (Inferno Titan): kwoty na wrogie cele/gracza = zysk

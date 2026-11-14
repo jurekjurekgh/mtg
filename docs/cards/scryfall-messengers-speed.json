@@ -1,0 +1,16 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Messenger%27s+Speed&set=ths&format=json",
+  "print": "ths",
+  "name": "Messenger's Speed",
+  "mana_cost": "{R}",
+  "cmc": 1,
+  "type_line": "Enchantment — Aura",
+  "oracle_text": "Enchant creature\nEnchanted creature has trample and haste.",
+  "colors": ["R"],
+  "set": "ths",
+  "set_name": "Theros",
+  "collector_number": "129",
+  "rarity": "common",
+  "image_uris": { "large": "https://cards.scryfall.io/large/front/9/3/93d7f033-217f-4fb3-a57b-e32291257ec8.jpg?1783939759", "normal": "https://cards.scryfall.io/normal/front/9/3/93d7f033-217f-4fb3-a57b-e32291257ec8.jpg?1783939759" },
+  "pobrano": "2026-11-11"
+}
