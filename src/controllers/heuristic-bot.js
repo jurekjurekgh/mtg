@@ -1420,6 +1420,9 @@ export const IDEMPOTENT_EOT_EFFECTS = new Set([
   'attack_as_though_no_defender_until_end_of_turn',
   'lock_untap', 'dont_untap_next_untap_step', 'tap_permanent', 'untap_permanent',
   'set_saddled',
+  // Batch 73 (Necrosavant): reanimacja z grobu — ponowna aktywacja tej samej
+  // karty nie zmienia stanu (już na polu bitwy), więc idempotentne.
+  'reanimate_under_your_control',
   // Batch 66 (Rakish Revelers): dwukrotne nadanie tej samej tap-zdolności
   // many temu samemu landowi nie daje dodatkowej produkcji (land może być
   // tapnięty tylko raz); czas linkowany nie zmienia idempotencji grantu.

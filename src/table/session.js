@@ -422,6 +422,8 @@ function defaultBotFactory(seed, ctx) {
     // Batch67 (Spellkeeper Weird): „{2}, {T}, Sacrifice this creature: Return
     // target instant or sorcery card from your graveyard to your hand."
     return_card_from_graveyard_to_hand: 'zwrot karty z grobu na rękę',
+    // Batch 73 (Necrosavant): reanimacja z grobu pod kontrolą gracza.
+    reanimate_under_your_control: 'powrót karty z grobu na pole bitwy pod twoją kontrolą',
     // Batch65 (Zombie Boa): „{1}{B}: Choose a color … destroy that creature.”
     choose_color_grant_block_destroy: 'wybór koloru — zniszczenie stwora tego koloru blokującego w tej turze',
     craft_transform: 'craft — przemiana artefaktu',

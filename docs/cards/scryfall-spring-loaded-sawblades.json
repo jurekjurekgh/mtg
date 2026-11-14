@@ -1,6 +1,7 @@
 {
   "source": "https://api.scryfall.com/cards/named?exact=Spring-Loaded+Sawblades&set=lci&format=json",
   "print": "lci",
+  "layout": "transform",
   "name": "Spring-Loaded Sawblades // Bladewheel Chariot",
   "mana_cost": "{1}{W}",
   "cmc": 2,

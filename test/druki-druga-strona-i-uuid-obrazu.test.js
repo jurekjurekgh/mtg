@@ -43,6 +43,8 @@ const PARY = [
   ['balamb-garden-airborne', 'balamb-garden-seed-academy'],
   // Batch 59 (2026-09-24): Bird Admirer // Wing Shredder (126/127 MID).
   ['wing-shredder', 'bird-admirer'],
+  // Batch 73: Bladewheel Chariot // Spring-Loaded Sawblades (LCI TDFC).
+  ['bladewheel-chariot', 'spring-loaded-sawblades'],
 ];
 
 test('D/1 uuidObrazuSnapshotu: zwykła karta — UUID z image_uris.large', () => {

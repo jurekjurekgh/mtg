@@ -5175,7 +5175,7 @@ export const REAL_CARDS = Object.freeze([
       createAbility({
         type: ABILITY_TYPE.activated,
         keyword: 'craft',
-        cost: { mana: 3, colors: ['W'] },
+        cost: { mana: 4, colors: ['W'] },
         timing: 'sorcery',
         effect: { type: 'craft_transform' },
       }),
@@ -5229,12 +5229,7 @@ export const REAL_CARDS = Object.freeze([
       createAbility({
         type: ABILITY_TYPE.activated,
         fromGraveyard: true,
-        cost: { mana: 3, colors: ['B', 'B'], sacrificeCreature: true },
-        effect: { type: 'reanimate_under_your_control' },
-      }),
-    ],
-    plan: 'Arcavios',
-    support: { status: 'supported', limitations: [] },
+        cost: { mana: 5, colors: ['B', 'B'], sacrificeCreature: true },
   }),
 
   // 10. Kessig Flamebreather (VOW) — Creature — Human Shaman {1}{R} 1/3, gdy rzucasz czar niebędący stworem: 1 dmg do każdego przeciwnika.
