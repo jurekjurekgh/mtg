@@ -155,7 +155,7 @@ export function probeLeoninLightbringer(setup = () => {}) {
 }
 
 export function probeNecrosavant(setup = () => {}) {
-  const state = stateAt();
+  const state = stateAt('upkeep'); // Necrosavant: „Activate only during your upkeep”
   put(state, 'necro-grave', 'necrosavant', 'p1', 'graveyard'); // fromGraveyard ability — musi być w grobie
   richMana(state, 'p1');
   put(state, 'sac-victim', 'leonin-lightbringer', 'p1', 'battlefield'); // creature do poświęcenia jako koszt

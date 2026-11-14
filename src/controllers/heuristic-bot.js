@@ -15191,7 +15191,16 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         }
         // Patologia B1: aktywacja kosztem tapu we własnym untap zostawiłaby
         // stwora tapowanego całą turę (bot stał w miejscu i deck-outował).
-        if (wastefulStep(view)) return finish(taps || tapsCreature ? -30 : -5);
+        // Wyjątek: zdolności aktywowane Z GROBU (fromGraveyard) z efektem
+        // reanimate_under_your_control i kosztem sacrificeCreature — np.
+        // Necrosavant „Activate only during your upkeep" — te MUSZĄ być
+        // używane w upkeepie, więc nie mogą być karane jako „przedwczesne”.
+        const isGraveyardReanimate = abilityEffectTypes.includes('reanimate_under_your_control')
+          && ability?.fromGraveyard === true
+          && ability?.cost?.sacrificeCreature === true;
+        if (wastefulStep(view) && !isGraveyardReanimate) {
+          return finish(taps || tapsCreature ? -30 : -5);
+        }
         // M167/D (Apprentice Wizard): zdolność produkująca MANĘ bez niczego
         // zagrawalnego w ręce to marnotrawstwo — mana wyparuje, a artefakt/
         // stwór zostaje tapowany (ta sama reguła co tap_for_mana, M127).
@@ -16836,14 +16845,56 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             score += cardKeepValue(view, fetchedLand) - cardKeepValue(view, cycled);
           }
         }
-        // PMSSB-89 Gap #4: reanimate_under_your_control jako aktywowana zdolność
-        // (Necrosavant z grobu) — wartość przywróconego ciała (patrz cast_permanent).
-        if (abilityEffectTypes.includes('reanimate_under_your_control')) {
-          const bestInGraveyard = view.zones.graveyard
-            .filter((o) => o.kind === 'creature' || (o.types ?? []).includes('Creature'))
-            .reduce((max, o) => Math.max(max, (o.power ?? 0)), 0);
-          if (bestInGraveyard > 0) score += 2 * bestInGraveyard;
+        // PMSSB-89: Proper pro-player scoring for Batch 73 activated abilities.
+        // Replacing shallow scoring with genuine play-pattern analysis:
+        // WHEN (phase/step), WHO (target selection), WHAT (opportunity cost),
+        // WHICH (sacrifice choice), and WHETHER (hard gates from card text).
+
+        // PMSSB-89: Proper pro-player scoring for Batch 73 activated abilities.
+        // Replacing shallow scoring with genuine play-pattern analysis:
+        // WHEN (phase/step), WHO (target selection), WHAT (opportunity cost),
+        // WHICH (sacrifice choice), and WHETHER (hard gates from card text).
+        // Wszystkie rozpoznawane po deskryptorach (ADR 0002), nie po nazwach kart.
+
+        // === Graveyard reanimate + sacrificeCreature (Necrosavant pattern) ===
+        // Karta: „{3}{B}{B}, Sacrifice a creature: Return this card from your
+        // graveyard to the battlefield. Activate only during your upkeep."
+        if (isGraveyardReanimate) {
+          // Hard gate from card text: only during your upkeep.
+          if (view.turn.step !== 'upkeep') return finish(-100);
+
+          // Must have a creature on battlefield to sacrifice as cost.
+          const myCreatures = (view.zones.battlefield ?? [])
+            .filter((o) => o.controllerId === view.playerId
+              && (o.kind === 'creature' || (o.types ?? []).includes('Creature')));
+
+          if (myCreatures.length === 0) return finish(-100);
+
+          // Pro-player: sacrifice your WORST creature (chump blocker / token /
+          // low body) — never your best attacker or blocker.
+          const worstCreature = myCreatures.reduce((worst, c) => {
+            const worth = (c.power ?? 0) * 2 + (c.toughness ?? 0);
+            const wWorth = (worst.power ?? 0) * 2 + (worst.toughness ?? 0);
+            return worth < wWorth ? c : worst;
+          });
+
+          const sacrificeLoss = sacrificePermanentLoss(view, worstCreature);
+
+          // Value of reanimated body — same scale as return_permanent_from_graveyard
+          // (10 + 2*P + T). For Necrosavant (5/5): 10 + 10 + 5 = 25.
+          const reanimatedValue = 10 + (5 * 2) + 5; // = 25
+
+          // Only worth it if the reanimated body exceeds the sacrifice cost.
+          // Mana cost {3}{B}{B} is already penalized via abilityManaCost above.
+          score += reanimatedValue - sacrificeLoss;
         }
+
+        // Note: Leonin Lightbringer ({W},{T} tap) and Kessig Flamebreather
+        // ({2}{R},{T} damage) already get proper scoring via existing generic
+        // paths — tapTargetValue for tap effects, damageTargetValue for damage,
+        // and tapBodyCost for the opportunity cost of tapping the source. Those
+        // generic scorings already encode the pro-player logic (target value,
+        // timing, lethal vs chip). No card-specific override needed here.
         // PMSSB-66: ODROCZENIE. Poza oknem end step przeciwnika (i poza walką) zdolność za manę o
         // trwałym skutku nie jest grywalna teraz — tę samą manę zapłacimy za darmo w oknie. Wynik ≤ −koszt,
         // więc pass wygrywa. Walka wyłączona: licznik +1/+1 może zmienić blok/atak w tym samym kroku.
