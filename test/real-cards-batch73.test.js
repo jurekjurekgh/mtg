@@ -440,3 +440,111 @@ test("Seton's Desire: runda passów deklaruje wymuszone bloki automatycznie (lus
   assert.deepEqual([...(state.combat?.blockers?.get('host') ?? [])].sort(), ['foe1', 'foe2'],
     'spasowanie nie pomija osiągalnych wymogów (CR 509.1c)');
 });
+
+// ---------------------------------------------------------------------------
+// F-3 (E2.4): Spring-Loaded Sawblades — „When this artifact enters, it deals 5
+// damage to target tapped creature an opponent controls."
+// Pomiar audytu (sonda 4C, stan 5df0e96): wpis niósł
+// `requiresTarget: { type: 'creature', qualifier: { tapped: true, controller:
+// 'opponent' } }`, a klucz `qualifier` NIE ISTNIEJE w języku deskryptorów celu
+// (silnik zna `qualifier` wyłącznie dla przeszukiwań biblioteki) — filtr był
+// cicho ignorowany, więc ETB oznaczał `damage_marked 5` na WŁASNYM, ODKRĘCONYM
+// stworze i nie pytał o cel przy wielu kandydatach (CR 115.1, 601.2c, 608.2b).
+// ---------------------------------------------------------------------------
+
+/** Ustawia stan tapped (addObject nie przyjmuje `tapped` — kontrakt L21). */
+function tapped(state, id) {
+  state.objects.set(id, Object.freeze({ ...state.objects.get(id), tapped: true }));
+  return state.objects.get(id);
+}
+
+/**
+ * Rzuca Sawblades z ręki (Flash) i doprowadza do wejścia na pole bitwy.
+ * Zmiana strefy tworzy NOWY obiekt (CR 400.7), więc permanentu szukamy po
+ * `cardId`, nie po id karty z ręki.
+ */
+function castSawblades(state, controller = 'p1') {
+  put(state, 'saw', 'spring-loaded-sawblades', controller, 'hand');
+  addMana(state, controller, 6, { colors: [] });
+  addMana(state, controller, 2, { colors: ['W'] });
+  const cast = commands(state, controller).find((c) => (c.type === 'cast_permanent' || c.type === 'cast_spell')
+    && c.objectId === 'saw');
+  assert.ok(cast, 'Sawblades jest rzucalne z ręki');
+  assert.equal(execute(state, cast).ok, true, 'rzut przyjęty');
+  const onBattlefield = () => state.zones.battlefield
+    .find((id) => state.objects.get(id)?.cardId === 'spring-loaded-sawblades'
+      && state.objects.get(id)?.controllerId === controller);
+  for (let i = 0; i < 12 && state.zones.stack.length && !onBattlefield(); i += 1) {
+    const pass = commands(state, state.turn.priorityPlayerId).find((c) => c.type === 'pass_priority');
+    if (!pass || !execute(state, pass).ok) break;
+  }
+  assert.ok(onBattlefield(), 'artefakt wszedł na pole bitwy');
+  return onBattlefield();
+}
+
+test('Spring-Loaded Sawblades: deskryptor celu mówi językiem silnika (tapped_creature + opponentControls)', () => {
+  const ability = definition('spring-loaded-sawblades').abilities.find((a) => a.type === 'triggered');
+  assert.equal(ability.trigger.event, 'enter_battlefield', 'trigger wejścia');
+  assert.deepEqual(ability.effect, { type: 'damage', amount: 5 }, '5 obrażeń z Oracle');
+  const spec = ability.trigger.requiresTarget;
+  assert.equal(spec.type, 'tapped_creature', '„target tapped creature" — typ znany silnikowi');
+  assert.equal(spec.opponentControls, true, '„an opponent controls" — flaga znana silnikowi');
+  assert.equal('qualifier' in spec, false,
+    'klucz `qualifier` nie istnieje w deskryptorach celu (F-3: cicho ignorowany filtr)');
+});
+
+test('Spring-Loaded Sawblades: ETB zadaje 5 obrażeń TAPNIĘTEMU stworowi przeciwnika, nie własnemu ani odkręconemu', () => {
+  const state = game();
+  put(state, 'foeTap', 'pheres-band-centaurs', 'p2'); tapped(state, 'foeTap'); // 3/7 → przeżyje 5
+  put(state, 'ownTap', 'kraken-hatchling', 'p1'); tapped(state, 'ownTap');     // własny tapnięty
+  put(state, 'foeUp', 'river-herald-guide', 'p2');                             // odkręcony przeciwnika
+  castSawblades(state);
+  // Jeden legalny kandydat → cel wybierany automatycznie (M242: wybór bez
+  // alternatywy nie jest decyzją gracza), trigger wchodzi na stos i rozstrzyga.
+  resolveStack(state);
+  assert.equal(state.objects.get('foeTap')?.damage, 5, 'tapnięty stwór przeciwnika dostał 5');
+  assert.equal(state.objects.get('ownTap')?.damage ?? 0, 0, 'własny stwór nietknięty');
+  assert.equal(state.objects.get('foeUp')?.damage ?? 0, 0, 'odkręcony stwór przeciwnika nietknięty');
+  assert.ok(!eventTypes(state).includes('damage_fizzled'), 'obrażenia nie fizzlują');
+  assert.equal(lifeOf(state, 'p2'), 20, 'to nie są obrażenia w gracza');
+});
+
+test('Spring-Loaded Sawblades: przy dwóch legalnych celach kontroler WYBIERA cel (CR 115.1b/603.3d)', () => {
+  const state = game();
+  put(state, 'foeA', 'pheres-band-centaurs', 'p2'); tapped(state, 'foeA');
+  put(state, 'foeB', 'kraken-hatchling', 'p2'); tapped(state, 'foeB');
+  put(state, 'ownTap', 'river-herald-guide', 'p1'); tapped(state, 'ownTap');
+  castSawblades(state);
+  const pending = state.pendingTriggerTargets ?? [];
+  assert.equal(pending.length, 1, 'decyzja celu jest odłożona (nie auto-wybór)');
+  assert.deepEqual([...pending[0].candidates].sort(), ['foeA', 'foeB'],
+    'kandydaci: wyłącznie tapnięte stwory przeciwnika');
+  const offers = commands(state, 'p1').filter((c) => c.type === 'resolve_trigger_target');
+  assert.deepEqual(offers.map((c) => c.targetId).sort(), ['foeA', 'foeB'], 'oferta niesie oba cele');
+  assert.equal(execute(state, offers.find((c) => c.targetId === 'foeB')).ok, true, 'wybór przyjęty');
+  resolveStack(state);
+  // Śmierć to zmiana strefy = nowy obiekt (CR 400.7), więc sprawdzamy strefę
+  // i cardId, nie id sprzed walki.
+  assert.equal(state.zones.battlefield.includes('foeB'), false, 'trafiony stwór opuścił pole bitwy');
+  assert.ok(state.zones.graveyard.some((id) => state.objects.get(id)?.cardId === 'kraken-hatchling'
+    && state.objects.get(id)?.controllerId === 'p2'),
+    '0/4 z 5 obrażeniami umiera (CR 704.3)');
+  assert.equal(state.objects.get('foeA')?.damage ?? 0, 0, 'drugi kandydat nietknięty');
+  assert.equal(state.objects.get('ownTap')?.damage ?? 0, 0, 'własny stwór nietknięty');
+});
+
+test('Spring-Loaded Sawblades: bez legalnego celu zdolność nie wchodzi na stos (CR 603.3d)', () => {
+  for (const scenario of ['własny tapnięty', 'odkręcony przeciwnika']) {
+    const state = game();
+    if (scenario === 'własny tapnięty') { put(state, 'ownTap', 'kraken-hatchling', 'p1'); tapped(state, 'ownTap'); }
+    if (scenario === 'odkręcony przeciwnika') put(state, 'foeUp', 'pheres-band-centaurs', 'p2');
+    castSawblades(state);
+    resolveStack(state);
+    assert.ok(state.events.some((e) => e.type === 'trigger_resolved' && e.noEffect === true && e.reason === 'no_targets'),
+      `${scenario}: gracz dostaje wpis o braku celu (M106/Z2)`);
+    assert.equal(state.zones.stack.length, 0, `${scenario}: stos pusty — zdolność usunięta`);
+    assert.equal(state.objects.get('ownTap')?.damage ?? 0, 0, `${scenario}: własny stwór nietknięty`);
+    assert.equal(state.objects.get('foeUp')?.damage ?? 0, 0, `${scenario}: odkręcony stwór nietknięty`);
+    assert.ok(!state.events.some((e) => e.type === 'damage_marked'), `${scenario}: brak obrażeń`);
+  }
+});

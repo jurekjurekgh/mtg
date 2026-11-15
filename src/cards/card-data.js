@@ -5169,7 +5169,17 @@ export const REAL_CARDS = Object.freeze([
     abilities: [
       createAbility({
         type: ABILITY_TYPE.triggered,
-        trigger: { event: 'enter_battlefield', requiresTarget: { type: 'creature', qualifier: { tapped: true, controller: 'opponent' } } },
+        // Audyt PR #185 (F-3): poprzedni zapis `{ type: 'creature', qualifier:
+        // { tapped: true, controller: 'opponent' } }` używał klucza `qualifier`,
+        // którego język deskryptorów celu NIE ZNA (silnik ma `qualifier` tylko
+        // dla przeszukiwań biblioteki) — filtr był cicho ignorowany, więc ETB
+        // oznaczał 5 obrażeń na własnym, odkręconym stworze. Składamy regułę
+        // z istniejących elementów: typ `tapped_creature` (spells.js, od
+        // Batcha 22) + flaga `opponentControls` (jak `nonland_permanent`).
+        trigger: {
+          event: 'enter_battlefield',
+          requiresTarget: { type: 'tapped_creature', opponentControls: true },
+        },
         effect: { type: 'damage', amount: 5 },
       }),
       createAbility({
