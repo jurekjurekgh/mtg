@@ -5249,7 +5249,16 @@ export const REAL_CARDS = Object.freeze([
       createAbility({
         type: ABILITY_TYPE.triggered,
         trigger: { event: 'you_cast_noncreature_spell' },
-        effect: { type: 'damage', amount: 1, toEachOpponent: true },
+        // Audyt PR #185 (F-5): wpis z Batch 73 niósł `{ type: 'damage', amount: 1,
+        // toEachOpponent: true }`, a pole `toEachOpponent` nie występuje w silniku
+        // NIGDZIE (grep: jedno trafienie — ten wpis), więc efekt `damage` bez celu
+        // fizzlował: `ability_triggered` → `damage_fizzled`, życie 20/20 zamiast
+        // 19 u przeciwnika. Silnik ma gotowy deskryptor tej klasy —
+        // `damage_each_opponent` (effects.js:1879): obrażenia nie-combat dla
+        // każdego gracza poza kontrolerem źródła, źródłem jest SAM stwór
+        // (CR 608.2h — „this creature deals"), etykiety UI istnieją
+        // (render.js:1449, session.js:509).
+        effect: { type: 'damage_each_opponent', amount: 1 },
       }),
     ],
     plan: 'Innistrad',
