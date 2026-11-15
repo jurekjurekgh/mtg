@@ -128,18 +128,38 @@ audyt → niedokończony plan → pętla jakości). Bez dodawania kart do katalo
 Kolejność wg wagi regułowej; każdy krok: **RED test → naprawa u root cause →
 GREEN → mutacja kontrolna → `npm test` + `npm run build` → commit + push**.
 
-- [ ] E2.1 — H1/H2: Threshold Seton's Desire jako WYMAGANIE blokowania
+- [x] E2.1 — H1/H2: Threshold Seton's Desire jako WYMAGANIE blokowania
       (CR 508.1d/509.1c) czytane przy deklaracji bloków i w ofercie/ walidacji
       (jedno źródło, L48), z warunkiem „if able" i bez specjalnego przypadku po
       nazwie karty (ADR 0002). Jeśli pełnego Oracle nie da się zaimplementować
       w tej sesji — karta do `unsupported` (ADR 0022), nie do „prawie działa".
-- [ ] E2.2 — H3: warunek `equipped` w `staticConditionHolds` (generyczny:
+      **Stan (2026-11-15):** ZROBIONE jako F-1 audytu, commit `83a764e` —
+      `combat.mustBlockHostCounts`/`blockRequirementCountOf`/`fulfilledBlockRequirements`
+      per para, `condition.minGraveyardCards`, martwa gałąź `applyEffect` usunięta,
+      `playerView` niesie `blocksIfAble`/`blockRequirementCount` (ADR 0017); 8 testów,
+      5 mutacji kontrolnych RED. Pełny Oracle zrealizowany — karta zostaje `supported`.
+- [x] E2.2 — H3: warunek `equipped` w `staticConditionHolds` (generyczny:
       „as long as this creature is equipped" = ma przypięty Equipment).
-- [ ] E2.3 — H4: Necrosavant — bramka upkeep-only jako generyczny deskryptor
+      **Stan (2026-11-15):** ZROBIONE jako F-2 audytu, commit `40727cf` —
+      `attachmentsAttachedTo(...).some(isAttachedEquipment)` (aura NIE wystarcza,
+      CR 301.5a/303.4b); 3 testy, mutacja RED.
+- [x] E2.3 — H4: Necrosavant — bramka upkeep-only jako generyczny deskryptor
       okna aktywacji (nie po nazwie karty), skutek zwracający ŹRÓDŁO z grobu
       (Oracle: „Return this card") i test koszt→skutek (bez „zapłać i nic").
+      **Stan (2026-11-15):** ZROBIONE jako F-4+F-9 audytu, commit `1c3aed1` —
+      generyczny deskryptor `onlyInStep` w `createAbility` + bramka w
+      `abilityConditionFailure` (jedno źródło dla oferty i walidacji, CR 602.1b/602.5);
+      regułowa kara `-100` usunięta z heurystyki bota (F-9); nowy strażnik klasowy
+      `test/oracle-restrykcje-aktywacji-straznik.test.js` (6 testów) przegląda
+      `oracleText` całego katalogu; 3 testy, 2 mutacje RED. Skutek `reanimate_under_your_control`
+      zwraca ŹRÓDŁO (test koszt→skutek: poświęcony stwór w grobie, karta na polu bitwy).
 - [ ] E2.4 — H5: `test/real-cards-batch73.test.js` — legalny + nielegalny +
       sanity dla każdej z 11 kart (wzorzec `real-cards-batch72.test.js`).
+      **Stan (2026-11-15):** CZĘŚCIOWO — plik istnieje i ma 28 testów (pin danych
+      11 wpisów kontra snapshoty Oracle + arkusz kolekcji, tył DFC, Kessig ×3,
+      Leonin ×3, Seton's Desire ×8, Sawblades ×5, Necrosavant ×3, Bladewheel ×6),
+      ale F-11 audytu wymaga jeszcze zachowania/sanity dla kart bez własnej naprawy
+      (Might Beyond Reason, Get the Point, River Herald Guide, Plummet) — krok E2.9.
 - [ ] E2.5 — H6: `rulings` w 10 snapshotach batcha 73 (ADR 0028 §2;
       `fetch_page` → `api.scryfall.com/cards/<set>/<nr>/rulings`, normalizacja
       `tools/fetch-card-rulings.mjs`).
@@ -149,6 +169,14 @@ GREEN → mutacja kontrolna → `npm test` + `npm run build` → commit + push**
 - [ ] E2.7 — H8/H9/H10 i wszystko, co wyjdzie w E1 ponad listę: naprawa albo
       jawne „nie błąd, bo <cytat CR>" w raporcie (L57: rozbieżność ze
       zgłoszeniem/dokumentem rozstrzyga reguła, nie wygoda).
+      **Stan (2026-11-15):** W TOKU — z raportu audytu (`docs/audits/AUDYT_PR185_2026-11-15.md`,
+      F-1…F-18) zrobione: F-5 Kessig `damage_each_opponent` (`ab8b822`), F-3 język
+      deskryptorów celu + strażnik klasowy (`5ccfa46`), F-4+F-9 bramka upkeep (`1c3aed1`),
+      F-6 tył TDFC + `tapOtherArtifacts` (`ae24d01`). Pozostałe: F-7 (`ward` przez
+      `createCardDeck`), F-8 (`reanimatedValue` z P/T karty), F-10…F-18 (patrz tabela
+      E2.7–E2.13 raportu). H8/H9/H10 z rozpoznania: zweryfikowane sondami w E1 —
+      craft i ward działają end-to-end (wadą była ścieżka DANYCH `ward`, czyli F-7),
+      sesja przy seed 9 nie jest zepsuta (luką był helper `sesja()`, czyli F-13).
 
 ## E3. Pętla jakości (ADR 0021 pkt 4)
 
