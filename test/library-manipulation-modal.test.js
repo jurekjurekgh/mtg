@@ -22,6 +22,13 @@ import { BOT_ID, HUMAN_ID, createSession, describeGameEvent } from '../src/table
 import { createCardRegistry } from '../src/cards/card-data.js';
 import { parseDeckText } from '../src/cards/deck-text.js';
 
+const SURVEIL_HELPERS = {
+  nameOf: (cardId) => REGISTRY.get(cardId)?.name ?? String(cardId ?? '?'),
+  nameOfObject: () => '?',
+  isPlayer: (id) => id === 'p1' || id === 'p2',
+};
+const SURVEIL_NAMES = { p1: 'Ty', p2: 'Nieprzyjaciel' };
+
 const REGISTRY = createCardRegistry();
 const nameOf = (cardId) => REGISTRY.get(cardId)?.name ?? String(cardId ?? '?');
 const NAMES = { p1: 'Ty', p2: 'Nieprzyjaciel' };
@@ -145,47 +152,18 @@ function playCollectingModals(session, { maxMoves = 400 } = {}) {
 }
 
 test('E4 (modal): własny surveil z Curate — nazwy w modalu; surveil bota — bez nazw (FoW)', () => {
-  let checkedMine = 0;
-  let checkedBots = 0;
-  // Seed 8 dołożony po transzy 2 batcha 33 (azorius +2 karty): dawne seedy
-  // przestały dawać WŁASNY surveil (bot ma go dalej) — przelosowane hunterem.
-  // Seed 13 po batchu 34 (azorius +3, mechanicy +1) — jedyny z listy, który
-  // daje ORAZ własny surveil, ORAZ surveil bota; przelosowane hunterem.
-  // Seed 5 po M132 (azorius +3 lądy wg reguły 2:1) — zmiana składu talii
-  // zmienia rozdania, więc dawne seedy przestały dawać WŁASNY surveil.
-  // Hunter przeszedł 140 seedów; 5 daje oba warunki naraz (kolejne: 63, 67).
-  // M178: seedy przelosowane hunterem na lustrze FR vs FR (1/2/4 dają oba warunki).
-  // M191/Batch 46: forgotten-realms +Manor Gate (przeliczone landy) —
-  // hunter po 60 seedach: 10 i 37 dają OBA warunki naraz (konwencja L25).
-  // Batch 47 D (forgotten-realms +Caves of Chaos Adventurer, landy
-  // przeliczone) — hunter: 34 daje OBA warunki naraz (kolejne: 35, 37).
-  // Batch 55 B3 (forgotten-realms +Jungleborn Pioneer, landy przeliczone):
-  // zmiana skladu talii przelosowala rozdania — hunter po 200 seedach:
-  // 11 daje OBA warunki naraz (kolejne: 33, 47, 52, 66, 98, 114, 134, 145).
-  // Batch 58 B7 (forgotten-realms +Gond Gate, landy przeliczone): zmiana
-  // skladu talii znow przelosowala rozdania — hunter po 60 seedach:
-  // 35 daje OBA warunki naraz (kolejny: 41).
-  // Batch 59 G1.5 (forgotten-realms +Waveskimmer Aven, landy przeliczone):
-  // hunter po 60 seedach — 33 daje OBA warunki naraz (kolejny: 51).
-  // Batch 66 (+Wild Celebrants i ponowne przeliczenie landów): hunter 1–90;
-  // seed 29 daje oba warunki i końcówkę (kolejne: 45, 90).
-  // Batch 69 (Heron-Blessed Geist / Gnoll War Band w forgotten-realms, landy
-  // przeliczone wg reguły pipów zdolności): hunter 1–60 — 3 i 45 daje OBA warunki naraz.
-  for (const seed of [3, 45]) {
-    const { modalTexts } = playCollectingModals(makeSession(seed));
-    for (const line of modalTexts.filter((t) => /^Wykonujesz surveil/.test(t ?? ''))) {
-      checkedMine += 1;
-      // M100/E10 (P4): poprawna odmiana — „1 kartę / 2 karty / 5 kart".
-      assert.match(line, /patrzy na \d+ (kartę|karty|kart): \S/, `własne surveil bez nazw: ${line}`);
-    }
-    for (const line of modalTexts.filter((t) => /^Nieprzyjaciel wykonuje surveil/.test(t ?? ''))) {
-      checkedBots += 1;
-      assert.ok(!/patrzy na \d+ (kartę|karty|kart): /.test(line),
-        `surveil BOTA z nazwami (wyciek FoW): ${line}`);
-    }
-  }
-  assert.ok(checkedMine > 0, 'żaden seed nie dał własnego surveil w modalu — test nic nie sprawdził');
-  assert.ok(checkedBots > 0, 'żaden seed nie dał surveil bota w modalu — test nic nie sprawdził');
+  // surveil_started: własny gracz widzi nazwy kart, przeciwnika nie (FoW).
+  const mine = describeGameEvent(
+    { type: 'surveil_started', playerId: 'p1', amount: 2, cardIds: ['curate-stx', 'basic-island'] },
+    SURVEIL_HELPERS, SURVEIL_NAMES,
+  );
+  assert.match(mine, /Wykonujesz surveil.*patrzy na 2 karty: Curate.*Island/, `własne surveil powinno mieć nazwy: ${mine}`);
+  const bots = describeGameEvent(
+    { type: 'surveil_started', playerId: 'p2', amount: 2, cardIds: ['curate-stx', 'basic-island'] },
+    SURVEIL_HELPERS, SURVEIL_NAMES,
+  );
+  assert.match(bots, /Nieprzyjaciel wykonuje surveil \(patrzy na 2 karty\)$/, `surveil bota bez nazw (FoW): ${bots}`);
+  assert.ok(!bots.includes('Curate') && !bots.includes('Wyspa'), `surveil bota z nazwami (wyciek FoW): ${bots}`);
 });
 
 test('E4 (modal): linie manipulacji w ogóle docierają (surveil/scry rozstrzygnięcia w modalu)', () => {

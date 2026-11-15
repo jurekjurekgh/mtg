@@ -4269,7 +4269,7 @@ Post-audit gates: `node tools/run-tests.mjs fast` **10,060/10,060**;
 
 | Karta | Finding PRZED | Finding PO |
 |---|---|---|
-| Leonin Lightbringer | tap zdolność nie miała własnej wyceny opportunity-cost (bot mógł tapować Attackującego) | `tapBodyCost` + `tapTargetValue` w ścieżce `activate_ability` — koszt tapnięcia źródła liczony; brakוקה przy zamiarze ataku |
+| Leonin Lightbringer | tap zdolność nie miała własnej wyceny opportunity-cost (bot mógł tapować Attackującego) | `tapBodyCost` + `tapTargetValue` w ścieżce `activate_ability` — koszt tapnięcia źródła liczony; brak opisu przy zamiarze ataku |
 | Kessig Flamebreather | damage za {2}{R},{T} miał gołą bazę 2, chip spoza walki remisował z passem | `damageTargetValue` — −80 dla nieletalnego chippy poza walką, `tapBodyCost` |
 | Necrosavant | reanimacja z grobu nie miała bramki upkeep, scoring ciała był płaski 2, `wastefulStep` karował −5 w upkeep | twarda bramka upkeep (tekst karty), `isGraveyardReanimate` (fromGraveyard + sacrificeCreature + reanimate_under_your_control), wycena ciała 10+2P+T − strata ofiary, omijanie `wastefulStep` |
 | Spring-Loaded Sawblades | `etbForcedOwnPingPenalty` zwracał 80 przy pustym stole (fizzle = samobójstwo) | zwraca 0 przy braku ofiar (fizzle, nie samobójstwo) |

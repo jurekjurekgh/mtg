@@ -27,7 +27,7 @@ function makeSession(seed) {
   const registry = createCardRegistry();
   const decks = new Map([
     [HUMAN_ID, parseDeckText(fs.readFileSync('decks/innistrad-brg.txt', 'utf8'), registry).cardIds],
-    [BOT_ID, parseDeckText(fs.readFileSync('decks/dominaria-brg.txt', 'utf8'), registry).cardIds],
+    [BOT_ID, parseDeckText(fs.readFileSync('decks/dominaria-wrg.txt', 'utf8'), registry).cardIds],
   ]);
   return createSession({ registry, decks, seed, pauseOnBotMoves: true });
 }
