@@ -21,7 +21,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { put, game, playerView, addMana, execute } from './helpers/pmssb58.js';
-import { BOT_ID, HUMAN_ID, createSession } from '../src/table/session.js';
+import { BOT_ID, HUMAN_ID, createSession, describeGameEvent } from '../src/table/session.js';
 import { parseDeckText } from '../src/cards/deck-text.js';
 import { createHeuristicBot } from '../src/controllers/heuristic-bot.js';
 import { addObject } from '../src/engine/game-state.js';
@@ -96,31 +96,116 @@ test('Y/4: wróg 1/1 — chip dobija natychmiast, bot aktywuje (kontrola)', () =
   assert.deepEqual(dec.targets?.[0], 'atk');
 });
 
-test('Y/5: log nazywa cel BOTA, zanim gracz wybierze swój (oba cele jawne)', () => {
+test('Y/5: log nazywa cel BOTA, zanim gracz wybierze swój (oba cele jawne w session.log)', () => {
   // Zgłoszenie Y(b) właściciela: „Gdy bot używa tej zdolności to nie wiadomo do
   // kogo strzela — nie ma tej informacji w Rozgrywce do czasu aż wybiorę swój
   // cel". Kolejność w silniku jest poprawna (CR 601.2c: aktywujący wskazuje
   // pierwszy, oba cele jawne zanim ktokolwiek dostanie priorytet) — brakowało
   // jawności w logu. Zdarzenie `opponent_target_required` musi nieść cel
-  // aktywującego, a opis nazwać go PRZED wezwaniem gracza do wyboru.
-  const s = game({ step: 'main2', active: 'p2' });
-  put(s, 'witches', 'cuombajj-witches', 'p2', 'battlefield', { summoningSickness: false });
-  put(s, 'atk', 'segmented-krotiq', 'p1', 'battlefield', { summoningSickness: false, power: 1, toughness: 1 });
-  s.combat = {
-    attackers: ['atk'], attackingPlayerId: 'p2', defendingPlayerId: 'p1',
-    blockers: new Map(), blockedAttackers: new Set(), unblockedAttackers: ['atk'],
-  };
-  const aktywacja = playerView(s, 'p2').legalCommands.find(
+  // aktywującego, a `session.log` nazwać go PRZED wezwaniem gracza do wyboru
+  // (Audyt PR #184 / F-3: wcześniejszy pin nie wołał session.js — klasa L34).
+  const session = createSession({ seed: 424051, registry: REGISTRY, decks: TALIE() });
+  const keep = session.view().legalCommands.find((c) => c.type === 'resolve_mulligan_choice');
+  assert.ok(keep && session.apply(keep).ok, 'zatrzymanie ręki');
+  const s = session.state;
+  s.turn = jumpToStep(s.turn, 'main', BOT_ID);
+  s.turn.activePlayerId = BOT_ID;
+  s.turn.priorityPlayerId = BOT_ID;
+  const defW = REGISTRY.get('cuombajj-witches');
+  const defK = REGISTRY.get('segmented-krotiq');
+  addObject(s, {
+    id: 'witches', instanceId: 'i-witches', cardId: 'cuombajj-witches',
+    controllerId: BOT_ID, ownerId: BOT_ID, zone: 'battlefield', summoningSickness: false,
+    ...gameObjectDataOf(defW), types: defW.types ?? [], keywords: defW.keywords ?? [], subtypes: defW.subtypes ?? [],
+  });
+  addObject(s, {
+    id: 'atk', instanceId: 'i-atk', cardId: 'segmented-krotiq',
+    controllerId: HUMAN_ID, ownerId: HUMAN_ID, zone: 'battlefield', summoningSickness: false,
+    ...gameObjectDataOf(defK), power: 1, toughness: 1, types: defK.types ?? [], keywords: defK.keywords ?? [], subtypes: defK.subtypes ?? [],
+  });
+  const aktywacja = playerView(s, BOT_ID).legalCommands.find(
     (c) => c.type === 'activate_ability' && c.objectId === 'witches');
   assert.ok(aktywacja, 'bot ma ofertę aktywacji');
-  const r = execute(s, { ...aktywacja, targets: ['atk'] });
-  assert.equal(r.ok, true, JSON.stringify(r.events?.[0] ?? {}));
-  const zdarzenie = r.events.find((e) => e.type === 'opponent_target_required');
-  assert.ok(zdarzenie, `zdarzenie wezwania istnieje: ${JSON.stringify(r.events.map((e) => e.type))}`);
-  assert.equal(zdarzenie.activatingTargetId, 'atk',
-    `zdarzenie niesie JAWNY cel aktywującego: ${JSON.stringify(zdarzenie)}`);
-  // Decyzja o drugim celu należy do GRACZA i jest nierozstrzygnięta.
-  assert.equal(s.pendingOpponentTarget?.playerId, 'p1', 'drugi cel wskazuje gracz');
+  const r = session.apply({ ...aktywacja, targets: ['atk'] });
+  assert.equal(r.ok, true);
+  assert.equal(s.pendingOpponentTarget?.playerId, HUMAN_ID, 'drugi cel wskazuje gracz');
+  const log = session.log.map((l) => l.text).join('\n');
+  assert.match(
+    log,
+    /Cuombajj Witches: Nieprzyjaciel wskazuje Segmented Krotiq, wskazujesz drugi cel obrażeń/,
+    `log stołu nazywa cel bota przed wyborem gracza:\n${log}`,
+  );
+});
+
+test('Y/6 (Audyt PR #184 / F-3): cel będący graczem-człowiekiem używa biernika „Ciebie" (zarówno w session.log, jak i w czystym describeGameEvent)', () => {
+  // 1) Żywa sesja stołu: nameOfObject(HUMAN_ID) zwraca „Ty", więc bez biernika
+  // log stołu pisał „Nieprzyjaciel wskazuje Ty, wskazujesz drugi cel obrażeń".
+  const session = createSession({ seed: 424051, registry: REGISTRY, decks: TALIE() });
+  const keep = session.view().legalCommands.find((c) => c.type === 'resolve_mulligan_choice');
+  assert.ok(keep && session.apply(keep).ok);
+  const s = session.state;
+  s.turn = jumpToStep(s.turn, 'main', BOT_ID);
+  s.turn.activePlayerId = BOT_ID;
+  s.turn.priorityPlayerId = BOT_ID;
+  const defW = REGISTRY.get('cuombajj-witches');
+  addObject(s, {
+    id: 'witches', instanceId: 'i-witches', cardId: 'cuombajj-witches',
+    controllerId: BOT_ID, ownerId: BOT_ID, zone: 'battlefield', summoningSickness: false,
+    ...gameObjectDataOf(defW), types: defW.types ?? [], keywords: defW.keywords ?? [], subtypes: defW.subtypes ?? [],
+  });
+  const aktywacja = playerView(s, BOT_ID).legalCommands.find(
+    (c) => c.type === 'activate_ability' && c.objectId === 'witches');
+  assert.ok(aktywacja && session.apply({ ...aktywacja, targets: [HUMAN_ID] }).ok);
+  const log = session.log.map((l) => l.text).join('\n');
+  assert.match(
+    log,
+    /Cuombajj Witches: Nieprzyjaciel wskazuje Ciebie, wskazujesz drugi cel obrażeń/,
+    `log stołu używa biernika „Ciebie" zamiast „Ty":\n${log}`,
+  );
+
+  // 2) Czysty describeGameEvent z helperami stołowymi (nameOfObject zwraca '?' dla
+  // id graczy spoza state.objects): gałęzie opponent_target_* muszą pytać
+  // isPlayer(id) i odmieniać cel HUMAN_ID na biernik „Ciebie" zamiast „?".
+  const helpers = {
+    nameOf: (id) => (id === 'cuombajj-witches' ? 'Cuombajj Witches' : String(id)),
+    nameOfObject: () => '?',
+    isPlayer: (id) => id === HUMAN_ID || id === BOT_ID,
+  };
+  assert.equal(
+    describeGameEvent({
+      type: 'opponent_target_required',
+      cardId: 'cuombajj-witches',
+      activatingPlayerId: BOT_ID,
+      activatingTargetId: HUMAN_ID,
+      playerId: HUMAN_ID,
+    }, helpers),
+    'Cuombajj Witches: Nieprzyjaciel wskazuje Ciebie, wskazujesz drugi cel obrażeń',
+  );
+  assert.equal(
+    describeGameEvent({
+      type: 'opponent_target_resolved',
+      cardId: 'cuombajj-witches',
+      playerId: BOT_ID,
+      targetId: HUMAN_ID,
+    }, helpers),
+    'Cuombajj Witches: Nieprzyjaciel wskazuje Ciebie',
+  );
+});
+
+test('Y/7 (Audyt PR #184 / F-3): starsze zdarzenie bez activatingTargetId zachowuje dawne zdanie bez „undefined wskazuje,"', () => {
+  const helpers = {
+    nameOf: (id) => (id === 'cuombajj-witches' ? 'Cuombajj Witches' : String(id)),
+    nameOfObject: (id) => String(id),
+    isPlayer: (id) => id === HUMAN_ID || id === BOT_ID,
+  };
+  assert.equal(
+    describeGameEvent({
+      type: 'opponent_target_required',
+      cardId: 'cuombajj-witches',
+      playerId: HUMAN_ID,
+    }, helpers),
+    'Cuombajj Witches: wskazujesz drugi cel obrażeń',
+  );
 });
 
 // ---------- Z ----------

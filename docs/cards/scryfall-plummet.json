@@ -1,0 +1,16 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Plummet&set=m20&format=json",
+  "print": "m20",
+  "name": "Plummet",
+  "mana_cost": "{1}{G}",
+  "cmc": 2,
+  "type_line": "Instant",
+  "oracle_text": "Destroy target creature with flying.",
+  "colors": ["G"],
+  "set": "m20",
+  "set_name": "Core Set 2020",
+  "collector_number": "188",
+  "rarity": "common",
+  "image_uris": { "large": "https://cards.scryfall.io/large/front/4/a/4a1a0c7b-ce1c-4284-9362-04b21861f69d.jpg?1783932960", "normal": "https://cards.scryfall.io/normal/front/4/a/4a1a0c7b-ce1c-4284-9362-04b21861f69d.jpg?1783932960" },
+  "pobrano": "2026-11-11"
+}

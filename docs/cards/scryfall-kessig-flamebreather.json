@@ -1,0 +1,18 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Kessig+Flamebreather&set=vow&format=json",
+  "print": "vow",
+  "name": "Kessig Flamebreather",
+  "mana_cost": "{1}{R}",
+  "cmc": 2,
+  "type_line": "Creature — Human Shaman",
+  "oracle_text": "Whenever you cast a noncreature spell, this creature deals 1 damage to each opponent.",
+  "power": "1",
+  "toughness": "3",
+  "colors": ["R"],
+  "set": "vow",
+  "set_name": "Innistrad: Crimson Vow",
+  "collector_number": "164",
+  "rarity": "common",
+  "image_uris": { "large": "https://cards.scryfall.io/large/front/3/0/303ad78a-b02a-44dc-afe6-7f95781a5062.jpg?1783924832", "normal": "https://cards.scryfall.io/normal/front/3/0/303ad78a-b02a-44dc-afe6-7f95781a5062.jpg?1783924832" },
+  "pobrano": "2026-11-11"
+}

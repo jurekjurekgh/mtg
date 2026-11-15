@@ -53,7 +53,8 @@ test('M419/B: każdy wpis katalogu ma status supported, token albo back', () => 
   // Batch 72 (Living History): +token_spirit_red_white (2/2 RW Spirit) → 54.
   assert.equal(tokeny, 54, 'tyle tokenów zna katalog (stan po Batchu 72)');
   // Batch 59 (Bird Admirer // Wing Shredder): +wing-shredder (127 MID) → 9.
-  assert.equal(tyly, 9, 'tyle tylnych stron DFC zna katalog (stan po M419 + Batch 59)');
+  // Batch 73: +bladewheel-chariot (LCI TDFC tył) → 10.
+  assert.equal(tyly, 10, 'tyle tylnych stron DFC zna katalog (stan po M419 + Batch 59)');
   assert.equal(karty + tokeny + tyly, ALL.length, 'każdy wpis policzony dokładnie raz');
 });
 
@@ -80,7 +81,7 @@ test('M419/D: wpis z arkusza kolekcji (artId + plan) nie jest tokenem', () => {
   const nieKarty = zArkusza.filter((c) => !['supported', 'back'].includes(c.support.status));
   assert.deepEqual(nieKarty.map((c) => c.id), [],
     'pozycja z arkusza jest taliowalna (supported) albo tyłem DFC (back)');
-  assert.equal(zArkusza.filter((c) => c.support.status === 'back').length, 9,
+  assert.equal(zArkusza.filter((c) => c.support.status === 'back').length, 10,
     'tyle tylnych stron DFC pochodzi z arkusza (Batch 59: 127 MID dołożył jedną)');
 });
 

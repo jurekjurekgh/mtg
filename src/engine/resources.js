@@ -704,27 +704,52 @@ function kartyNieLadoweWReke(state, playerId) {
 }
 
 /**
- * Kolory, których potrzebuje NAJBLIŻSZY rzucalny czar z ręki (poza płaconym
- * właśnie `payingCardId`). Zgłoszenie właściciela 2026-11-11: „Wystarczyło
- * rzucając pierwszy niebieski czar użyć many białej, a nie niebieskiej, skoro
- * wiedział, że kolejny czar będzie tej many potrzebował." — decyduje
- * NAJBLIŻSZA potrzeba, nie suma zapasu. Przy 3 wyspach i 2 przyszłych {U}
- * wyspy NIE są nadmiarem: następny czar zużyje jedną z nich.
+ * Kolory, których potrzebuje NAJBLIŻSZY realnie rzucalny w tej turze czar
+ * z ręki (poza płaconym właśnie obiektem). Zgłoszenie właściciela 2026-11-11:
+ * „Wystarczyło rzucając pierwszy niebieski czar użyć many białej, a nie
+ * niebieskiej, skoro wiedział, że kolejny czar będzie tej many potrzebował." —
+ * decyduje NAJBLIŻSZA potrzeba, nie suma zapasu. Przy 3 wyspach i 2 przyszłych
+ * {U} wyspy NIE są nadmiarem: następny czar zużyje jedną z nich.
  *
- * Liczymy tylko czary realnie rzucalne (produkująca mana ≥ koszt) — inaczej
- * kolor „potrzebny" na czar, którego nigdy nie rzucimy, blokowałby regułę.
+ * Audyt PR #184 (F-2):
+ *  (a) budżet przyszłego czaru odejmuje bieżącą kwotę `reservedAmount` (oraz
+ *      używa prawdziwego `spellManaPurpose(card)`), żeby droższy czar w ręce,
+ *      na który po opłaceniu bieżącego JUŻ nie starczy many, nie zatrzymywał
+ *      pętli przez `break;`;
+ *  (b) przyszły czar musi mieć pokrywalne pipy kolorowe w pozostałych
+ *      nietapniętych źródłach (`planGrantManaColors(..., ignorePool)`) oraz co
+ *      najmniej jeden kolorowy pip (bezbarwny czar `{2}` nie ma preferencji
+ *      koloru i nie może gasić ochrony przez puste `break;`);
+ *  (c) pomijamy płacony EGZEMPLARZ (`objectId` / `instanceId`), a przy
+ *      wywołaniu ze stringiem `cardId` najwyżej jedną kopię — druga sztuka tej
+ *      samej karty w ręce (custom deck ADR 0012) zachowuje ochronę koloru.
  * Kolejność ręki zachowana (determinizm, ADR 0005).
  */
-export function koloryNastepnegoCzaru(state, playerId, payingCardId = null) {
+export function koloryNastepnegoCzaru(state, playerId, paying = null, reservedAmount = 0) {
   const kolory = new Set();
+  const payingObjectId = typeof paying === 'object' && paying !== null ? (paying.objectId ?? null) : null;
+  const payingInstanceId = typeof paying === 'object' && paying !== null ? (paying.instanceId ?? null) : null;
+  const payingCardId = typeof paying === 'string'
+    ? paying
+    : (typeof paying === 'object' && paying !== null ? (paying.cardId ?? null) : null);
+  let skippedByCardId = false;
   for (const card of kartyNieLadoweWReke(state, playerId)) {
-    if (payingCardId && card.cardId === payingCardId) continue;
-    if ((card.manaCost ?? 0) <= 0) continue;
-    if (producibleMana(state, playerId, null, { kind: 'cast', cardId: card.cardId }) < (card.manaCost ?? 0)) continue;
+    if (payingObjectId && card.id === payingObjectId) continue;
+    if (payingInstanceId && card.instanceId === payingInstanceId) continue;
+    if (!payingObjectId && !payingInstanceId && payingCardId && !skippedByCardId && card.cardId === payingCardId) {
+      skippedByCardId = true;
+      continue;
+    }
+    const cost = card.manaCost ?? 0;
+    if (cost <= 0) continue;
     let pips = [];
     try { pips = coloredPipsOf(card.cardId) ?? []; } catch { pips = []; }
+    if (pips.length === 0) continue;
+    const cardPurpose = spellManaPurpose(card);
+    if (producibleMana(state, playerId, null, cardPurpose, pips) - reservedAmount < cost) continue;
+    if (planGrantManaColors(state, playerId, pips, null, cardPurpose, [], reservedAmount > 0) === null) continue;
     for (const unit of pips) for (const c of unit) kolory.add(c);
-    break; // tylko NAJBLIŻSZY czar
+    break; // tylko NAJBLIŻSZY realnie rzucalny czar kolorowy
   }
   return kolory;
 }
@@ -933,13 +958,19 @@ export function spendMana(state, playerId, amount, requirements = [], purpose = 
     // `untappedLandManaSources` WEWNĄTRZ komparatora, a sort tapuje źródła
     // w trakcie — dostawała niespójne odpowiedzi i gubiła rzuty
     // (golden-master dominaria-brg@1000: cast 6→5).
-    const payingObj = purpose?.cardId
-      ? state.objects.get(purpose.cardId)
-      : purpose?.castInstanceId
-        ? [...state.objects.values()].find((o) => o.instanceId === purpose.castInstanceId) ?? null
-        : null;
-    const paying = payingObj?.cardId ?? purpose?.card?.cardId ?? null;
-    const nastepny = koloryNastepnegoCzaru(state, playerId, paying);
+    const payingObj = purpose?.castObjectId
+      ? state.objects.get(purpose.castObjectId)
+      : purpose?.cardId
+        ? state.objects.get(purpose.cardId)
+        : purpose?.castInstanceId
+          ? [...state.objects.values()].find((o) => o.instanceId === purpose.castInstanceId) ?? null
+          : null;
+    const paying = {
+      objectId: payingObj?.id ?? purpose?.castObjectId ?? null,
+      instanceId: payingObj?.instanceId ?? purpose?.castInstanceId ?? null,
+      cardId: payingObj?.cardId ?? purpose?.card?.cardId ?? (typeof purpose?.cardId === 'string' ? purpose.cardId : null),
+    };
+    const nastepny = koloryNastepnegoCzaru(state, playerId, paying, amount);
     // 0 = bezpieczny płatnik (kolor nie jest potrzebny następnemu czarowi),
     // 1 = kolor, który następny czar zużyje — takie źródło zostawiamy nietknięte.
     const bezpieczne = new Map();
@@ -1876,7 +1907,7 @@ export function producibleMana(state, playerId, excludeSourceId = null, purpose 
  * pipa" — wtedy oferta (backtracking) mówi TAK, a płatność pada
  * (Island + Plains+Embrace vs {U}{G}).
  */
-export function planGrantManaColors(state, playerId, requirements, excludeSourceId = null, purpose = {}, extraUnits = []) {
+export function planGrantManaColors(state, playerId, requirements, excludeSourceId = null, purpose = {}, extraUnits = [], ignorePool = false) {
   const player = state.players.find((entry) => entry.id === playerId);
   if (!player) return null;
   // A: plan kosztowych Z GÓRY (granty zużyte finansowaniem wypadają z grantLands).
@@ -1886,7 +1917,7 @@ export function planGrantManaColors(state, playerId, requirements, excludeSource
   // — TYLKO dla ofert (canPayColoredCostForOffer); płatność liczy je, gdy
   // realnie trafią do puli. Traktowane jak jednostki puli (aktywacja
   // poprzedza płatność).
-  const units = [...spendablePoolUnits(player, purpose), ...(extraUnits ?? []).map((u) => [...u])];
+  const units = [...(ignorePool ? [] : spendablePoolUnits(player, purpose)), ...(extraUnits ?? []).map((u) => [...u])];
   // Wykluczenia (M174/B + once-per-turn): id własne + klucze id:indeks
   // (te drugie nie matchują lądów — celowo, tylko lister kosztowych).
   const excludedGrant = excludeSourceId == null

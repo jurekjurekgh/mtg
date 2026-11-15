@@ -52,7 +52,7 @@ export function parseArgs(argv) {
     // istnieć, a tester grał wtedy tym, co artefakt miał wybrane domyślnie,
     // nagłówkując transkrypt podaną nazwą (cichy fałsz). Domyślne = pierwsza
     // i czwarta talia stałej próbki benchmarku (tools/benchmark.mjs).
-    human: 'dominaria-brg',
+    human: 'dominaria-wrg',
     bot: 'ravnica-wur',
     seed: 42,
     steps: 300,

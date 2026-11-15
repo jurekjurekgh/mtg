@@ -84,7 +84,7 @@ test('D/1: walka z Malamet Battle Glyph (rzut człowieka) — linie efektów w b
 });
 
 test('D/2: walka z Malamet Battle Glyph trafia też do przebiegu tur (panel „Przebieg tur”)', () => {
-  const { session, registry } = sesja(9);
+  const { session, registry } = sesja(7);
   const state = session.state;
   state.turn = jumpToStep(state.turn, 'main', HUMAN_ID);
   state.turn.activePlayerId = HUMAN_ID;

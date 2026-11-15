@@ -1,12 +1,12 @@
 # Forgotten Realms (WUG)
 
-1x Basilisk Gate
-1x Gond Gate
+1x Heap Gate
 1x Manor Gate
 1x Fleeting Flight
 1x Circle of the Land Druid
 1x Curate (BRO)
 1x Greatsword of Tyr
+1x Spring-Loaded Sawblades
 1x Jungleborn Pioneer
 1x Silvanus's Invoker
 1x Your Temple Is Under Attack

@@ -29,6 +29,7 @@
     "table-turn-history.test.js",
     "table-ui.test.js",
     "undercity-fabricate-pass-guard.test.js",
+    "audyt-pmssb89-batch73.test.js",
     "zgloszenie-c-log-partii-tury.test.js"
   ]
 }

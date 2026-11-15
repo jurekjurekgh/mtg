@@ -1,0 +1,16 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Seton%27s+Desire&set=dmr&format=json",
+  "print": "dmr",
+  "name": "Seton's Desire",
+  "mana_cost": "{2}{G}",
+  "cmc": 3,
+  "type_line": "Enchantment — Aura",
+  "oracle_text": "Enchant creature\nEnchanted creature gets +2/+2.\nThreshold — As long as there are seven or more cards in your graveyard, all creatures able to block enchanted creature do so.",
+  "colors": ["G"],
+  "set": "dmr",
+  "set_name": "Dominaria Remastered",
+  "collector_number": "176",
+  "rarity": "common",
+  "image_uris": { "large": "https://cards.scryfall.io/large/front/7/2/72c7f922-c334-4a75-9f5a-e68595049318.jpg?1783918436", "normal": "https://cards.scryfall.io/normal/front/7/2/72c7f922-c334-4a75-9f5a-e68595049318.jpg?1783918436" },
+  "pobrano": "2026-11-11"
+}

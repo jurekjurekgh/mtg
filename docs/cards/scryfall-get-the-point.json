@@ -1,0 +1,16 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Get+the+Point&set=rna&format=json",
+  "print": "rna",
+  "name": "Get the Point",
+  "mana_cost": "{3}{B}{R}",
+  "cmc": 5,
+  "type_line": "Instant",
+  "oracle_text": "Destroy target creature. Scry 1.",
+  "colors": ["B", "R"],
+  "set": "rna",
+  "set_name": "Ravnica Allegiance",
+  "collector_number": "176",
+  "rarity": "common",
+  "image_uris": { "large": "https://cards.scryfall.io/large/front/8/2/821c4ab5-eb75-445a-bbec-e50af54dba7a.jpg?1783933649", "normal": "https://cards.scryfall.io/normal/front/8/2/821c4ab5-eb75-445a-bbec-e50af54dba7a.jpg?1783933649" },
+  "pobrano": "2026-11-11"
+}

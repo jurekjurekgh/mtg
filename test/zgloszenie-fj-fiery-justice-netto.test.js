@@ -328,3 +328,52 @@ test('FJ/14: anty-over-fix — czyste obrażenia 5 w twarz bez ridera nadal są 
   settle(s);
   assert.equal(lifeOf(s, 'p2'), 15);
 });
+
+// ---------------------------------------------------------------------------
+// Audyt PR #184 / F-1: zabijaCokolwiek nie może zerować ridera dla progu +1000
+// (CR 704.3 / 704.5a + ruling WotC 2017-03-14)
+// ---------------------------------------------------------------------------
+
+test('FJ/15 (Audyt PR #184 / F-1): przy 2 życia wroga i 0/1 na stole prawdziwy letalny burn (2 dmg) wygrywa z Fiery Justice', () => {
+  const s = scene({ foeLife: 2, foeBodies: [[0, 1, { manaCost: 0 }]] });
+  addObject(s, {
+    id: 'burn', instanceId: 'i-burn', cardId: 'test-burn', controllerId: 'p1', ownerId: 'p1',
+    zone: 'hand', kind: 'spell', types: ['Instant'], manaCost: 2, colors: ['R'],
+    cardName: 'burn', abilities: [], keywords: [], subtypes: [],
+    spell: { timing: 'instant', targets: [{ type: 'any_target' }], effects: [{ type: 'damage', amount: 2 }] },
+  });
+  const { cmd, options } = choose(s);
+  const fjScores = options.filter((o) => String(o.cmd).startsWith('cast_spell(spell')).map((o) => o.score);
+  assert.ok(best(fjScores) < 500,
+    `Fiery Justice (2 − 2 + 5 = 5 życia wroga) nie może dostawać premii letalnej +1000: ${best(fjScores)}`);
+  assert.equal(cmd.type, 'cast_spell');
+  assert.equal(cmd.objectId, 'burn', `bot wybiera prawdziwe dobicie zamiast leczenia wroga do 5: ${JSON.stringify(cmd)}`);
+  assert.deepEqual(cmd.targets, ['p2']);
+  run(s, cmd);
+  settle(s);
+  assert.equal(s.status, 'finished');
+  assert.equal(s.winnerId, 'p1');
+});
+
+test('FJ/16 (Audyt PR #184 / F-1): w ramach tego samego czaru nieletalne [5→0/1, 5→p2] nie przebija prawdziwego dobicia [10→p2]', () => {
+  // Przed naprawą F-1 wariant [5→foe-0, 5→p2] dostawał fałszywe +1000 za 5>=4
+  // plus premię za zabicie 0/1 (razem >1000) i WYGRYWAŁ z prawdziwym dobiciem
+  // [10→p2] (1000), zostawiając wroga przy 4 życia (4 − 5 + 5 = 4) zamiast
+  // zakończyć partię (4 − 10 + 5 = −1 <= 0, CR 704.5a).
+  const spell = {
+    timing: 'sorcery', targets: [{ type: 'opponent' }],
+    divided: { total: 10, targetType: 'any_target' },
+    effects: [{ type: 'damage_divided_among_targets' }, { type: 'gain_life_target', amount: 5 }],
+  };
+  const s = scene({ foeLife: 4, foeBodies: [[0, 1, { manaCost: 0 }]], synSpell: spell });
+  const { cmd, options } = choose(s);
+  assert.equal(cmd.type, 'cast_spell');
+  assert.ok(best(castScores(options)) >= 1000,
+    `prawdziwe dobicie netto zachowuje +1000: ${best(castScores(options))}`);
+  run(s, cmd);
+  settle(s);
+  assert.ok(lifeOf(s, 'p2') <= 0, `wróg ginie z netto <= 0 życia (jest ${lifeOf(s, 'p2')})`);
+  assert.equal(s.status, 'finished');
+  assert.equal(s.winnerId, 'p1');
+});
+

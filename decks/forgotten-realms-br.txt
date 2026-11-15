@@ -1,6 +1,7 @@
 # Forgotten Realms (BR)
 
-1x Heap Gate
+1x Basilisk Gate
+1x Gond Gate
 1x Scorch Spitter
 1x Cloak of the Bat
 1x Guildsworn Prowler

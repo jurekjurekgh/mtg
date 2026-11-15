@@ -1083,6 +1083,7 @@ export const KEYWORD_LABELS = Object.freeze({
   // Batch 67 (Kuldotha Ringleader, CR 702.91): battle cry to trigger ataku —
   // bez etykiety linia keywordów pokazywałaby surowy slug „battle_cry" (M127/L29).
   battle_cry: 'Battle cry (atak: inne atakujące stwory +1/+0 do końca tury)',
+  crew: 'Crew (tapnij stworów o łącznej mocy >= N, by stał się stworem)',
   // Batch 69 (Gnoll War Band, CR 702.116): myriad — trigger ataku; w 1v1 bez efektu.
   myriad: 'Myriad (atak: token-kopia za każdego innego przeciwnika)',
   // Batch 69 (Gruul Beastmaster, CR 702.136a): riot — wybór przy wejściu.
@@ -1363,6 +1364,7 @@ function describeEffect(e, ctx = {}) {
     detain: () => 'detain — do twojej następnej tury cel nie atakuje, nie blokuje i nie aktywuje zdolności',
     sacrifice_permanent: () => 'poświęć ten permanent',
     grant_keywords_until_end_of_turn: () => `zdobądź ${(e.keywords ?? []).map((k) => KEYWORD_LABELS[k] ?? k).join(', ')} do końca tury`,
+    must_block_enchanted: () => 'przy 7+ kartach w grobie: wszystkie stworzenia zdolne do blokowania zaklętego stwora musza go blokowac',
     // M73c: pełna mapa pozostałych typów — koniec „efekt." i surowych slugów.
     // M190/A (uwaga właściciela, Heap Gate): obie zdolności many miały
     // identyczny opis („dodaj manę"), więc w panelu różniły się wyłącznie

@@ -18,6 +18,93 @@
 > wpisach są więc historyczne — pliki nadal istnieją w historii gita, ale nie
 > w drzewie. Obowiązująca reguła: `docs/setup/TESTER_STOLU.md` → „Transkrypty
 > nie trafiają do repozytorium".
+
+## 2026-11-11 — audyt techniczny PR #184, naprawy F-1..F-5 i pętla jakości (PR #185, `arena/ae91191e-mtg`)
+
+- **Audyt PR #184 (`0d0a12b`, 39 commitów, 54 pliki, +7081/−404):** pełna mapa
+  54/54 w `docs/audits/PR184_MAPA_PLIKOW_2026-11-11.md` i raport
+  `docs/audits/AUDYT_PR184_2026-11-11.md` (`ca3ae1e`). 14 sond mutacyjnych na
+  kodzie z #184 (13 RED, `m-Y5-session-log` GREEN `rc=0`); weryfikacja cytatów
+  CR przeciw wydaniu **2026-11-06** (`sha256: d7cdcc11…`, `tools/cr-numery.mjs`
+  → OK, 576 numerów). Wykryto **4 błędy techniczne (F-1..F-4)** i **1 lukę
+  ciągłości dokumentacji (F-5)**.
+- **E2.1 / F-1 (`d45d5b1`, `heuristic-bot.js` `dividedDamageValue`):** końcowy
+  commit `fcc9e87` z #184 przy zabiciu stwora w podziale obrażeń (`zabijaCokolwiek`)
+  przyznawał pełne `+1000` za dobicie gracza z surowej kwoty obrażeń mimo
+  jednoczesnego ridera zysku życia w tym samym rozstrzygnięciu (CR 704.3 /
+  704.5a, ruling WotC 2017-03-14) — bot rzucał `Fiery Justice` zamiast
+  śmiertelnego czaru 2 dmg albo wybierał nieletalne `[5→0/1, 5→p2]` zamiast
+  prawdziwego dobicia `[10→p2]`. Naprawiono przez wycenę względem
+  `effectiveFoeLife = Math.max(1, (foe.life ?? 20) + recovered)` z zachowaniem
+  `FJ/7b`; piny `FJ/15`–`FJ/16`, mutacje `m-F1a`/`m-F1b` → RED.
+- **E2.2 / F-2 (`7605aa7`, `resources.js` `koloryNastepnegoCzaru` + `spendMana`):**
+  odjęcie bieżącej kwoty `amount` przy `spellManaPurpose(card)`, bramka
+  pokrywalności pipów kolorowych w pozostałych nietapniętych źródłach
+  (`planGrantManaColors(..., ignorePool)`), pomijanie czarów bezbarwnych przed
+  `break;` oraz pomijanie płaconego egzemplarza po `objectId`/`instanceId`
+  zamiast `cardId` (custom deck ADR 0012). Piny `M/5`–`M/8`, mutacje
+  `m-F2a`..`m-F2d` → RED. Weryfikacja `bot-scoring-snapshot.json` wg L176:
+  w `dominaria-brg|mirrodin-wu@1001` (tura 7) naprawa odblokowała drugi rzut
+  w tej samej turze (`cast_spell(hand-21)`, `356 → 285` decyzji).
+- **E2.3 / F-3 (`2764faf`, `session.js` + `zgloszenie-yz-witches-nightsnare.test.js`):**
+  przywrócono zdanie legacy bez `activatingTargetId`/`activatingPlayerId` (bez
+  `"undefined wskazuje,"`), dodano wspólny helper `celWskazania` z `isPlayer`
+  i biernikiem `'Ciebie'` przy wskazaniu człowieka w `opponent_target_required`
+  i `opponent_target_resolved` oraz wzmocniono `Y/5` + dopisano `Y/6`–`Y/7` na
+  żywym `session.log` (`m-Y5-session-log` → RED `rc=1`).
+- **E2.4 / F-4 (`eb0f5e2`, `heuristic-bot.js`):** wspólny strażnik
+  `isLibraryDrainCastCommand` (`cast !== false && decline !== true`) chroni
+  warianty odmowy w oknach `resolve_exile_cast` / `resolve_madness_cast` /
+  `resolve_*_free_cast` przed wetem `NEVER` (`-Infinity`) w 4 miejscach
+  (`symmetricUpkeepRevealCastVeto`, `lootCastVeto`, `springbloomDrainVeto`,
+  `libraryDrainTax`); wspólny `springbloomShouldDecline` blokuje też opcjonalne
+  poświęcenie lądu w `resolve_springbloom` przy `<10` kartach lub `<2` basic
+  landach wg `ownDeck` (zachowując `A8`). Piny `R/7`–`R/9`, mutacje
+  `m-F4a`/`m-F4b` → RED.
+- **Pętla jakości E3 (ADR 0021 pkt 4):** audyty `bot-tie-audit`,
+  `scoring-unvalued-audit`, `family-audit`, `event-contract-audit` → `rc=0`;
+  Żywy Tester `q1`–`q5` (5 par spoza `BENCH_DECKS`, 5 profili w tym `impatient`
+  i `--tick-rate 0.2`) + celowana sonda M331 `q6` na `Fiery Justice`, `Ior`+`Jwari`,
+  `Springbloom Druid`/`Roiling Regrowth` i `Cuombajj Witches`: **0 zgłoszeń
+  detektorów, 0 niewycenionych ruchów bota**.
+- **Bramy:** `npm test` **10 280/10 280**, `npm run test:all` **10 549/10 549**
+  (fail 0, skipped 0, ~513 s), `npm run build` **79 modułów / 5 847,3 kB**,
+  `tools/cr-numery.mjs` → OK (576 numerów), budżet lektury ~99,7k/100k bez zmian.
+  Plan: `docs/plans/PLAN_2026-11-11-audyt-pr184.md`, handoff:
+  `docs/setup/HANDOFF_2026-11-11.md`.
+
+## 2026-11-10..11 — uzupełnienie śladu końcówki PR #184 (`0d0a12b`, F-5 audytu #185)
+
+Końcowe commity gałęzi `arena/76d4141f-mtg` (scalonej jako `0d0a12b` w PR #184),
+które nie miały wpisu w `PROJECT_HISTORY.md`:
+
+- **Zgłoszenia W i X (`36b647d`, handoff `HANDOFF_2026-11-11-wx-gate-flight.md`):**
+  W (`Gatebreaker Ram` / `mana_hold_for_counter_instant`): decyzja właściciela —
+  stała kara `120` zostaje bez zmian dla ciał ≥19/19 (nie naprawiać); X (`Flight`
+  jako „dobicie” na stworze z `defender`/`cantAttackStatic`): `closesGame`
+  sprawdza `canCreatureAttackNow(trickTarget)` (`test/zgloszenie-wx-gate-flight.test.js`).
+- **Zgłoszenia Y i Z (`6952f26`, `test/zgloszenie-yz-witches-nightsnare.test.js`):**
+  Y(a) (`Cuombajj Witches` 1 dmg w 3/4 w walce bez blokerów): ujemna wycena
+  nieletalnego chipa w oknie walki; Y(b): jawny `activatingTargetId` w zdarzeniu
+  `opponent_target_required`; Z (`Nightsnare`): log uznany przez właściciela za
+  poprawny — bez zmian zachowania, dopisany pin `Z/1`.
+- **Tapowanie nadmiarowej many (`9dfdbd7`, `src/engine/resources.js`,
+  `test/zgloszenie-tapowanie-many-nadmiar.test.js`):** w fazie sumy `spendMana`
+  źródła niepotrzebne najbliższemu czarowi w ręce (`koloryNastepnegoCzaru`)
+  idą przed źródłami pokrywającymi jego kolor + regeneracja
+  `test/fixtures/bot-scoring-snapshot.json` (`95f3692a…`); doprecyzowane w #185
+  (`7605aa7`, F-2).
+- **Roiling Regrowth — drenaż i brak basic landów (`0b25071`,
+  `test/zgloszenie-roiling-regrowth-drenaz.test.js`):** `springbloomDrainVeto`
+  wetuje rzut przy `<10` kartach w bibliotece albo `<2` basic landach pozostałych
+  wg `searchTargetsRemaining`; domknięte na oknach `*_cast` i `resolve_springbloom`
+  w #185 (`eb0f5e2`, F-4).
+- **Fiery Justice `FJ/7b` (`fcc9e87`) i stan końcowy `0d0a12b`:** nadwyżka
+  obrażeń na twarz przy zabiciu stwora wyceniana jako zmniejszenie zysku życia
+  przeciwnika (`FJ/7b`; regresję fałszywego `+1000` przy niskim życiu wroga
+  naprawiono w #185 `d45d5b1`, F-1). Stan `main` po scaleniu #184 (`0d0a12b`):
+  `npm test` **10 269/10 269**, build **79 modułów / 5 843,4 kB**.
+
 ## 2026-11-09 — zgłoszenie właściciela: README jako wizytówka, nie dziennik (PR #184, kontynuacja arena/76d4141f-mtg)
 
 - **Objaw:** „strona główna repozytorium to jakiś śmietnik z wklejoną historią

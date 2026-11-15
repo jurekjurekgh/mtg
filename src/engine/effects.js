@@ -7506,5 +7506,15 @@ function markTemporaryExile(state, exileId, sourceObject) {
     state.events.push(event('keyword_granted', { objectId: object.id, cardId: object.cardId, keywords: ['saddled'] }));
     return;
   }
+  if (effect.type === 'must_block_enchanted') {
+    // Seton's Desire Threshold: zaklęte stworzenie musi być blokowane przez
+    // wszystkie stworzenia które mogą je blokować (CR 509.1c — wymagania
+    // blokowania są egzekwowane przy deklarowaniu blokatorów). Flaga egzekwowana
+    // w declareBlockers (combat.js) oraz przy ofertach blokowania.
+    const object = state.objects.get(sourceObject.id);
+    if (!object) return;
+    state.objects.set(object.id, Object.freeze({ ...object, mustBlockEnchanted: true }));
+    return;
+  }
     throw new Error(`Nieznany typ efektu: ${effect.type}`);
 }

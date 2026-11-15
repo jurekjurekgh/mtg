@@ -11,7 +11,7 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-const names=['alara','dominaria-brg','forgotten-realms-br','forgotten-realms-wug','ixalan','kaldheim','srodziemie','tarkir-wur','theros','warhammer-ubr','wiedzmin-wur','worek-basni','worek-dziki','worek-legend','worek-mroczny'];
+const names=['alara','dominaria-wrg','forgotten-realms-br','forgotten-realms-wug','ixalan','kaldheim','srodziemie','tarkir-wur','theros','warhammer-ubr','wiedzmin-wur','worek-basni','worek-dziki','worek-legend','worek-mroczny'];
 const readme=fs.readFileSync('README.md','utf8');
 const basics=new Set(['Plains','Island','Swamp','Mountain','Forest']);
 

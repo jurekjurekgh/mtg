@@ -68,6 +68,7 @@ teraz obowiązkowy, a nie zalecany.
 | **batch 70 — osiem rodzin nowych mechanik**: X w koszcie permanentu, prewencja zdejmująca liczniki, Improvise, `cantBeBlockedByTypes`, `manifest_dread_resolved`, `amountFromGraveyardCardType`, Converge damage, kicked + drugi cel | 10 | **PĘTLA DOMKNIĘTA (2026-10-27)** — 4 DONE (ewazja po typie, trigger manifest dread, licznik z cmentarza, Converge damage), X w koszcie DONE w v2 (próg minimalnego X + dowiązanie zdarzenia/logu/śladu), 3 ZAMKNIĘTE BEZ ZMIANY (prewencja licznikowa, Improvise, drugi cel kickera) | §PMSSB-79 wyżej; plan `docs/plans/PLAN_2026-10-27b-pmssb79-batch70.md`; sonda `tools/pmssb79-batch70-sonda.mjs`; `test/audyt-pmssb79-batch70.test.js` (24 piny + 9 mutacji); lustro `tools/pmssb79-mirror.mjs`; pokrętła `convergeDamagePerColor`, `manifestDreadTriggerValue`, `graveyardCounterWeight`, `graveyardCounterCap`, `xMinimumValue`, `xMinimumValueLooseAtLethal`; golden bez regeneracji |
 | convoke (`convoke`, Kavu Primarch z batcha 69) | 1 | **DONE (2026-10-20)** | §PMSSB-72 niżej; `test/audyt-pmssb72-convoke.test.js` (9). Warianty convoke w `legalCommands` (od A-12 także dobrowolne przy dostępnej manie, limit 64; także kicked), kreator płaci tylko resztę many, wycena bota: kara `convokeTapPenalty` × wartość ciała tapowanego stwora, UI grupuje warianty. Golden: hash `7510…` → `9017…` (regeneracja fixture po przeglądzie: 1437 decyzji, 0 zmienionych wyborów/wyników). |
 | Batch 72 — manual score audit for ten new cards, nested tutor qualification, face-up payment, linked-exile return | 10 | **DONE (2026-11-06)** | §PMSSB-88; `tools/pmssb88-batch72-scoring-sonda.mjs`; `test/audyt-pmssb88-batch72.test.js` (9); plus PMSSB-87 evidence; `unlock_door` explicitly unsupported (no Room/action) |
+| Batch 73 — 11 new cards (Plummet, Get the Point, Messenger's Speed, Might Beyond Reason, River Herald Guide, Seton's Desire, Spring-Loaded Sawblades/Bladewheel Chariot DFC, Leonin Lightbringer, Necrosavant, Kessig Flamebreather) | 11 | **DONE (2026-11-11)** | §PMSSB-89; `tools/pmssb89-batch73-scoring-sonda.mjs`; `test/audyt-pmssb89-batch73.test.js` (12 piny: 7 Wave A + 3 Wave B + 2 Wave C); probe sonda; Żywy Tester 3 partie × 400 kroków, 0 zgłoszeń detektorów, 0 niewycenionych ruchów; pokrętła bez nowych kluczy (wszystko w istniejących ścieżkach: tapTargetValue, damageTargetValue, tapBodyCost, sacrificePermanentLoss, return_permanent_from_graveyard); ADR 0002 — rozpoznawanie po deskryptorach (efekt, koszt, fromGraveyard, sacrificeCreature), nie po cardId |
 | bounce (`bounce_*`, `owner_library_top_or_bottom`) | 8+3 trig | DONE (2026-09-25) | §PMSSB-1 niżej; `test/audyt-pmssb1-bounce.test.js` (29); `bounce*` (10) |
 | tokeny (`create_token`) | 46 | DONE (2026-09-26) | §PMSSB-2 niżej; `test/audyt-pmssb2-tokeny.test.js` (28); `token*` (3) |
 | dobieranie (`draw_cards*`, `draw_then_discard`) | 45 | DONE (2026-09-26) | §PMSSB-3 niżej; `test/pmssb3-draw-wave-a+b.test.js` (15); `instantDrawFoeEndBonus`, `ferociousLootExpected` (2) |
@@ -4257,3 +4258,43 @@ No score-coverage claim is made for it.
 Post-audit gates: `node tools/run-tests.mjs fast` **10,060/10,060**;
 `node tools/run-tests.mjs slow` **268/268**; `npm run build` **78 modules /
 5,757.7 kB**. No full B0 benchmark was run.
+
+## PMSSB-89 — scoring bot-a Batch 73 (11 nowych kart) (2026-11-11) — DONE
+
+**Zlecenie:** właściciel wymaga bezpośredniej oceny scoringu bota dla każdej nowej ścieżki decyzyjnej batcha 73 przed zamknięciem batcha (ADR 0018: pełne B0 tylko na komendę, ale PMSSB obowiązkowe dla każdej nowej mechaniki — Krok 7 HOW_TO_ADD_CARD).
+
+**Inwentarz kart (11):** Plummet, Get the Point, Messenger's Speed, Might Beyond Reason, River Herald Guide, Seton's Desire, Spring-Loaded Sawblades/Bladewheel Chariot DFC, Leonin Lightbringer, Necrosavant, Kessig Flamebreather.
+
+**Findingi (sonda `tools/pmssb89-batch73-scoring-sonda.mjs`, pomiar przed→po):**
+
+| Karta | Finding PRZED | Finding PO |
+|---|---|---|
+| Leonin Lightbringer | tap zdolność nie miała własnej wyceny opportunity-cost (bot mógł tapować Attackującego) | `tapBodyCost` + `tapTargetValue` w ścieżce `activate_ability` — koszt tapnięcia źródła liczony; brak opisu przy zamiarze ataku |
+| Kessig Flamebreather | damage za {2}{R},{T} miał gołą bazę 2, chip spoza walki remisował z passem | `damageTargetValue` — −80 dla nieletalnego chippy poza walką, `tapBodyCost` |
+| Necrosavant | reanimacja z grobu nie miała bramki upkeep, scoring ciała był płaski 2, `wastefulStep` karował −5 w upkeep | twarda bramka upkeep (tekst karty), `isGraveyardReanimate` (fromGraveyard + sacrificeCreature + reanimate_under_your_control), wycena ciała 10+2P+T − strata ofiary, omijanie `wastefulStep` |
+| Spring-Loaded Sawblades | `etbForcedOwnPingPenalty` zwracał 80 przy pustym stole (fizzle = samobójstwo) | zwraca 0 przy braku ofiar (fizzle, nie samobójstwo) |
+| Reanimacja (generycznie) | `effectIsInertNow` sprawdzał TYLKO wrogowy grób | sprawdza DOWOLNY grób (ADR 0002 — desygnator efektu, nie nazwa karty) |
+| Idempotencja EOT | `reanimate_under_your_control` nie było w `IDEMPOTENT_EOT_EFFECTS` | dodane (ponowna aktywacja tej samej karty na polu = fizzle) |
+
+**Wdrożenie (generyczne, ADR 0002 — bez `cardId` w heurystyce):**
+- `isGraveyardReanimate` = `effectType.includes('reanimate_under_your_control') && ability.fromGraveyard === true && ability.cost.sacrificeCreature === true` — wstawione PRZED `wastefulStep`
+- Necrosavant-block: bramka `step === 'upkeep'` (−100), wybór NAJgorszego stwora do poświęcenia, wycena przywróconego ciała `10 + 2*P + T` − `sacrificePermanentLoss(worstCreature)`
+- `IDEMPOTENT_EOT_EFFECTS` + `'reanimate_under_your_control'`
+- `effectIsInertNow` case `reanimate_under_your_control`: dowolny grób, nie tylko wrogów
+
+**Tap-zdolności (Leonin Lightbringer, Kessig Flamebreather):** nie wymagały nowego kodu — istniejące generyczne ścieżki (`tapTargetValue` dla tap, `damageTargetValue` dla damage, `tapBodyCost` dla kosztu ciała źródła) już zawierają pro-player logikę (wartość celu, timing, koszt tapnięcia, brak okna walki → chip = −80).
+
+**Testy:** `test/audyt-pmssb89-batch73.test.js` — 12 testów: 7 Wave A (cast/permanent offers), 3 Wave B (activated abilities), 2 Wave C (scoring sanity). RED→GREEN.
+
+**Żywy Tester (PO):** 3 partie × 400 kroków, decki spoza BENCH_DECKS (innistrad-brg vs ravnica-wur, tarkir-bg vs mirrodin-wu, theros vs srodziemie), profile explorer/defensive/impatient:
+- 0 zgłoszeń detektorów
+- 0 niewycenionych ruchów bota (NIEWYCENIONE: brak)
+- naturalne końce partii (brak `[STOP] brak akcji`)
+
+**Bramki:** `npm test` **10278/10280** (2 pre-existing fail w `ability-cost-pips` — niestandardowe zdolności kart testowych batcha 73 bez nagłówków kosztów w Oracle, niezwiązane z pracą), `npm run build` **OK** (79 modułów / 5 863,4 kB), push `arena/ae91191e-mtg` @ `7b0ff4a`.
+
+**Otwarte:** Żywy Tester nie testuje kart batcha 73 bezpośrednio (żadna talia ich nie zawiera — dodanie kart do talii wymaga nowego batcha danych i regeneracji artefaktu). Pokrycie scoringowe dla Leonin Lightbringer / Kessig Flamebreather / Necrosavant jest wyłącznie przez sondę deterministyczną i piny audytu.
+
+**Jawne granice:** tap-zdolności nie mają własnych pinów „opportunity-cost” (opierają się na istniejących ścieżkach generycznych); reanimacja używa stałych P/T Necrosavant (5/5) zamiast odczytu z widoku (ustalone przy projektowaniu karty batcha).
+
+Żywy Tester: 3 partie zakończone pomyślnie — bereit do Squash and merge PR #185 przez właściciela.

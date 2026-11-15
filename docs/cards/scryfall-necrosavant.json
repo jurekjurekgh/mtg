@@ -1,0 +1,18 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Necrosavant&set=dmr&format=json",
+  "print": "dmr",
+  "name": "Necrosavant",
+  "mana_cost": "{3}{B}{B}{B}",
+  "cmc": 6,
+  "type_line": "Creature — Zombie Giant",
+  "oracle_text": "{3}{B}{B}, Sacrifice a creature: Return this card from your graveyard to the battlefield. Activate only during your upkeep.",
+  "power": "5",
+  "toughness": "5",
+  "colors": ["B"],
+  "set": "dmr",
+  "set_name": "Dominaria Remastered",
+  "collector_number": "93",
+  "rarity": "uncommon",
+  "image_uris": { "large": "https://cards.scryfall.io/large/front/8/7/87ce2548-38d3-4763-960a-d5d802094a0c.jpg?1783918475", "normal": "https://cards.scryfall.io/normal/front/8/7/87ce2548-38d3-4763-960a-d5d802094a0c.jpg?1783918475" },
+  "pobrano": "2026-11-11"
+}

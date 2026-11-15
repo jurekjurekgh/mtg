@@ -1,6 +1,7 @@
 # Theros
 
 1x Glaring Aegis
+1x Messenger's Speed
 1x Pyxis of Pandemonium
 1x Sleep of the Dead
 1x Titan's Strength
@@ -23,5 +24,5 @@
 1x Plains
 4x Island
 1x Swamp
-1x Mountain
+2x Mountain
 3x Forest
