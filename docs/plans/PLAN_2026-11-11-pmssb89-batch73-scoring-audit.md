@@ -50,4 +50,4 @@ Fresh ad-hoc deterministic score probe found these uncovered scoring paths:
 
 ## Final outcome
 
-Pending execution.
+COMPLETED (2026-11-11). Wszystkie 7 scoring gaps PMSSB-89 (1-7) zamknięte: sonda deterministyczna `tools/pmssb89-batch73-scoring-sonda.mjs`, `test/audyt-pmssb89-batch73.test.js` 12/12 pass, `npm test` 10278/10280 (2 pre-existing fail niezwiązane), `npm run build` OK, Żywy Tester 3 partie × 400 kroków — 0 detektorów, 0 niewycenionych ruchów. PR #185 otwarty na GitHubie, oczekuje na squash-and-merge przez właściciela (ADR 0007 — agent nie scaluje). Commit `31cf601` (docs/PMSSB.md) + `7b0ff4a` (kod) na branchu `arena/ae91191e-mtg`, zsynchronizowane z `origin/arena/ae91191e-mtg`.
