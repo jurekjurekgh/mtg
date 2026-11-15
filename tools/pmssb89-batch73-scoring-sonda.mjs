@@ -1,5 +1,20 @@
 // PMSSB-89 — Batch 73 card-scoring cross-check and probes for uncovered paths.
 // Run with: node tools/pmssb89-batch73-scoring-sonda.mjs
+//
+// Audyt PR #185 (F-20): blok main był strzeżony przez `import.meta.url ===
+// process.argv[1]`, więc ta komenda kończyła się kodem 0 i PUSTYM stdoutem
+// (`process.argv[1]` to ścieżka względna, `import.meta.url` to URL pliku).
+// Strażnik jest teraz w konwencji repo (`tools/benchmark.mjs:763`,
+// `tools/bot-scoring-snapshot.mjs:176`). Audyt PR #185 (F-16): etykiety kart
+// poniżej kłamały wobec Oracle — opisują fabrykowane zdolności aktywowane
+// („Leonin Lightbringer ({W},{T} tap target)", „Kessig Flamebreather ({1}{R},{T}
+// damage 2"), cudze cechy („Seton's Desire … ward {2}" — ward {2} ma Leonin) i
+// efekty, których nie ma w tekście kart („Messenger's Speed +1/+1", „Might Beyond
+// Reason +X/+X board pump"). Etykiety przepisane z `docs/cards/scryfall-*.json`
+// (ADR 0030/L57); pin: `test/audyt-pr185-f20-sonda-pmssb89.test.js`.
+import fs from 'node:fs';
+import path from 'node:path';
+import { pathToFileURL } from 'node:url';
 import { addObject, createGameState, execute, playerView } from '../src/engine/game-state.js';
 import { jumpToStep } from '../src/engine/turn.js';
 import { addMana } from '../src/engine/resources.js';
@@ -176,18 +191,21 @@ export function probeKessigFlamebreather(setup = () => {}) {
   return { cardId: 'kessig-flamebreather', chosen };
 }
 
-if (import.meta.url === process.argv[1]) {
+const uruchomionaBezposrednio = () =>
+  import.meta.url === pathToFileURL(path.resolve(fs.realpathSync(process.argv[1]))).href;
+
+if (uruchomionaBezposrednio()) {
   console.log('=== PMSSB-89 — Batch 73 scoring probe ===\n');
 
-  console.log('Plummet (destroy flying):', JSON.stringify(probePlummet()));
-  console.log('Get the Point (destroy any creature + scry):', JSON.stringify(probeGetThePoint()));
-  console.log("Messenger's Speed (aura +1/+1 haste/trample):", JSON.stringify(probeMessengersSpeed()));
-  console.log('Might Beyond Reason (+X/+X board pump):', JSON.stringify(probeMightBeyondReason()));
-  console.log('River Herald Guide (explore):', JSON.stringify(probeRiverHeraldGuide()));
-  console.log("Seton's Desire (aura +2/+2 ward {2}):", JSON.stringify(probeSetonsDesire()));
-  console.log('Spring-Loaded Sawblades (craft DFC):', JSON.stringify(probeSpringLoadedSawblades()));
-  console.log('Leonin Lightbringer ({W},{T} tap target):', JSON.stringify(probeLeoninLightbringer()));
-  console.log('Necrosavant (reanimate minGraveyardCards):', JSON.stringify(probeNecrosavant()));
-  console.log('Kessig Flamebreather ({1}{R},{T} damage 2):', JSON.stringify(probeKessigFlamebreather()));
+  console.log('Plummet (destroy target creature with flying):', JSON.stringify(probePlummet()));
+  console.log('Get the Point (destroy target creature, then scry 1):', JSON.stringify(probeGetThePoint()));
+  console.log("Messenger's Speed (aura: trample i haste, BEZ pump):", JSON.stringify(probeMessengersSpeed()));
+  console.log('Might Beyond Reason (liczniki +1/+1 ×2 na cel; delirium ×3):', JSON.stringify(probeMightBeyondReason()));
+  console.log('River Herald Guide (vigilance + ETB explore):', JSON.stringify(probeRiverHeraldGuide()));
+  console.log("Seton's Desire (aura +2/+2 + Threshold 7+: must-block):", JSON.stringify(probeSetonsDesire()));
+  console.log('Spring-Loaded Sawblades (flash, ETB 5 obrażeń w tapniętego stwora, craft → Bladewheel Chariot):', JSON.stringify(probeSpringLoadedSawblades()));
+  console.log('Leonin Lightbringer (ward {2} + pump +1/+1 gdy wyekwipowany — BRAK zdolności aktywowanej):', JSON.stringify(probeLeoninLightbringer()));
+  console.log('Necrosavant (reanimacja z grobu: {3}{B}{B} + poświęć stwora, tylko w upkeep):', JSON.stringify(probeNecrosavant()));
+  console.log('Kessig Flamebreather (trigger: rzucasz noncreature spell → 1 obrażenie każdemu przeciwnikowi):', JSON.stringify(probeKessigFlamebreather()));
   console.log('\n=== Probe complete ===');
 }
