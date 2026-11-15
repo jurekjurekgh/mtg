@@ -7506,15 +7506,12 @@ function markTemporaryExile(state, exileId, sourceObject) {
     state.events.push(event('keyword_granted', { objectId: object.id, cardId: object.cardId, keywords: ['saddled'] }));
     return;
   }
-  if (effect.type === 'must_block_enchanted') {
-    // Seton's Desire Threshold: zaklęte stworzenie musi być blokowane przez
-    // wszystkie stworzenia które mogą je blokować (CR 509.1c — wymagania
-    // blokowania są egzekwowane przy deklarowaniu blokatorów). Flaga egzekwowana
-    // w declareBlockers (combat.js) oraz przy ofertach blokowania.
-    const object = state.objects.get(sourceObject.id);
-    if (!object) return;
-    state.objects.set(object.id, Object.freeze({ ...object, mustBlockEnchanted: true }));
-    return;
-  }
+  // `must_block_enchanted` (Seton's Desire — Threshold) NIE MA tu gałęzi:
+  // to deskryptor efektu CIĄGŁEGO zdolności statycznej, czytany przy każdej
+  // deklaracji bloków (`combat.mustBlockHostCounts`). Audyt PR #185 (F-1):
+  // poprzednio stała tu gałąź stawiająca flagę `mustBlockEnchanted` na AURZE,
+  // której nie czytał żaden konsument (grep: jedno trafienie — producent), więc
+  // wymóg z Oracle nie istniał (pusty blob `declare_blockers` dawał ok=true).
+  // Zdolność statyczna nie wchodzi na stos, więc `applyEffect` jej nie dostaje.
     throw new Error(`Nieznany typ efektu: ${effect.type}`);
 }

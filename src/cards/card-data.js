@@ -5276,6 +5276,13 @@ export const REAL_CARDS = Object.freeze([
     abilities: [
       createAbility({
         type: ABILITY_TYPE.static,
+        // Threshold (słowo-zdolność bez znaczenia regułowego — liczy się tekst):
+        // warunek ciągły `minGraveyardCards` ewaluuje `staticConditionHolds`
+        // (CR 611.3a), a deskryptor efektu czyta `combat.mustBlockHostCounts`
+        // przy każdej deklaracji bloków (CR 509.1c) — jak `start_engines`
+        // w state-based.js. Audyt PR #185 (F-1): poprzednio ten efekt miał
+        // gałąź w `applyEffect`, która stawiała flagę `mustBlockEnchanted`
+        // na aurze; nie czytał jej żaden konsument, więc wymóg nie istniał.
         condition: { minGraveyardCards: 7 },
         effect: { type: 'must_block_enchanted' },
       }),

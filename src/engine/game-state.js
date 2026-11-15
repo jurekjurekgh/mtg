@@ -26,7 +26,7 @@ function hasColorForCardId(state, playerId, cardId, phyrexianPay = 0, purpose = 
   if (offerUnits != null) return canPayColoredCostForOffer(state, playerId, requirements, offerUnits, null, purpose);
   return canPayColoredCost(state, playerId, requirements, null, purpose);
 }
-import { attackerBlockPowerRestriction, blockCandidatePool, blockSlotsFor, cantBeBlockedFromEquipment, declareAttackers, declareBlockers, attackerSeedDeclarations, blockerSeedAssignments, combatDeclarationView, mandatoryAttackerIds, mandatoryBlockerIds, minimalMandatoryBlocks, rememberClosedCombat, resolveCombatDamage, buildDamageAssignmentView, buildDefaultDamageAssignments, validateDamageAssignment, validateBlockerDamageAssignment, staticAttackPreventionOf } from './combat.js';
+import { attackerBlockPowerRestriction, blockCandidatePool, blockRequirementCountOf, blockSlotsFor, mustBlockHostCounts, cantBeBlockedFromEquipment, declareAttackers, declareBlockers, attackerSeedDeclarations, blockerSeedAssignments, combatDeclarationView, mandatoryAttackerIds, mandatoryBlockerIds, minimalMandatoryBlocks, rememberClosedCombat, resolveCombatDamage, buildDamageAssignmentView, buildDefaultDamageAssignments, validateDamageAssignment, validateBlockerDamageAssignment, staticAttackPreventionOf } from './combat.js';
 import { optionalSpellEffectChoices, castSpell, castCleave, legalSpellCasts, legalCleaveCasts, plotCard, suspendCard, warpCard, resolveTopOfStack, resolveRiotEntry, finishPendingSpell, resumeSuspendedSpell, castEscape, resolveEscapeExile, legalEscapeCasts, declareDelveCast, resolveDelveExile, delveExileLimit, affordableDelveCounts, castFlashback, legalFlashbackCasts, castAdventure, legalAdventureCasts, castAdventureCreature, legalAdventureCreatureCasts, effectiveSpellManaCost, legalTargetCandidates, validateTargets, castMadnessSpell, legalModeCasts, legalXCostCasts, legalFireballCasts, validateVariableTargets, validateFireballTargets, legalTargetCombos, validateDamageDivision, dividedDamageDivisions } from './spells.js';
 import { legalActivatedAbilities, legalManaAbilities, manualManaOfferUnits, activateAbility, performActivation } from './abilities.js';
 import { attachmentRestrictions, deathZoneFor, wardAmountOf, clearMarkedDamage, clearStatModifiers, creatureCantBlock, effectiveAbilities, effectiveKeywords, effectivePower, effectiveToughness, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, grantedStatBonus, hasTemporaryCantBlock, staticAbilityIsActive, markDamage, modifyStats, transformedCharacteristics, turnFaceUp, untapObject, activatableAbilities, entersTappedNow } from './permanents.js';
@@ -7299,6 +7299,9 @@ function buildBlockerView(state, playerId) {
 
 export function playerView(state, playerId) {
   if (!state.players.some((p) => p.id === playerId)) throw new Error('Nieznany gracz');
+  // Wymogi blokowania liczone ze stanu RAZ na widok (nie per obiekt): poza walką
+  // mapa jest pusta, więc koszt to jedno sprawdzenie `state.combat`.
+  const mustBlockHosts = mustBlockHostCounts(state);
   const zones = {};
   for (const [zone, ids] of Object.entries(state.zones)) {
     zones[zone] = ids.map((id) => {
@@ -7582,10 +7585,16 @@ export function playerView(state, playerId) {
         // M177/E: detain jest informacją publiczną (badge + boty).
         if (object.detained === true) entry.detained = true;
         // Batch60 („blocks if able" — Timely Interference): wymóg bloku to
-        // informacja publiczna (badge + boty; lustro goad).
-        if (object.blocksIfAble === true) {
+        // informacja publiczna (badge + boty; lustro goad). Audyt PR #185 (F-1):
+        // wymóg bywa też CIĄGŁY i celowany („all creatures able to block
+        // enchanted creature do so" — Seton's Desire, CR 509.1c), więc liczymy go
+        // ze stanu, a nie z samej flagi na obiekcie — inaczej stół pokazywałby
+        // stwora bez wymogu, choć pusta deklaracja bloków jest nielegalna
+        // (ADR 0017: skutek widoczny w grze musi być widoczny na stole).
+        const blockRequirementNow = blockRequirementCountOf(state, object.id, mustBlockHosts);
+        if (blockRequirementNow > 0) {
           entry.blocksIfAble = true;
-          entry.blockRequirementCount = blockingRequirementCount(object);
+          entry.blockRequirementCount = blockRequirementNow;
         }
         // M172/B2 (uwaga właściciela, klasa L1/ADR 0017): AKTYWNE zmiany
         // czasowe są informacją publiczną (skutki rozstrzygniętych efektów),

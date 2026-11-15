@@ -456,6 +456,25 @@ export function staticConditionHolds(state, object, condition) {
   if (condition.hasCounter != null) {
     return (object.counters?.[condition.hasCounter] ?? 0) > 0;
   }
+  // Seton's Desire (Batch 73, audyt PR #185 F-1) — „Threshold — As long as
+  // there are seven or more cards in your graveyard…”: liczba KART w grobie
+  // kontrolera źródła (CR 108.2b — tokeny NIE są kartami; „your” = kontroler,
+  // CR 109.5). Threshold nie jest już słowem kluczowym, tylko słowem-zdolnością
+  // bez znaczenia regułowego (glossary CR: „It is now an ability word and has no
+  // rules meaning”), więc liczy się dosłowny tekst: warunek CIĄGŁY liczony przy
+  // każdym odczycie (CR 611.3a). Dotąd klucza nie było w tej funkcji, więc
+  // nieznany warunek dawał `false` (cichy no-op, klasa L21) i próg nigdy nie
+  // zachodził.
+  if (condition.minGraveyardCards != null) {
+    let count = 0;
+    for (const objectId of state.zones.graveyard) {
+      const candidate = state.objects.get(objectId);
+      if (!candidate || candidate.controllerId !== object.controllerId) continue;
+      if (!isCardObject(candidate)) continue; // tokeny nie są kartami (CR 108.2b)
+      count += 1;
+    }
+    return count >= condition.minGraveyardCards;
+  }
   // „As long as there are four or more creature cards in your graveyard\"
   // (Gray Slaad — menace i deathtouch): liczba KART-stworów (nie tokenów)
   // w grobie kontrolera źródła.

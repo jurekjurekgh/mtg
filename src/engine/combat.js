@@ -1,7 +1,7 @@
 import { event } from '../protocol/types.js';
 import { addPoisonCounters, changeLife } from './players.js';
 import { addCounter } from './counters.js';
-import { blockingRequirementCount, hasCreatureType, combatDamageAmount, combatDamageByToughness, preventDamageWithShieldCounter, preventDamageByRemovingCounters, removeLoyaltyForDamage, attachmentRestrictions, creatureCantBlock, effectiveAbilities, effectiveColors, effectiveKeywords, effectivePower, effectiveSubtypes, effectiveToughness, isDamagePrevented, isDamagePreventedByProtection, isProtectedFromSource, markDamage, markDealtDamageThisTurn, staticAbilityIsActive, preventDamageTo, tapObject } from './permanents.js';
+import { blockingRequirementCount, staticConditionHolds, hasCreatureType, combatDamageAmount, combatDamageByToughness, preventDamageWithShieldCounter, preventDamageByRemovingCounters, removeLoyaltyForDamage, attachmentRestrictions, creatureCantBlock, effectiveAbilities, effectiveColors, effectiveKeywords, effectivePower, effectiveSubtypes, effectiveToughness, isDamagePrevented, isDamagePreventedByProtection, isProtectedFromSource, markDamage, markDealtDamageThisTurn, staticAbilityIsActive, preventDamageTo, tapObject } from './permanents.js';
 import { attachmentsAttachedTo } from './attachments.js';
 import { effectiveProtectionFromColors } from './attachments.js';
 
@@ -349,6 +349,75 @@ export function mandatoryAttackerIds(state, playerId) {
 }
 
 /**
+ * Ciągłe wymogi blokowania KONKRETNEGO atakującego (CR 509.1c) liczone ze stanu,
+ * nie z flag zapisanych na obiektach. Wzorzec `grantedActivatedAbilities`
+ * (permanents.js) i `start_engines` (state-based.js): efekt ciągły czyta się przy
+ * każdym odczycie, więc zniknięcie aury albo spadek poniżej progu odbiera wymóg
+ * natychmiast (CR 611.3a) — bez sprzątania stanu i bez zatrzaskiwania flag.
+ *
+ * „Threshold — As long as there are seven or more cards in your graveyard, all
+ * creatures able to block enchanted creature do so." (Seton's Desire, Batch 73).
+ * Audyt PR #185 (F-1): poprzedni zapis aplikował `must_block_enchanted` jako
+ * efekt JEDNORAZOWY, który stawiał flagę `mustBlockEnchanted` na AURZE, a flagi
+ * nie czytał ŻADEN konsument (grep: jedno trafienie — producent), więc wymóg nie
+ * istniał i pusta deklaracja blokujących przechodziła z `ok=true`.
+ *
+ * Zdolność statyczna nie wchodzi na stos, więc jej `effect` nigdy nie jest
+ * „aplikowany" — deskryptor czytamy wprost (jak `start_engines`), a `condition`
+ * ewaluuje `staticConditionHolds` (jedno źródło warunków ciągłych).
+ *
+ * Zwraca Map(hostId → liczba wymogów): dwie aury na jednym gospodarzu to dwa
+ * wymogi (CR 509.1c liczy wymogi, nie unikalnych blokerów — jak
+ * `blockRequirementCount` dla „blocks if able").
+ */
+export function mustBlockHostCounts(state) {
+  const hosts = new Map();
+  if (!state.combat?.attackers?.length) return hosts; // poza walką wymóg jest nieosiągalny
+  for (const object of state.objects.values()) {
+    if (object.zone !== 'battlefield' || object.faceDown) continue; // CR 708.2a
+    if (typeof object.attachedTo !== 'string') continue;            // tylko załącznik ma gospodarza
+    for (const ability of effectiveAbilities(object)) {
+      if (ability?.type !== 'static') continue;
+      for (const effect of [ability.effect].flat()) {
+        // Deskryptor efektu CIĄGŁEGO (wzorzec `start_engines` w state-based.js):
+        // zdolność statyczna nie wchodzi na stos, więc nie ma czego „aplikować"
+        // w `applyEffect` — wymóg istnieje tak długo, jak długo spełniony jest
+        // warunek (CR 611.3a), i znika razem z aurą albo progiem.
+        if (effect?.type !== 'must_block_enchanted') continue;
+        if (!staticConditionHolds(state, object, ability.condition)) continue;
+        hosts.set(object.attachedTo, (hosts.get(object.attachedTo) ?? 0) + 1);
+      }
+    }
+  }
+  return hosts;
+}
+
+/**
+ * Liczba wymogów blokowania ciążących na stworze w tym combacie: flagowe
+ * („blocks this turn if able" — Batch60/Timely Interference) PLUS ciągłe wymogi
+ * celowane (`mustBlockHostCounts`). „If able" (CR 509.1): wymóg celowany liczy
+ * się tylko dla ATAKUJĄCEGO gospodarza, którego ten bloker może legalnie
+ * blokować (`canBlock` — te same restrykcje parowe co oferta i walidacja).
+ * `hosts` można podać z zewnątrz, żeby nie liczyć mapy w pętli (L41: jedno
+ * źródło, jeden przebieg).
+ */
+export function blockRequirementCountOf(state, blockerId, hosts = null) {
+  const object = state.objects.get(blockerId);
+  if (!object) return 0;
+  let count = blockingRequirementCount(object);
+  const attackers = state.combat?.attackers ?? [];
+  if (attackers.length === 0) return count;
+  hosts ??= mustBlockHostCounts(state);
+  if (hosts.size === 0) return count;
+  for (const [hostId, requirements] of hosts) {
+    if (!attackers.includes(hostId)) continue;
+    if (!canBlock(state, state.objects.get(hostId), object)) continue;
+    count += requirements;
+  }
+  return count;
+}
+
+/**
  * Batch60 (Timely Interference — „blocks this turn if able"): LUSTRO
  * `mandatoryAttackerIds` po stronie obrońcy. JEDNO źródło prawdy
  * o blokerach wymuszonych (L41) — używane przez:
@@ -359,9 +428,10 @@ export function mandatoryAttackerIds(state, playerId) {
  * Lista to kandydaci objęci wymogami, nie nakaz pokrycia WSZYSTKICH naraz;
  * konflikty i liczbę wymogów rozstrzyga `maximalRequiredBlocks`.
  *
- * „If able" (CR 509.1): wymuszony jest stwór ze znacznikiem `blocksIfAble`,
- * który przechodzi filtr bloku (jak oferta: odkręcony, bez zakazów) i ma
- * parowo-legalnego atakującego (canBlock). Dwa analogi wyjątku M270
+ * „If able" (CR 509.1): wymuszony jest stwór z wymogiem bloku — flagowym
+ * (`blocksIfAble`, Batch60) albo CIĄGŁYM celowanym (`mustBlockHostCounts`,
+ * Seton's Desire) — który przechodzi filtr bloku (jak oferta: odkręcony, bez
+ * zakazów) i ma parowo-legalnego atakującego (canBlock). Dwa analogi wyjątku M270
  * (deadlock: wymóg bez legalnego wykonania):
  *   • „can't block alone" (CR 506.5) jako jedyny zdolny — nie może blokować;
  *   • WSZYSTKIE parowe opcje to atakujący z menace (CR 702.111b) przy
@@ -370,7 +440,7 @@ export function mandatoryAttackerIds(state, playerId) {
 export function mandatoryBlockerIds(state, playerId, problem = blockingProblem(state, playerId)) {
   const able = problem.blockers.filter((id) => problem.targets.get(id).length > 0);
   return able.filter((id) => {
-    if (blockingRequirementCount(state.objects.get(id)) === 0) return false;
+    if (blockRequirementCountOf(state, id, problem.mustBlockHosts) === 0) return false;
     if (problem.alone.has(id) && able.length < 2) return false;
     if (able.length < 2 && problem.targets.get(id).every((a) => problem.menace.has(a))) return false;
     return true;
@@ -1911,7 +1981,7 @@ export function blockerSeedAssignments(state, playerId) {
   const problem = blockingProblem(state, playerId);
   const maximum = maximalRequiredBlocks(state, playerId, null, problem);
   const legal = (assignment) => blockerDeclarationViolation(state, playerId, assignment, problem.slots) === null
-    && fulfilledBlockRequirements(state, assignment) >= maximum.count;
+    && fulfilledBlockRequirements(state, assignment, problem.mustBlockHosts) >= maximum.count;
   const seeds = [];
   const seen = new Set();
   const add = (assignment) => {
@@ -1994,7 +2064,10 @@ function blockingProblem(state, playerId) {
   const slots = new Map(blockers.map((id) => [id, blockSlotsFor(state, state.objects.get(id))]));
   const menace = new Set(attackers.filter((id) => hasKeyword(state, state.objects.get(id), 'menace')));
   const alone = new Set(blockers.filter((id) => hasAloneRestriction(state.objects.get(id), 'cantBlockAlone')));
-  return { attackers, blockers, targets, slots, menace, alone,
+  // Wymogi celowane liczone RAZ na problem (nie per bloker) — czyta je
+  // `blockRequirementCountOf`, `maximalRequiredBlocks` i `fulfilledBlockRequirements`.
+  const mustBlockHosts = mustBlockHostCounts(state);
+  return { attackers, blockers, targets, slots, menace, alone, mustBlockHosts,
     valid: (a) => blockerDeclarationViolation(state, playerId, a, slots) === null };
 }
 
@@ -2021,8 +2094,31 @@ export function blockerDeclarationViolation(state, playerId, assignments, slots 
 
 const blockAssignmentSize = (assignment) => Object.values(assignment).reduce((n, ids) => n + ids.length, 0);
 const copyBlockAssignment = (a) => Object.fromEntries(Object.entries(a).filter(([, ids]) => ids.length).map(([id, ids]) => [id, [...ids]]));
-function fulfilledBlockRequirements(state, assignment) {
-  return [...new Set(Object.values(assignment).flat())].reduce((n, id) => n + blockingRequirementCount(state.objects.get(id)), 0);
+/**
+ * CR 509.1c: liczba wymogów POSŁUCHANYCH przez daną deklarację.
+ * Wymóg flagowy („blocks if able") jest bezcelowy — wystarczy, że bloker blokuje
+ * cokolwiek, więc liczymy go raz na unikalnego blokera. Wymóg celowany
+ * (`must_block_enchanted`) jest spełniony TYLKO blokiem gospodarza aury, więc
+ * liczymy go per PARA (bloker, atakujący) — inaczej bloker zmuszony do bloku
+ * stwora A „spełniłby" wymóg blokując B (audyt PR #185 F-1).
+ */
+function fulfilledBlockRequirements(state, assignment, hosts = null) {
+  const pairs = Object.entries(assignment);
+  if (pairs.length === 0) return 0;
+  let total = 0;
+  const counted = new Set();
+  hosts ??= mustBlockHostCounts(state);
+  for (const [attackerId, ids] of pairs) {
+    const hostRequirements = hosts.get(attackerId) ?? 0;
+    for (const id of ids) {
+      if (!counted.has(id)) {
+        counted.add(id);
+        total += blockingRequirementCount(state.objects.get(id));
+      }
+      total += hostRequirements;
+    }
+  }
+  return total;
 }
 
 /**
@@ -2090,17 +2186,20 @@ function completeBlockingAssignment(problem, primary, forbidden = new Set()) {
  */
 function maximalRequiredBlocks(state, playerId, forced = null, problem = null) {
   // Tania ścieżka zwykłej walki: nie budujemy nawet grafu, gdy brak wymogów.
+  // Wymogi celowane (Seton's Desire) są liczone ze stanu, więc tania ścieżka
+  // musi je widzieć — ale mapa hostów powstaje tylko w combacie z atakującymi.
+  const hosts = problem?.mustBlockHosts ?? mustBlockHostCounts(state);
   if (forced?.length === 0 || !state.zones.battlefield.some((id) => {
     const o = state.objects.get(id);
-    return o?.controllerId === playerId && blockingRequirementCount(o) > 0;
+    return o?.controllerId === playerId && blockRequirementCountOf(state, id, hosts) > 0;
   })) return { count: 0, assignment: {} };
   problem ??= blockingProblem(state, playerId);
   forced ??= mandatoryBlockerIds(state, playerId, problem);
   if (forced.length === 0) return { count: 0, assignment: {} };
   const required = [...forced].sort((a, b) =>
-    blockingRequirementCount(state.objects.get(b)) - blockingRequirementCount(state.objects.get(a))
+    blockRequirementCountOf(state, b, hosts) - blockRequirementCountOf(state, a, hosts)
       || problem.targets.get(a).length - problem.targets.get(b).length);
-  const weights = required.map((id) => blockingRequirementCount(state.objects.get(id)));
+  const weights = required.map((id) => blockRequirementCountOf(state, id, hosts));
   const remaining = Array(required.length + 1).fill(0);
   for (let i = required.length - 1; i >= 0; i--) remaining[i] = remaining[i + 1] + weights[i];
   let best = { count: 0, assignment: {} }; let bestSize = 0;
@@ -2110,7 +2209,7 @@ function maximalRequiredBlocks(state, playerId, forced = null, problem = null) {
     if (best.count === remaining[0] && bestSize === required.length) return;
     const completed = completeBlockingAssignment(problem, primary, forbidden);
     if (!completed) return;
-    const fulfilled = fulfilledBlockRequirements(state, completed);
+    const fulfilled = fulfilledBlockRequirements(state, completed, hosts);
     const size = blockAssignmentSize(completed);
     if (fulfilled > best.count || (fulfilled === best.count && size < bestSize)) {
       best = { count: fulfilled, assignment: completed }; bestSize = size;
