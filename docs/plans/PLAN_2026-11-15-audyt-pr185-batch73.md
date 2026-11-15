@@ -172,8 +172,14 @@ GREEN → mutacja kontrolna → `npm test` + `npm run build` → commit + push**
       **Stan (2026-11-15):** W TOKU — z raportu audytu (`docs/audits/AUDYT_PR185_2026-11-15.md`,
       F-1…F-18) zrobione: F-5 Kessig `damage_each_opponent` (`ab8b822`), F-3 język
       deskryptorów celu + strażnik klasowy (`5ccfa46`), F-4+F-9 bramka upkeep (`1c3aed1`),
-      F-6 tył TDFC + `tapOtherArtifacts` (`ae24d01`). Pozostałe: F-7 (`ward` przez
-      `createCardDeck`), F-8 (`reanimatedValue` z P/T karty), F-10…F-18 (patrz tabela
+      F-6 tył TDFC + `tapOtherArtifacts` (`ae24d01`), F-7 kwota `ward {N}` przez
+      CAŁĄ ścieżkę danych (`d4e5547` — brakowało czterech dowiązań: `defineCard`,
+      `gameObjectDataOf` ×5 gałęzi, lista pól `installDeck`, kontrakt `addObject`;
+      oba zgadywania `?? 2` usunięte — w `wardAmountOf` i w `wardTargetTax` bota;
+      walidacja `defineCard`: keyword `ward` wymaga dodatniej całkowitej kwoty
+      i odwrotnie; 8 + 4 testy, 12/12 mutacji kontrolnych zabitych; bramy
+      10 341/10 341, build 79/5891,3 kB, benchmark 10/10). Pozostałe: F-8
+      (`reanimatedValue` z P/T karty), F-10…F-18 (patrz tabela
       E2.7–E2.13 raportu). H8/H9/H10 z rozpoznania: zweryfikowane sondami w E1 —
       craft i ward działają end-to-end (wadą była ścieżka DANYCH `ward`, czyli F-7),
       sesja przy seed 9 nie jest zepsuta (luką był helper `sesja()`, czyli F-13).
