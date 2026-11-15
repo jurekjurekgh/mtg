@@ -153,13 +153,18 @@ GREEN → mutacja kontrolna → `npm test` + `npm run build` → commit + push**
       `test/oracle-restrykcje-aktywacji-straznik.test.js` (6 testów) przegląda
       `oracleText` całego katalogu; 3 testy, 2 mutacje RED. Skutek `reanimate_under_your_control`
       zwraca ŹRÓDŁO (test koszt→skutek: poświęcony stwór w grobie, karta na polu bitwy).
-- [ ] E2.4 — H5: `test/real-cards-batch73.test.js` — legalny + nielegalny +
+- [x] E2.4 — H5: `test/real-cards-batch73.test.js` — legalny + nielegalny +
       sanity dla każdej z 11 kart (wzorzec `real-cards-batch72.test.js`).
-      **Stan (2026-11-15):** CZĘŚCIOWO — plik istnieje i ma 28 testów (pin danych
-      11 wpisów kontra snapshoty Oracle + arkusz kolekcji, tył DFC, Kessig ×3,
-      Leonin ×3, Seton's Desire ×8, Sawblades ×5, Necrosavant ×3, Bladewheel ×6),
-      ale F-11 audytu wymaga jeszcze zachowania/sanity dla kart bez własnej naprawy
-      (Might Beyond Reason, Get the Point, River Herald Guide, Plummet) — krok E2.9.
+      **Stan (2026-11-15):** ZROBIONE — plik ma 51 testów: pin danych 11 wpisów
+      kontra snapshoty Oracle + arkusz kolekcji, zachowanie każdej naprawy
+      (Kessig, Leonin ×3 + ward ×4, Seton's Desire ×8, Sawblades ×5, Necrosavant ×4,
+      Bladewheel ×7) oraz — domknięcie F-11 w kroku E2.9, commit `7e68325` —
+      sanity czterech kart bez własnej naprawy: Might Beyond Reason ×5 (delirium
+      jako warunek efektu, próg typów nie sztuk, liczone przy rozstrzygnięciu),
+      Get the Point ×3 (destroy + scry z decyzją blokującą), River Herald Guide ×6
+      (vigilance, explore z lądem/nie-lądem/pustą biblioteką/po śmierci źródła),
+      Plummet ×3 (wymóg flying, cel traci flying → `fizzled`, CR 608.2b).
+      9/9 mutacji kontrolnych zabitych.
 - [ ] E2.5 — H6: `rulings` w 10 snapshotach batcha 73 (ADR 0028 §2;
       `fetch_page` → `api.scryfall.com/cards/<set>/<nr>/rulings`, normalizacja
       `tools/fetch-card-rulings.mjs`).
@@ -184,7 +189,14 @@ GREEN → mutacja kontrolna → `npm test` + `npm run build` → commit + push**
       stałe `10 + (5*2) + 5` usunięte; 6 + 1 testów na kartach syntetycznych tym
       samym deskryptorem, 7/7 mutacji kontrolnych; bramy 10 348/10 348, build
       79/5892,7 kB, benchmark 10/10; sprostowany wpis „Jawne granice" §PMSSB-89).
-      Pozostałe: F-10…F-18 (patrz tabela
+      F-11 sanity czterech kart batcha + NOWE znalezisko F-19 (`7e68325` — explore
+      bez celu nie kładł licznika +1/+1: efekt brał eksplorujący permanent tylko
+      z `targets[0]`, a ETB River Herald Guide nie celuje; helper
+      `explorerOfExplore(targets, source)` = cel ?? źródło, jedno źródło dla obu
+      gałęzi explore, licznik tylko na polu bitwy — CR 701.44a/701.44b/122.1;
+      19 testów, 9/9 mutacji; bramy 10 367/10 367, build 79/5893,6 kB, benchmark
+      10/10; F-19 dopisany do raportu jako §8 „Znaleziska dodane w trakcie napraw").
+      Pozostałe: F-10, F-12…F-18 (patrz tabela
       E2.7–E2.13 raportu). H8/H9/H10 z rozpoznania: zweryfikowane sondami w E1 —
       craft i ward działają end-to-end (wadą była ścieżka DANYCH `ward`, czyli F-7),
       sesja przy seed 9 nie jest zepsuta (luką był helper `sesja()`, czyli F-13).
