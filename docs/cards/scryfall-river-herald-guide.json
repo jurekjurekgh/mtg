@@ -9,10 +9,46 @@
   "power": "3",
   "toughness": "1",
   "colors": ["G"],
+  "color_identity": ["G"],
+  "keywords": ["Vigilance","Explore"],
   "set": "lci",
   "set_name": "The Lost Caverns of Ixalan",
   "collector_number": "209",
   "rarity": "common",
   "image_uris": { "large": "https://cards.scryfall.io/large/front/9/e/9ea7e323-f329-4928-b25a-c0b44c5ac058.jpg?1783913740", "normal": "https://cards.scryfall.io/normal/front/9/e/9ea7e323-f329-4928-b25a-c0b44c5ac058.jpg?1783913740" },
+  "rulings": [
+    {
+      "date": "2023-11-10",
+      "source": "wotc",
+      "comment": "If an ability instructs a creature to explore, its controller reveals the top card of their library. If it's a land card, they'll put it into their hand. Otherwise, they'll put a +1/+1 counter on that creature, then choose to either leave that card on top of their library or put it into their graveyard."
+    },
+    {
+      "date": "2023-11-10",
+      "source": "wotc",
+      "comment": "Once an ability that causes a creature to explore begins to resolve, no player may take any other actions until it's done. Notably, opponents can't try to remove the exploring creature after you reveal a nonland card but before it receives a counter."
+    },
+    {
+      "date": "2023-11-10",
+      "source": "wotc",
+      "comment": "If no card is revealed, most likely because that player's library is empty, the exploring creature receives a +1/+1 counter."
+    },
+    {
+      "date": "2023-11-10",
+      "source": "wotc",
+      "comment": "If a resolving spell or ability instructs a specific creature to explore but that creature has left the battlefield, the creature still explores. If you reveal a nonland card this way, you won't put a +1/+1 counter on anything, but you may put the revealed card into your graveyard. Effects that trigger \"whenever a creature explores\" trigger as appropriate."
+    },
+    {
+      "date": "2023-11-10",
+      "source": "wotc",
+      "comment": "Some spells or abilities might cause a creature to explore multiple times in a row. If you reveal a nonland card when a creature explores and leave it on top of your library, then the creature explores again immediately afterwards, you'll reveal the same card again."
+    },
+    {
+      "date": "2023-11-10",
+      "source": "wotc",
+      "comment": "In some unusual cases, noncreature permanents may explore. For example, if the creature card returned by Defossilize is somehow not a creature once it's on the battlefield, it can still explore. You'll take all the same actions, and you may end up putting a +1/+1 counter on the permanent. (Note that some effects target a creature, and those effects would still require a legal target to have it explore.)"
+    }
+  ],
+  "rulingsSource": "https://api.scryfall.com/cards/lci/209/rulings",
+  "rulingsPobrano": "2026-11-15",
   "pobrano": "2026-11-11"
 }

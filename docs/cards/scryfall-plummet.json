@@ -12,5 +12,8 @@
   "collector_number": "188",
   "rarity": "common",
   "image_uris": { "large": "https://cards.scryfall.io/large/front/4/a/4a1a0c7b-ce1c-4284-9362-04b21861f69d.jpg?1783932960", "normal": "https://cards.scryfall.io/normal/front/4/a/4a1a0c7b-ce1c-4284-9362-04b21861f69d.jpg?1783932960" },
+  "rulings": [],
+  "rulingsSource": "https://api.scryfall.com/cards/m20/188/rulings",
+  "rulingsPobrano": "2026-11-15",
   "pobrano": "2026-11-11"
 }
