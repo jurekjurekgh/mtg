@@ -96,32 +96,32 @@ audyt → niedokończony plan → pętla jakości). Bez dodawania kart do katalo
       najnowszy handoff `HANDOFF_2026-11-11.md`.
 - [x] Pomiar bazowy `npm test` (10280/10280) i `npm run build` (79 / 5863,0 kB)
       z cichym logowaniem do `.arena/`.
-- [ ] Zapisanie tego planu, commit na `arena/4fa65e47-mtg`, push i otwarcie PR
-      przed jakimkolwiek kodowaniem.
+- [x] Zapisanie tego planu, commit na `arena/4fa65e47-mtg` (`dc29482`), push i otwarcie
+      PR **#186** przed jakimkolwiek kodowaniem.
 
 ## E1. Pełny audyt techniczny PR #185 (ADR 0020 B / ADR 0016)
 
-- [ ] Mapa **85/85** plików: `docs/audits/PR185_MAPA_PLIKOW_2026-11-15.md`
+- [x] Mapa **85/85** plików: `docs/audits/PR185_MAPA_PLIKOW_2026-11-15.md`
       (kotwica `^diff --git ` + porównanie z REST, L190).
-- [ ] Pobrać dosłowny tekst CR dla każdej reguły, o której będę orzekać
+- [x] Pobrać dosłowny tekst CR dla każdej reguły, o której będę orzekać
       (ADR 0030): craft (702.140), ward (702.21), threshold (502?/604?),
       wymagania blokowania (508.1d/509.1c), explore (701.44), delirium
       (207.2c), zdolności z grobu (113.6/604.3), „activate only during your
       upkeep" (602.2b/117.1a), LKI i zmiana stref (400.7). Źródło: mirror
       repozytoryjny CR 2026-11-06 (`tools/cr-numery.mjs`,
       `test/helpers/cr-numery-tabela.js`) + `fetch_page` dla brakujących.
-- [ ] Oracle kontra implementacja dla WSZYSTKICH 11 kart (snapshot
+- [x] Oracle kontra implementacja dla WSZYSTKICH 11 kart (snapshot
       `docs/cards/scryfall-*.json` jako źródło, ADR 0010 §2/§2a, ADR 0022):
       koszt, typy, P/T, linie tekstu, cele, restrykcje czasowe.
-- [ ] Weryfikacja H1–H10 sondami headless (repro PRZED naprawą, L11/L68/L111):
+- [x] Weryfikacja H1–H10 sondami headless (repro PRZED naprawą, L11/L68/L111):
       każda hipoteza dostaje mierzalny dowód albo zostaje odrzucona z powodem.
-- [ ] Audyt testów PR #185 pod kątem RED→GREEN i weryfikacji mutacyjnej (L13):
+- [x] Audyt testów PR #185 pod kątem RED→GREEN i weryfikacji mutacyjnej (L13):
       `test/audyt-pmssb89-batch73.test.js`, zmienione piny (CR cytaty, batch3,
       M228, M205, D/2), `library-manipulation-modal.test.js`,
       `bot-scoring-snapshot.json`.
-- [ ] Raport: `docs/audits/AUDYT_PR185_2026-11-15.md` (znaleziska z numerami
+- [x] Raport: `docs/audits/AUDYT_PR185_2026-11-15.md` (znaleziska z numerami
       F-1..F-n, dowody, cytaty CR, decyzja „naprawiam / zgłaszam właścicielowi").
-- [ ] Commit + push (mapa i raport osobno albo razem, byle zielone).
+- [x] Commit + push (mapa i raport razem, bez zmian w kodzie — bramy bazowe bez zmian).
 
 ## E2. Naprawy znalezisk (każda osobnym, samodzielnie zielonym commitem)
 
