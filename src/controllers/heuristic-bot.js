@@ -10941,7 +10941,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     for (const id of targetIds ?? []) {
       const o = objectOnBoard(view, id);
       if (!o || o.controllerId === view.playerId) continue;
-      const amount = o.ward ?? ((o.keywords ?? []).includes('ward') ? 2 : null);
+      // Audyt PR #185 (F-7): kwota z PlayerView (`entry.ward`, ADR 0017) — była
+      // tu druga kopia reguły „ward wynosi 2, skoro jest keyword" (L41), która
+      // zgadywała kwotę zamiast ją czytać.
+      const amount = o.ward ?? null;
       if (amount == null || amount <= 0) continue;
       if (open >= amount) { tax += amount; open -= amount; }
       else { tax += 200; } // brak many na dopłatę → wariant fiknie, poniżej passu

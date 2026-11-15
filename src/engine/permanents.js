@@ -1318,10 +1318,22 @@ export function effectiveSubtypesOnBattlefield(state, object) {
  * jedyne źródło w katalogu to zakryte permanenty (cloak/disguise,
  * CR 701.58a: „2/2 creature with ward {2}").
  */
+/**
+ * Kwota warda (CR 702.21a — „Ward [cost]"): tyle dopłaca przeciwnik, żeby
+ * czar/zdolność NIE została skontrowana. `null` = permanent nie ma warda.
+ *
+ * Audyt PR #185 (F-7): był tu fallback `object.ward ?? 2`. Kwota jest częścią
+ * mechaniki i podróżuje z danymi karty (rejestr → `gameObjectDataOf` →
+ * `installDeck` → kontrakt `addObject`), więc zgadywanie 2 maskowało dziurę
+ * w ścieżce danych: Leonin Lightbringer (ward {2}) działał przypadkiem, a karta
+ * z ward {1} albo {3} dostałaby złą kwotę bez żadnego błędu (klasa M379/L21).
+ * Zakrycie cloak/disguise nadaje kwotę jawnie (CR 701.58a i 702.168a — `ward: 2`
+ * w effects.js oraz resources.js), więc tu nie ma czego zgadywać.
+ */
 export function wardAmountOf(object, state = null) {
   if (!object) return null;
   if (!effectiveKeywords(object, state).includes('ward')) return null;
-  return object.ward ?? 2;
+  return object.ward ?? null;
 }
 
 export function effectiveKeywords(object, state = null) {

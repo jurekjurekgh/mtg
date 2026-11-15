@@ -48,6 +48,26 @@ export function defineCard(data) {
       throw new RangeError(`Keyword musi być małym snake_case (np. 'reach'): ${JSON.stringify(kw)}`);
     }
   }
+  // Ward (CR 702.21a — „Ward [cost] means ‘Whenever this permanent becomes the
+  // target of a spell or ability an opponent controls, counter that spell or
+  // ability unless that player pays [cost]'"): KWOTA jest częścią mechaniki,
+  // więc nie wolno jej zgadywać. Audyt PR #185 (F-7): `defineCard` w ogóle nie
+  // kopiował pola `ward`, a `wardAmountOf` miał fallback `?? 2` — Leonin
+  // Lightbringer (ward {2}) działał przypadkiem, a każda przyszła karta
+  // z ward {1}/{3} dostałaby po cichu kwotę 2 (klasa M379/L21). Walidacja
+  // w obu kierunkach: keyword bez kwoty i kwota bez keywordu to martwy wpis.
+  const keywordy = data.keywords ?? [];
+  if (keywordy.includes('ward') && !Number.isInteger(data.ward)) {
+    throw new RangeError(`Keyword 'ward' wymaga kwoty — dopisz pole ward: N (CR 702.21a, ${data.id})`);
+  }
+  if (data.ward != null) {
+    if (!Number.isInteger(data.ward) || data.ward < 1) {
+      throw new RangeError(`ward musi być dodatnią liczbą całkowitą (CR 702.21a): ${JSON.stringify(data.ward)} (${data.id})`);
+    }
+    if (!keywordy.includes('ward')) {
+      throw new RangeError(`Pole ward bez keywordu 'ward' jest martwe — wardAmountOf wymaga keywordu (${data.id})`);
+    }
+  }
   const abilities = (data.abilities ?? []).map((a) => Object.freeze({ ...a }));
   return Object.freeze({
     id: data.id,
@@ -356,6 +376,9 @@ export function defineCard(data) {
     endure: data.endure ?? null,
     // Toxic N (CR 702.164) — wartość liczbowa keyworda (Batch 45).
     toxic: data.toxic ?? null,
+    // Ward {N} (CR 702.21a, audyt PR #185 F-7): kwota dopłaty musi dojść do
+    // obiektu gry — patrz walidacja wyżej i `wardAmountOf` (permanents.js).
+    ward: data.ward ?? null,
     // Batch 46 (Bone Shredder): koszt echa (CR 702.30).
     echo: data.echo ?? null,
     // M259/B7 (CR 702.30 + 118.2): pipy kolorowe kosztu echa ({2}{B} — Bone

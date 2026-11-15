@@ -821,3 +821,106 @@ test('Bladewheel Chariot: bot liczy tap dwóch artefaktów jako koszt — tańsz
   const command = pick?.command ?? pick;
   assert.equal(command?.abilityIndex, 1, `bot wybiera tańszą aktywację: ${JSON.stringify(command)}`);
 });
+
+// ---------------------------------------------------------------------------
+// F-7 (E2.7): Leonin Lightbringer — „Ward {2}". Kwota dopłaty musi podróżować
+// z danymi karty (rejestr → materialize → installDeck → obiekt), a nie być
+// zgadywana: `wardAmountOf` miało fallback `object.ward ?? 2`, a ścieżka danych
+// w ogóle nie niosła pola, więc mechanika działała wyłącznie dlatego, że ta
+// karta ma drukowane {2}. CR 702.21a: „Ward is a triggered ability. Ward [cost]
+// means ‘Whenever this permanent becomes the target of a spell or ability an
+// opponent controls, counter that spell or ability unless that player pays
+// [cost].'" — dopłaca kontroler CZARU (that player), nie kontroler permanentu.
+// Ścieżkę danych pinuje test/audyt-pr185-f7-ward-sciezka-danych.test.js.
+// ---------------------------------------------------------------------------
+
+/**
+ * p2 rzuca Shocka ({R}, 2 obrażenia, any target) w Leonina 3/2 i doprowadza do
+ * rozstrzygnięcia triggera ward. `p2Extra` = mana p2 PONAD koszt rzutu: bez niej
+ * dopłata jest niemożliwa i silnik kontruje automatycznie (CR 702.21a +
+ * `producibleMana` w triggers.js — wybór bez alternatywy nie jest decyzją).
+ */
+function wardScena(state, { p2Extra = 0 } = {}) {
+  put(state, 'leonin', 'leonin-lightbringer', 'p1');
+  put(state, 'bolt', 'shock', 'p2', 'hand');
+  addMana(state, 'p2', 1 + p2Extra, { colors: ['R'] });
+  const cast = commands(state, 'p2')
+    .find((c) => c.type === 'cast_spell' && c.objectId === 'bolt' && (c.targets ?? []).includes('leonin'));
+  assert.ok(cast, 'Shock (any target) może celować w Leonina');
+  assert.equal(execute(state, cast).ok, true, 'rzut przyjęty');
+  assert.ok(eventTypes(state).includes('ability_triggered'), 'trigger ward wszedł na stos');
+  return cast;
+}
+
+const leoninWGrobie = (state) => state.zones.graveyard
+  .some((id) => state.objects.get(id)?.cardId === 'leonin-lightbringer');
+
+/**
+ * Rundy passów aż do OTWARCIA decyzji ward. Nie `resolveStack`: ten helper
+ * bierze pierwszą komendę `resolve_*`, a `resolve_ward_pay_choice` też tak się
+ * zaczyna — połknąłby decyzję, którą test ma zmierzyć.
+ */
+function doDecyzjiWard(state, limit = 8) {
+  for (let i = 0; i < limit && !state.pendingWardPay; i += 1) {
+    const pass = commands(state, state.turn.priorityPlayerId).find((c) => c.type === 'pass_priority');
+    if (!pass || !execute(state, pass).ok) return;
+  }
+}
+
+test('Leonin Lightbringer: ward {2} kontruje czar przeciwnika, który nie ma czym dopłacić (CR 702.21a)', () => {
+  const state = game(96, 'main', 'p2');
+  wardScena(state);
+  resolveStack(state);
+  assert.equal(state.pendingWardPay, null, 'bez many na dopłatę nie ma decyzji (wybór bez alternatywy)');
+  assert.equal(eventTypes(state).includes('ward_choice_required'), false, 'brak oferty dopłaty');
+  assert.ok(eventTypes(state).includes('spell_countered'), 'Shock skontrowany przez ward');
+  assert.equal(state.objects.get('leonin')?.damage ?? 0, 0, 'Leonin bez obrażeń');
+  assert.equal(leoninWGrobie(state), false, 'Leonin żyje');
+});
+
+test('Leonin Lightbringer: przeciwnik z maną dostaje decyzję dopłaty o kwocie Z DANYCH karty (CR 702.21a)', () => {
+  const state = game(97, 'main', 'p2');
+  wardScena(state, { p2Extra: 2 });
+  doDecyzjiWard(state);
+  const pending = state.pendingWardPay;
+  assert.ok(pending, 'decyzja dopłaty jest otwarta');
+  assert.equal(pending.playerId, 'p2', 'dopłaca kontroler czaru („unless that player pays")');
+  assert.equal(pending.amount, definition('leonin-lightbringer').ward,
+    'kwota pochodzi z danych karty (F-7: silnik niczego nie zgaduje)');
+  assert.ok(eventTypes(state).includes('ward_choice_required'), 'zdarzenie decyzji ward');
+  const offers = commands(state, 'p2').filter((c) => c.type === 'resolve_ward_pay_choice');
+  assert.deepEqual(offers.map((c) => c.pay).sort(), [false, true], 'wybór: zapłać albo nie');
+  assert.equal(execute(state, offers.find((c) => c.pay === true)).ok, true, 'dopłata przyjęta');
+  resolveStack(state);
+  assert.equal(eventTypes(state).includes('spell_countered'), false, 'opłacony czar NIE jest kontrowany');
+  assert.equal(leoninWGrobie(state), true, '2 obrażenia w 3/2 są śmiertelne — Leonin w grobie (CR 704.5g)');
+});
+
+test('Leonin Lightbringer: odmowa dopłaty kontruje czar, choć mana była (CR 702.21a)', () => {
+  const state = game(98, 'main', 'p2');
+  wardScena(state, { p2Extra: 2 });
+  doDecyzjiWard(state);
+  assert.ok(state.pendingWardPay, 'decyzja otwarta');
+  const refuse = commands(state, 'p2').find((c) => c.type === 'resolve_ward_pay_choice' && c.pay === false);
+  assert.ok(refuse, 'oferta odmowy');
+  assert.equal(execute(state, refuse).ok, true, 'odmowa przyjęta');
+  resolveStack(state);
+  assert.ok(eventTypes(state).includes('spell_countered'), 'Shock skontrowany');
+  assert.equal(leoninWGrobie(state), false, 'Leonin żyje');
+  assert.equal(state.objects.get('leonin')?.damage ?? 0, 0, 'bez obrażeń');
+});
+
+test('Leonin Lightbringer: WŁASNY czar nie odpala warda (CR 702.21a — „an opponent controls")', () => {
+  const state = game(99, 'main', 'p1');
+  put(state, 'leonin', 'leonin-lightbringer', 'p1');
+  put(state, 'bolt', 'shock', 'p1', 'hand');
+  addMana(state, 'p1', 1, { colors: ['R'] });
+  const cast = commands(state, 'p1')
+    .find((c) => c.type === 'cast_spell' && c.objectId === 'bolt' && (c.targets ?? []).includes('leonin'));
+  assert.ok(cast, 'własny Shock może celować we własnego Leonina');
+  assert.equal(execute(state, cast).ok, true, 'rzut przyjęty');
+  resolveStack(state);
+  assert.equal(state.pendingWardPay, null, 'brak decyzji dopłaty');
+  assert.equal(eventTypes(state).includes('spell_countered'), false, 'czar się rozstrzyga');
+  assert.equal(leoninWGrobie(state), true, '2 obrażenia w 3/2 — Leonin ginie bez ochrony warda');
+});

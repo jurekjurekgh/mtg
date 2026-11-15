@@ -23,6 +23,10 @@ export function gameObjectDataOf(card) {
     // green." Deskryptor musi dojść na obiekt gry (L21) — LAND ma osobną
     // gałąź materializacji niż stwory, więc pole dopisujemy tutaj.
     if (card.chooseColor) landData.chooseColor = card.chooseColor;
+    // Ward {N} (CR 702.21a, audyt PR #185 F-7): kwota dopłaty jest cechą karty
+    // i musi przejść na obiekt — gałęzie materializacji kopiują pola ręcznie
+    // (klasa Z5/L21: pominięcie = mechanika martwa w prawdziwej talii).
+    if (card.ward != null) landData.ward = card.ward;
     return landData;
   }
   if (card.types.includes('Creature')) {
@@ -61,6 +65,10 @@ export function gameObjectDataOf(card) {
     if (card.endure != null) data.endure = card.endure;
     // Toxic (CR 702.164): wartość na obiekcie gry (combat czyta source.toxic).
     if (card.toxic != null) data.toxic = card.toxic;
+    // Ward {N} (CR 702.21a, audyt PR #185 F-7): jw. — Leonin Lightbringer
+    // (Batch 73) miał `ward: 2` w katalogu, ale pole nie docierało na obiekt,
+    // a `wardAmountOf` zgadywało 2 z fallbacku.
+    if (card.ward != null) data.ward = card.ward;
     // Batch 46 (Bone Shredder): echo — koszt musi dojść na obiekt gry (L21).
     if (card.echo != null) data.echo = card.echo;
     // M259/B7: pipy kolorowe kosztu echa ({2}{B}) — jw. (L21).
@@ -123,6 +131,7 @@ export function gameObjectDataOf(card) {
     // zdolnościami, bez statystyk stwora. Na razie tylko typ — karty
     // planeswalkerów pojawią się w przyszłości (decyzja właściciela).
     const data = { kind: 'planeswalker', manaCost: card.manaCost, abilities: card.abilities ?? [], colors: colors(), cardName: card.name };
+    if (card.ward != null) data.ward = card.ward; // F-7: ward na każdym permanentie
     return data;
   }
   if (card.types.includes('Enchantment')) {
@@ -146,6 +155,7 @@ export function gameObjectDataOf(card) {
     // karta nie robiła NIC. Testy Batch 39 były zielone, bo czytały rozdziały
     // z REJESTRU zamiast z obiektu (martwy test — klasa L5/L21).
     if (card.saga) data.saga = card.saga;
+    if (card.ward != null) data.ward = card.ward; // F-7: ward na każdym permanentie
     return data;
   }
   if (card.types.includes('Artifact')) {
@@ -176,6 +186,7 @@ export function gameObjectDataOf(card) {
       data.power = card.power;
       data.toughness = card.toughness;
     }
+    if (card.ward != null) data.ward = card.ward; // F-7: ward na każdym permanentie
     return data;
   }
   if (card.spell && (card.types.includes('Instant') || card.types.includes('Sorcery'))) {

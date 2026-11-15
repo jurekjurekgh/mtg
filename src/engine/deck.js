@@ -151,6 +151,13 @@ export function installDeck(state, deck, { seed }) {
       xCost: card.xCost ?? null,
       surge: card.surge ?? null,
       toxic: card.toxic ?? null,
+      // Ward {N} (CR 702.21a, audyt PR #185 F-7): TA lista jest niezależna od
+      // `gameObjectDataOf` i od kontraktu `addObject` — pole pominięte w którymkolwiek
+      // z tych trzech miejsc ginie po cichu (klasa M379/L21: tak zginęły echo,
+      // surge, toxic, warp, madness, chooseColor, offspring). Leonin Lightbringer
+      // (Batch 73) miał ward {2} tylko w katalogu, więc mechanika działała
+      // z twardego fallbacku w `wardAmountOf`.
+      ward: card.ward ?? null,
       warp: card.warp ?? null,
       // Właściciel karty (CR 108.3) — jawny, żeby efekty „gains control of
       // all creatures they own" (Trostani Discordant) działały po zmianach
