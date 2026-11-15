@@ -61,9 +61,9 @@ test('PMSSB-89/A7: Spring-Loaded Sawblades DFC is offered and chosen', () => {
 // Wave B — activated abilities on battlefield permanents
 // ---------------------------------------------------------------------------
 
-test('PMSSB-89/B1: Leonin Lightbringer tap ability is used (not pass)', () => {
+test('PMSSB-89/B1: Leonin Lightbringer — brak zdolności aktywowanej w Oracle, bot pasuje', () => {
   const r = probeLeoninLightbringer();
-  assert.ok(r.chosen.startsWith('activate_ability'), `Leonin Lightbringer must use tap ability, got: ${r.chosen}`);
+  assert.ok(!r.chosen.startsWith('activate_ability'), `Leonin Lightbringer nie ma zdolności aktywowanej w Oracle, bot nie powinien aktywować, wybrał: ${r.chosen}`);
 });
 
 test('PMSSB-89/B2: Necrosavant reanimate ability is used (not pass)', () => {
@@ -71,9 +71,9 @@ test('PMSSB-89/B2: Necrosavant reanimate ability is used (not pass)', () => {
   assert.ok(r.chosen.startsWith('activate_ability'), `Necrosavant must use reanimate ability, got: ${r.chosen}`);
 });
 
-test('PMSSB-89/B3: Kessig Flamebreather tap-damage ability is used (not pass)', () => {
+test('PMSSB-89/B3: Kessig Flamebreather — brak zdolności aktywowanej w Oracle, bot pasuje', () => {
   const r = probeKessigFlamebreather();
-  assert.ok(r.chosen.startsWith('activate_ability'), `Kessig Flamebreather must use tap-damage ability, got: ${r.chosen}`);
+  assert.ok(!r.chosen.startsWith('activate_ability'), `Kessig Flamebreather nie ma zdolności aktywowanej w Oracle, bot nie powinien aktywować, wybrał: ${r.chosen}`);
 });
 
 // ---------------------------------------------------------------------------
