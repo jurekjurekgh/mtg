@@ -1370,7 +1370,16 @@ function describeEffect(e, ctx = {}) {
     detain: () => 'detain — do twojej następnej tury cel nie atakuje, nie blokuje i nie aktywuje zdolności',
     sacrifice_permanent: () => 'poświęć ten permanent',
     grant_keywords_until_end_of_turn: () => `zdobądź ${(e.keywords ?? []).map((k) => KEYWORD_LABELS[k] ?? k).join(', ')} do końca tury`,
-    must_block_enchanted: () => 'przy 7+ kartach w grobie: wszystkie stworzenia zdolne do blokowania zaklętego stwora musza go blokowac',
+    // Audyt PR #185 (F-17): próg Threshold to DANA karty (`minGraveyardCards`
+    // w deskryptorze albo w `condition` zdolności), nie literał prezentera
+    // (ADR 0002) — wpisane na sztywno „7+" kłamałoby dla każdej innej karty
+    // z tym efektem i innym progiem. Poprawna polszczyzna (M127/L29): było
+    // „musza go blokowac".
+    must_block_enchanted: () => {
+      const próg = e.minGraveyardCards ?? ctx.condition?.minGraveyardCards;
+      const skutek = 'wszystkie stworzenia zdolne do blokowania zaklętego stwora muszą go blokować';
+      return próg != null ? `przy ${próg}+ kartach w twoim grobie: ${skutek}` : skutek;
+    },
     // M73c: pełna mapa pozostałych typów — koniec „efekt." i surowych slugów.
     // M190/A (uwaga właściciela, Heap Gate): obie zdolności many miały
     // identyczny opis („dodaj manę"), więc w panelu różniły się wyłącznie
@@ -1871,6 +1880,15 @@ function describeStatic(ability) {
   if (cond.controlsArtifact) parts.push('gdy kontrolujesz artefakt');
   if (cond.hasCounter) parts.push(`gdy ma licznik ${counterLabelGen(cond.hasCounter)}`);
   if (cond.minCreatureCardsInGraveyard) parts.push(`przy ${cond.minCreatureCardsInGraveyard}+ stworach w grobie`);
+  // Audyt PR #185 (F-17): Threshold (`condition.minGraveyardCards`) — Seton's
+  // Desire. Gdy zdolność niesie też deskryptor efektu, próg opisuje SAM efekt
+  // (`describeEffect(eff, { condition: cond })` niżej) — jedno źródło (L41),
+  // bez „przy 7+ … : przy 7+ …" na kaflu.
+  const statyczneEfekty = (Array.isArray(ability?.effect) ? ability.effect : (ability?.effect ? [ability.effect] : []))
+    .filter((eff) => eff && typeof eff.type === 'string' && eff.type !== '');
+  if (cond.minGraveyardCards != null && statyczneEfekty.length === 0) {
+    parts.push(`przy ${cond.minGraveyardCards}+ kartach w twoim grobie`);
+  }
   if (ability.cantBlock || ability.cant_block) parts.push('nie może blokować');
   if (ability.mustAttack) parts.push('musi atakować');
   if (ability.cantAttackAlone) parts.push('nie może atakować sam');
@@ -1893,6 +1911,19 @@ function describeStatic(ability) {
   }
   if (ability.faceDownEnterFlyingCounter) parts.push('zakryte stwory wchodzą z licznikiem flying');
   if (ability.costModifier) parts.push('obniża koszt czarów');
+  // Klasa M73d/M138 (pusty kafelek): zdolność STATYCZNA, której treścią jest sam
+  // deskryptor efektu, nie była opisywana WCALE — `describeStatic` znał tylko
+  // pump/keywords/warunki/mustAttack, a `describeAbility` dla `type === 'static'`
+  // nie schodzi do `describeEffect`. Pomiar PRZED (`.arena/probe-e212a.mjs`):
+  // `rulesText(Seton's Desire) === ""`, a Glitch Ghost Surveyor i Leonin Surveyor
+  // gubiły linię „start your engines!" (w całym katalogu tylko te 3 karty mają
+  // statyczny efekt, więc zakres zmiany jest zmierzony, nie zgadywany).
+  // Warunek z karty idzie do opisu jako `ctx.condition` — stąd etykieta efektu
+  // bierze próg Threshold (ADR 0002: wartość z deskryptora, nie literał).
+  for (const eff of statyczneEfekty) {
+    const opis = describeEffect(eff, { condition: cond });
+    if (opis) parts.push(opis);
+  }
   return parts.join(' · ');
 }
 
