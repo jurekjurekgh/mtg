@@ -924,3 +924,350 @@ test('Leonin Lightbringer: WŁASNY czar nie odpala warda (CR 702.21a — „an o
   assert.equal(eventTypes(state).includes('spell_countered'), false, 'czar się rozstrzyga');
   assert.equal(leoninWGrobie(state), true, '2 obrażenia w 3/2 — Leonin ginie bez ochrony warda');
 });
+
+// ---------------------------------------------------------------------------
+// F-11 (E2.9): sanity/zachowanie czterech kart batcha, które nie miały własnej
+// naprawy (Might Beyond Reason, Get the Point, River Herald Guide, Plummet).
+// Audyt zmierzył, że batch 73 nie miał ŻADNEGO testu kart, a 6 z 7 sond
+// mutacyjnych przeżywało; piny danych (koszt/typy/P/T/tekst kontra snapshoty
+// Oracle) są na górze pliku — tu jest ZACHOWANIE: scenariusz legalny +
+// nielegalny per karta (kryterium ukończenia planu batcha, commit #11).
+// ---------------------------------------------------------------------------
+
+/**
+ * Rundy SAMYCH passów (bez komend `resolve_*`): decyzje blokujące — scry,
+ * explore, ward — muszą zostać OTWARTE, bo to je mierzymy. `resolveStack`
+ * bierze pierwszą komendę `resolve_*`, więc połknąłby decyzję (lekcja z F-7).
+ */
+function pasyBezDecyzji(state, limit = 14) {
+  for (let i = 0; i < limit && state.zones.stack.length; i += 1) {
+    const pass = commands(state, state.turn.priorityPlayerId).find((c) => c.type === 'pass_priority');
+    if (!pass || !execute(state, pass).ok) return;
+  }
+}
+
+const liczniki = (state, id) => state.objects.get(id)?.counters?.['+1/+1'] ?? 0;
+const wGrobie = (state, cardId) => state.zones.graveyard
+  .some((id) => state.objects.get(id)?.cardId === cardId);
+
+/** Biblioteka p1 od wierzchu (`zones.library[0]` = wierzch). */
+function biblioteka(state, cardIds) {
+  cardIds.forEach((cardId, i) => put(state, `lib-${i}`, cardId, 'p1', 'library'));
+}
+
+// === Might Beyond Reason (645, SOI) — „Put two +1/+1 counters on target
+// creature. Delirium — Put three +1/+1 counters on that creature instead if
+// there are four or more card types among cards in your graveyard." ===
+
+test('Might Beyond Reason: „three instead" to dwa efekty licznikowe, a delirium jest warunkiem drugiego (CR 207.2c)', () => {
+  const spell = definition('might-beyond-reason').spell;
+  assert.deepEqual(spell.targets, [{ type: 'creature' }], 'cel: stwór (dowolny, także własny)');
+  assert.deepEqual(spell.effects, [
+    { type: 'add_counter', counter: '+1/+1', amount: 2 },
+    { type: 'add_counter', counter: '+1/+1', amount: 1, condition: { delirium: true } },
+  ], '„two … three instead" = 2 + warunkowy 1: słowo zdolności jest warunkiem EFEKTU, nie osobną gałęzią');
+  assert.equal(spell.timing, 'instant', 'Instant (Oracle)');
+});
+
+/** Scena MBR: cel na polu, grób o zadanych typach, mana {3}{G}, czar w ręce. */
+function mbrScena(state, { graveyard, cel = 'river-herald-guide' }) {
+  put(state, 'cel', cel, 'p1');
+  ready(state, 'cel');
+  put(state, 'mbr', 'might-beyond-reason', 'p1', 'hand');
+  graveyard.forEach((cardId, i) => put(state, `gy-${i}`, cardId, 'p1', 'graveyard'));
+  addMana(state, 'p1', 3);
+  addMana(state, 'p1', 1, { colors: ['G'] });
+  const cast = commands(state, 'p1').find((c) => c.type === 'cast_spell' && c.objectId === 'mbr');
+  assert.ok(cast, 'MBR jest oferowany (cel legalny)');
+  assert.equal(execute(state, cast).ok, true, 'rzut przyjęty');
+  pasyBezDecyzji(state);
+  return state;
+}
+
+test('Might Beyond Reason: bez delirium dwa liczniki — River Herald Guide 3/1 → 5/3', () => {
+  const state = mbrScena(game(780), { graveyard: ['plummet', 'river-herald-guide', 'unbreakable-bond'] });
+  assert.equal(liczniki(state, 'cel'), 2, 'trzy typy kart w grobie to za mało na delirium');
+  assert.equal(pt(state, 'cel'), '5/3', 'dwa liczniki +1/+1');
+});
+
+test('Might Beyond Reason: delirium (cztery lub więcej TYPÓW kart w grobie) daje trzy liczniki — 3/1 → 6/4', () => {
+  const state = mbrScena(game(781), {
+    graveyard: ['plummet', 'river-herald-guide', 'unbreakable-bond', 'basic-plains', 'setons-desire'],
+  });
+  assert.equal(liczniki(state, 'cel'), 3, 'pięć typów: Instant, Creature, Sorcery, Land, Enchantment');
+  assert.equal(pt(state, 'cel'), '6/4', 'trzy liczniki +1/+1');
+});
+
+test('Might Beyond Reason: CZTERY karty jednego typu to NIE delirium — liczy typy, nie sztuki', () => {
+  const state = mbrScena(game(782), { graveyard: ['plummet', 'shock', 'get-the-point', 'might-beyond-reason'] });
+  const typyWGrobie = new Set(state.zones.graveyard.flatMap((id) => state.objects.get(id)?.types ?? []));
+  assert.deepEqual([...typyWGrobie], ['Instant'], 'warunek testu: wszystkie karty w grobie (4 + rozstrzygnięty MBR) to Instanty');
+  assert.equal(liczniki(state, 'cel'), 2, 'wszystkie to Instanty — jeden typ, więc dwa liczniki');
+  assert.equal(pt(state, 'cel'), '5/3');
+});
+
+test('Might Beyond Reason: delirium jest liczone PRZY ROZSTRZYGNIĘCIU, nie przy rzucaniu (CR 608.2)', () => {
+  const state = game(783);
+  put(state, 'cel', 'river-herald-guide', 'p1');
+  ready(state, 'cel');
+  put(state, 'mbr', 'might-beyond-reason', 'p1', 'hand');
+  put(state, 'plains-in-hand', 'basic-plains', 'p1', 'hand');
+  // Przy rzucie trzy typy (za mało), w oknie odpowiedzi dochodzi czwarty.
+  ['plummet', 'river-herald-guide', 'unbreakable-bond'].forEach((cardId, i) => put(state, `gy-${i}`, cardId, 'p1', 'graveyard'));
+  addMana(state, 'p1', 3);
+  addMana(state, 'p1', 1, { colors: ['G'] });
+  const cast = commands(state, 'p1').find((c) => c.type === 'cast_spell' && c.objectId === 'mbr');
+  assert.equal(execute(state, cast).ok, true, 'rzut przyjęty');
+  assert.equal(state.zones.stack.length, 1, 'czar na stosie (okno odpowiedzi)');
+  moveObjectDirectly(state, 'plains-in-hand', 'graveyard', 'gy-dorzucony');
+  pasyBezDecyzji(state);
+  assert.equal(liczniki(state, 'cel'), 3, 'czwarty typ doszedł w oknie → trzy liczniki (CR 608.2)');
+  assert.equal(pt(state, 'cel'), '6/4');
+});
+
+test('Might Beyond Reason: bez stwora brak oferty, a wymuszony rzut jest odrzucony (CR 115.1b/601.2c)', () => {
+  const state = game(784);
+  put(state, 'mbr', 'might-beyond-reason', 'p1', 'hand');
+  put(state, 'land', 'basic-plains', 'p1');
+  addMana(state, 'p1', 3);
+  addMana(state, 'p1', 1, { colors: ['G'] });
+  const oferty = commands(state, 'p1').filter((c) => c.type === 'cast_spell' && c.objectId === 'mbr');
+  assert.equal(oferty.length, 0, 'ląd nie jest stworem — brak legalnego celu, brak oferty');
+  const wymuszony = execute(state, { type: 'cast_spell', playerId: 'p1', objectId: 'mbr', targets: ['land'] });
+  assert.equal(wymuszony.ok, false, 'komenda spoza oferty odrzucona');
+  assert.match(wymuszony.reason ?? '', /cel|illegal/i, `powód mówi o celu: ${wymuszony.reason}`);
+  assert.equal(state.zones.hand.includes('mbr'), true, 'odrzucona komenda niczego nie rusza — czar zostaje w ręce');
+});
+
+// === Get the Point (647, RNA) — „Destroy target creature. Scry 1." ===
+
+test('Get the Point: deskryptor niesie OBA zdania Oracle — zniszczenie i scry 1', () => {
+  const spell = definition('get-the-point').spell;
+  assert.deepEqual(spell.targets, [{ type: 'creature' }], 'cel: stwór');
+  assert.deepEqual(spell.effects, [{ type: 'destroy_permanent' }, { type: 'scry', amount: 1 }],
+    '„Destroy target creature. Scry 1." — dwa efekty, drugi nie może zniknąć');
+});
+
+test('Get the Point: niszczy stwora i OTWIERA decyzję scry, która blokuje inne działania (CR 701.22a)', () => {
+  const state = game(785);
+  put(state, 'foe', 'rustwing-falcon', 'p2');
+  put(state, 'gtp', 'get-the-point', 'p1', 'hand');
+  biblioteka(state, ['basic-plains', 'shock', 'plummet', 'river-herald-guide']);
+  addMana(state, 'p1', 3);
+  addMana(state, 'p1', 2, { colors: ['B'] });
+  const cast = commands(state, 'p1').find((c) => c.type === 'cast_spell' && c.objectId === 'gtp');
+  assert.ok(cast, 'oferta rzutu z celem w stwora przeciwnika');
+  assert.equal(execute(state, cast).ok, true);
+  pasyBezDecyzji(state);
+  assert.ok(wGrobie(state, 'rustwing-falcon'), 'cel zniszczony (CR 704.5g — w grobie jako karta)');
+  assert.ok(state.pendingScry, 'scry 1 otwiera decyzję (nie dzieje się po cichu)');
+  assert.deepEqual(state.pendingScry.objectIds, ['lib-0'], 'przeglądana jest dokładnie jedna karta z wierzchu');
+  assert.equal(execute(state, { type: 'pass_priority', playerId: 'p1' }).reason, 'scry_unresolved',
+    'dopóki decyzja scry nie jest rozstrzygnięta, inne komendy są odrzucane');
+  assert.equal(execute(state, { type: 'resolve_scry', playerId: 'p1', bottomIds: ['lib-0'] }).ok, true,
+    'wybór „na spód" przyjęty');
+  assert.deepEqual(state.zones.library.map((id) => state.objects.get(id).cardId),
+    ['shock', 'plummet', 'river-herald-guide', 'basic-plains'],
+    'karta z wierzchu wędruje na spód, reszta zachowuje kolejność (CR 701.22a)');
+  assert.equal(state.pendingScry, null, 'decyzja zamknięta');
+});
+
+test('Get the Point: nie celuje w nic poza stworem — ląd i gracz nie mają oferty (CR 115.1b)', () => {
+  const state = game(786);
+  put(state, 'land', 'basic-plains', 'p2');
+  put(state, 'gtp', 'get-the-point', 'p1', 'hand');
+  addMana(state, 'p1', 3);
+  addMana(state, 'p1', 2, { colors: ['B'] });
+  const oferty = commands(state, 'p1').filter((c) => c.type === 'cast_spell' && c.objectId === 'gtp');
+  assert.equal(oferty.length, 0, 'brak stwora = brak legalnego celu = brak oferty');
+  for (const cel of ['land', 'p2']) {
+    const wymuszony = execute(state, { type: 'cast_spell', playerId: 'p1', objectId: 'gtp', targets: [cel] });
+    assert.equal(wymuszony.ok, false, `cel ${cel} odrzucony`);
+    assert.match(wymuszony.reason ?? '', /cel|illegal/i, `powód mówi o celu: ${wymuszony.reason}`);
+  }
+  assert.equal(state.pendingScry, null, 'bez rzutu nie ma też scry');
+});
+
+// === River Herald Guide (652, LCI) — „Vigilance // When this creature enters,
+// it explores." (3/1 za {2}{G}) ===
+
+test('River Herald Guide: vigilance to keyword, a ETB to deskryptor explore bez celu („it explores")', () => {
+  const card = definition('river-herald-guide');
+  assert.deepEqual(card.keywords, ['vigilance'], 'Vigilance z Oracle');
+  assert.equal(card.power, 3, '3/1 (snapshot Oracle)');
+  assert.equal(card.toughness, 1);
+  const [trigger] = card.abilities;
+  assert.equal(trigger.type, 'triggered');
+  assert.deepEqual(trigger.trigger, { event: 'enter_battlefield' }, '„When this creature enters"');
+  assert.deepEqual(trigger.effect, { type: 'explore' }, '„it explores" — eksploruje ŹRÓDŁO, nie wybrany cel');
+  assert.equal(trigger.targets, null, 'zdolność nie celuje (CR 701.44a: licznik idzie na eksplorujący permanent)');
+});
+
+test('River Herald Guide: vigilance — atakuje i zostaje odkręcony (CR 702.20)', () => {
+  const state = game(787, 'declare_attackers', 'p1');
+  put(state, 'guide', 'river-herald-guide', 'p1');
+  put(state, 'leonin', 'leonin-lightbringer', 'p1');
+  ready(state, 'guide');
+  ready(state, 'leonin');
+  assert.equal(execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['guide', 'leonin'] }).ok, true,
+    'atak obu stworów legalny');
+  assert.equal(state.objects.get('guide').tapped, false, 'vigilance: atak nie tapuje (CR 702.20)');
+  assert.equal(state.objects.get('leonin').tapped, true, 'kontrola: stwór bez vigilance tapuje (CR 508.1f)');
+});
+
+/** RHG rzucony z ręki przy bibliotece `top` — zwraca id obiektu na polu bitwy. */
+function guideWchodzi(state, top) {
+  biblioteka(state, top);
+  put(state, 'guide', 'river-herald-guide', 'p1', 'hand');
+  addMana(state, 'p1', 2);
+  addMana(state, 'p1', 1, { colors: ['G'] });
+  const cast = commands(state, 'p1').find((c) => c.type === 'cast_permanent' && c.objectId === 'guide');
+  assert.ok(cast, 'stwór z ręki jest oferowany jako cast_permanent');
+  assert.equal(execute(state, cast).ok, true, 'rzut przyjęty');
+  pasyBezDecyzji(state);
+  const naPolu = state.zones.battlefield.find((id) => state.objects.get(id)?.cardId === 'river-herald-guide');
+  assert.ok(naPolu, 'Guide wszedł na pole bitwy');
+  return naPolu;
+}
+
+test('River Herald Guide: explore z LĄDEM na wierzchu — ląd do ręki, bez licznika i bez decyzji (CR 701.44a)', () => {
+  const state = game(788);
+  const guide = guideWchodzi(state, ['basic-plains', 'shock', 'plummet']);
+  assert.equal(state.pendingExplore, null, 'gałąź lądu nie otwiera decyzji');
+  assert.ok(eventTypes(state).includes('card_revealed'), 'odsłonięcie karty jest w logu');
+  assert.ok(state.zones.hand.some((id) => state.objects.get(id)?.cardId === 'basic-plains'),
+    'odsłonięty ląd trafia do ręki (CR 701.44a)');
+  assert.equal(liczniki(state, guide), 0, 'ląd na wierzchu = brak licznika +1/+1');
+  assert.equal(pt(state, guide), '3/1', 'ciało bez zmian');
+  assert.deepEqual(state.zones.library.map((id) => state.objects.get(id).cardId), ['shock', 'plummet'],
+    'ląd opuścił bibliotekę');
+});
+
+test('River Herald Guide: explore z NIE-LĄDEM — licznik +1/+1 na Guide i decyzja wierzch/grób (CR 701.44a)', () => {
+  // F-19 (znalezisko E2.9): efekt `explore` brał licznik z `targets[0]`, a ETB
+  // Guide'a NIE celuje („it explores") — więc licznik nie trafiał nigdzie
+  // (zmierzone: `counters: {}`, P/T 3/1 po explore). CR 701.44a: „Otherwise,
+  // that player puts a +1/+1 counter on the exploring permanent" — eksplorujący
+  // permanent to ŹRÓDŁO zdolności, gdy efekt nie ma celu.
+  const state = game(789);
+  const guide = guideWchodzi(state, ['shock', 'plummet', 'basic-plains']);
+  assert.ok(state.pendingExplore, 'nie-ląd otwiera decyzję „wierzch albo grób"');
+  assert.equal(state.pendingExplore.cardId, 'shock', 'odsłonięta karta');
+  assert.equal(state.pendingExplore.sourceCardId, 'river-herald-guide', 'decyzja nazywa źródło eksploracji (zgłoszenie H)');
+  assert.equal(liczniki(state, guide), 1, 'licznik +1/+1 NA EKSPLORUJĄCYM PERMANENCIE (F-19)');
+  assert.equal(pt(state, guide), '4/2', '3/1 + licznik = 4/2');
+  const oferty = commands(state, 'p1').filter((c) => c.type === 'resolve_explore_choice');
+  assert.deepEqual(oferty.map((c) => c.putInGraveyard).sort(), [false, true], 'wybór: wierzch albo grób');
+  assert.equal(execute(state, { type: 'resolve_explore_choice', playerId: 'p2', putInGraveyard: true }).reason,
+    'explore_not_your_decision', 'decyzja należy do kontrolera eksploracji');
+  assert.equal(execute(state, { type: 'resolve_explore_choice', playerId: 'p1', putInGraveyard: false }).ok, true,
+    'wybór „na wierzch" przyjęty');
+  assert.deepEqual(state.zones.library.map((id) => state.objects.get(id).cardId), ['shock', 'plummet', 'basic-plains'],
+    'karta zostaje na wierzchu biblioteki');
+  assert.equal(state.zones.graveyard.length, 0, 'nic nie trafiło do grobu');
+  assert.equal(liczniki(state, guide), 1, 'licznik zostaje po decyzji (CR 701.44a — licznik przed wyborem karty)');
+});
+
+test('River Herald Guide: explore z nie-lądem — wybór „do grobu" miele odsłoniętą kartę', () => {
+  const state = game(790);
+  const guide = guideWchodzi(state, ['shock', 'plummet', 'basic-plains']);
+  assert.ok(state.pendingExplore, 'decyzja otwarta');
+  assert.equal(execute(state, { type: 'resolve_explore_choice', playerId: 'p1', putInGraveyard: true }).ok, true);
+  assert.ok(wGrobie(state, 'shock'), 'odsłonięty Shock w grobie');
+  assert.deepEqual(state.zones.library.map((id) => state.objects.get(id).cardId), ['plummet', 'basic-plains'],
+    'karta opuściła bibliotekę');
+  assert.equal(liczniki(state, guide), 1, 'licznik niezależny od wyboru karty');
+  assert.equal(state.pendingExplore, null, 'decyzja zamknięta');
+});
+
+test('River Herald Guide: explore przy PUSTEJ bibliotece i tak daje licznik (CR 701.44a/b)', () => {
+  // „If a land card is revealed this way" jest fałszywe, gdy nic nie odsłonięto,
+  // więc działa gałąź „Otherwise … +1/+1 counter"; permanent i tak „explores"
+  // (CR 701.44b — nawet gdy część kroków była niemożliwa). Pin audytu PR #134
+  // mierzył to dla Guidestone Compass (explore z CELEM); tu jest ta sama reguła
+  // dla źródła bez celu (F-19).
+  const state = game(791);
+  const guide = guideWchodzi(state, []);
+  assert.equal(state.pendingExplore, null, 'nie ma czego odsłonić → brak decyzji');
+  assert.equal(liczniki(state, guide), 1, 'licznik +1/+1 na Guide (F-19)');
+  assert.equal(pt(state, guide), '4/2');
+});
+
+// === Plummet (655, M20) — „Destroy target creature with flying." ===
+
+test('Plummet: niszczy stwora z lataniem (scenariusz legalny)', () => {
+  const state = game(792);
+  put(state, 'falcon', 'rustwing-falcon', 'p2');
+  put(state, 'plummet', 'plummet', 'p1', 'hand');
+  addMana(state, 'p1', 1);
+  addMana(state, 'p1', 1, { colors: ['G'] });
+  const oferty = commands(state, 'p1').filter((c) => c.type === 'cast_spell' && c.objectId === 'plummet');
+  assert.equal(oferty.length, 1, 'dokładnie jeden legalny cel (stwór z flying)');
+  assert.deepEqual(oferty[0].targets, ['falcon']);
+  assert.equal(execute(state, oferty[0]).ok, true, 'rzut przyjęty');
+  pasyBezDecyzji(state);
+  assert.equal(state.zones.battlefield.includes('falcon'), false, 'Falcon zszedł z pola');
+  assert.ok(wGrobie(state, 'rustwing-falcon'), 'zniszczony stwór w grobie właściciela (CR 704.5g + 108.3)');
+});
+
+test('Plummet: stwór BEZ latania nie jest legalnym celem (CR 115.1b/601.2c)', () => {
+  const state = game(793);
+  put(state, 'guide', 'river-herald-guide', 'p2'); // 3/1, vigilance — bez flying
+  put(state, 'plummet', 'plummet', 'p1', 'hand');
+  addMana(state, 'p1', 1);
+  addMana(state, 'p1', 1, { colors: ['G'] });
+  assert.equal(commands(state, 'p1').filter((c) => c.type === 'cast_spell' && c.objectId === 'plummet').length, 0,
+    'brak legalnego celu → brak oferty');
+  const wymuszony = execute(state, { type: 'cast_spell', playerId: 'p1', objectId: 'plummet', targets: ['guide'] });
+  assert.equal(wymuszony.ok, false, 'wymuszony rzut odrzucony');
+  assert.match(wymuszony.reason ?? '', /flying/i, `powód nazywa brakujący keyword: ${wymuszony.reason}`);
+  assert.equal(state.zones.battlefield.includes('guide'), true, 'cel nietknięty');
+});
+
+test('Plummet: cel, który STRACIŁ latanie przed rozstrzygnięciem, unieważnia czar (CR 608.2b)', () => {
+  const state = game(794);
+  put(state, 'falcon', 'rustwing-falcon', 'p2');
+  put(state, 'plummet', 'plummet', 'p1', 'hand');
+  addMana(state, 'p1', 1);
+  addMana(state, 'p1', 1, { colors: ['G'] });
+  const cast = commands(state, 'p1').find((c) => c.type === 'cast_spell' && c.objectId === 'plummet');
+  assert.equal(execute(state, cast).ok, true, 'rzut w latającego Falcona przyjęty');
+  const falcon = state.objects.get('falcon');
+  state.objects.set('falcon', Object.freeze({ ...falcon, keywords: [], lostKeywordsUntilEOT: ['flying'] }));
+  pasyBezDecyzji(state);
+  const resolved = state.events.filter((e) => e.type === 'spell_resolved').at(-1);
+  assert.equal(resolved?.fizzled, true, 'wszystkie wybrane cele nielegalne → czar się nie rozstrzyga');
+  assert.equal(state.zones.battlefield.includes('falcon'), true, 'Falcon przeżył (efekt nie zaszedł)');
+  assert.ok(wGrobie(state, 'plummet'), 'Plummet schodzi z gry do grobu jak każdy rozstrzygany/kontrowany instant');
+});
+
+test('River Herald Guide: explore rozstrzyga się po śmierci Guide’a, ale licznik nie trafia na nie-permanent (CR 122.1)', () => {
+  // Trigger explore nie ma intervening-if, więc wchodzi na stos i rozstrzyga się
+  // nawet bez źródła (CR 603.3/608.2b — „last known information"), ale liczniki
+  // istnieją tylko na permanentach (CR 122.1): eksplorujący permanent, który
+  // zszedł z pola, nie dostaje +1/+1. Zmiana strefy tworzy NOWY obiekt (CR 400.7),
+  // więc stary id nie jest już permanentem — bramka strefy w efekcie explore.
+  const state = game(796);
+  biblioteka(state, ['shock', 'plummet']);
+  put(state, 'guide', 'river-herald-guide', 'p1', 'hand');
+  addMana(state, 'p1', 2);
+  addMana(state, 'p1', 1, { colors: ['G'] });
+  const cast = commands(state, 'p1').find((c) => c.type === 'cast_permanent' && c.objectId === 'guide');
+  assert.equal(execute(state, cast).ok, true, 'rzut przyjęty');
+  const krok = () => {
+    const pass = commands(state, state.turn.priorityPlayerId).find((c) => c.type === 'pass_priority');
+    return pass ? execute(state, pass).ok : false;
+  };
+  krok();
+  krok();
+  const naPolu = state.zones.battlefield.find((id) => state.objects.get(id)?.cardId === 'river-herald-guide');
+  assert.ok(naPolu, 'Guide wszedł, a jego trigger explore jest na stosie');
+  assert.equal(state.zones.stack.length, 1, 'trigger czeka na rozstrzygnięcie (okno odpowiedzi)');
+  applyEffect(state, { type: 'destroy_permanent' }, { id: 'src', controllerId: 'p2', cardId: 'shock' }, [naPolu]);
+  assert.ok(wGrobie(state, 'river-herald-guide'), 'Guide zniszczony w oknie odpowiedzi');
+  for (let i = 0; i < 8 && state.zones.stack.length; i += 1) krok();
+  assert.ok(eventTypes(state).includes('card_revealed'), 'odsłonięcie i tak zaszło (trigger bez intervening-if)');
+  assert.ok(state.pendingExplore, 'decyzja „wierzch albo grób" nadal należy do kontrolera');
+  assert.equal(state.events.filter((e) => e.type === 'counter_added').length, 0,
+    'żaden licznik nie został położony (CR 122.1 — liczniki tylko na permanentach)');
+});
