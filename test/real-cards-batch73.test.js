@@ -1271,3 +1271,38 @@ test('River Herald Guide: explore rozstrzyga się po śmierci Guide’a, ale lic
   assert.equal(state.events.filter((e) => e.type === 'counter_added').length, 0,
     'żaden licznik nie został położony (CR 122.1 — liczniki tylko na permanentach)');
 });
+
+// --- F-10 (audyt PR #185, ADR 0030/L57): Leonin Lightbringer i Kessig
+// Flamebreather NIE mają zdolności aktywowanych. Komentarz PMSSB-89 w
+// `src/controllers/heuristic-bot.js` opisywał „Leonin Lightbringer ({W},{T} tap)"
+// i „Kessig Flamebreather ({2}{R},{T} damage)" jako karty wyceniane przez
+// `tapTargetValue`/`damageTargetValue`/`tapBodyCost` — czyli jako posiadające
+// zdolności, których snapshoty Oracle tego PR nie znają (oba wpisy miały
+// fabrykowane zdolności aktywowane, usunięte w ostatnim commicie PR #185 po tym,
+// jak czerwieniły `ability-cost-pips`). Ten pin jest STRAŻNIKIEM (L13): pilnuje,
+// żeby fabrykacja nie wróciła do katalogu razem z fałszywym opisem w kodzie.
+test('F-10: Leonin Lightbringer i Kessig Flamebreather bez zdolności aktywowanych (Oracle)', () => {
+  const aktywowane = (id) => (definition(id).abilities ?? []).filter((a) => a.type === 'activated');
+  assert.deepEqual(aktywowane('leonin-lightbringer'), [],
+    'Leonin: fabrykowana zdolność {W},{T} tap wróciła do katalogu (Oracle zna tylko ward + pump statyczny)');
+  assert.deepEqual(aktywowane('kessig-flamebreather'), [],
+    'Kessig: fabrykowana zdolność {2}{R},{T} damage wróciła do katalogu (Oracle zna tylko trigger)');
+
+  // docs/cards/scryfall-leonin-lightbringer.json: „Ward {2} (Whenever this
+  // creature becomes the target of a spell or ability an opponent controls,
+  // counter it unless that player pays {2}.) / As long as this creature is
+  // equipped, it gets +1/+1."
+  const leonin = definition('leonin-lightbringer');
+  assert.ok(leonin.keywords?.includes('ward'), 'Leonin: ward z Oracle');
+  assert.equal(leonin.ward, 2, 'Leonin: ward {2} (F-7 — jedyna karta z ward w katalogu)');
+  const statyczna = (leonin.abilities ?? []).find((a) => a.type === 'static');
+  assert.deepEqual(statyczna?.condition, { equipped: true }, 'Leonin: pump warunkowy „as long as equipped"');
+  assert.deepEqual(statyczna?.pump, { power: 1, toughness: 1 }, 'Leonin: +1/+1');
+
+  // docs/cards/scryfall-kessig-flamebreather.json: „Whenever you cast a
+  // noncreature spell, this creature deals 1 damage to each opponent."
+  const trigger = (definition('kessig-flamebreather').abilities ?? []).find((a) => a.type === 'triggered');
+  assert.equal(trigger?.trigger?.event, 'you_cast_noncreature_spell', 'Kessig: trigger, nie zdolność aktywowana');
+  assert.deepEqual(trigger?.effect, { type: 'damage_each_opponent', amount: 1 },
+    'Kessig: 1 obrażenie każdemu przeciwnikowi (deskryptor `damage_each_opponent` — bez celowania)');
+});

@@ -16878,12 +16878,8 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // Replacing shallow scoring with genuine play-pattern analysis:
         // WHEN (phase/step), WHO (target selection), WHAT (opportunity cost),
         // WHICH (sacrifice choice), and WHETHER (hard gates from card text).
-
-        // PMSSB-89: Proper pro-player scoring for Batch 73 activated abilities.
-        // Replacing shallow scoring with genuine play-pattern analysis:
-        // WHEN (phase/step), WHO (target selection), WHAT (opportunity cost),
-        // WHICH (sacrifice choice), and WHETHER (hard gates from card text).
         // Wszystkie rozpoznawane po deskryptorach (ADR 0002), nie po nazwach kart.
+        // Audyt PR #185 (F-10): ten akapit stał tu DOSŁOWNIE dwa razy pod rząd.
 
         // === Graveyard reanimate + sacrificeCreature (Necrosavant pattern) ===
         // Karta: „{3}{B}{B}, Sacrifice a creature: Return this card from your
@@ -16927,12 +16923,23 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           score += reanimatedValue - sacrificeLoss;
         }
 
-        // Note: Leonin Lightbringer ({W},{T} tap) and Kessig Flamebreather
-        // ({2}{R},{T} damage) already get proper scoring via existing generic
-        // paths — tapTargetValue for tap effects, damageTargetValue for damage,
-        // and tapBodyCost for the opportunity cost of tapping the source. Those
-        // generic scorings already encode the pro-player logic (target value,
-        // timing, lethal vs chip). No card-specific override needed here.
+        // Audyt PR #185 (F-10, ADR 0030/L57): poprzedni komentarz w tym miejscu
+        // twierdził, że „Leonin Lightbringer ({W},{T} tap)" i „Kessig Flamebreather
+        // ({2}{R},{T} damage)" są już wyceniane przez `tapTargetValue`,
+        // `damageTargetValue` i `tapBodyCost`. Snapshoty Oracle tego PR
+        // (`docs/cards/scryfall-leonin-lightbringer.json`,
+        // `docs/cards/scryfall-kessig-flamebreather.json`) nie znają takich zdolności:
+        //   Leonin Lightbringer — „Ward {2} (…) As long as this creature is
+        //     equipped, it gets +1/+1." (ward wycenia `wardTargetTax` — audyt
+        //     F-7; warunkowy pump statyczny nie jest zdolnością aktywowaną),
+        //   Kessig Flamebreather — „Whenever you cast a noncreature spell, this
+        //     creature deals 1 damage to each opponent." (trigger, nie aktywacja).
+        // W ścieżce `activate_ability` nie ma więc dla tych dwóch kart czego
+        // wyceniać. Fabrykowane zdolności aktywowane zostały z katalogu usunięte
+        // (ostatni commit PR #185), a pin Oracle stoi w
+        // `test/real-cards-batch73.test.js` (F-10: zero zdolności aktywowanych,
+        // ward {2} + pump `equipped` u Leonina, trigger `you_cast_noncreature_spell`
+        // u Kessiga) — powrót fabrykacji czerwieni test, nie komentarz.
         // PMSSB-66: ODROCZENIE. Poza oknem end step przeciwnika (i poza walką) zdolność za manę o
         // trwałym skutku nie jest grywalna teraz — tę samą manę zapłacimy za darmo w oknie. Wynik ≤ −koszt,
         // więc pass wygrywa. Walka wyłączona: licznik +1/+1 może zmienić blok/atak w tym samym kroku.
