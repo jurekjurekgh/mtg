@@ -7,7 +7,7 @@ import { nextTimestamp, timestampOf, attachmentTimestampOf } from './timestamps.
 // reguły stamtąd robiłoby cykl, a build odmawia cykli (ADR 0011; L171).
 import { countGraveyardCardTypes } from './graveyard-types.js';
 import { LINKED_EXILE_CAST_DURATION, isLinkedExileCastGrant } from './linked-exile-cast.js';
-import { attachmentGrant, attachmentsAttachedTo, effectiveColors, effectiveProtectionFromColors, effectiveProtectionQualities, isProtectedFromSource, isTargetingBlockedByProtection, sourceHasProtectionQuality } from './attachments.js';
+import { attachmentGrant, attachmentsAttachedTo, effectiveColors, effectiveProtectionFromColors, effectiveProtectionQualities, isAttachedEquipment, isProtectedFromSource, isTargetingBlockedByProtection, sourceHasProtectionQuality } from './attachments.js';
 // M110: helpery ochrony przed JAKOŚCIĄ mieszkają w attachments.js (razem
 // z ochroną kolorową); permanents.js re-eksportuje je, bo stamtąd biorą je
 // combat.js, effects.js i spells.js (i żeby nie robić cyklu importów).
@@ -513,6 +513,19 @@ export function staticConditionHolds(state, object, condition) {
   // Resurrected Cultist i triggery; L41/L48). Próg 4 z reguły, nie z karty.
   if (condition.delirium) {
     return countGraveyardCardTypes(state, object.controllerId, CARD_TYPES) >= 4;
+  }
+  // Leonin Lightbringer (Batch 73, audyt PR #185 F-2): „As long as this creature
+  // is equipped, it gets +1/+1." CR 301.5a: „The creature an Equipment is
+  // attached to is called the ‘equipped creature.' The Equipment is attached to,
+  // or ‘equips,' that creature." — czyli WARUNEK dotyczy wyłącznie Equipmentu:
+  // aura „enchant creature" nie wyposaża (CR 303.4b: obiekt załączony aurą jest „enchanted", nie „equipped"). Dotąd klucza
+  // `equipped` nie było w tej funkcji, więc nieznany warunek zwracał `false`
+  // (cichy no-op, klasa L21) i karta zostawała 3/2 zamiast 4/3.
+  // Jedno źródło: ten sam predykat załączenia, który czyta reszta silnika
+  // (`attachments.js` → `isAttachedEquipment`, L41/L48).
+  if (condition.equipped != null) {
+    const equipped = attachmentsAttachedTo(state, object.id).some(isAttachedEquipment);
+    return condition.equipped ? equipped : !equipped;
   }
   return false;
 }

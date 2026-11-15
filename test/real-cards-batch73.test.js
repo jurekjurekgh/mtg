@@ -22,6 +22,7 @@ import { createCardDeck } from '../src/cards/materialize.js';
 import { jumpToStep } from '../src/engine/turn.js';
 import { addMana } from '../src/engine/resources.js';
 import { effectivePower, effectiveToughness } from '../src/engine/permanents.js';
+import { attachAuraToCreature, attachEquipmentToCreature } from '../src/engine/attachments.js';
 
 const registry = createCardRegistry();
 const definition = (id) => registry.get(id);
@@ -164,6 +165,49 @@ test('Kessig Flamebreather: rzucenie czaru niebędącego stworem zadaje 1 obraż
   assert.equal(lifeOf(state, 'p1'), 20, 'kontroler źródła jest nietknięty (each OPPONENT)');
   assert.ok(!eventTypes(state).includes('damage_fizzled'), 'trigger nie fizzluje');
   assert.ok(eventTypes(state).includes('ability_triggered'), 'trigger wszedł na stos');
+});
+
+// ---------------------------------------------------------------------------
+// F-2 (E2.2): Leonin Lightbringer — „As long as this creature is equipped, it
+// gets +1/+1." (warunek `equipped`, CR 301.5a)
+// ---------------------------------------------------------------------------
+
+test('Leonin Lightbringer: pump statyczny ma warunek `equipped` i kwoty +1/+1 z Oracle', () => {
+  const ability = definition('leonin-lightbringer').abilities.find((a) => a.type === 'static');
+  assert.ok(ability, 'zdolność statyczna istnieje');
+  assert.deepEqual(ability.condition, { equipped: true }, 'warunek z Oracle („as long as … equipped")');
+  assert.deepEqual(ability.pump, { power: 1, toughness: 1 }, '+1/+1 z Oracle');
+  assert.deepEqual([definition('leonin-lightbringer').power, definition('leonin-lightbringer').toughness], [3, 2],
+    'drukowane 3/2');
+  assert.ok(definition('leonin-lightbringer').keywords.includes('ward'), 'Ward {2} jako keyword');
+});
+
+test('Leonin Lightbringer: 3/2 bazowo, 4/3 gdy wyposażony, z powrotem 3/2 po odłączeniu (CR 301.5a)', () => {
+  const state = game();
+  put(state, 'leonin', 'leonin-lightbringer', 'p1');
+  put(state, 'cloak', 'cloak-of-the-bat', 'p1');
+  assert.equal(pt(state, 'leonin'), '3/2', 'bez sprzętu drukowane 3/2');
+  attachEquipmentToCreature(state, 'cloak', 'leonin');
+  assert.equal(state.objects.get('cloak').attachedTo, 'leonin', 'sprzęt przyłączony do stwora');
+  assert.equal(pt(state, 'leonin'), '4/3', 'Oracle: „As long as this creature is equipped, it gets +1/+1"');
+  // Odłączenie (np. sprzęt zniszczony) cofa pump — warunek jest ciągły (CR 611.3a).
+  state.objects.set('cloak', Object.freeze({ ...state.objects.get('cloak'), attachedTo: null, zone: 'graveyard' }));
+  state.zones.battlefield = state.zones.battlefield.filter((id) => id !== 'cloak');
+  state.zones.graveyard = [...state.zones.graveyard, 'cloak'];
+  assert.equal(pt(state, 'leonin'), '3/2', 'po utracie sprzętu wraca 3/2');
+});
+
+test('Leonin Lightbringer: AURA nie jest sprzętem — „equipped" nie zachodzi od enchant creature (CR 301.5a/303.4b)', () => {
+  const state = game();
+  put(state, 'leonin', 'leonin-lightbringer', 'p1');
+  put(state, 'aura', 'messengers-speed', 'p1'); // Enchant creature, trample + haste — bez P/T
+  attachAuraToCreature(state, 'aura', 'leonin');
+  assert.equal(state.objects.get('aura').attachedTo, 'leonin', 'aura przyłączona');
+  assert.equal(pt(state, 'leonin'), '3/2', 'aura nie „wyposaża" stwora — pump z `equipped` nie działa');
+  // Ten sam stwór z aurą I sprzętem dostaje pump (sprzęt decyduje).
+  put(state, 'cloak', 'cloak-of-the-bat', 'p1');
+  attachEquipmentToCreature(state, 'cloak', 'leonin');
+  assert.equal(pt(state, 'leonin'), '4/3', 'sprzęt przy aurze nadal daje +1/+1');
 });
 
 test('Kessig Flamebreather: obrażenia są nie-combat, a trigger nie odpala się po rzuceniu stwora', () => {
