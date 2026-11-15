@@ -178,8 +178,13 @@ GREEN → mutacja kontrolna → `npm test` + `npm run build` → commit + push**
       oba zgadywania `?? 2` usunięte — w `wardAmountOf` i w `wardTargetTax` bota;
       walidacja `defineCard`: keyword `ward` wymaga dodatniej całkowitej kwoty
       i odwrotnie; 8 + 4 testy, 12/12 mutacji kontrolnych zabitych; bramy
-      10 341/10 341, build 79/5891,3 kB, benchmark 10/10). Pozostałe: F-8
-      (`reanimatedValue` z P/T karty), F-10…F-18 (patrz tabela
+      10 341/10 341, build 79/5891,3 kB, benchmark 10/10), F-8 wycena reanimacji
+      z P/T karty (`c6fe973` — helper `graveyardBodyValue` jako JEDNO źródło skali
+      `10 + 2P + T` dla gałęzi `cast_spell`, `activate_ability` i aktywacji Z GROBU;
+      stałe `10 + (5*2) + 5` usunięte; 6 + 1 testów na kartach syntetycznych tym
+      samym deskryptorem, 7/7 mutacji kontrolnych; bramy 10 348/10 348, build
+      79/5892,7 kB, benchmark 10/10; sprostowany wpis „Jawne granice" §PMSSB-89).
+      Pozostałe: F-10…F-18 (patrz tabela
       E2.7–E2.13 raportu). H8/H9/H10 z rozpoznania: zweryfikowane sondami w E1 —
       craft i ward działają end-to-end (wadą była ścieżka DANYCH `ward`, czyli F-7),
       sesja przy seed 9 nie jest zepsuta (luką był helper `sesja()`, czyli F-13).
