@@ -155,7 +155,10 @@ GREEN → mutacja kontrolna → `npm test` + `npm run build` → commit + push**
       zwraca ŹRÓDŁO (test koszt→skutek: poświęcony stwór w grobie, karta na polu bitwy).
 - [x] E2.4 — H5: `test/real-cards-batch73.test.js` — legalny + nielegalny +
       sanity dla każdej z 11 kart (wzorzec `real-cards-batch72.test.js`).
-      **Stan (2026-11-15):** ZROBIONE — plik ma 51 testów: pin danych 11 wpisów
+      **Stan (2026-11-15):** ZROBIONE — plik ma 52 testy (51 + pin F-10 z E2.12, commit
+      `f00e581`: Leonin Lightbringer = ward {2} + statyczny `condition.equipped` bez żadnej
+      aktywacji, Kessig Flamebreather = trigger `damage_each_opponent` bez aktywacji): pin danych
+      11 wpisów
       kontra snapshoty Oracle + arkusz kolekcji, zachowanie każdej naprawy
       (Kessig, Leonin ×3 + ward ×4, Seton's Desire ×8, Sawblades ×5, Necrosavant ×4,
       Bladewheel ×7) oraz — domknięcie F-11 w kroku E2.9, commit `7e68325` —
@@ -165,16 +168,38 @@ GREEN → mutacja kontrolna → `npm test` + `npm run build` → commit + push**
       (vigilance, explore z lądem/nie-lądem/pustą biblioteką/po śmierci źródła),
       Plummet ×3 (wymóg flying, cel traci flying → `fizzled`, CR 608.2b).
       9/9 mutacji kontrolnych zabitych.
-- [ ] E2.5 — H6: `rulings` w 10 snapshotach batcha 73 (ADR 0028 §2;
+- [x] E2.5 — H6: `rulings` w 10 snapshotach batcha 73 (ADR 0028 §2;
       `fetch_page` → `api.scryfall.com/cards/<set>/<nr>/rulings`, normalizacja
       `tools/fetch-card-rulings.mjs`).
-- [ ] E2.6 — H7: sprostowanie planu PMSSB-89 i wpisu w `docs/PMSSB.md`
+      **Stan (2026-11-15):** ZROBIONE jako F-18 audytu, commit `d77baa2` — 18 wpisów WotC
+      w 10 snapshotach (Might Beyond Reason 5, River Herald Guide 6, Spring-Loaded Sawblades 4,
+      Get the Point 1, Seton's Desire 1, Necrosavant 1; potwierdzone puste: Messenger's Speed,
+      Leonin Lightbringer, Kessig Flamebreather, Plummet), wszystkie z `rulingsSource`
+      i `rulingsPobrano`; pokrycie repo 214 → 224 z 652; `keywords` + `color_identity`
+      dla 9 z 10 (Plummet jawnie na liście wyjątków — obiekt karty nie dał się pobrać:
+      `SignatureDoesNotMatch` proxy, endpoint rulingów odpowiedział); zapis przez
+      `normalizeRulings`/`applyRulings` narzędzia (L41), tożsamość kart potwierdzona `oracle_id`.
+      Nowy strażnik `test/audyt-pr185-f18-rulingi-batch73.test.js` (4 testy) z częścią
+      strukturalną: snapshot z `pobrano` ≥ 2026-10-01 musi mieć `rulings` i endpoint Scryfall
+      w `rulingsSource`; 8/8 mutacji kontrolnych RED; bramy 10 380/10 380, build 79/5896,1 kB.
+- [x] E2.6 — H7: sprostowanie planu PMSSB-89 i wpisu w `docs/PMSSB.md`
       (Oracle z snapshotów; usunięcie gapów o zdolnościach, których nie ma;
       status zgodny z pomiarem, L92/L142).
-- [ ] E2.7 — H8/H9/H10 i wszystko, co wyjdzie w E1 ponad listę: naprawa albo
+      **Stan (2026-11-15):** ZROBIONE jako F-16 audytu, commit `067e6dc` — 7 sprostowań
+      w `docs/PMSSB.md` (konwencja: stare zdanie przekreślone + `**SPROSTOWANE 2026-11-15
+      (audyt PR #185, F-16…)**` z pomiarem): wiersz tabeli zbiorczej (linia 71), Leonin
+      Lightbringer i Kessig Flamebreather opisani jako karty z tap-zdolnościami, których NIE mają
+      (Oracle: ward {2} + statyczny `equipped`; trigger `you_cast_noncreature_spell`), punkt
+      „Tap-zdolności" (połączony z F-20), „Bramki" (`npm test` 10 280/10 280 i `ability-cost-pips`
+      9/9 na stanie końcowym PR — przyczyną czerwieni były FABRYKOWANE zdolności, nie „2
+      pre-existing fail"), „Otwarte" (wszystkie 10 kart talio­walnych jest w 9 taliach, nie w
+      żadnej) i „Jawne granice". Brakujące wpisy dokumentacyjne dopisane w commicie `a764f63`:
+      „2026-11-11 — Batch 73" i „2026-11-15 — Audyt techniczny PR #185" w
+      `docs/PROJECT_HISTORY.md` oraz **M464** w `docs/ENGINE_MILESTONES.md`.
+- [x] E2.7 — H8/H9/H10 i wszystko, co wyjdzie w E1 ponad listę: naprawa albo
       jawne „nie błąd, bo <cytat CR>" w raporcie (L57: rozbieżność ze
       zgłoszeniem/dokumentem rozstrzyga reguła, nie wygoda).
-      **Stan (2026-11-15):** W TOKU — z raportu audytu (`docs/audits/AUDYT_PR185_2026-11-15.md`,
+      **Stan (2026-11-15):** ZROBIONE — z raportu audytu (`docs/audits/AUDYT_PR185_2026-11-15.md`,
       F-1…F-18) zrobione: F-5 Kessig `damage_each_opponent` (`ab8b822`), F-3 język
       deskryptorów celu + strażnik klasowy (`5ccfa46`), F-4+F-9 bramka upkeep (`1c3aed1`),
       F-6 tył TDFC + `tapOtherArtifacts` (`ae24d01`), F-7 kwota `ward {N}` przez
@@ -196,8 +221,33 @@ GREEN → mutacja kontrolna → `npm test` + `npm run build` → commit + push**
       gałęzi explore, licznik tylko na polu bitwy — CR 701.44a/701.44b/122.1;
       19 testów, 9/9 mutacji; bramy 10 367/10 367, build 79/5893,6 kB, benchmark
       10/10; F-19 dopisany do raportu jako §8 „Znaleziska dodane w trakcie napraw").
-      Pozostałe: F-10, F-12…F-18 (patrz tabela
-      E2.7–E2.13 raportu). H8/H9/H10 z rozpoznania: zweryfikowane sondami w E1 —
+      **Dokończone w E2.12/E2.13:** F-13 harness sesji potwierdza pauzy bota, D/2 wrócił na
+      seed 9 (`22976e2`; mutacja F13-c PRZEŻYŁA → martwe wywołanie usunięte, L21), F-14
+      przywrócony integracyjny pin surveil/FoW na re-hunted seedach 1/7/13 (`6954146`, 4/4
+      mutacje, slow 282/282 — L25: re-hunt zamiast kasacji pinu), F-17 kafelek Seton's Desire
+      przestał milczeć, a próg Threshold jest brany z danych karty (`18fb76c`, 5/5 mutacji;
+      root cause głębszy niż w raporcie: `describeAbility` dla `type==='static'` oddaje
+      sterowanie do `describeStatic`, który nie znał `ability.effect`, więc próg drukował się
+      dwa razy — L41), F-10 zdublowany blok komentarza PMSSB-89 usunięty, fałszywy „Note:
+      Leonin/Kessig" zastąpiony sprostowaniem z cytatem Oracle + pin (`f00e581`, 5/5 mutacji,
+      `test/real-cards-batch73.test.js` 52 testy), F-12 próg benchmarku vs aggro 0.63 → **0.69**
+      z pomiaru 672 meczów + ślad regeneracji golden-mastera per para (`bfa36d6`), F-15/F-16
+      lekcje **L192** („pre-existing" wymaga pomiaru bazy PR) i **L193** (rotacja próbki =
+      migracja z czterema śladami) dopisane od razu w formie zwięzłej + kondensacja **24**
+      istniejących wpisów `docs/LESSONS.md` (L13, L26, L40, L51, L52, L70, L75, L86, L90, L93,
+      L94, L105, L108, L117, L120, L126, L128, L129, L136, L137, L166, L169, L189, L193 —
+      pomiar porównaniem treści wpisów PRZED/PO; L91 i L95, wymienione w wiadomości commitu
+      `a764f63` z dopiskiem „zachowany", NIE zostały zmienione) pod budżet lektury startowej
+      (~99 442 z 100 000 tokenów; numery, daty i tytuły wszystkich 184 lekcji bez zmian,
+      7 przykładów przeniesionych 1:1 do `docs/LESSONS_PRZYPADKI.md`) i wpisy Batch 73 +
+      audytu w `docs/PROJECT_HISTORY.md` oraz M464 w `docs/ENGINE_MILESTONES.md` (`a764f63`,
+      `067e6dc`), F-20 sonda PMSSB-89 miała MARTWY blok main (`import.meta.url ===
+      process.argv[1]` nigdy nie zachodzi → pusty stdout i kod 0), guard przepisany na konwencję
+      repo, 10 etykiet z Oracle, 3 piny, 7/7 mutacji (`aca6b6b`), F-18 rulingi w 10 snapshotach
+      (`d77baa2`, patrz E2.5). Wszystkie znaleziska F-1…F-20 zamknięte; bramy: `npm test`
+      **10 380/10 380**, `npm run build` **79/5896,1 kB**, benchmark **10/10**,
+      `node tools/cr-numery.mjs` OK.
+      H8/H9/H10 z rozpoznania: zweryfikowane sondami w E1 —
       craft i ward działają end-to-end (wadą była ścieżka DANYCH `ward`, czyli F-7),
       sesja przy seed 9 nie jest zepsuta (luką był helper `sesja()`, czyli F-13).
 
