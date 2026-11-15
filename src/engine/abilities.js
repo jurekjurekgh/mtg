@@ -111,6 +111,20 @@ function maxSpeedHolds(state, playerId, ability) {
  */
 function abilityConditionFailure(state, playerId, ability, sourceObject = null) {
   if (!maxSpeedHolds(state, playerId, ability)) return 'Zdolność wymaga max speed (4)';
+  // Necrosavant (Batch 73, audyt PR #185 F-4): „Activate only during your
+  // upkeep" — CR 602.1b (tekst ograniczający CZAS aktywacji działa w każdej
+  // chwili i nie jest częścią efektu) + CR 602.5 (nie wolno zacząć aktywacji
+  // zabronionej). Bramka siedzi w tym JEDNYM miejscu, więc oferta
+  // (`legalActivatedAbilities`) i walidacja (`activateAbility`) czytają tę samą
+  // regułę i nie mogą się rozjechać (L41/L48). „YOUR upkeep" = krok tury
+  // AKTYWNEGO gracza — lustro bramki forecastu niżej w tym pliku.
+  // Dotąd reguła istniała TYLKO jako kara w heurystyce bota
+  // (`step !== 'upkeep' → finish(-100)`), więc silnik przyjmował aktywację
+  // w fazie głównej i w kroku końcowym (F-9).
+  if (ability?.onlyInStep != null
+    && (state.turn?.step !== ability.onlyInStep || state.turn.activePlayerId !== playerId)) {
+    return `Zdolność można aktywować tylko w kroku ${ability.onlyInStep} swojej tury`;
+  }
   if (ability?.condition?.delirium === true && graveyardCardTypeCount(state, playerId) < 4) {
     return 'Delirium wymaga czterech typów kart w grobie';
   }
@@ -202,7 +216,7 @@ export function effectiveAbilityManaCost(state, playerId, ability, sourceObject)
   return base;
 }
 
-export function createAbility({ type, cost = null, effect, trigger, keyword = null, targets = null, cycling = null, channel = null, reinforce = null, bloodrush = null, forecast = false, grantsExtraBlockWithCounter = null, condition = null, pump = null, keywords = null, timing = 'instant', oncePerTurn = false, mustAttack = false, cantBeBlocked = false, scope = null, costModifier = null, costReduction = null, fromHand = false, fromGraveyard = false, cantAttackAlone = false, cantBlockAlone = false, cantAttackUnlessDefenderHasFlying = false, cantAttackUnlessDefenderPoisoned = false, opponentChoosesTarget = null, faceDownEnterFlyingCounter = false, cantBeBlockedExceptByColors = null, cantBeBlockedBySubtypes = null, cantBeBlockedByKeywords = null, cantBeBlockedByTypes = null, cantBeBlockedByPower = null, storied = false, landwalk = null, onNthResolve = null, preventDamageByRemovingCounter = null, preventCombatDamageToController = null, entersUntapped = null, characteristicDefining = false }) {
+export function createAbility({ type, cost = null, effect, trigger, keyword = null, targets = null, cycling = null, channel = null, reinforce = null, bloodrush = null, forecast = false, grantsExtraBlockWithCounter = null, condition = null, pump = null, keywords = null, timing = 'instant', oncePerTurn = false, mustAttack = false, cantBeBlocked = false, scope = null, costModifier = null, costReduction = null, fromHand = false, fromGraveyard = false, cantAttackAlone = false, cantBlockAlone = false, cantAttackUnlessDefenderHasFlying = false, cantAttackUnlessDefenderPoisoned = false, opponentChoosesTarget = null, faceDownEnterFlyingCounter = false, cantBeBlockedExceptByColors = null, cantBeBlockedBySubtypes = null, cantBeBlockedByKeywords = null, cantBeBlockedByTypes = null, cantBeBlockedByPower = null, storied = false, onlyInStep = null, landwalk = null, onNthResolve = null, preventDamageByRemovingCounter = null, preventCombatDamageToController = null, entersUntapped = null, characteristicDefining = false }) {
   if (!Object.values(ABILITY_TYPE).includes(type)) throw new TypeError('Nieprawidłowy typ zdolności');
   if (!['instant', 'sorcery'].includes(timing)) throw new RangeError('Nieprawidłowa szybkość zdolności');
   const effects = Array.isArray(effect)
@@ -240,6 +254,14 @@ export function createAbility({ type, cost = null, effect, trigger, keyword = nu
     // Tarmogoyfa) — warstwa 7a, nie modyfikator 7c. Pole tylko gdy prawda,
     // żeby kształt pozostałych zdolności się nie zmienił.
     ...(characteristicDefining ? { characteristicDefining: true } : {}),
+    // Necrosavant (Batch 73, audyt PR #185 F-4): „Activate only during your
+    // upkeep" — restrykcja CZASU aktywacji z tekstu po dwukropku (CR 602.1b:
+    // taki tekst „functions at all times" i nie jest częścią efektu; CR 602.5:
+    // gracz nie może zacząć aktywować zdolności, której aktywacja jest
+    // zabroniona). Nazwa kroku z `turn.js`; semantyka „YOUR" = krok tury
+    // AKTYWNEGO gracza (lustro bramki forecastu). Pole tylko gdy ustawione,
+    // żeby kształt pozostałych zdolności się nie zmienił.
+    ...(onlyInStep ? { onlyInStep } : {}),
     keywords: keywords ? Object.freeze([...keywords]) : null,
     // „Activate only once each turn\" (Snarling Wolf): limit aktywacji tej
     // zdolności do raz na turę na źródło (tracking w state.abilityActivatedThisTurn).

@@ -5239,6 +5239,12 @@ export const REAL_CARDS = Object.freeze([
       createAbility({
         type: ABILITY_TYPE.activated,
         fromGraveyard: true,
+        // Audyt PR #185 (F-4/F-9): „Activate only during your upkeep" nie było
+        // wyrażone ŻADNYM deskryptorem — restrykcję egzekwowała wyłącznie kara
+        // w heurystyce bota, więc silnik przyjmował aktywację w main1 i w end
+        // (`execute` z ok=true). CR 602.1b/602.5: to ograniczenie aktywacji,
+        // nie część efektu, więc należy do deskryptora zdolności.
+        onlyInStep: 'upkeep',
         cost: { mana: 5, colors: ['B', 'B'], sacrificeCreature: true },
         effect: { type: 'reanimate_under_your_control' },
       }),

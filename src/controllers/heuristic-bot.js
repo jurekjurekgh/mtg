@@ -16860,8 +16860,13 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // Karta: „{3}{B}{B}, Sacrifice a creature: Return this card from your
         // graveyard to the battlefield. Activate only during your upkeep."
         if (isGraveyardReanimate) {
-          // Hard gate from card text: only during your upkeep.
-          if (view.turn.step !== 'upkeep') return finish(-100);
+          // Audyt PR #185 (F-9): stała tu regułowa bramka „only during your
+          // upkeep" jako kara -100. Reguła należy do RDZENIA, nie do heurystyki:
+          // deskryptor `onlyInStep: 'upkeep'` egzekwuje `abilityConditionFailure`
+          // (abilities.js) w ofercie I w walidacji (CR 602.1b/602.5), więc
+          // nielegalna aktywacja w ogóle nie trafia do `view.legalCommands` —
+          // kara w bocie maskowała brak bramki w silniku (F-4) i byłaby drugim
+          // źródłem tej samej reguły (L41). Zostaje wyłącznie WYCENA.
 
           // Must have a creature on battlefield to sacrifice as cost.
           const myCreatures = (view.zones.battlefield ?? [])

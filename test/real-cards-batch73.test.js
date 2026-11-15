@@ -548,3 +548,72 @@ test('Spring-Loaded Sawblades: bez legalnego celu zdolność nie wchodzi na stos
     assert.ok(!state.events.some((e) => e.type === 'damage_marked'), `${scenario}: brak obrażeń`);
   }
 });
+
+// ---------------------------------------------------------------------------
+// F-4 (E2.5): Necrosavant — „{3}{B}{B}, Sacrifice a creature: Return this card
+// from your graveyard to the battlefield. Activate only during your upkeep."
+// Pomiar audytu (sonda 6 §4, stan 5df0e96): oferty aktywacji z grobu i
+// `execute` z `ok=true` w upkeep, main1 I end — restrykcja czasu istniała
+// wyłącznie jako kara w heurystyce bota (`step !== 'upkeep' → finish(-100)`),
+// więc człowiek/Żywy Tester/inny kontroler mógł aktywować kiedy chciał.
+// CR 602.1b (tekst po dwukropku ograniczający czas aktywacji „functions at all
+// times" i nie jest częścią efektu) + CR 602.5 („A player can't begin to
+// activate an ability that's prohibited from being activated").
+// ---------------------------------------------------------------------------
+
+function necrosavantInGraveyard(state, controller = 'p1') {
+  put(state, 'necro', 'necrosavant', controller, 'graveyard');
+  put(state, 'fodder', 'river-herald-guide', controller);
+  addMana(state, controller, 6, { colors: [] });
+  addMana(state, controller, 4, { colors: ['B'] });
+  return state.objects.get('necro');
+}
+
+test('Necrosavant: restrykcja „Activate only during your upkeep" jest deskryptorem zdolności, nie karą w bocie', () => {
+  const ability = definition('necrosavant').abilities.find((a) => a.type === 'activated');
+  assert.equal(ability.fromGraveyard, true, 'zdolność działa z grobu (CR 113.6)');
+  assert.equal(ability.onlyInStep, 'upkeep', 'Oracle: „Activate only during your upkeep"');
+  assert.deepEqual(ability.cost, { mana: 5, colors: ['B', 'B'], sacrificeCreature: true }, 'koszt {3}{B}{B} + poświęcenie stwora');
+  assert.equal(ability.effect.type, 'reanimate_under_your_control', 'efekt z Oracle');
+});
+
+test('Necrosavant: w swoim upkeepie aktywacja jest oferowana i wraca kartę na pole bitwy', () => {
+  const state = game(76, 'upkeep', 'p1');
+  necrosavantInGraveyard(state);
+  const offers = commands(state, 'p1').filter((c) => c.type === 'activate_ability' && c.objectId === 'necro');
+  assert.equal(offers.length, 1, 'dokładnie jedna oferta aktywacji z grobu');
+  assert.equal(execute(state, { ...offers[0], sacrificeCreatureId: 'fodder' }).ok, true, 'aktywacja przyjęta');
+  resolveStack(state);
+  const back = [...state.objects.values()].filter((o) => o.cardId === 'necrosavant');
+  assert.equal(back.length, 1, 'karta wróciła jako jeden obiekt');
+  assert.equal(back[0].zone, 'battlefield', 'Necrosavant jest na polu bitwy');
+  assert.equal(back[0].controllerId, 'p1', 'wraca pod Twoją kontrolę');
+  // Poświęcenie to zmiana strefy = nowy obiekt (CR 400.7), więc sprawdzamy cardId.
+  assert.ok(state.zones.graveyard.some((id) => state.objects.get(id)?.cardId === 'river-herald-guide'),
+    'poświęcony stwór trafił do grobu jako zapłata kosztu');
+  assert.equal(state.zones.battlefield.includes('fodder'), false, 'poświęcony stwór opuścił pole bitwy');
+});
+
+test('Necrosavant: poza swoim upkeepem brak oferty, a komenda spoza oferty jest odrzucona (CR 602.5)', () => {
+  for (const [step, priority, kto] of [['main', 'p1', 'własna faza główna'], ['end', 'p1', 'własny krok końcowy'],
+    ['declare_attackers', 'p1', 'własna deklaracja atakujących'], ['upkeep', 'p2', 'upkeep przeciwnika']]) {
+    const state = game(77, step, priority);
+    necrosavantInGraveyard(state, 'p1');
+    const offers = commands(state, 'p1').filter((c) => c.type === 'activate_ability' && c.objectId === 'necro');
+    assert.equal(offers.length, 0, `${kto}: brak oferty aktywacji`);
+    const forced = execute(state, {
+      type: 'activate_ability', playerId: 'p1', objectId: 'necro', abilityIndex: 0, sacrificeCreatureId: 'fodder',
+    });
+    assert.equal(forced.ok, false, `${kto}: komenda spoza oferty odrzucona`);
+    if (priority === 'p1') {
+      assert.match(forced.reason ?? '', /upkeep/i, `${kto}: powód mówi o restrykcji kroku`);
+    } else {
+      // W upkeepie przeciwnika p1 nie ma nawet priorytetu (CR 117.1) — odrzucenie
+      // następuje wcześniej niż bramka kroku, i to jest poprawna kolejność bramek.
+      assert.match(forced.reason ?? '', /priority|upkeep/i, `${kto}: powód odrzucenia`);
+    }
+    const back = [...state.objects.values()].filter((o) => o.cardId === 'necrosavant' && o.zone === 'battlefield');
+    assert.equal(back.length, 0, `${kto}: karta nie wróciła na pole bitwy`);
+    assert.equal(state.zones.battlefield.includes('fodder'), true, `${kto}: koszt nie został zapłacony`);
+  }
+});
