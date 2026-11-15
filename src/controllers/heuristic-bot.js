@@ -7980,6 +7980,33 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   const cardDef = (cardId) => (cardId ? registry.get(cardId) : undefined);
 
   /**
+   * Wartość ciała karty leżącej w grobie: skala `10 + 2*P + T`.
+   *
+   * JEDNO źródło dla wszystkich trzech gałęzi reanimacji (L41): czar z efektem
+   * `return_permanent_from_graveyard`, zdolność aktywowana z tym efektem
+   * (M157/Batch 60 — Xu-Ifit, Osteoharmonist) oraz aktywacja Z GROBU zwracająca
+   * własne źródło (`reanimate_under_your_control` + `fromGraveyard` +
+   * `cost.sacrificeCreature`). P/T z widoku grobu (ADR 0017), z definicji karty
+   * jako zapas.
+   *
+   * Audyt PR #185 (F-8): trzecia gałąź miała tu STAŁE `10 + (5 * 2) + 5` — P/T
+   * Necrosavanta wpisane w kod bota, wbrew ADR 0002: predykat gałęzi jest
+   * generyczny, więc każda inna karta o tym deskryptorze (np. 1/1 za {1}{B})
+   * była wyceniana jak 5/5. Zmierzone: score aktywacji identyczny (19/15/4) dla
+   * ciał 1/1, 5/5 i 7/7 przy tym samym fodderze — wartość ciała nie zależała od
+   * ciała, a mutacja stałych na `10 + (1*2) + 1` przeżywała wszystkie testy.
+   */
+  const graveyardBodyValue = (view, graveObjectId) => {
+    if (!graveObjectId) return 0;
+    const card = (view.zones.graveyard ?? []).find((o) => o.id === graveObjectId);
+    if (!card) return 0;
+    const def = cardDef(card.cardId);
+    const power = card.power ?? def?.power ?? 0;
+    const toughness = card.toughness ?? def?.toughness ?? 0;
+    return 10 + (power * 2) + toughness;
+  };
+
+  /**
    * Czy dowolna zdolność/efekt karty to `springbloom_sacrifice_search`
    * (Roiling Regrowth, Springbloom Druid). MUSI stać za `cardDef` — stała
    * `const` zdefiniowana wyżej sięgałaby w TDZ i po cichu zwracała 0 efektów
@@ -14524,14 +14551,9 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           // Bond) — remis wariantów zwracał pierwszą kartę; premiujemy
           // najcenniejszego stwora w grobie (P/T z widoku grobu).
           if (effect.type === 'return_permanent_from_graveyard') {
-            const slot = cmd.targets?.[effect.targetIndex ?? 0] ?? null;
-            const gyCard = slot ? (view.zones.graveyard ?? []).find((o) => o.id === slot) : null;
-            if (gyCard) {
-              const gyDef = cardDef(gyCard.cardId);
-              const gyValue = ((gyCard.power ?? gyDef?.power ?? 0) * 2)
-                + (gyCard.toughness ?? gyDef?.toughness ?? 0);
-              score += 10 + gyValue;
-            }
+            // F-8 (audyt PR #185): skala ciała z grobu w jednym helperze (L41) —
+            // bliźniacze gałęzie cast_spell i activate_ability liczyły to samo inline.
+            score += graveyardBodyValue(view, cmd.targets?.[effect.targetIndex ?? 0] ?? null);
           }
           // Batch 52 (Cemetery Recruitment): zwrot karty STWORA z grobu do
           // RĘKI to card advantage (jak dobranie) + ciało karty. Bez wyceny
@@ -16044,14 +16066,9 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           // 5/5). Ta sama skala 10+2P+T co czar; stripAbilities/addSubtypes
           // z deskryptora nie zmieniają wyceny (cierniste P/T wraca na stół).
           if (effect.type === 'return_permanent_from_graveyard') {
-            const slot = cmd.targets?.[effect.targetIndex ?? 0] ?? null;
-            const gyCard = slot ? (view.zones.graveyard ?? []).find((o) => o.id === slot) : null;
-            if (gyCard) {
-              const gyDef = cardDef(gyCard.cardId);
-              const gyValue = ((gyCard.power ?? gyDef?.power ?? 0) * 2)
-                + (gyCard.toughness ?? gyDef?.toughness ?? 0);
-              score += 10 + gyValue;
-            }
+            // F-8 (audyt PR #185): skala ciała z grobu w jednym helperze (L41) —
+            // bliźniacze gałęzie cast_spell i activate_ability liczyły to samo inline.
+            score += graveyardBodyValue(view, cmd.targets?.[effect.targetIndex ?? 0] ?? null);
           }
           // M162/B (uwaga właściciela, Ghoulcaller's Bell): symetryczny mill
           // bez celu („each player mills") — ta sama wycena wyścigu bibliotek
@@ -16897,9 +16914,13 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
 
           const sacrificeLoss = sacrificePermanentLoss(view, worstCreature);
 
-          // Value of reanimated body — same scale as return_permanent_from_graveyard
-          // (10 + 2*P + T). For Necrosavant (5/5): 10 + 10 + 5 = 25.
-          const reanimatedValue = 10 + (5 * 2) + 5; // = 25
+          // Wartość zwracanego ciała — TA sama skala co `return_permanent_from_graveyard`
+          // (10 + 2*P + T), więc liczona przez wspólny helper (L41). Reanimacja z grobu
+          // zwraca ŹRÓDŁO zdolności („Return this card from your graveyard"), czyli
+          // obiekt o `cmd.objectId` leżący w grobie — P/T bierzemy z widoku, nie ze
+          // stałej (F-8, audyt PR #185; ADR 0002 + ADR 0017). Dla Necrosavanta 5/5
+          // daje to dokładnie tyle, ile dawały stałe: 10 + 10 + 5 = 25.
+          const reanimatedValue = graveyardBodyValue(view, cmd.objectId);
 
           // Only worth it if the reanimated body exceeds the sacrifice cost.
           // Mana cost {3}{B}{B} is already penalized via abilityManaCost above.

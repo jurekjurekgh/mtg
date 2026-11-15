@@ -214,6 +214,29 @@ test('B60-bot: Xu-Ifit reanimuje NAJCENNIEJSZEGO stwora z grobu (5/5, nie pierws
   assert.ok(goodScore > badScore, `5/5 (${goodScore}) ponad 2/2 (${badScore})`);
 });
 
+// F-8 (audyt PR #185): bliźniak CZARU brakował — gałąź `cast_spell` liczyła tę
+// samą skalę inline, a mutacja spłaszczająca ją do stałej przeżywała wszystkie
+// testy. Od F-8 oba miejsca (i aktywację Z GROBU typu Necrosavant) obsługuje
+// jeden helper `graveyardBodyValue` (L41), więc pin liczbowy ma tu drugie dno:
+// różnica wariantów = dokładnie różnica ciał (2*ΔP + ΔT), czyli wartość idzie
+// z P/T karty z widoku grobu (ADR 0017), nie ze stałej w kodzie bota.
+test('B60-bot: Unbreakable Bond (cast) wskrzesza NAJCENNIEJSZEGO stwora z grobu — bliźniak Xu-Ifita (F-8)', () => {
+  const state = game('p1');
+  addMana(state, 'p1', 4);
+  addMana(state, 'p1', 1, { colors: ['B'] }); // {4}{B}
+  put(state, 'bond', 'unbreakable-bond', 'p1', 'hand');
+  put(state, 'bad', 'leafcrown-dryad', 'p1', 'graveyard'); // 2/2 — pierwsza, słaba
+  put(state, 'good', 'gorger-wurm', 'p1', 'graveyard');    // 5/5 — druga, mocna
+  const { chosen, options } = decide(playerView(state, 'p1'));
+  assert.equal(chosen?.type, 'cast_spell', `ma rzucić Unbreakable Bond: ${JSON.stringify(chosen)}`);
+  assert.deepEqual(chosen.targets, ['good'], `ma wskrzesić 5/5, nie pierwszą 2/2: ${JSON.stringify(chosen)}`);
+  const badScore = scoreOf(options, 'cast_spell(bond->bad)');
+  const goodScore = scoreOf(options, 'cast_spell(bond->good)');
+  assert.ok(goodScore > badScore, `5/5 (${goodScore}) ponad 2/2 (${badScore})`);
+  assert.equal(goodScore - badScore, (2 * (5 - 2)) + (5 - 2),
+    `różnica wariantów = sama różnica ciał 2*ΔP + ΔT = 9 (mierzone ${goodScore - badScore}) — wspólna skala z gałęzią activate (F-8/L41)`);
+});
+
 // =============================================================================
 // Revealing Wind / Demolish / Trigon / Stensia / Clone Shell — piny zachowań
 // =============================================================================
