@@ -11659,6 +11659,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       const member = objectOnBoard(view, cid);
       return suma + (member && !member.summoningSickness ? (member.power ?? 0) : 0);
     }, 0);
+    // Batch 73 (Bladewheel Chariot, F-6): koszt tapu artefaktów — utracone
+    // aktywacje w tej turze, 1 za artefakt (ta sama waga, co przy koszcie
+    // „Tap X untapped artifacts" Merchant's Dockhand).
+    const artifactCost = (cmd.tapArtifactIds ?? []).length;
     const moc = effect.power ?? body?.power ?? 0;
     const gotowy = Boolean(body) && !body.tapped && !body.animatedUntilEOT;
     // (a) MOJE okno ataku: faza walki przed deklaracją atakujących.
@@ -11673,7 +11677,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       let zysk = moc * 2;
       if (hasKeyword(body, 'flying')
         && untappedEnemyBlockers(view).every((o) => !hasKeyword(o, 'flying') && !hasKeyword(o, 'reach'))) zysk += 8;
-      return zysk - crewCost;
+      return zysk - crewCost - artifactCost;
     }
     // (b) OKNO OBRONY: tura przeciwnika, deklaracja atakujących już jest,
     // bloki jeszcze nie — pojazd ma kogo zablokować.
@@ -11690,7 +11694,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         }]));
       if (blokowalni.length === 0) return -12;
       const najwiekszaMoc = blokowalni.reduce((max, a) => Math.max(max, a.power ?? 0), 0);
-      return 8 + Math.min(najwiekszaMoc, effect.toughness ?? body.toughness ?? 0) - crewCost;
+      return 8 + Math.min(najwiekszaMoc, effect.toughness ?? body.toughness ?? 0) - crewCost - artifactCost;
     }
     // Każde inne okno (główna faza, upkeep, po deklaracjach, end step):
     // animacja wygaśnie bez ataku i bez bloku, a tap załogi przepada.
@@ -15530,7 +15534,12 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           // chory pojazd). Wycena generyczna po koszcie i stanie z PlayerView
           // (ADR 0002/0017): zysk = nowy atakujący (moc ×2 jak ninjutsu +
           // evasion), koszt = moc załogi, która w tej turze nie zaatakuje.
-          if (effect.type === 'animate_permanent_until_end_of_turn' && ability?.cost?.crewPower != null) {
+          // Batch 73 (Bladewheel Chariot, audyt PR #185 F-6): ten sam efekt
+          // animacji bywa płacony tapem STAŁEJ liczby artefaktów („Tap two
+          // other untapped artifacts you control"), nie tylko załogą — wycena
+          // okna (atak/blok) jest ta sama, różni się tylko koszt.
+          if (effect.type === 'animate_permanent_until_end_of_turn'
+            && (ability?.cost?.crewPower != null || ability?.cost?.tapOtherArtifacts != null)) {
             score += crewValue(view, cmd, effect, source);
           }
           // M96 (audyt Żywym Testerem): `pump_enchanted_creature`

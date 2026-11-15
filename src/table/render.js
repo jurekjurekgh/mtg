@@ -1083,7 +1083,13 @@ export const KEYWORD_LABELS = Object.freeze({
   // Batch 67 (Kuldotha Ringleader, CR 702.91): battle cry to trigger ataku —
   // bez etykiety linia keywordów pokazywałaby surowy slug „battle_cry" (M127/L29).
   battle_cry: 'Battle cry (atak: inne atakujące stwory +1/+0 do końca tury)',
-  crew: 'Crew (tapnij stworów o łącznej mocy >= N, by stał się stworem)',
+  // Audyt PR #185 (F-6): była tu etykieta keywordu `crew` dodana w Batch 73 —
+  // MARTWA (L29: `MAPA[key] ?? key` jest cichą dziurą, nie fallbackiem). Żadna
+  // karta katalogu nie niesie `crew` w `keywords`, `ability.keywords` ani
+  // `ability.keyword`, bo język deskryptorów wyraża Crew przez `cost.crewPower`
+  // (`costTextOf` → `załoga N`) i tak samo robi dedykowana etykieta akcji
+  // („Obsadź … (moc ≥ N)"). Pomiar 2026-11-15: 39 kluczy mapy, 5 bez desygnatu,
+  // `crew` był jedynym dodanym w PR #185.
   // Batch 69 (Gnoll War Band, CR 702.116): myriad — trigger ataku; w 1v1 bez efektu.
   myriad: 'Myriad (atak: token-kopia za każdego innego przeciwnika)',
   // Batch 69 (Gruul Beastmaster, CR 702.136a): riot — wybór przy wejściu.
@@ -1765,6 +1771,10 @@ const NON_MANA_COST_LABELS = Object.freeze([
   ['payLifeX', 'zapłać X życia'],
   // M177/E (Merchant's Dockhand): koszt „Tap X untapped artifacts you control”.
   ['tapXArtifacts', 'tapnij X swoich nietapniętych artefaktów'],
+  // Batch 73 (Bladewheel Chariot, audyt PR #185 F-6): „Tap two other untapped
+  // artifacts you control" to STAŁA liczba artefaktów, nie X (Merchant's
+  // Dockhand) — stąd osobny wpis z licznikiem, nie litera X.
+  ['tapOtherArtifacts', (n) => `tapnij ${n} inne swoje nietapnięte artefakty`],
   ['crewPower', (n) => `załoga ${n}`],
   // Batch 56 (CR 122.1): koszt „Pay {E}" — energia gracza, nie mana.
   ['energy', (n) => `zapłać {E}×${n} energii`],
@@ -3361,6 +3371,17 @@ export function activationAlreadyAppliedWarning(ability, view, subjectId) {
     && Object.keys(effect).every((key) => ['type', 'typesAdd'].includes(key))
     && (effect.typesAdd ?? []).length === 1 && effect.typesAdd[0] === 'Creature') {
     return 'jest już obsadzony do końca tury — ponowna aktywacja nic nie zmieni, a koszt (tapnięcie) przepadnie';
+  }
+  // Batch 73 (Bladewheel Chariot, audyt PR #185 F-6): ta sama czysta animacja
+  // bywa płacona tapem STAŁEJ liczby artefaktów („Tap two other untapped
+  // artifacts you control"). Powtórka nie dodaje nic (typy już dodane, P/T
+  // wydrukowane), a koszt — dwa tapnięcia — przepada (wzór M230). Bez wymogu
+  // `crewed`: ten koszt nie obsadza załogi, wystarczy znacznik animacji.
+  if (ability?.cost?.tapOtherArtifacts > 0 && effect.type === 'animate_permanent_until_end_of_turn'
+    && subject?.animatedUntilEOT === true
+    && Object.keys(effect).every((key) => ['type', 'typesAdd'].includes(key))
+    && (effect.typesAdd ?? []).length === 1 && effect.typesAdd[0] === 'Creature') {
+    return 'jest już artefaktem-stworem do końca tury — ponowna aktywacja nic nie zmieni, a koszt (tapnięcie artefaktów) przepadnie';
   }
   return '';
 }

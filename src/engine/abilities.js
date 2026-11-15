@@ -675,6 +675,22 @@ function defaultCrewSubset(state, crewableIds, neededPower, vehiclePower = null)
   return out.reverse();
 }
 
+/**
+ * Pula „other untapped artifacts you control" — Crew (CR 702.122a) używa tego
+ * samego słowa „other": własne, nietapnięte artefakty na polu bitwy, POZA źródłem
+ * zdolności. Jedno źródło dla oferty (`legalActivatedAbilities`) i walidacji
+ * kosztu (`performActivation`) — Merchant's Dockhand (M177/E, „Tap X untapped
+ * artifacts you control") i Bladewheel Chariot (Batch 73, audyt PR #185 F-6,
+ * „Tap two other untapped artifacts you control") czytają tę samą regułę (L41).
+ */
+function otherUntappedArtifactIds(state, playerId, sourceId) {
+  return state.zones.battlefield.filter((aid) => {
+    const cand = state.objects.get(aid);
+    return cand && cand.id !== sourceId && cand.controllerId === playerId && !cand.tapped
+      && (cand.kind === 'artifact' || (cand.types ?? []).includes('Artifact'));
+  });
+}
+
 /** Moc pojazdu/wierzchowca do reguły „nie tapuj większych” (drukowana, gdy nie animowany). */
 function crewVehiclePowerOf(state, id) {
   const object = state.objects.get(id);
@@ -1088,14 +1104,29 @@ export function legalActivatedAbilities(state, playerId) {
         if (ability.cost?.tap && object.tapped) continue;
         if (ability.cost?.tap && tapBlockedBySummoningSickness(state, object, ability)) continue;
         if (!canPayColoredCost(state, playerId, colorRequirementsOf(ability.cost), colorExcludeId, manaPurposeForAbility(ability))) continue;
-        const artifactPool = state.zones.battlefield.filter((aid) => {
-          const cand = state.objects.get(aid);
-          return cand && cand.id !== id && cand.controllerId === playerId && !cand.tapped
-            && (cand.kind === 'artifact' || (cand.types ?? []).includes('Artifact'));
-        });
+        const artifactPool = otherUntappedArtifactIds(state, playerId, id);
         for (let x = 0; x <= artifactPool.length; x += 1) {
           out.push({ objectId: id, abilityIndex: index, ability, xValue: x, tapArtifactIds: artifactPool.slice(0, x) });
         }
+        continue;
+      }
+      // Bladewheel Chariot (Batch 73, audyt PR #185 F-6): „Tap two other
+      // untapped artifacts you control: This Vehicle becomes an artifact
+      // creature until end of turn." — STAŁA liczba artefaktów w koszcie, nie X
+      // (jak Merchant's Dockhand wyżej). Wzór crew (A2/A3): JEDNA oferta
+      // z domyślnym podzbiorem — człowiek zmienia wybór w kreatorze, silnik
+      // re-waliduje każdy podzbiór przy aktywacji (L48), bez enumeracji
+      // kombinacji (kardynalna zasada właściciela). Mniej niż N innych
+      // nietapniętych artefaktów = koszt niezapłacalny (CR 118.3) → brak oferty.
+      if (targetSpec.length === 0 && ability.cost?.tapOtherArtifacts != null) {
+        const needed = ability.cost.tapOtherArtifacts;
+        if ((ability.cost?.mana ?? 0) > mana) continue;
+        if (ability.cost?.tap && object.tapped) continue;
+        if (ability.cost?.tap && tapBlockedBySummoningSickness(state, object, ability)) continue;
+        if (!canPayColoredCost(state, playerId, colorRequirementsOf(ability.cost), colorExcludeId, manaPurposeForAbility(ability))) continue;
+        const pool = otherUntappedArtifactIds(state, playerId, id);
+        if (pool.length < needed) continue;
+        out.push({ objectId: id, abilityIndex: index, ability, tapArtifactIds: pool.slice(0, needed) });
         continue;
       }
       if (targetSpec.length === 0 && ability.cost?.manaX && ability.cost?.payLifeX) {
@@ -1832,20 +1863,31 @@ export function performActivation(state, ctx) {
   // M177/E (Merchant's Dockhand): walidacja artefaktów do kosztu „Tap X”
   // PRZED jakąkolwiek mutacją (CR 601.2h — odrzucona komenda nie tapuje).
   let artifactsToTap = null;
-  if (cost.tapXArtifacts) {
+  if (cost.tapXArtifacts || cost.tapOtherArtifacts != null) {
     const list = Array.isArray(tapArtifactIds) ? tapArtifactIds : [];
-    if ((xValue ?? list.length) !== list.length) throw new Error('X musi równać się liczbie tapowanych artefaktów');
+    // Bladewheel Chariot (Batch 73, audyt PR #185 F-6): „Tap two other untapped
+    // artifacts" to STAŁA liczba w koszcie; Merchant's Dockhand (M177/E) ma X.
+    // Różni je tylko sposób ustalenia wymaganej liczby — sama reguła „inne,
+    // nietapnięte, własne artefakty" siedzi w `otherUntappedArtifactIds`
+    // i jest TA sama, którą czyta oferta (L41/L48).
+    const fixedCount = cost.tapOtherArtifacts ?? null;
+    if (fixedCount != null) {
+      if (list.length !== fixedCount) throw new Error(`Koszt wymaga dokładnie ${fixedCount} innych nietapniętych artefaktów`);
+    } else if ((xValue ?? list.length) !== list.length) {
+      throw new Error('X musi równać się liczbie tapowanych artefaktów');
+    }
     // Uwaga C1 właściciela (2026-09-19): pusta lista jest legalna WYŁĄCZNIE
     // dla X=0 (CR 107.3 — X może być 0; aktywacja jałowa, ale legalna).
+    // Przy stałej liczbie ≥ 1 pusta lista odpada już wyżej.
     if (list.length === 0) {
-      if ((xValue ?? 0) !== 0) throw new Error('Pusta lista artefaktów legalna tylko przy X=0');
+      if (fixedCount == null && (xValue ?? 0) !== 0) throw new Error('Pusta lista artefaktów legalna tylko przy X=0');
     } else {
-      if (new Set(list).size !== list.length) throw new Error('Koszt Tap X artifacts wymaga listy różnych artefaktów');
+      if (new Set(list).size !== list.length) throw new Error('Koszt tapu artefaktów wymaga listy różnych artefaktów');
+      const pool = otherUntappedArtifactIds(state, playerId, objectId);
       for (const aid of list) {
         const cand = state.objects.get(aid);
-        const isArtifact = cand && (cand.kind === 'artifact' || (cand.types ?? []).includes('Artifact'));
-        if (!cand || cand.zone !== 'battlefield' || cand.controllerId !== playerId || cand.tapped || !isArtifact || cand.id === objectId) {
-          throw new Error('Nielegalny artefakt w koszcie Tap X artifacts');
+        if (!cand || cand.zone !== 'battlefield' || !pool.includes(aid)) {
+          throw new Error('Nielegalny artefakt w koszcie tapu artefaktów');
         }
       }
     }

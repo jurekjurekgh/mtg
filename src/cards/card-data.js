@@ -5202,6 +5202,32 @@ export const REAL_CARDS = Object.freeze([
     oracleText: 'Tap two other untapped artifacts you control: This Vehicle becomes an artifact creature until end of turn.\nCrew 1 (Tap any number of creatures you control with total power 1 or more: This Vehicle becomes an artifact creature until end of turn.)',
     imageUri: 'https://cards.scryfall.io/large/back/2/4/24417388-f2bb-4783-bdce-264774531838.jpg?1783913808',
     power: 5, toughness: 5,
+    // Audyt PR #185 (F-6): wpis tyłu nie miał ŻADNEJ zdolności, więc po craft
+    // obiekt (`transformTo.abilities` → obiekt gry) miał `abilities=[]` i zero
+    // ofert — Vehicle 5/5, który nigdy nie staje się stworem (CR 702.122a:
+    // „Crew is an activated ability of Vehicle cards"). Oba zdania Oracle tyłu
+    // istniejącymi deskryptorami: crew jak inne pojazdy (`cost.crewPower`,
+    // Irontread Crusher), a „Tap two other untapped artifacts you control"
+    // jako `cost.tapOtherArtifacts: 2` (stała liczba; X ma Merchant's Dockhand).
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        timing: 'instant',
+        cost: { tapOtherArtifacts: 2 },
+        effect: { type: 'animate_permanent_until_end_of_turn', typesAdd: ['Creature'] },
+      }),
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        timing: 'instant',
+        // Bez `keyword: 'crew'`: katalog wyraża Crew przez `cost.crewPower`
+        // (Irontread Crusher, Bomat Bazaar Barge, Mobile Garrison, Balamb
+        // Garden) — dwie nazwy tej samej mechaniki to dwa źródła reguły (L41),
+        // a UI czyta koszt (`załoga N`) i dedykowaną etykietę akcji
+        // („Obsadź … (moc ≥ N)"), nie keyword.
+        cost: { crewPower: 1 },
+        effect: { type: 'animate_permanent_until_end_of_turn', typesAdd: ['Creature'] },
+      }),
+    ],
     plan: 'Forgotten Realms',
     support: { status: 'back', limitations: ['Tył karty dwustronnej (Spring-Loaded Sawblades) — nie do talii ani kreatora; do gry trafia wyłącznie przez transform frontu'] },
   }),

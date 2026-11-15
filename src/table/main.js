@@ -53,7 +53,7 @@ import { detectImageMode } from './card-images.js';
 // import { mountDeckBuilder } from './deck-builder.js';
 import { createArtShowcaseQueue, isCastHiddenFromViewer } from './art-showcase.js';
 import { clashSourceCardIdOf, lookWizardKindOf, previewCardIdOfOption, renderChoiceRequest, renderLookWizard, renderCombatWizard, renderDamageWizard, renderDamageDivisionWizard, renderMultiTargetWizard, renderEscapeExileWizard, renderDelveExileWizard, renderPeekPickOrderWizard, renderPickOneRestBottomWizard, renderSearchBatchWizard } from './choice-request.js';
-import { crewWizardPlanFor, discardPlanOf, multiTargetPlanOf, upToTargetsPlanOf, mulliganBottomPlanOf, sacrificeCastPlanOf, dividedCastPlanOf, commandForDivisionSelection, proliferatePlanOf, singleTargetPlanOf, mulliganKeepPlanOf, castWindowPlanOf, buttonsPlanOf, searchBatchPlanOf, searchBatchStepOf, tapXArtifactsPlanOf, castModePlanOf, chooseOneOrBothPlanOf, chooseModesPlanOf, epicChoiceCardPlanOf, epicChoiceModePlanOf, epicChoiceTargetPlanOf, epicChoiceDiscardPlanOf } from './multi-target.js';
+import { crewWizardPlanFor, tapOtherArtifactsPlanFor, discardPlanOf, multiTargetPlanOf, upToTargetsPlanOf, mulliganBottomPlanOf, sacrificeCastPlanOf, dividedCastPlanOf, commandForDivisionSelection, proliferatePlanOf, singleTargetPlanOf, mulliganKeepPlanOf, castWindowPlanOf, buttonsPlanOf, searchBatchPlanOf, searchBatchStepOf, tapXArtifactsPlanOf, castModePlanOf, chooseOneOrBothPlanOf, chooseModesPlanOf, epicChoiceCardPlanOf, epicChoiceModePlanOf, epicChoiceTargetPlanOf, epicChoiceDiscardPlanOf } from './multi-target.js';
 import { choiceRequestGroupKey, choiceGroupLabel, choiceGroupTitle, groupCombatDecisions, polishPluralCount, targetTypeLabel } from './render.js';
 import { choiceRequest } from '../protocol/types.js';
 
@@ -2821,7 +2821,7 @@ function bootstrapTable() {
    * otwierają kreator „tapnij źródło po jednym"; gdy płatność jest
    * jednoznaczna (0 tapów albo jedyny wariant) zostaje auto-tap M34.
    */
-  function play(cmd, { skipCrewWizard = false } = {}) {
+  function play(cmd, { skipCrewWizard = false, skipTapArtifactsWizard = false } = {}) {
     if (!session) { playDirect(cmd); return; }
     // M106/Z10 (audyt stołu): przy OTWARTYM kreatorze many klik w inną akcję
     // szedł prosto do playDirect — wstrzymany rzut przepadał bez śladu, nowa
@@ -2845,6 +2845,15 @@ function bootstrapTable() {
     if (!skipCrewWizard) {
       const crew = crewPlanFor(cmd);
       if (crew) { openCrewWizard(crew); return; }
+    }
+    // Batch 73 (Bladewheel Chariot, audyt PR #185 F-6): koszt „Tap two other
+    // untapped artifacts you control" — oferta silnika niesie DEFAULT (dwa
+    // pierwsze artefakty pola bitwy), a człowiek wybiera w kreatorze dokładnie
+    // tak samo jak załogę (świadoma zgoda na tapnięcie własnych permanentów,
+    // duch M101/B7 i A2). PRZED kreatorem many, z tej samej przyczyny co crew.
+    if (!skipTapArtifactsWizard) {
+      const tapArtifacts = tapArtifactsPlanFor(cmd);
+      if (tapArtifacts) { openTapArtifactsWizard(tapArtifacts); return; }
     }
     const descriptor = manaWizardFor(cmd);
     if (!descriptor) { playDirect(cmd); return; }
@@ -3021,6 +3030,45 @@ function bootstrapTable() {
     const alreadyWarning = activationAlreadyAppliedWarning(ability, session.view(), cmd.objectId);
     const warn = alreadyWarning ? ` — UWAGA: ${alreadyWarning}` : '';
     return { plan, intro: `${verb}: ${session.nameOf(source?.cardId)}${warn} — zaznacz załogę do tapnięcia:` };
+  }
+
+  /**
+   * Batch 73 (Bladewheel Chariot, audyt PR #185 F-6): plan kreatora „tapnij N
+   * innych artefaktów" dla ludzkiej oferty albo null. N z deskryptora kosztu na
+   * PEŁNYM stanie (widok nie niesie `abilities`), kandydaci z widoku pola bitwy
+   * — ten sam podział co `crewPlanFor` (czysty moduł liczy, main.js dokleja
+   * nazwę i ostrzeżenie).
+   */
+  function tapArtifactsPlanFor(cmd) {
+    const source = session.state?.objects?.get(cmd?.objectId);
+    const ability = (source ? activatableAbilities(session.state, source)?.[cmd?.abilityIndex] : null)
+      ?? source?.abilities?.[cmd?.abilityIndex];
+    const needed = ability?.cost?.tapOtherArtifacts;
+    if (!Number.isInteger(needed)) return null;
+    const plan = tapOtherArtifactsPlanFor({
+      cmd, playerId: HUMAN_ID, needed, battlefield: session.view().zones?.battlefield,
+    });
+    if (!plan) return null;
+    // Ta sama ocena co etykieta akcji: pojazd już animowany do końca tury nie
+    // zyskuje na drugim tapnięciu artefaktów, a koszt przepadnie (M230).
+    const alreadyWarning = activationAlreadyAppliedWarning(ability, session.view(), cmd.objectId);
+    const warn = alreadyWarning ? ` — UWAGA: ${alreadyWarning}` : '';
+    return { plan, intro: `Aktywuj: ${session.nameOf(source?.cardId)}${warn} — zaznacz ${needed} inne swoje nietapnięte artefakty do tapnięcia:` };
+  }
+
+  /** F-6: modal kreatora „tapnij N artefaktów"; Zatwierdź wraca do play() bez re-wejścia. */
+  function openTapArtifactsWizard({ plan, intro }) {
+    renderMultiTargetWizard(els.choiceRequestBody, { ...(typeof modalObjectHoverProps !== 'undefined' ? modalObjectHoverProps : {}),
+      view: session.view(),
+      session,
+      plan,
+      commands: [],
+      intro,
+      onOpenCard: openCardFullscreen,
+      onComplete: (built) => { hideModal('choice-request'); play(built, { skipCrewWizard: true, skipTapArtifactsWizard: true }); },
+      onCancel: () => hideModal('choice-request'),
+    });
+    showModal('choice-request');
   }
 
   /** A2: modal kreatora załogi; Zatwierdź wraca do play() z pominięciem re-wejścia. */

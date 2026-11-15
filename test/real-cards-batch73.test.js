@@ -21,10 +21,12 @@ import { createCardRegistry } from '../src/cards/card-data.js';
 import { createCardDeck } from '../src/cards/materialize.js';
 import { jumpToStep } from '../src/engine/turn.js';
 import { addMana } from '../src/engine/resources.js';
-import { effectivePower, effectiveToughness, staticConditionHolds } from '../src/engine/permanents.js';
+import { effectivePower, effectiveToughness, staticConditionHolds, clearStatModifiers } from '../src/engine/permanents.js';
+import { applyEffect } from '../src/engine/effects.js';
 import { attachAuraToCreature, attachEquipmentToCreature } from '../src/engine/attachments.js';
 import { blockerSeedAssignments, blockCandidatePool, mandatoryBlockerIds, minimalMandatoryBlocks } from '../src/engine/combat.js';
 import { moveObjectDirectly } from '../src/engine/objects.js';
+import { createHeuristicBot } from '../src/controllers/heuristic-bot.js';
 
 const registry = createCardRegistry();
 const definition = (id) => registry.get(id);
@@ -616,4 +618,206 @@ test('Necrosavant: poza swoim upkeepem brak oferty, a komenda spoza oferty jest 
     assert.equal(back.length, 0, `${kto}: karta nie wróciła na pole bitwy`);
     assert.equal(state.zones.battlefield.includes('fodder'), true, `${kto}: koszt nie został zapłacony`);
   }
+});
+
+// ---------------------------------------------------------------------------
+// F-6 (E2.6): Bladewheel Chariot — tył TDFC (Artifact — Vehicle 5/5) po craft.
+// Oracle tyłu (snapshot `scryfall-spring-loaded-sawblades.json`): „Tap two other
+// untapped artifacts you control: This Vehicle becomes an artifact creature
+// until end of turn. // Crew 1 (…)".
+// Pomiar audytu (sonda 6 §5 / sonda 5, stan 5df0e96): po poprawnie rozliczonym
+// craft obiekt tyłu miał `abilities=0`, `keywords=[]` i OFERTY `[]` — Vehicle
+// 5/5, który nigdy nie staje się stworem (CR 702.122a: „Crew is an activated
+// ability of Vehicle cards"). Wpis tyłu nie miał żadnej zdolności w katalogu.
+// ---------------------------------------------------------------------------
+
+/**
+ * Front Sawblades na polu bitwy, obrócony na tył przez craft (CR 702.167a).
+ * Dokładnie JEDEN inny artefakt → wygnanie automatyczne (decyzja właściciela:
+ * craft z jednym kandydatem nie otwiera modalu), więc transform jest
+ * synchroniczny i test mierzy tył, nie decyzję wygnania.
+ */
+function chariotAfterCraft(state, controller = 'p1') {
+  put(state, 'saw', 'spring-loaded-sawblades', controller);
+  put(state, 'mat', 'spring-loaded-sawblades', controller);
+  applyEffect(state, { type: 'craft_transform' }, state.objects.get('saw'), [], {});
+  const id = state.zones.battlefield.find((oid) => state.objects.get(oid)?.cardId === 'bladewheel-chariot'
+    && state.objects.get(oid)?.controllerId === controller);
+  assert.ok(id, 'po craft tył DFC (Bladewheel Chariot) jest na polu bitwy');
+  return id;
+}
+
+test('Bladewheel Chariot: tył ma obie zdolności z Oracle jako deskryptory (tap 2 artefakty + Crew 1)', () => {
+  const back = definition('bladewheel-chariot');
+  assert.equal(back.support?.status, 'back', 'wpis tyłu nie trafia do talii (ADR 0022)');
+  assert.deepEqual(back.types, ['Artifact'], 'Artifact — Vehicle');
+  assert.deepEqual(back.subtypes ?? [], ['Vehicle'], 'podtyp Vehicle');
+  assert.equal(`${back.power}/${back.toughness}`, '5/5', 'P/T tyłu');
+  const acts = (back.abilities ?? []).filter((a) => a.type === 'activated');
+  assert.equal(acts.length, 2, 'dwa zdania Oracle tyłu = dwie zdolności aktywowane');
+  const [tapTwo, crew] = acts;
+  assert.deepEqual(tapTwo.cost, { tapOtherArtifacts: 2 },
+    '„Tap two other untapped artifacts you control" — stała liczba, nie X');
+  assert.equal(tapTwo.timing, 'instant', 'bez ograniczenia czasu aktywacji');
+  assert.deepEqual(crew.cost, { crewPower: 1 }, '„Crew 1" tym samym deskryptorem co inne pojazdy (CR 702.122a)');
+  assert.equal(crew.keyword ?? null, null,
+    'crew wyraża `cost.crewPower` — jak pozostałe 4 pojazdy katalogu (jedno źródło, L41)');
+  for (const ability of acts) {
+    assert.deepEqual(ability.effect, { type: 'animate_permanent_until_end_of_turn', typesAdd: ['Creature'] },
+      '„This Vehicle becomes an artifact creature until end of turn"');
+  }
+  // Źródło prawdy: twarz tylna w snapshocie Oracle (ADR 0022/0030, L57).
+  const face = snapshot('spring-loaded-sawblades').card_faces.find((f) => f.name === back.name);
+  assert.ok(face, 'twarz tylna w snapshocie');
+  assert.match(face.oracle_text, /Tap two other untapped artifacts you control/, 'zdanie 1 Oracle');
+  assert.match(face.oracle_text, /Crew 1/, 'zdanie 2 Oracle');
+  assert.deepEqual(back.keywords ?? [], [],
+    'keyword `crew` nie istnieje w języku deskryptorów — UI czyta `cost.crewPower` (F-6)');
+});
+
+test('Bladewheel Chariot: po craft obiekt tyłu niesie obie zdolności i obie są oferowane', () => {
+  const state = game(91);
+  const chariot = chariotAfterCraft(state);
+  put(state, 'artA', 'spring-loaded-sawblades', 'p1');
+  put(state, 'artB', 'spring-loaded-sawblades', 'p1');
+  put(state, 'guide', 'river-herald-guide', 'p1'); // 3/1 → załoga dla Crew 1
+  assert.equal((state.objects.get(chariot).abilities ?? []).length, 2,
+    'transform przenosi zdolności tyłu na obiekt (payload `transformTo.abilities`)');
+  const offers = commands(state, 'p1').filter((c) => c.type === 'activate_ability' && c.objectId === chariot);
+  const tapOffer = offers.find((c) => c.abilityIndex === 0);
+  assert.ok(tapOffer, 'oferta „tap two other untapped artifacts"');
+  assert.equal(tapOffer.tapArtifactIds?.length, 2, 'default kosztu: dokładnie dwa artefakty (jak default załogi)');
+  assert.deepEqual(tapOffer.tapArtifactIds, ['artA', 'artB'], 'default bierze inne własne nietapnięte artefakty');
+  const crewOffer = offers.find((c) => c.abilityIndex === 1);
+  assert.ok(crewOffer?.crewCreatureIds?.length >= 1, 'oferta Crew 1 z domyślną załogą');
+});
+
+test('Bladewheel Chariot: tap dwóch innych artefaktów robi z pojazdu artefakt-stwora 5/5 do końca tury', () => {
+  const state = game(92);
+  const chariot = chariotAfterCraft(state);
+  put(state, 'artA', 'spring-loaded-sawblades', 'p1');
+  put(state, 'artB', 'spring-loaded-sawblades', 'p1');
+  const offer = commands(state, 'p1')
+    .find((c) => c.type === 'activate_ability' && c.objectId === chariot && c.abilityIndex === 0);
+  assert.ok(offer, 'oferta istnieje');
+  assert.equal(execute(state, offer).ok, true, 'aktywacja przyjęta');
+  resolveStack(state);
+  const animated = state.objects.get(chariot);
+  assert.deepEqual([...(animated.types ?? [])].sort(), ['Artifact', 'Creature'], 'artifact creature (typy, nie podmiana)');
+  assert.equal(animated.kind, 'creature', 'rodzaj obiektu: stwór (może atakować i blokować)');
+  assert.equal(pt(state, chariot), '5/5', 'drukowane 5/5 tyłu');
+  for (const id of offer.tapArtifactIds) {
+    assert.equal(state.objects.get(id).tapped, true, `koszt zapłacony: ${id} tapnięty`);
+  }
+  clearStatModifiers(state); // cleanup (CR 514.2): efekty „until end of turn" wygasają
+  const after = state.objects.get(chariot);
+  assert.deepEqual(after.types ?? [], ['Artifact'], 'animacja wygasa w cleanup');
+  assert.equal(after.kind, 'artifact', 'z powrotem Vehicle-artefakt');
+});
+
+test('Bladewheel Chariot: koszt to DWA inne, nietapnięte, WŁASNE artefakty (CR 118.3, 602.5b)', () => {
+  const state = game(93);
+  const chariot = chariotAfterCraft(state);
+  put(state, 'artA', 'spring-loaded-sawblades', 'p1');
+  const onlyOne = commands(state, 'p1')
+    .filter((c) => c.type === 'activate_ability' && c.objectId === chariot && c.abilityIndex === 0);
+  assert.equal(onlyOne.length, 0, 'przy jednym innym artefakcie kosztu nie da się zapłacić — brak oferty');
+  put(state, 'artB', 'spring-loaded-sawblades', 'p1');
+  put(state, 'foeArt', 'spring-loaded-sawblades', 'p2');
+  put(state, 'guide', 'river-herald-guide', 'p1'); // stwór, nie artefakt
+  // Kontrola dodatnia: sama zdolność musi istnieć, inaczej każde odrzucenie
+  // poniżej byłoby „zielone" z powodu braku zdolności, nie z powodu kosztu.
+  assert.equal((state.objects.get(chariot).abilities ?? []).length, 2,
+    'tył po craft ma obie zdolności (bez tego test mierzyłby pustkę)');
+  tapped(state, 'artB');
+  const nielegalne = [
+    ['za mało artefaktów', ['artA']],
+    ['pusty koszt', []],
+    ['duplikat', ['artA', 'artA']],
+    ['źródło w koszcie (Oracle: „other")', ['artA', chariot]],
+    ['tapnięty artefakt', ['artA', 'artB']],
+    ['artefakt przeciwnika', ['artA', 'foeArt']],
+    ['stwór zamiast artefaktu', ['artA', 'guide']],
+  ];
+  for (const [powod, tapArtifactIds] of nielegalne) {
+    const before = eventTypes(state).length;
+    const result = execute(state, {
+      type: 'activate_ability', playerId: 'p1', objectId: chariot, abilityIndex: 0, tapArtifactIds,
+    });
+    assert.equal(result.ok, false, `${powod}: komenda odrzucona`);
+    assert.equal(state.objects.get('artA').tapped, false, `${powod}: odrzucona aktywacja niczego nie tapuje (CR 601.2h)`);
+    assert.equal((state.objects.get(chariot).types ?? []).includes('Creature'), false,
+      `${powod}: pojazd nie stał się stworem`);
+    assert.equal(eventTypes(state).length, before, `${powod}: brak zdarzeń po odrzuceniu`);
+  }
+});
+
+test('Bladewheel Chariot: Crew 1 wymaga łącznej mocy ≥ 1 — stwór 0/4 nie wystarczy (CR 702.122a)', () => {
+  const state = game(94);
+  const chariot = chariotAfterCraft(state);
+  put(state, 'hatch', 'kraken-hatchling', 'p1'); // 0/4
+  const crewOffers = commands(state, 'p1')
+    .filter((c) => c.type === 'activate_ability' && c.objectId === chariot && c.abilityIndex === 1);
+  assert.equal(crewOffers.length, 0, 'stwory o mocy 0 nie tworzą defaultu załogi (A3: tap za nic)');
+  const forced = execute(state, {
+    type: 'activate_ability', playerId: 'p1', objectId: chariot, abilityIndex: 1, crewCreatureIds: ['hatch'],
+  });
+  assert.equal(forced.ok, false, 'silnik re-waliduje podzbiór załogi (L48)');
+  assert.match(forced.reason ?? '', /moc|crew/i, 'powód mówi o łącznej mocy');
+  assert.equal(state.objects.get('hatch').tapped, false, 'odrzucona aktywacja nie tapuje załogi');
+  put(state, 'guide', 'river-herald-guide', 'p1'); // 3/1
+  const offer = commands(state, 'p1')
+    .find((c) => c.type === 'activate_ability' && c.objectId === chariot && c.abilityIndex === 1);
+  assert.ok(offer?.crewCreatureIds?.length >= 1, 'Crew 1 z 3/1 jest oferowane');
+  assert.equal(execute(state, offer).ok, true, 'aktywacja przyjęta');
+  resolveStack(state);
+  assert.equal((state.objects.get(chariot).types ?? []).includes('Creature'), true, 'Crew 1 animuje pojazd');
+  assert.equal(pt(state, chariot), '5/5', 'drukowane 5/5');
+});
+
+test('Bladewheel Chariot: bot liczy tap dwóch artefaktów jako koszt — tańsze Crew 1 wygrywa (F-6)', () => {
+  // Wycena musi znać NOWY koszt: bez `artifactCost` mutacja przeżywała (L34),
+  // a bot wolałby droższą aktywację. Scenariusz: okno walki przed deklaracją
+  // atakujących (jedyne okno z dodatnią wyceną animacji, M408), pojazd 5/5 bez
+  // choroby przywołania, dwa artefakty na koszt „tap two other" i stwór 1/1 na
+  // Crew 1 (koszt załogi = moc 1 < 2 tapnięcia artefaktów).
+  const state = game(95, 'beginning_of_combat', 'p1');
+  const back = definition('bladewheel-chariot');
+  addObject(state, {
+    id: 'chariot', instanceId: 'instance-chariot', cardId: 'bladewheel-chariot', controllerId: 'p1', ownerId: 'p1',
+    zone: 'battlefield', kind: 'artifact', power: back.power, toughness: back.toughness,
+    types: back.types, subtypes: back.subtypes ?? [], abilities: back.abilities ?? [], keywords: [],
+  });
+  for (const id of ['a0', 'a1']) {
+    addObject(state, {
+      id, instanceId: `instance-${id}`, cardId: 'angels-feather', controllerId: 'p1', ownerId: 'p1',
+      zone: 'battlefield', kind: 'artifact', abilities: [], subtypes: [], types: ['Artifact'],
+    });
+  }
+  addObject(state, {
+    id: 'c1', instanceId: 'instance-c1', cardId: 'highland-game', controllerId: 'p1', ownerId: 'p1',
+    zone: 'battlefield', kind: 'creature', power: 1, toughness: 1, abilities: [], subtypes: [], types: ['Creature'],
+  });
+  for (const id of ['chariot', 'c1']) {
+    state.objects.set(id, Object.freeze({ ...state.objects.get(id), summoningSickness: false }));
+  }
+  const view = playerView(state, 'p1');
+  const bot = createHeuristicBot({ seed: 1 });
+  const pick = bot.chooseCommand(view, {});
+  const trace = bot.trace()[0];
+  const scoreOf = (index) => trace.options.find((o) => o.cmd === `activate_ability(chariot#${index})`)?.score;
+  const pass = trace.options.find((o) => o.cmd === 'pass_priority')?.score ?? 0;
+  assert.ok(Number.isFinite(scoreOf(0)), 'aktywacja „tap two other artifacts" jest w ofercie bota');
+  assert.ok(Number.isFinite(scoreOf(1)), 'aktywacja Crew 1 jest w ofercie bota');
+  assert.ok(scoreOf(0) > pass, `animacja za tap artefaktów powyżej passu (${scoreOf(0)} vs ${pass}) — anty-over-fix`);
+  // Obie zdolności animują TO SAMO ciało 5/5 w tym samym oknie, więc ich wycena
+  // może się różnić WYŁĄCZNIE kosztem: moc załogi 1 (stwór 1/1) kontra dwa
+  // tapnięcia artefaktów. Bez wyceny animacji dla nowego kosztu (mutacja:
+  // `ability?.cost?.tapOtherArtifacts` usunięte z gałęzi) tap dostawał gołą bazę
+  // i różnica rosła do ~9 — pin łapie obie wady naraz (L34).
+  const roznica = scoreOf(1) - scoreOf(0);
+  assert.ok(roznica > 0 && roznica <= 2,
+    `Crew 1 (koszt: moc 1) tańsze niż tap DWÓCH artefaktów (koszt 2), różnica = sama różnica kosztów: crew=${scoreOf(1)} vs tap=${scoreOf(0)}`);
+  const command = pick?.command ?? pick;
+  assert.equal(command?.abilityIndex, 1, `bot wybiera tańszą aktywację: ${JSON.stringify(command)}`);
 });
