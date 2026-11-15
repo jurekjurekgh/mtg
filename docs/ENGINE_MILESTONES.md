@@ -9134,3 +9134,86 @@ build **78 modules / 5,755.8 kB**, quick benchmark **672 games / 0 unfinished**
 (heuristic 80.7% vs aggro, 97.6% vs random; changed deck sample, not a strict
 before/after comparison). Stage plan and evidence are linked from
 `docs/plans/PLAN_2026-11-06-batch72-kolekcja-635-644.md` and the B2–B6 reports.
+
+## M464 — Batch 73: graveyard threshold, ward data path, untargeted explore (2026-11-11, PR #185; audited 2026-11-15, PR #186)
+
+**Scope:** collection 645–655 — eleven catalog entries (ten deckable cards plus
+the DFC back Bladewheel Chariot), 702 → 713 `defineCard` entries; registry 649
+supported + 54 tokens + 10 backs, 32 decks (README numbers verified by the audit).
+Definitions, costs and art IDs mirror the Scryfall snapshots committed with the
+batch (`docs/cards/scryfall-*.json`); every card `supported` with
+`limitations: []`, and no card-name logic in the engine (ADR 0002/0022/0029).
+
+- **Threshold as a live static condition:** `condition: { minGraveyardCards: 7 }`
+  (Seton's Desire) was a silent no-op — the key was missing from
+  `staticConditionHolds`, which returns `false` for unknown keys — and
+  `must_block_enchanted` was applied as a flag on the aura that no consumer read.
+  Fixed (audit F-1) as a continuous effect: the condition is evaluated by
+  `staticConditionHolds` (CR 611.3a) and the blocking requirement is read from the
+  descriptor at every blocker declaration (`combat.mustBlockHostCounts`, CR
+  509.1c), with `declareBlockers` throwing when fewer than the maximal required
+  blocks are fulfilled.
+- **`condition: { equipped: true }` + pump:** Leonin Lightbringer's „As long as
+  this creature is equipped, it gets +1/+1" — a static ability whose whole content
+  is a condition plus pump.
+- **Ward data path (audit F-7):** the ward amount now travels through one path —
+  `wardAmountOf` in `permanents.js`, `ward` inside `effectiveKeywords` for
+  face-down permanents (cloak/disguise set `ward: 2`), and `wardTargetTax` in the
+  bot. The payer is the controller of the targeting spell or ability; when payment
+  is impossible the engine counters the spell automatically, and the choice is a
+  blocking decision (`resolve_ward_pay_choice`).
+- **Untargeted explore (audit F-19):** „When this creature enters, it explores"
+  has no target, so the exploring permanent is `targets[0] ?? source` — one helper
+  (`explorerOfExplore`) for both explore branches (empty library, non-land), with
+  the +1/+1 counter placed only while the object is on the battlefield (CR
+  701.44a/b, 122.1).
+- **Delirium as an effect condition (CR 207.2c):** Might Beyond Reason is
+  `add_counter +1/+1` ×2 plus a conditional ×1 with `condition: { delirium: true }`
+  — four or more card TYPES in the graveyard, counted at resolution (CR 608.2).
+- **`damage_each_opponent` (audit F-5):** Kessig Flamebreather's trigger used a
+  `toEachOpponent` field that exists nowhere in the engine, so the damage fizzled;
+  the descriptor is now the existing engine path (source is the creature itself).
+- **Craft + transform DFC, Vehicle crew 1:** Spring-Loaded Sawblades (flash, ETB 5
+  damage to a target tapped creature an opponent controls) crafts into Bladewheel
+  Chariot (5/5 Vehicle); both faces pinned against Oracle.
+- **Deck migration:** `dominaria-brg` → `dominaria-wrg`, `dominaria-wu` removed →
+  new `dominaria-ub`, `forgotten-realms` → `-br`/`-wug`; batch cards entered nine
+  decks. This rotated the benchmark sample (`selectBenchDecks()` → alara,
+  dominaria-ub, dominaria-wrg, eldraine, final-fantasy, forgotten-realms-br) and
+  regenerated the golden master (`overallHash` `95f3692a…` → `ada1d349…`).
+- **Bot scoring (PMSSB-89):** graveyard reanimation valuation now reads power and
+  toughness from the graveyard view through one helper, `graveyardBodyValue`
+  (`10 + 2P + T`), shared by the `cast_spell`, `activate_ability` and
+  activate-from-graveyard branches (audit F-8) — the previous constants were
+  hardcoded Necrosavant 5/5 in three places.
+
+**Audit PR #185 → PR #186 (2026-11-15):** file map 85/85 and report F-1…F-18
+(`docs/audits/AUDYT_PR185_2026-11-15.md`), plus F-19 (untargeted explore) and F-20
+(PMSSB-89 probe had a dead main block: `node tools/pmssb89-batch73-scoring-sonda.mjs`
+printed nothing and exited 0, so the declared before→after measurement was not
+reproducible) found while fixing. Benchmark recalibrated per ADR 0024 §3 and
+L193: 672 games, 8 seeds, 0 unfinished — heuristic **97.0% (326/336)** vs random
+and **84.2% (283/336)** vs aggro, so `MIN_WIN_RATE_VS_AGGRO` 0.63 → **0.69** and
+`MIN_WIN_RATE_VS_RANDOM` stays **0.82** (97.0 → 0.820); the golden-master trace is
+recorded per pair in the header of `test/bot-benchmark.test.js` (the
+`tarkir-bg|warhammer-ubr` pair is bit-identical — its decks were untouched).
+`docs/PMSSB.md` §PMSSB-89 carries seven corrections (gates from measurement,
+fabricated Leonin/Kessig activated abilities, the false „no deck contains them"
+open point, limits), and lessons **L192** („pre-existing" requires a measurement
+of the PR base) and **L193** (deck rotation is a migration with four traces) were
+added to `docs/LESSONS.md`.
+
+**Evidence:** `test/real-cards-batch73.test.js` (52 pins: Oracle data + behaviour
+for all eleven entries), `test/audyt-pmssb89-batch73.test.js` (12),
+`test/audyt-pr185-f7-ward-sciezka-danych.test.js`,
+`test/audyt-pr185-f8-wycena-reanimacji.test.js` (6),
+`test/audyt-pr185-f17-etykieta-threshold-must-block.test.js` (4),
+`test/audyt-pr185-f20-sonda-pmssb89.test.js` (3),
+`test/uwagi-z-testow-d-malamet-i-e-reach.test.js` (7, harness pin D/0),
+`test/library-manipulation-modal.test.js` (14). Gates measured 2026-11-15 at
+E2.12 (to be refreshed at session end per L92): fast **10,376/10,376**, slow
+**282/282**, build **79 modules / 5,896.1 kB**, benchmark **10/10**,
+`node tools/cr-numery.mjs` OK (table of 581 CR 2026-11-06 numbers; code cites 561
+unique numbers in 6,767 citations). Plan:
+`docs/plans/PLAN_2026-11-15-audyt-pr185-batch73.md`; batch plan:
+`docs/plans/PLAN_2026-11-11-batch73-kolekcja-645-655.md`.
