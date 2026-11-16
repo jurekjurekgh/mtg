@@ -1831,6 +1831,94 @@ function costTextOf(ability) {
   return parts.join(', ');
 }
 
+/**
+ * E3/F-21 (audyt PR #185, Żywy Tester — partia `audyt-batch73-ward` ×
+ * `innistrad-brg`, seed 25): JEDNA tabela klauzul warunków zdolności
+ * STATYCZNYCH (CR 611.3a — „as long as …").
+ *
+ * Dotąd `describeStatic` miał ręczny łańcuch `if` pokrywający 11 z 17 kluczy
+ * `condition` używanych w katalogu (pomiar `.arena/probe-e3d-linie.mjs`:
+ * 19 kart, 22 zdolności statyczne z warunkiem). Sześć kluczy nie miało żadnej
+ * gałęzi, więc kafel drukował SAM skutek i bonus wyglądał na bezwarunkowy —
+ * Leonin Lightbringer (batch 73) pokazywał „Ward {2} · +1/+1", choć Oracle
+ * mówi „As long as this creature is equipped, it gets +1/+1", a silnik
+ * (`staticConditionHolds`, naprawa F-2) liczy go tylko z wyposażeniem.
+ * To klasa M138/Z3 odwrócona (tam: sam warunek bez skutku) i rodzeństwo F-17
+ * (próg Threshold bez etykiety).
+ *
+ * Tabela jest EKSPORTOWANA, bo strażnik w teście wiąże jej zbiór kluczy ze
+ * zbiorem kluczy w DANYCH kart (L26: bez ręcznych list — nowy klucz warunku
+ * bez klauzuli musi dać RED, a martwy wpis nie może zostać). Słownictwo
+ * warunków jest wspólne z `triggerConditionClause` dla triggerów (L41):
+ * „delirium", „gdy …", „przy N+ …". Wartości liczbowe pochodzą z deskryptora
+ * (ADR 0002), nie z literału w prezenterze.
+ *
+ * Klucz → (cond, ctx) => klauzula albo null. Kolejność wpisu = kolejność
+ * członu na kaflu (zachowana z dawnego łańcucha `if`, żeby dotychczasowe
+ * linie nie zmieniły się ani o bajt — piny w teście F-21/5).
+ */
+export const STATIC_CONDITION_CLAUSES = Object.freeze({
+  minLevel: (cond) => (cond.minLevel == null ? null
+    : `poziomy ${cond.maxLevel != null ? `${cond.minLevel}-${cond.maxLevel}` : `${cond.minLevel}+`}`),
+  maxLevel: (cond) => (cond.minLevel != null || cond.maxLevel == null ? null : `poziomy -${cond.maxLevel}`),
+  minLandsControlled: (cond) => (cond.minLandsControlled ? `przy ${cond.minLandsControlled}+ landach` : null),
+  minArtifactsControlled: (cond) => (cond.minArtifactsControlled ? `przy ${cond.minArtifactsControlled}+ artefaktach` : null),
+  minCardsDrawnThisTurn: (cond) => (cond.minCardsDrawnThisTurn ? `przy ${cond.minCardsDrawnThisTurn}+ dobranych kartach` : null),
+  controlsAnotherMulticolored: (cond) => (cond.controlsAnotherMulticolored ? 'gdy kontrolujesz inny wielokolorowy permanent' : null),
+  controlsAnotherArtifact: (cond) => (cond.controlsAnotherArtifact ? 'gdy kontrolujesz inny artefakt' : null),
+  controlsArtifact: (cond) => (cond.controlsArtifact ? 'gdy kontrolujesz artefakt' : null),
+  hasCounter: (cond) => (cond.hasCounter ? `gdy ma licznik ${counterLabelGen(cond.hasCounter)}` : null),
+  minCreatureCardsInGraveyard: (cond) => (cond.minCreatureCardsInGraveyard ? `przy ${cond.minCreatureCardsInGraveyard}+ stworach w grobie` : null),
+  // Audyt PR #185 (F-17): Threshold (`condition.minGraveyardCards`) — Seton's
+  // Desire. Gdy zdolność niesie też deskryptor efektu, próg opisuje SAM efekt
+  // (`describeEffect(eff, { condition: cond })` niżej) — jedno źródło (L41),
+  // bez „przy 7+ … : przy 7+ …" na kaflu.
+  minGraveyardCards: (cond, ctx) => (cond.minGraveyardCards != null && !ctx?.statyczneEfekty
+    ? `przy ${cond.minGraveyardCards}+ kartach w twoim grobie` : null),
+  // --- F-21: sześć kluczy, których łańcuch `if` nie znał ---
+  // Leonin Lightbringer (batch 73, F-2 w silniku): „As long as this creature
+  // is equipped" — CR 301.5a, warunek dotyczy WYŁĄCZNIE Equipmentu (aura
+  // „enchant creature" nie wyposaża, CR 303.4b). Negacja jest w silniku
+  // (`condition.equipped: false`), więc etykieta też ją opisuje z DANYCH.
+  equipped: (cond) => (cond.equipped == null ? null : (cond.equipped ? 'gdy ma wyposażenie' : 'gdy nie ma wyposażenia')),
+  // Crew Captain: „has indestructible as long as it entered this turn".
+  enteredThisTurn: (cond) => (cond.enteredThisTurn ? 'w turze wejścia' : null),
+  // Ulna Alley Shopkeep (Infusion): „as long as you gained life this turn".
+  gainedLifeThisTurn: (cond) => (cond.gainedLifeThisTurn ? 'gdy zyskałeś życie w tej turze' : null),
+  // Leonin Surveyor: „During your turn, this creature has first strike";
+  // `false` = „as long as it's NOT your turn" (permanents.js:424-428).
+  activePlayerIsController: (cond) => (cond.activePlayerIsController == null ? null
+    : (cond.activePlayerIsController ? 'w twojej turze' : 'w turze przeciwnika')),
+  // Óin the Brave: „As long as you have an enduring story" — nazwa mechaniki
+  // zostaje po angielsku, bo tak nosi ją badge (STATIC_CONDITION_MECHANIC_LABELS,
+  // zgłoszenie właściciela 2026-09-19b) i tak drukuje ją karta.
+  enduringStory: (cond) => (cond.enduringStory ? 'gdy masz enduring story (Storied)' : null),
+  // Spineseeker Centipede: „Delirium — … as long as there are four or more
+  // card types among cards in your graveyard" (próg 4 z reguły CR 207.2c,
+  // nie z karty — to samo słowo co w `triggerConditionClause`).
+  delirium: (cond) => (cond.delirium ? 'delirium' : null),
+});
+
+/** Efekty statyczne zdolności (deskryptory z niepustym `type`) — jedno miejsce
+ * filtrowania dla klauzul warunków (F-17) i dla pętli opisów (F-17/E2.12). */
+function statyczneEfektyOf(ability) {
+  return (Array.isArray(ability?.effect) ? ability.effect : (ability?.effect ? [ability.effect] : []))
+    .filter((eff) => eff && typeof eff.type === 'string' && eff.type !== '');
+}
+
+/** Klauzule warunków zdolności statycznej w kolejności tabeli (F-21). */
+export function staticConditionClauses(ability) {
+  const cond = ability?.condition ?? {};
+  const ctx = { statyczneEfekty: statyczneEfektyOf(ability).length > 0 };
+  const clauses = [];
+  for (const [key, clause] of Object.entries(STATIC_CONDITION_CLAUSES)) {
+    if (cond[key] == null) continue;
+    const text = clause(cond, ctx);
+    if (text) clauses.push(text);
+  }
+  return clauses;
+}
+
 /** Diament (2026-08-11): opis zdolności STATYCZNEJ (pump/condition/scope/
  * keywords/mustAttack/cantAttackAlone/costModifier/...). Wcześniej pusty —
  * kafle pokazywały „· ·"/„· · · ·" (Veiled, Kabira, inne). */
@@ -1867,28 +1955,14 @@ function describeStatic(ability) {
         : (scope === 'all_creatures_you_control' ? 'twoje stwory' : null));
     parts.push(who ? `${who}: ${kws}` : kws);
   }
-  if (cond.minLevel != null || cond.maxLevel != null) {
-    const range = cond.minLevel != null && cond.maxLevel != null
-      ? `${cond.minLevel}-${cond.maxLevel}` : (cond.minLevel != null ? `${cond.minLevel}+` : `${cond.maxLevel}-`);
-    parts.push(`poziomy ${range}`);
-  }
-  if (cond.minLandsControlled) parts.push(`przy ${cond.minLandsControlled}+ landach`);
-  if (cond.minArtifactsControlled) parts.push(`przy ${cond.minArtifactsControlled}+ artefaktach`);
-  if (cond.minCardsDrawnThisTurn) parts.push(`przy ${cond.minCardsDrawnThisTurn}+ dobranych kartach`);
-  if (cond.controlsAnotherMulticolored) parts.push('gdy kontrolujesz inny wielokolorowy permanent');
-  if (cond.controlsAnotherArtifact) parts.push('gdy kontrolujesz inny artefakt');
-  if (cond.controlsArtifact) parts.push('gdy kontrolujesz artefakt');
-  if (cond.hasCounter) parts.push(`gdy ma licznik ${counterLabelGen(cond.hasCounter)}`);
-  if (cond.minCreatureCardsInGraveyard) parts.push(`przy ${cond.minCreatureCardsInGraveyard}+ stworach w grobie`);
-  // Audyt PR #185 (F-17): Threshold (`condition.minGraveyardCards`) — Seton's
-  // Desire. Gdy zdolność niesie też deskryptor efektu, próg opisuje SAM efekt
-  // (`describeEffect(eff, { condition: cond })` niżej) — jedno źródło (L41),
-  // bez „przy 7+ … : przy 7+ …" na kaflu.
-  const statyczneEfekty = (Array.isArray(ability?.effect) ? ability.effect : (ability?.effect ? [ability.effect] : []))
-    .filter((eff) => eff && typeof eff.type === 'string' && eff.type !== '');
-  if (cond.minGraveyardCards != null && statyczneEfekty.length === 0) {
-    parts.push(`przy ${cond.minGraveyardCards}+ kartach w twoim grobie`);
-  }
+  // F-21: klauzule warunków z JEDNEJ tabeli (STATIC_CONDITION_CLAUSES) —
+  // dawniej ręczny łańcuch `if` na 11 z 17 kluczy, przez co sześć kart
+  // drukowało skutek bez warunku (Leonin Lightbringer: „+1/+1" zamiast
+  // „+1/+1 · gdy ma wyposażenie"). Strażnik zbioru kluczy: test F-21/3.
+  for (const clause of staticConditionClauses(ability)) parts.push(clause);
+  // F-17/F-21: próg Threshold opisuje SAM efekt (jedno źródło, L41) — filtr
+  // efektów statycznych ma jedno miejsce (`statyczneEfektyOf`).
+  const statyczneEfekty = statyczneEfektyOf(ability);
   if (ability.cantBlock || ability.cant_block) parts.push('nie może blokować');
   if (ability.mustAttack) parts.push('musi atakować');
   if (ability.cantAttackAlone) parts.push('nie może atakować sam');
