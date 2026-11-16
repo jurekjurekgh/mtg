@@ -74,9 +74,12 @@ wiersz rejestru rodzin @72, kamień **M465** w `docs/ENGINE_MILESTONES.md`, wpis
 - `node tools/cr-numery.mjs` — OK (561 unikalnych numerów w 6805 cytatach wobec 581 zweryfikowanych;
   w pętli poprawiony jeden cytat: explore to **CR 701.44a**, bo 701.40 w wydaniu CR 2026-11-06 to
   manifest). Uwaga: narzędzie daje EXIT 0 także przy „do poprawy" — **czytać stdout**.
-- `test/dokumentacja-budzet-lektury.test.js` — zielony: budżet liczy wyłącznie `AGENTS.md` + ADR-y +
+- `test/dokumentacja-budzet-lektury.test.js` — zielony, ale **zapas stopniał do 220 tokenów**
+  (~0,6 kB): 99 780 / 100 000 po dopisaniu **L194**. Budżet liczy wyłącznie `AGENTS.md` + ADR-y +
   `docs/LESSONS.md` + `docs/setup/ENVIRONMENT.md`, więc raporty pętli (PMSSB.md, ENGINE_MILESTONES.md,
-  PROJECT_HISTORY.md, plany, handoffy) go NIE obciążają
+  PROJECT_HISTORY.md, plany, handoffy) go NIE obciążają. **Następna sesja: przed dopisaniem czegokolwiek
+  do `docs/LESSONS.md` najpierw kondensacja** (PR #93/L66 — miejsce robi się streszczeniem, NIE
+  podnoszeniem progu); narrację wynosi się do `docs/LESSONS_PRZYPADKI.md` (poza budżetem)
 - Szybki profil benchmarku **pominięty świadomie** (ADR 0018): `test/bot-benchmark.test.js` z progiem
   vs aggro 0.69 leci w `test:slow`; pełne B0 (~2,5 h) tylko na komendę właściciela
 - CI GitHub Actions (check `test` na PR #186) — **pass, 5m50s** dla HEAD `695727c`
@@ -147,6 +150,9 @@ Lista z `HANDOFF_2026-11-15.md` §3 pozostaje w mocy (m.in. `counterInstantHoldP
 bez enumeracji wariantów, ward zakrycia jawny w widoku, badge „Storied: +1/+0" po angielsku, zakaz
 `constructedTargetSet` w `execute`). Dodatkowo z tej sesji:
 
+- **Nowa lekcja L194** (rejestr + narracja w `docs/LESSONS_PRZYPADKI.md`): pin porządku bez progu
+  przechodzi bez naprawy (Δ 0,0018 drukuje się jako remis), nową zmienną wprowadza się JAKO wariant
+  sondy, a pin na dosłowne wyrażenie źródła przepisuje się na licznik intencji (klasa L186/L5).
 - **Zakres T11/7 (equip):** pierwsze założenie sprzętu waży treść sprzętu + `2 × moc` hosta, NIE
   waży jakości nosiciela; jakość hosta jest decyzją w gałęzi **przeniesienia**.
 - **`printedBody` = `2 × pumpPower + pumpToughness`** (bez statyki hosta) — pompa hosta z

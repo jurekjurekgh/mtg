@@ -2084,3 +2084,10 @@ a przyczynę faila nazywamy z pomiaru, nie z przekonania (ADR 0030/L57).
 
 → narracja: `docs/LESSONS_PRZYPADKI.md` (L193) — tam pełna lista talii i liczby per para.
 
+## L194 (2026-11-16) — Pin porządku bez progu przechodzi bez naprawy: różnica śladowa i jedna zmienna na scenariusz
+
+**Przypadek:** PMSSB-90/F-90-10 — 70,2036 (Leonin) vs 70,2018 (Kessig) drukowało się w logu jako remis 70,20 = 70,20, assert `>` przechodził bez naprawy, a w jednym pomiarze zmieniały się dwie zmienne (paliwo w ręce i stan hosta).
+**Reguła:** pin porządku ma PRÓG decyzji (Δ ≥ 1 wyświetlany punkt, nie `> 0`) i cytuje wartość z pełną precyzją silnika; nową zmienną wprowadza się JAKO wariant sondy (jedna na wariant); pin na DOSŁOWNE wyrażenie źródła przepisuje się na licznik intencji (L186), a re-pin po zmianie skali obejmuje też piny „SAME/SKIP-proofs" (`grep -rn "<karta>" test/`).
+**Strażnik:** `test/audyt-pmssb90-batch73.test.js` (10a/10b), T9/8 w `test/uwagi-tura9-bot-rowne-ciala-equip.test.js`, warianty KF-06/M-04 sondy PMSSB-90.
+
+→ narracja: `docs/LESSONS_PRZYPADKI.md` (L194)

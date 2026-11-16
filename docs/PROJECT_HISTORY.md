@@ -75,6 +75,10 @@
   RC=0 z profilem remisów IDENTYCZNYM jak przed pętlą, `bot-scoring-snapshot` **4/4 bez regeneracji**.
   Żywy Tester PO: 3 partie × 400 kroków, karty batcha 73 po obu stronach, 0 zgłoszeń detektorów i 0
   niewycenionych ruchów. Talie chwilowe usunięte PRZED bramką + rebuild (M331).
+- **Nowa lekcja L194** w `docs/LESSONS.md` (+ narracja w `docs/LESSONS_PRZYPADKI.md`): pin porządku
+  bez progu decyzji przechodzi bez naprawy (Δ 0,0018 drukuje się jako remis), jedna zmienna na wariant
+  sondy, pin na dosłowne wyrażenie → licznik intencji. Budżet lektury startowej: **99 780 / 100 000**
+  tokenów (zapas 220 ≈ 0,6 kB) — następna sesja przed kolejnym wpisem robi kondensację (PR #93/L66).
 - **Lekcje zapisane w §PMSSB-90 i w handoffie:** (1) stare piny na DOSŁOWNE wyrażenia/wartości padają
   przy rozbudowie modelu — przed bramką `grep -rln "equipValuation\|printedBody\|nothingAdded\|auraKeywordValue\|anticipatedTailValue\|prowessCastValue" test/`;
   (2) asserty „większe niż" przechodzą bez naprawy przy różnicy śladowej (Δ 0,0018) — izolować JEDNĄ

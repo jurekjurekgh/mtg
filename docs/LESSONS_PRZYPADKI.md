@@ -4004,3 +4004,57 @@ triggera → exploit", a bramki w `execute` stały odwrotnie.
 
 (Przeniesione z `docs/LESSONS.md` przy kondensacji budżetu lektury startowej, 2026-11-15 —
 w rejestrze została reguła i strażnik.)
+
+## L194 (2026-11-16) — PMSSB-90/F-90-10: remis, który nie był remisem, i dwie zmienne w jednym pomiarze
+
+**Zdarzenie:** pętla PMSSB-90 (Batch 73, 11 kart realnych) mierzyła, czy bot ceni
+Kessig Flamebreathera (trigger „whenever you cast a noncreature spell → 1 damage to
+each opponent") zależnie od tego, czy w ręce jest rzucalne paliwo. Sonda KF-06 dała
+`cast_permanent(kessig-hand)` = **70,2018** we wszystkich czterech wariantach ręki
+(Plummet za 2 — tanie paliwo; Get the Point za 5 — za drogie na okno; sam Leonin;
+ręka pusta), czyli trigger trwały był wyceniany tak samo bez względu na paliwo.
+Obok stał Leonin Lightbringer z **70,2036**. Log partii drukuje dwie cyfry po
+przecinku, więc obie opcje wyglądały na remis **70,20 = 70,20**, a pierwszy pin
+pętli („Kessig z paliwem > Kessig bez paliwa", assert `>`) przechodził **bez
+naprawy**: różnica 0,0018 wystarczyła, by `>` był prawdziwy.
+
+**Drugi problem tego samego pomiaru:** próba naprawy (bramka dowodu rzucalnego
+paliwa, wspólny licznik ze ścieżką prowess PMSSB-65) była testowana na scenariuszu,
+w którym jednocześnie zmieniały się dwie rzeczy — zawartość ręki i stan hosta — więc
+nie było wiadomo, która przesunęła wartość. Dopiero rozbicie na warianty (cztery
+ręce przy tym samym stanie stołu) pokazało skutek: 70,20 / 68,40 / 68,40 / 68,40.
+
+**Przebieg weryfikacji:** bramka `npm test` po naprawie dała **5 fail** w
+`test/pmssb10-ogon-wave-{a,b1}.test.js` (Kulrath Mystic 64,8→63,9; Tellah
+69,3→64,8; token_wizard 65,7→63,9; Goblin Battle Jester 64,8→63,9; **Illusory
+Demon 71,7→78,00**). Przyczyna: `when_you_cast_spell` bywa **kosztem** (poświęcenie
+ciała), a bramka „brak paliwa TERAZ" wyciszała koszt tak samo jak wypłatę —
+permanetna pułapka zaczęła wyglądać na darmowego lotnika 4/3. Patch cofnięty
+(`git checkout -- src/controllers/heuristic-bot.js` do `1c34b4e`), piny-kotwice
+10a/10b zostały i noszą pełne uzasadnienie; finding zamknięty jako ZMIERZONY, a
+decyzja modelowa (wypłata TYMCZASOWA skaluje się paliwem z ręki, wypłata TRWAŁA
+nie) została przedstawiona właścicielowi zamiast być rozstrzygnięta jednostronnie.
+
+**Reguła (trwała):**
+1. Pin porządku (`>`, `<`) musi mieć **próg decyzji** — Δ ≥ 1 wyświetlany punkt,
+   bo log partii i UI drukują dwie cyfry; assert bez progu przechodzi na szumie
+   0,0018 i nie dowodzi naprawy.
+2. Wartości w pinie cytuje się **z pełną precyzją silnika** (70,2018), a nie z
+   wyświetlenia (70,20) — inaczej pin nie odróżnia remisu od porządku.
+3. Każdą nową zmienną wprowadza się **JAKO scenariusz/wariant sondy** (jedna
+   zmienna na wariant): `d.opcje` są filtrowane po etykiecie bez gwarancji
+   kolejności, więc izolacja musi być w STANIE, nie w assertach.
+4. Pin na **DOSŁOWNE wyrażenie źródła** (regex na `const value = wagaSily *
+   pumpPower + …`) pada przy każdej rozbudowie modelu — przepisuje się go na
+   licznik intencji (`(cialo.match(/wagaSily \*/g)).length === 2`: jedna waga
+   siły, żadna gałąź equipu nie mnoży własnej), świadomie i z powodem w
+   komentarzu (klasa L186/L5). Przed bramką: `grep -rln
+   "equipValuation\|printedBody\|nothingAdded\|auraKeywordValue\|anticipatedTailValue\|prowessCastValue" test/`.
+5. Zmiana skali wyceny wymaga `grep -rn "<karta>" test/` — re-pin musi objąć także
+   piny „SAME/SKIP-proofs" (w tej pętli: `test/pmssb10-ogon-wave-b2.test.js` dla
+   `fear-of-burning-alive` 70,20 → 81,00 / 138,60).
+
+**Strażnik:** `test/audyt-pmssb90-batch73.test.js` (piny 10a/10b),
+`test/uwagi-tura9-bot-rowne-ciala-equip.test.js` T9/8, warianty KF-06/M-04 w
+`tools/pmssb90-batch73-petla-sonda.mjs`; raport `docs/PMSSB.md` §PMSSB-90 i kamień
+**M465** w `docs/ENGINE_MILESTONES.md`.

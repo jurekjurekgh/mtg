@@ -526,6 +526,12 @@ z naturalnym końcem partii; transkrypty poza repo (`.gitignore:30`).
 jeden cytat — explore to **CR 701.44a**, bo 701.40 w wydaniu CR 2026-11-06 to manifest). Talie
 chwilowe z etapu E3 audytu usunięte PRZED bramkami + rebuild (M331).
 
+**Nowa lekcja:** **L194** w `docs/LESSONS.md` (pin porządku bez progu przechodzi bez naprawy —
+Δ 0,0018 drukuje się jako remis 70,20 = 70,20; jedna zmienna na wariant sondy; pin na dosłowne
+wyrażenie źródła → licznik intencji, klasa L186/L5) + narracja w `docs/LESSONS_PRZYPADKI.md`.
+Budżet lektury startowej po dopisaniu: **99 780 / 100 000** tokenów (zapas 220 ≈ 0,6 kB) — następna
+sesja przed kolejnym wpisem do `docs/LESSONS.md` robi kondensację (PR #93/L66).
+
 **Commity pętli (11 + dokumentacja):** `386bee8` plan → `6e98350` krok 1+2 → `41407d3` F-90/1 →
 `c402ee5` F-90/9 → `f3ca0af` F-90/2 → `70b0fe7` F-90/3 → `7d422f1` F-90/4 → `69be35f` F-90/5 →
 `0816c42` F-90/7+8 → `1c34b4e` F-90/11 → `bc58123` F-90/10 (piny-kotwice, bez kodu) → dokumentacja

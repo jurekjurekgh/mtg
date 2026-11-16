@@ -4366,4 +4366,12 @@ Post-audit gates: `node tools/run-tests.mjs fast` **10,060/10,060**;
 7. **F-90/10**: zasada „wypłata tymczasowa skaluje się paliwem z ręki, wypłata trwała nie" — zmierzona i udokumentowana; zmiana należy do właściciela (przesuwa 5 pinów PMSSB-10 Wave-A/B1, w tym koszt Illusory Demona).
 8. **Model silnika (poza scoringiem):** priorytet aktywnego gracza w `declare_attackers` przed turową akcją deklaracji atakujących (CR 508.1) — patrz wiersz „Timing pojazdu".
 
+**Nowa lekcja L194** (`docs/LESSONS.md` + narracja w `docs/LESSONS_PRZYPADKI.md`): pin porządku bez
+progu decyzji przechodzi bez naprawy — Δ 0,0018 drukuje się w logu jako remis 70,20 = 70,20 — więc pin
+porządku ma próg Δ ≥ 1 wyświetlany punkt i cytuje wartość z pełną precyzją silnika; nową zmienną
+wprowadza się JAKO wariant sondy (jedna na wariant), a pin na DOSŁOWNE wyrażenie źródła przepisuje się
+na licznik intencji (klasa L186/L5). Budżet lektury startowej po dopisaniu: **99 780 / 100 000**
+tokenów (zapas 220) — przed następnym wpisem do `docs/LESSONS.md` kondensacja (PR #93/L66), nie
+podnoszenie progu.
+
 **Kamień:** M465 (`docs/ENGINE_MILESTONES.md`). Merge wykonuje właściciel (`Squash and merge` PR #186) — autor PR nie scala sam.
