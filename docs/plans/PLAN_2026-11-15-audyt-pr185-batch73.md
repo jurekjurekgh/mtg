@@ -342,13 +342,30 @@ GREEN → mutacja kontrolna → `npm test` + `npm run build` → commit + push**
       wyceny bota niezmienione, a bramka `test/bot-benchmark.test.js` (próg vs
       aggro **0.69** z F-12) leci w `test:slow` — pełne B0 tylko na komendę
       właściciela (ADR 0018). Tabela bramy: raport §10.
-- [ ] `docs/PROJECT_HISTORY.md` + `docs/setup/HANDOFF_2026-11-15.md`
+- [x] `docs/PROJECT_HISTORY.md` + `docs/setup/HANDOFF_2026-11-15.md`
       (stan, decyzje, kolejka) + aktualizacja opisu PR kumulatywnie.
-- [ ] Lekcje: nowe wpisy do `docs/LESSONS.md` TYLKO jeśli klasa jest nowa;
+      **Stan (2026-11-15):** wpis audytu w `docs/PROJECT_HISTORY.md` domknięty
+      (bramy końcowe, E3, F-21/F-22, brak nowych lekcji); nowy
+      `docs/setup/HANDOFF_2026-11-15.md` (5 sekcji: co zrobiono, bramy, decyzje
+      właściciela, stan i następny krok, pułapki sandboxa); **M464** w
+      `docs/ENGINE_MILESTONES.md` odświeżony (zdanie „to be refreshed at session
+      end per L92" zastąpione pomiarem E4 + akapit o F-21/F-22 i pętli jakości);
+      opis PR #186 aktualizowany kumulatywnie w tej samej serii (sekcje
+      Rozwiązanie / Jak sprawdzono / Znane ograniczenia).
+- [x] Lekcje: nowe wpisy do `docs/LESSONS.md` TYLKO jeśli klasa jest nowa;
       pilnować budżetu lektury ~99,7k/100k (strażnik
       `test/dokumentacja-budzet-lektury.test.js`) — nowy wpis płaci
       skróceniem innego.
-- [ ] Blok przekazania projektu w czacie (ADR 0013 §2). Nie scalam PR.
+      **Stan (2026-11-15):** nowych wpisów BRAK — klasa F-21 to ręczna lista
+      rozjechana z danymi (M138/Z3 odwrócone, L41), klasa F-22 to martwe nazwy po
+      rotacji talii (L21 + L192/L193 dodane w E2.12), a w E2.13 LESSONS
+      skondensowano (24 wpisy) właśnie po to, by nie płacić drugim skróceniem.
+      Pomiar budżetu: **99 443/100 000** tokenów (zapas 557 ≈ 1,6 kB), strażnik
+      zielony (2/2).
+- [x] Blok przekazania projektu w czacie (ADR 0013 §2). Nie scalam PR.
+      **Stan (2026-11-15):** blok wypisany na końcu sesji (pierwsze kroki,
+      oczekiwane wyniki bram, dokumenty, zasady nienegocjowalne, kolejka,
+      pułapki); PR #186 zostaje otwarty do scalenia przez właściciela.
 
 ## Ryzyka i pułapki
 

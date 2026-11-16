@@ -9201,7 +9201,50 @@ recorded per pair in the header of `test/bot-benchmark.test.js` (the
 fabricated Leonin/Kessig activated abilities, the false „no deck contains them"
 open point, limits), and lessons **L192** („pre-existing" requires a measurement
 of the PR base) and **L193** (deck rotation is a migration with four traces) were
-added to `docs/LESSONS.md`.
+added to `docs/LESSONS.md`. F-18 added WotC rulings to the ten batch-73 snapshots
+(`rulings` coverage 214 → 224 of 652) plus a provenance guard.
+
+The quality loop (E3, ADR 0021) ran **13 live-table games** through
+`tools/table-tester/run-game.mjs` — all with `DETEKTORY: brak zgłoszeń` and no
+unvalued decisions — covering **11/11** collection entries 645–655 on the live
+table (including the DFC back Bladewheel Chariot via craft); two temporary decks
+(`decks/audyt-batch73*.txt`, procedure M331) were deleted and the artifact
+rebuilt before the gates, so `decks/` is back to 32 production decks. It found
+two more defects, both fixed at root cause:
+
+- **F-21 (presenter):** `describeStatic` had a hand-written `if` chain covering
+  **11 of the 17** `condition` keys present in card data, so six cards printed
+  the effect WITHOUT its condition — Leonin Lightbringer showed
+  „Ward {2} · +1/+1" although Oracle says „As long as this creature is equipped,
+  it gets +1/+1" (CR 611.3a; the engine had evaluated it correctly since F-2 via
+  `staticConditionHolds`). Fix: one exported, frozen `STATIC_CONDITION_CLAUSES`
+  table (17 entries, including the `equipped: false` and
+  `activePlayerIsController: false` negations) + `staticConditionClauses()`,
+  iterated by `describeStatic`; wording shared with `triggerConditionClause`
+  (L41), numeric values taken from the card descriptor (ADR 0002), Threshold
+  still printed once (F-17), and the English „Storied" badge not duplicated in
+  the rules line (owner decision 2026-09-19b). Measured: **6 of 713** rules
+  lines changed — exactly the six cards; a control game on the same seed 25 gave
+  an identical result and action counts (12/9, noop 50) with the clause on the
+  tile. Guard: table key set == data key set (both directions), so a new
+  condition key without a clause and a dead table entry both go RED.
+- **F-22 (tooling/tests, class L21/L193):** the Dominaria deck migration left
+  dead names — `AUDIT_PAIRS` in `tools/bot-tie-audit.mjs` still pointed at the
+  deleted `decks/dominaria-wu.txt`, so the default tie audit died with ENOENT
+  while gates stayed green (the gate test passes its own pair list), and
+  `deckFiles` in `test/real-cards-batch25/26.test.js` still listed
+  `dominaria-brg` behind `if (!fs.existsSync(path)) continue;`, silently dropping
+  a deck from coverage. Fix: `dominaria-ub` in pair 9 (one migration, not two
+  truths), `dominaria-wrg` plus a loud `assert.ok(fs.existsSync(path), …)` in
+  both batch tests; the audit↔benchmark overlap is pinned at the measured
+  **3** decks (pre-existing at base `0d0a12b`, per L192) so it cannot grow
+  silently.
+
+All five structural audits pass: event-contract, family, scoring-unvalued
+(12 games, 6,381 commands, no unvalued decisions), CR numbers, and — after F-22 —
+the bot tie audit. Report: `docs/audits/AUDYT_PR185_2026-11-15.md` §9 (quality
+loop) and §10 (final gates); handoff: `docs/setup/HANDOFF_2026-11-15.md`. No new
+lessons were needed — both classes are already covered (L21, L192, L193).
 
 **Evidence:** `test/real-cards-batch73.test.js` (52 pins: Oracle data + behaviour
 for all eleven entries), `test/audyt-pmssb89-batch73.test.js` (12),
@@ -9210,10 +9253,18 @@ for all eleven entries), `test/audyt-pmssb89-batch73.test.js` (12),
 `test/audyt-pr185-f17-etykieta-threshold-must-block.test.js` (4),
 `test/audyt-pr185-f20-sonda-pmssb89.test.js` (3),
 `test/uwagi-z-testow-d-malamet-i-e-reach.test.js` (7, harness pin D/0),
-`test/library-manipulation-modal.test.js` (14). Gates measured 2026-11-15 at
-E2.12 (to be refreshed at session end per L92): fast **10,376/10,376**, slow
-**282/282**, build **79 modules / 5,896.1 kB**, benchmark **10/10**,
-`node tools/cr-numery.mjs` OK (table of 581 CR 2026-11-06 numbers; code cites 561
-unique numbers in 6,767 citations). Plan:
+`test/library-manipulation-modal.test.js` (14),
+`test/audyt-pr185-f21-warunki-statyczne-batch73.test.js` (6),
+`test/audyt-pr185-f22-martwe-nazwy-talii.test.js` (4),
+`test/audyt-pr185-f18-rulingi-batch73.test.js` (4). Final gates measured
+2026-11-15 at session close (E4, L92): fast **10,390/10,390**, slow
+**282/282**, full PR gate `npm run test:all` **10,672/10,672** (disjoint
+fast + slow classes), build **79 modules / 5,900.7 kB**, all with fail 0 and
+exit 0; `node tools/bot-tie-audit.mjs --gry=2` exit 0 (24 games, 11,364
+decisions, tie_all 0, `play_land` 0); `node tools/cr-numery.mjs --cr` OK (table
+of 581 CR 2026-11-06 numbers; code cites 561 unique numbers in 6,771 citations).
+The quick benchmark profile was deliberately skipped (no bot valuations changed;
+ADR 0018) — `test/bot-benchmark.test.js` with the 0.69 aggro threshold runs
+inside `test:slow`. Plan:
 `docs/plans/PLAN_2026-11-15-audyt-pr185-batch73.md`; batch plan:
 `docs/plans/PLAN_2026-11-11-batch73-kolekcja-645-655.md`.
