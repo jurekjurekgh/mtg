@@ -583,8 +583,12 @@ test('Necrosavant: w swoim upkeepie aktywacja jest oferowana i wraca kartę na p
   const state = game(76, 'upkeep', 'p1');
   necrosavantInGraveyard(state);
   const offers = commands(state, 'p1').filter((c) => c.type === 'activate_ability' && c.objectId === 'necro');
-  assert.equal(offers.length, 1, 'dokładnie jedna oferta aktywacji z grobu');
-  assert.equal(execute(state, { ...offers[0], sacrificeCreatureId: 'fodder' }).ok, true, 'aktywacja przyjęta');
+  // PMSSB-90/F-90-1: oferta sama niesie wybór ofiary (jedna na kandydata), więc test NIE
+  // dokleja `sacrificeCreatureId` ręcznie — doklejanie maskowało złamanie L48 („oferta =
+  // walidacja = wykonanie"): bot brał komendę z oferty, a silnik ją odrzucał.
+  assert.equal(offers.length, 1, 'jedna oferta aktywacji z grobu (jeden stwór do poświęcenia)');
+  assert.equal(offers[0].sacrificeCreatureId, 'fodder', 'oferta mówi, który stwór jest poświęcany');
+  assert.equal(execute(state, offers[0]).ok, true, 'aktywacja PRZYJĘTA bez doklejania parametru');
   resolveStack(state);
   const back = [...state.objects.values()].filter((o) => o.cardId === 'necrosavant');
   assert.equal(back.length, 1, 'karta wróciła jako jeden obiekt');

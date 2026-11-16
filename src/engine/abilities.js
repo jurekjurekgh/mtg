@@ -708,6 +708,21 @@ function sacrificeCreatureCandidates(state, playerId, source, cost) {
   });
 }
 
+/**
+ * A-6/L41 (PMSSB-90/F-90-1): JEDNA enumeracja wariantów komendy dla kosztu „poświęć
+ * stwora" — wspólna dla oferty z pola bitwy i oferty z GROBU. Wcześniej gałąź grobowa
+ * pchała wariant GOŁY `{ objectId, abilityIndex, ability }`, a `performActivation`
+ * wymaga `ctx.sacrificeCreatureId` z listy kandydatów, więc oferowana (i wybierana przez
+ * bota) komenda była odrzucana: `illegal_ability:Nielegalny stwór do poświęcenia
+ * (koszt)`. To złamanie niezmienniczki L48/M384 „oferta = walidacja = wykonanie", a w
+ * partii na żywo `session.js:4009` rzuca „Bot wybrał nielegalną komendę" i przerywa grę.
+ * Brak kandydatów = brak wariantów = brak oferty (jak w gałęzi polowej).
+ */
+function sacrificeCreatureVariants(state, playerId, object, ability, id, index) {
+  return sacrificeCreatureCandidates(state, playerId, object, ability.cost)
+    .map((sacrificeCreatureId) => ({ objectId: id, abilityIndex: index, ability, sacrificeCreatureId }));
+}
+
 /** A-6: jeden predykat gospodarza dla oferty, walidacji i płatności (L41/L48). */
 function sacrificableEnchantedHost(state, playerId, aura) {
   const host = aura?.attachedTo ? state.objects.get(aura.attachedTo) : null;
@@ -943,9 +958,7 @@ export function legalActivatedAbilities(state, playerId) {
         if (effectiveAbilityManaCost(state, playerId, ability, object) > mana) continue;
         if (ability.cost.tap && (object.tapped || tapBlockedBySummoningSickness(state, object, ability))) continue;
         if (!canPayColoredCost(state, playerId, colorRequirementsOf(ability.cost), colorExcludeId, manaPurposeForAbility(ability))) continue;
-        for (const sacrificeCreatureId of sacrificeCreatureCandidates(state, playerId, object, ability.cost)) {
-          out.push({ objectId: id, abilityIndex: index, ability, sacrificeCreatureId });
-        }
+        for (const wariant of sacrificeCreatureVariants(state, playerId, object, ability, id, index)) out.push(wariant);
         continue;
       }
       // Batch 44 (Angel's Herald): koszt „Sacrifice a green creature, a white
@@ -1420,6 +1433,13 @@ export function legalActivatedAbilities(state, playerId) {
       if (abilityConditionFailure(state, playerId, ability, object) !== null) continue;
       if ((ability.cost?.mana ?? 0) > producibleMana(state, playerId, null, {}, colorRequirementsOf(ability.cost))) continue;
       if (!canPayColoredCost(state, playerId, colorRequirementsOf(ability.cost), null, manaPurposeForAbility(ability))) continue;
+      // PMSSB-90/F-90-1: koszt niosący WYBÓR musi jechać w komendzie, inaczej oferta nie
+      // przechodzi walidacji (Necrosavant: „{3}{B}{B}, Sacrifice a creature"). Ta sama
+      // enumeracja co w gałęzi polowej (L41) — brak kandydatów daje brak oferty.
+      if (ability.cost?.sacrificeCreature) {
+        for (const wariant of sacrificeCreatureVariants(state, playerId, object, ability, id, index)) out.push(wariant);
+        continue;
+      }
       out.push({ objectId: id, abilityIndex: index, ability });
     }
   }
