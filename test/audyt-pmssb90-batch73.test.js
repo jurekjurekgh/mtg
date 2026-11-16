@@ -418,3 +418,86 @@ test('PMSSB-90/F-90-4e: STRAŻNIK L41 — wymóg bloku i próg Threshold mają p
   assert.match(cialo, /attackerCanBeBlocked\(/, 'zdolność do blokowania liczy ten sam predykat co reszta bota');
   assert.match(cialo, /cantBlockRemovalValue\(/, 'ściągnięcie blokera liczy ta sama miara co „cel nie może blokować"');
 });
+
+// ---------------------------------------------------------------------------
+// F-90/5 (fala B) — explore: wybór „wierzch biblioteki czy grób" był PŁASKI
+// (`finish(cmd.putInGraveyard ? 10 : 40)`), więc bot ZAWSZE odkładał na wierzch.
+// Pomiar PRZED: RG-02 A/B/C = 40 (wierzch) / 10 (grób) także wtedy, gdy
+// zmielenie jednej karty dopełnia delirium (4+ typy, CR 207.2c) albo próg
+// Threshold (7+ kart) — czyli w stanie, w którym grób jest realnym paliwem;
+// RG-01 = 40/10 dla Plummeta, którego ręka potrzebuje, i dla zbędnej drugiej
+// kopii River Herald Guide. Kontrola dodatnia: scry (GT-04) model karty ZNA
+// (ląd 20/−10, drugi Get the Point 23/20, Guide 20/11) — explore i surveil to
+// TA SAMA decyzja (CR 701.44a vs CR 701.25), więc należy im się ta sama skala.
+// ---------------------------------------------------------------------------
+
+/** Wybór explore z przebiegu scenariusza (sonda rozlicza stos decyzjami bota). */
+function wyborExplore(id, indeks) {
+  const [w] = pomiarPrzed({ scen: id, przelot: true }).filter((x) => x.wariant === scenariusz(id).warianty[indeks].opis);
+  assert.ok(w, `brak wariantu ${indeks} scenariusza ${id} w pomiarze`);
+  const krok = (w.przebieg ?? []).find((k) => String(k.cmd).startsWith('resolve_explore_choice'));
+  assert.ok(krok, `brak decyzji explore w przebiegu ${id}/${indeks}: ${(w.przebieg ?? []).map((k) => k.cmd).join(' | ')}`);
+  return { milled: krok.cmd.includes('putInGraveyard:true'), score: krok.score, opcje: krok.scoreOpcji ?? [] };
+}
+
+test('PMSSB-90/F-90-5a: ANTY-OVER-FIX — użyteczna karta NIE idzie do grobu (RG-02 A/B)', () => {
+  // REZYDUALNE ZNALEZISKO F-90/5b (udokumentowane w raporcie PMSSB-90, nie naprawione
+  // w tej pętli): `graveyardReadingCardsInHand` zna delve i reanimację, ale NIE zna
+  // warunków czytających grób po liczbie kart/typach (Threshold `minGraveyardCards`,
+  // delirium CR 207.2c), więc dopełnienie progu jedną zmieloną kartą nie podnosi
+  // wartości mielenia. W RG-02 A (Angel's Feather → 4. typ i 7. karta, w ręce Seton's
+  // Desire) bot zostawia kartę na wierzchu. Ten pin ZAMRAŻA tamtą decyzję, żeby
+  // naprawa jakości karty nie zaczęła millować kart, które realnie chcemy dobrać —
+  // a przyszła naprawa F-90/5b musi go świadomie przepiąć (jak re-piny PMSSB-67/F2).
+  const a = wyborExplore('RG-02', 0);
+  const b = wyborExplore('RG-02', 1);
+  assert.equal(a.milled, false, `Angel's Feather (artefakt za 2, w zasięgu many) zostaje: ${a.opcje.join(' | ')}`);
+  assert.equal(b.milled, false, `Plummet (instant za 2, w zasięgu many) zostaje: ${b.opcje.join(' | ')}`);
+});
+
+test('PMSSB-90/F-90-5b: przy spełnionych progach użyteczna karta ZOSTAJE na wierzchu (RG-02 C)', () => {
+  const c = wyborExplore('RG-02', 2); // grób 5 typów/12 kart — mill niczego nie dopełnia
+  assert.equal(c.milled, false, `bez wartości progowej nie mielimy karty, którą chcemy dobrać: ${JSON.stringify(c)}`);
+});
+
+test('PMSSB-90/F-90-5c: jakość karty decyduje — martwa karta idzie do grobu, potrzebna zostaje', () => {
+  // RG-05 (scenariusz dodany przy naprawie): ten sam stan, różni się TYLKO
+  // odsłoniętą kartą. Marut 7/7 za 8 przy braku lądów na stole to dobro poza
+  // zasięgiem many (`cardKeepValue` = −3 — „poza zasięgiem, chętnie oddamy"),
+  // Plummet za 2 jest w zasięgu. Grób 4 karty / 3 typy i pusta ręka po rzucie,
+  // więc żaden próg delirium/Threshold nie wchodzi w grę — mierzymy SAMĄ jakość.
+  const marut = wyborExplore('RG-05', 0);
+  const plummet = wyborExplore('RG-05', 1);
+  assert.equal(marut.milled, true, `martwa karta musi iść do grobu: ${marut.opcje.join(' | ')}`);
+  assert.equal(plummet.milled, false, `karta w zasięgu many zostaje na wierzchu: ${plummet.opcje.join(' | ')}`);
+});
+
+test('PMSSB-90/F-90-5d: STRAŻNIK L41 — explore, surveil i clash mają jedną skalę wartości karty', () => {
+  const zrodlo = fs.readFileSync(new URL('../src/controllers/heuristic-bot.js', import.meta.url), 'utf8');
+  const start = zrodlo.indexOf("case 'resolve_explore_choice': {");
+  const koniec = zrodlo.indexOf("case 'resolve_craft_exile': {");
+  assert.ok(start > 0 && koniec > start, 'nie znaleziono gałęzi explore');
+  const galez = zrodlo.slice(start, koniec);
+  assert.match(galez, /cardKeepValue\(/, 'explore musi wyceniać odsłoniętą kartę tą samą miarą co scry/surveil/clash');
+  assert.match(galez, /graveyardReadingCardsInHand\(/, 'paliwo grobu liczy ten sam predykat co surveil');
+  assert.match(galez, /drawDeckingPenalty\(/, 'presja deck-outu (CR 121.4) wspólna z surveil');
+  assert.ok(!/finish\(cmd\.putInGraveyard \? 10 : 40\)/.test(galez), 'płaska stała 40/10 musi zniknąć');
+});
+
+test('PMSSB-90/F-90-5e: presja deck-outu (CR 121.4) obniża wartość mielenia przy krótkiej bibliotece', () => {
+  // RG-06: ten sam stan co RG-05 (wariant Plummet) poza rozmiarem biblioteki, więc
+  // mierzy WYŁĄCZNIE człon deck-outu (`drawDeckingPenalty`, wspólny z surveil —
+  // mielona karta to dobranie, którego już nie będzie). Porównanie odpornościowe na
+  // kolejność gałęzi: gałąź „zostaw na wierzchu" to punkt odniesienia (20), a gałąź
+  // „miel" jest w obu stanach niższa.
+  const liczby = (w) => w.opcje.map((o) => Number(o)).sort((a, b) => a - b);
+  const krotka = wyborExplore('RG-06', 0); // biblioteka 3 karty
+  const zdrowa = wyborExplore('RG-06', 1); // biblioteka 20 kart
+  const [millKrotka, keepKrotka] = liczby(krotka);
+  const [millZdrowa, keepZdrowa] = liczby(zdrowa);
+  assert.equal(keepKrotka, keepZdrowa, 'punkt odniesienia (karta zostaje) nie zależy od biblioteki');
+  assert.ok(millKrotka < millZdrowa - 1,
+    `mielenie przy bibliotece 3 musi być tańsze niż przy 20: ${millKrotka} vs ${millZdrowa}`);
+  assert.equal(krotka.milled, false, 'przy krótkiej bibliotece karta w zasięgu many zostaje na wierzchu');
+  assert.equal(zdrowa.milled, false, 'przy zdrowej bibliotece też (kotwica RG-05)');
+});

@@ -85,6 +85,10 @@ function stan({
   reka = [],
   grob = [],
   biblioteka = [],
+  // PMSSB-90/F-90-5: rozmiar biblioteki jest PARAMETREM (domyślnie 20 = wierność
+  // pomiaru H-2), żeby dało się zmierzyć presję deck-outu (CR 121.4) przy decyzji
+  // explore/surveil — przy zdrowej bibliotece ten człon wyceny jest zerem.
+  rozmiarBiblioteki = ROZMIAR_BIBLIOTEKI,
 } = {}) {
   const state = createGameState({ seed, players: [{ id: 'p1' }, { id: 'p2' }] });
   state.turn = jumpToStep(state.turn, krok, priorytet ?? aktywny);
@@ -125,9 +129,9 @@ function stan({
   const bibliotekaP1 = biblioteka.filter((wpis) => (typeof wpis === 'string' || wpis.gracz == null || wpis.gracz === 'p1'));
   const bibliotekaP2 = biblioteka.filter((wpis) => typeof wpis !== 'string' && wpis.gracz === 'p2');
   for (const wpis of bibliotekaP1) wstaw(wpis, 'library');
-  for (const wpis of wypelniacz('p1', 'basic-forest', ROZMIAR_BIBLIOTEKI - bibliotekaP1.length, bibliotekaP1.length)) wstaw(wpis, 'library');
+  for (const wpis of wypelniacz('p1', 'basic-forest', Math.max(0, rozmiarBiblioteki - bibliotekaP1.length), bibliotekaP1.length)) wstaw(wpis, 'library');
   for (const wpis of bibliotekaP2) wstaw(wpis, 'library');
-  for (const wpis of wypelniacz('p2', 'basic-island', ROZMIAR_BIBLIOTEKI - bibliotekaP2.length, bibliotekaP2.length)) wstaw(wpis, 'library');
+  for (const wpis of wypelniacz('p2', 'basic-island', Math.max(0, rozmiarBiblioteki - bibliotekaP2.length), bibliotekaP2.length)) wstaw(wpis, 'library');
   for (const [gracz, ile] of Object.entries(mana)) if (ile > 0) addMana(state, gracz, ile);
   return state;
 }
@@ -806,6 +810,69 @@ const SCENARIUSZE = [
         { id: 'g-dop-0', karta: 'basic-forest', gracz: 'p1' },
         { id: 'g-dop-1', karta: 'basic-forest', gracz: 'p1' },
         { id: 'g-dop-2', karta: 'basic-forest', gracz: 'p1' },
+      ],
+    }),
+  },
+  {
+    // PMSSB-90/F-90-5 (fala B): scenariusz dodany PRZY NAPRAWIE — RG-01/RG-02
+    // mierzą explore przez pryzmat progów (delirium/Threshold), a pierwszy wymiar
+    // tej decyzji to JAKOŚĆ odsłoniętej karty (pomiar PRZED: płaskie 40/10 dla
+    // Maruta za 8 i dla Plummeta za 2). Stan bez karty czytającej z grobu w ręce i
+    // z grobem 4 kart / 3 typów, więc żaden próg nie wchodzi w grę — różnica
+    // wynika wyłącznie z `cardKeepValue`.
+    id: 'RG-05', karta: 'river-herald-guide', wymiar: 'S', przelot: true,
+    tytul: 'explore a JAKOŚĆ odsłoniętej karty: martwa (Marut 7/7 za 8 — poza zasięgiem many) vs w zasięgu (Plummet za 2)',
+    pro: 'Explore najpierw pyta, czy odsłoniętą kartę w ogóle chcemy dobrać: Marut za 8 przy braku lądów to martwe dobranie na wiele tur, więc idzie do grobu; Plummet za 2 jest w zasięgu i zostaje na wierzchu. Pomiar PRZED: 40 (wierzch) / 10 (grób) dla obu kart.',
+    warianty: [
+      { opis: 'wierzch = Marut 7/7 za 8 (martwa karta — poza zasięgiem many)', wierzch: 'marut' },
+      { opis: 'wierzch = Plummet za 2 (w zasięgu many)', wierzch: 'plummet' },
+    ],
+    budowa: (w) => stan({
+      krok: 'main1',
+      mana: { p1: 6 },
+      reka: [{ id: 'rhg-hand', karta: 'river-herald-guide' }],
+      pole: [{ id: 'nasz-3-2', karta: 'leonin-lightbringer', gracz: 'p1' }],
+      biblioteka: [
+        { id: 'wierzch', karta: w.wierzch, gracz: 'p1' },
+        { id: 'druga', karta: 'basic-forest', gracz: 'p1' },
+        { id: 'trzecia', karta: 'get-the-point', gracz: 'p1' },
+      ],
+      grob: [
+        { id: 'g-creature', karta: 'leonin-lightbringer', gracz: 'p1' },
+        { id: 'g-land', karta: 'basic-forest', gracz: 'p1' },
+        { id: 'g-instant', karta: 'get-the-point', gracz: 'p1' },
+        { id: 'g-dop-0', karta: 'basic-forest', gracz: 'p1' },
+      ],
+    }),
+  },
+  {
+    // PMSSB-90/F-90-5: presja deck-outu (CR 121.4/704.5b) — przy bibliotece 3 kart
+    // zmielenie odsłoniętej karty przybliża przegraną z wyczerpania biblioteki, więc
+    // nawet karta „w zasięgu many" powinna zostać na wierzchu. Ten sam stan co RG-05
+    // (wariant Plummet) poza rozmiarem biblioteki — mierzy WYŁĄCZNIE ten człon.
+    id: 'RG-06', karta: 'river-herald-guide', wymiar: 'S', przelot: true,
+    tytul: 'explore przy bibliotece 3 kart: czy mill jest karany presją deck-outu?',
+    pro: 'Przy zdrowej bibliotece Plummet za 2 zostaje na wierzchu (RG-05). Przy bibliotece 3 kart zmielenie go przybliża przegraną z wyczerpania biblioteki — decyzja musi się zmienić albo przynajmniej różnica między gałęziami musi uwzględniać deck-out.',
+    warianty: [
+      { opis: 'biblioteka 3 karty (tuż przed deck-outem), wierzch = Plummet', rozmiar: 3 },
+      { opis: 'biblioteka 20 kart (zdrowa), wierzch = Plummet', rozmiar: 20 },
+    ],
+    budowa: (w) => stan({
+      krok: 'main1',
+      mana: { p1: 6 },
+      rozmiarBiblioteki: w.rozmiar,
+      reka: [{ id: 'rhg-hand', karta: 'river-herald-guide' }],
+      pole: [{ id: 'nasz-3-2', karta: 'leonin-lightbringer', gracz: 'p1' }],
+      biblioteka: [
+        { id: 'wierzch', karta: 'plummet', gracz: 'p1' },
+        { id: 'druga', karta: 'basic-forest', gracz: 'p1' },
+        { id: 'trzecia', karta: 'get-the-point', gracz: 'p1' },
+      ],
+      grob: [
+        { id: 'g-creature', karta: 'leonin-lightbringer', gracz: 'p1' },
+        { id: 'g-land', karta: 'basic-forest', gracz: 'p1' },
+        { id: 'g-instant', karta: 'get-the-point', gracz: 'p1' },
+        { id: 'g-dop-0', karta: 'basic-forest', gracz: 'p1' },
       ],
     }),
   },

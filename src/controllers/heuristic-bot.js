@@ -18390,9 +18390,40 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         return finish(60);
       }
       case 'resolve_explore_choice': {
-        // Guidestone Compass: karta na wierzch albo do grobu.
-        // Bot odkłada na wierzch (zachowuje kartę).
-        return finish(cmd.putInGraveyard ? 10 : 40);
+        // Guidestone Compass / River Herald Guide: odsłonięta karta na wierzch albo
+        // do grobu. PMSSB-90/F-90-5 (L41): explore (CR 701.44a) kończy się TĄ SAMĄ
+        // decyzją co surveil (CR 701.25) — „put the revealed card into your
+        // graveyard" — a był wyceniony PŁASKO (`putInGraveyard ? 10 : 40`), więc bot
+        // zawsze odkładał na wierzch, niezależnie od karty: pomiar RG-01/RG-02/RG-05
+        // dawał 40/10 dla Maruta 7/7 za 8 (dobro poza zasięgiem many, `cardKeepValue`
+        // = −3: „chętnie oddamy") i dla Plummeta za 2 (w zasięgu). Wspólna skala z
+        // surveil: wartość karty, bufor nieodwracalności mielenia (MILL_CAUTION),
+        // presja deck-outu (`drawDeckingPenalty`, CR 121.4 — mielona karta to
+        // dobranie, którego już nie będzie) i paliwo grobu (delve/reanimacja w ręce).
+        // Widok niesie `pendingExplore.cardId` (karta odsłonięta = informacja
+        // publiczna), więc deskryptory bierzemy z rejestru i składamy kartę w
+        // kształcie, jakiego oczekuje wycena — dokładnie jak `resolve_clash_choice`.
+        const exploreDef = view.pendingExplore?.cardId ? cardDef(view.pendingExplore.cardId) : undefined;
+        // Nieznana karta (brak `cardId` w widoku) = brak informacji: zostaje sam bufor
+        // ostrożności, czyli mielenie jest o MILL_CAUTION gorsze od zostawienia. Żadnej
+        // drugiej płaskiej stałej (dawne 40/10) — jedna skala dla wszystkich gałęzi.
+        const exploreCard = exploreDef ? {
+          cardId: exploreDef.id,
+          kind: (exploreDef.types ?? []).includes('Land') ? 'land' : 'spell',
+          types: exploreDef.types ?? [],
+          manaCost: exploreDef.manaCost ?? 0,
+          power: exploreDef.power ?? null,
+          toughness: exploreDef.toughness ?? null,
+        } : null;
+        // Punkt odniesienia = karta zostaje na wierzchu (jak „zostaw wszystko" w
+        // scry/surveil: 20). Mielenie opłaca się dokładnie wtedy, gdy karty nie
+        // chcemy dobrać, albo gdy grób jest paliwem (delve/reanimacja w ręce).
+        if (!cmd.putInGraveyard) return finish(20);
+        const MILL_CAUTION = 2; // ta sama stała co w surveil (mielenie jest nieodwracalne)
+        const millDecking = drawDeckingPenalty(view, 1) - drawDeckingPenalty(view, 0);
+        const graveSynergy = Math.min(P.surveilGraveSynergyPerSource
+          * graveyardReadingCardsInHand(view), P.surveilGraveSynergyCap);
+        return finish(20 - cardKeepValue(view, exploreCard) - MILL_CAUTION + millDecking + graveSynergy);
       }
       case 'resolve_craft_exile': {
         // Lodestone Needle: exile artifact do craft. Bot wybiera
