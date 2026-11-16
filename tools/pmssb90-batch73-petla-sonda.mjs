@@ -391,12 +391,19 @@ const SCENARIUSZE = [
       { opis: 'host odkręcony, gotowy', chory: false, tap: false },
       { opis: 'host odkręcony, chory (summoning sickness)', chory: true, tap: false },
       { opis: 'host TAPNIĘTY', chory: false, tap: true },
+      // PMSSB-90/F-90-11: izolacje dla bramki pośpiechu. Tapnięty NIE atakuje
+      // (CR 508.1a: „each untapped creature ... may attack"), więc choroba nie
+      // ma czego odblokowywać; Relic Robber 2/2 (takie samo ciało jak Leafcrown
+      // Dryad) pośpiech JUŻ ma — grant się nadpisuje (warstwa 6, duplikat nic
+      // nie dodaje), więc premia za użyteczny pośpiech nie może się pojawić.
+      { opis: 'host TAPNIĘTY i chory (tapnięty nie atakuje — pośpiech nic nie odblokowuje)', chory: true, tap: true },
+      { opis: 'host Relic Robber 2/2 chory, ale pośpiech JUŻ ma (grant nadpisany)', karta: 'relic-robber', chory: true, tap: false },
     ],
     budowa: (w) => stan({
       krok: 'main1',
       mana: { p1: 3 },
       reka: [{ id: 'ms-hand', karta: 'messengers-speed' }],
-      pole: [{ id: 'host', karta: 'leafcrown-dryad', gracz: 'p1', chory: w.chory, tap: w.tap }],
+      pole: [{ id: 'host', karta: w.karta ?? 'leafcrown-dryad', gracz: 'p1', chory: w.chory, tap: w.tap }],
     }),
   },
 

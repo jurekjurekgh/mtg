@@ -582,3 +582,71 @@ test('PMSSB-90/F-90-8e: treść triggera ma wartość, nie tylko brak kary — m
   assert.ok(miecz > plate,
     `Greatsword (+1/+1 co atak, tapnięcie blokera) musi bić Brawlers Plate (+2/+2 trample): ${miecz} vs ${plate}`);
 });
+
+// ---------------------------------------------------------------------------
+// F-90/11 (fala C) — grant POŚPIECHU (haste) w aurze był wyceniany płasko, bez
+// pytania, czy nosiciel może go spożytkować. Pomiar PRZED (M-04, TEN SAM host
+// Leafcrown Dryad 2/2 w pięciu stanach): 79,20 = 79,20 = 79,20 = 79,20 dla hosta
+// odkręconego-gotowego, CHOREGO, tapniętego i tapniętego-chorego, a M-01 dawał
+// main1 = main2 = 78,30 — czyli pośpiech był wart tyle samo w oknie ataku i po
+// walce. Ścieżka EQUIPU tę bramkę już miała (`equipValuation.hasteAdds` =
+// `freshGrants.includes('haste') && creature.summoningSickness === true` → +6,
+// M243/D-G) — dwie ścieżki grantu tego samego słowa kluczowego, dwa modele (L41).
+// ---------------------------------------------------------------------------
+
+/** Score rzutu aury Messenger's Speed z decyzji bota (host jak w scenariuszu). */
+const auraScore = (id, indeks) => scoreAlternatywy(decyzja(budowa(id, indeks).state, 'p1'), 'cast_permanent(ms-hand->');
+
+test('PMSSB-90/F-90-11a: pośpiech jest warty więcej na hoście CHORYM — tylko tam odblokowuje atak', () => {
+  const chory = auraScore('M-04', 1);
+  const gotowy = auraScore('M-04', 0);
+  assert.ok(chory > gotowy,
+    `choroba = jedyny stan, w którym haste coś odblokowuje: ${chory} (chory) vs ${gotowy} (gotowy), pomiar PRZED 79,20 = 79,20`);
+});
+
+test('PMSSB-90/F-90-11b: pośpiech na hoście TAPNIĘTYM nie odblokowuje ataku (CR 508.1a — atakuje tylko odkręcony)', () => {
+  const chory = auraScore('M-04', 1);
+  const tapniety = auraScore('M-04', 2);
+  const tapnietyChory = auraScore('M-04', 3);
+  assert.ok(chory > tapniety, `gotowy do ataku chory > tapnięty: ${chory} vs ${tapniety}`);
+  assert.equal(tapnietyChory, tapniety,
+    `choroba na ciele tapniętym nic nie zmienia (atak i tak nielegalny): ${tapnietyChory} vs ${tapniety}`);
+});
+
+test('PMSSB-90/F-90-11c: ANTY-OVER-FIX — aura jest PERMANENTNA: host gotowy == tapnięty (trample odroczony, nie zmarnowany)', () => {
+  // Granica modelu (udokumentowana decyzja w `auraKeywordValue`: aura zostaje na
+  // polu, więc NIE podlega oknu walki jak granty-do-EOT — M179/A1 + M218/3, gdzie
+  // „flying poza atakiem = −10"). Różnica między hostem gotowym a tapniętym to
+  // okno TRAMPLE w tej jednej turze, nie wartość aury — pin pilnuje, żeby naprawa
+  // F-90/11 nie wprowadziła drugiej kary okna (M429).
+  assert.equal(auraScore('M-04', 0), auraScore('M-04', 2),
+    'host gotowy i tapnięty dostają tę samą wartość aury permanentnej');
+});
+
+test('PMSSB-90/F-90-11d: ANTY-OVER-FIX — premia za pośpiech jest bramkowana ŚWIEŻOŚCIĄ grantu (M431)', () => {
+  // Relic Robber 2/2 (takie samo ciało jak Leafcrown Dryad 2/2) pośpiech JUŻ ma,
+  // więc grant się nadpisuje (warstwa 6: duplikat nic nie dodaje) i premia za
+  // „użyteczny pośpiech" nie może się pojawić — inaczej F-90/11 płaciłoby za sam
+  // tekst karty, nie za realny przyrost.
+  const chory = auraScore('M-04', 1);
+  const nadpisany = auraScore('M-04', 4);
+  assert.ok(chory > nadpisany,
+    `świeży pośpiech na chorym ciele > nadpisany pośpiech na tak samo chorym ciele 2/2: ${chory} vs ${nadpisany}`);
+});
+
+test('PMSSB-90/F-90-11e: timing — aura z pośpiechem jest warta więcej PRZED walką niż po niej (main1 > main2)', () => {
+  const main1 = scoreAlternatywy(decyzja(budowa('M-01', 0).state, 'p1'), 'cast_permanent(ms-hand->');
+  const main2 = scoreAlternatywy(decyzja(budowa('M-01', 4).state, 'p1'), 'cast_permanent(ms-hand->');
+  assert.ok(main1 > main2,
+    `w main2 pośpiech nie wypłaci się w tej turze, a choroba do kolejnej minie: ${main1} (main1) vs ${main2} (main2), pomiar PRZED 78,30 = 78,30`);
+});
+
+test('PMSSB-90/F-90-11f: STRAŻNIK L41 — ścieżka aury bramkuje pośpiech tak jak ścieżka equipu', () => {
+  const src = fs.readFileSync('src/controllers/heuristic-bot.js', 'utf8');
+  const start = src.indexOf('function auraKeywordValue(view, descriptor, host)');
+  assert.ok(start > 0, 'wycena grantów słów kluczowych aury istnieje');
+  const cialo = src.slice(start, src.indexOf('\n  }', start));
+  assert.match(cialo, /swieze\.includes\('haste'\)/, 'pośpiech wyceniany osobno (nie tylko jako „świeży grant")');
+  assert.match(cialo, /summoningSickness === true/, 'bramka choroby nosiciela — jak `equipValuation.hasteAdds`');
+  assert.match(cialo, /precombat_main/, 'okno ataku musi być jeszcze przed nami (aura to sorcery — CR 307.1: tylko faza główna)');
+});

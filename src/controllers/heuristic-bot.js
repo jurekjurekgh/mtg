@@ -10652,6 +10652,26 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     // w kolejnych — aura zostaje, wiec nie karzemy poza oknem (inaczej niz
     // przy grantach-do-EOT).
     if (swieze.includes('vigilance') && canAttackNow(host) && myTurn(view)) score += 4;
+    // PMSSB-90/F-90-11 (L41): POŚPIECH (CR 702.10) odblokowuje atak wyłącznie
+    // ciału CHOREMU (summoning sickness, CR 302.6) i wyłącznie wtedy, gdy okno
+    // ataku jest jeszcze przed nami — aura to sorcery (CR 307.1: tylko faza
+    // główna własnej tury), więc w main2 pośpiech nie wypłaci się w tej turze, a
+    // do kolejnej choroba i tak minie (CR 302.6: stworzenie jest chore tylko do
+    // początku tury kontrolera). Ciało tapnięte nie atakuje niezależnie od
+    // pośpiechu (CR 508.1a), a `cantAttackStatic` (defender/detain/prewencja)
+    // blokuje atak nawet z pośpiechem.
+    // To TA SAMA bramka, którą ścieżka EQUIPU ma od M243/D-G
+    // (`equipValuation.hasteAdds` = świeży grant && `summoningSickness === true`
+    // → +6 w `ofensywne`): dwie ścieżki grantu tego samego słowa kluczowego nie
+    // mogą mieć dwóch modeli świata (L41/L28). Kwota +6 jest lustrzana do +8 za
+    // latanie wyżej („flying wart jest tyle, ile `ofensywne` w equipValuation"),
+    // czyli nowa stała NIE powstaje — istniejąca waga dostaje tylko warunek.
+    // Pomiar PRZED (M-04/M-01): 79,20 = 79,20 = 79,20 = 79,20 (host gotowy,
+    // chory, tapnięty, tapnięty-chory) i main1 = main2 = 78,30.
+    if (swieze.includes('haste') && host.summoningSickness === true && !host.tapped
+      && host.cantAttackStatic !== true && myTurn(view) && view.turn.phase === 'precombat_main') {
+      score += 6;
+    }
     return score;
   }
 
