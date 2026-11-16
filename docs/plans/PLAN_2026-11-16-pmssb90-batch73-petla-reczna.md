@@ -69,15 +69,15 @@ przestawione numery, więc jest przepisana z pomiaru, nie z pamięci: L24.)
 
 ## 3. Kroki (procedura PMSSB z `docs/PMSSB.md`, checklist 0–7)
 
-- [ ] **0. Plan** — ten plik; commit + push PRZED jakimkolwiek kodem (ADR 0020 A).
-- [ ] **1. POMIAR PRZED** — nowa sonda macierzowa `tools/pmssb90-batch73-petla-sonda.mjs`
+- [x] **0. Plan** — ten plik; commit + push PRZED jakimkolwiek kodem (ADR 0020 A).
+- [x] **1. POMIAR PRZED** — nowa sonda macierzowa `tools/pmssb90-batch73-petla-sonda.mjs`
       (commitowana, nie w `/tmp`: L24 — skutek bez śladu nie istnieje; wzór harnessa:
       `tools/pmssb89-batch73-scoring-sonda.mjs` po naprawie F-20). Per karta ≥4 scenariusze
       zmieniające JEDEN wymiar, z realistyczną maną (nie `richMana`), z ≥2 kandydatami na cel
       i z wydrukiem: wybranej komendy, jej score, score alternatyw, fazy/tury, stanu
       (stół/ręka/biblioteka/grób/życie). Wynik: tabela `karta × scenariusz → decyzja /
       FINDING`. Log: `.arena/pmssb90-przed.log`.
-- [ ] **2. AUDYT** — macierz **kierunek × cel × timing × stan** → findingi (numeracja Fx pętli,
+- [x] **2. AUDYT** — macierz **kierunek × cel × timing × stan** → findingi (numeracja Fx pętli,
       powiązanie z F-audytu gdzie dotyczy) → fale A/B/C. Kontrole OBOWIĄZKOWE procedury:
       (a) **L41** — `cast_spell` / `cast_permanent` / `activate_ability` / tryb modalny /
       trigger-decyzje / `apply_to_each_target` liczą TO SAMO (rozjazdy = finding);
@@ -260,3 +260,205 @@ finding ma root cause, naprawę generyczną, piny RED→GREEN i mutacje; ewaluac
 regeneracji, tie-audit, mirror, Żywy Tester) wykonana; §PMSSB-90 + rejestr + PROJECT_HISTORY
 + M465 + opis PR zaktualizowane; bramy zielone (fast/slow/all/build); talie chwilowe usunięte;
 handoff i blok przekazania w czacie. PR #186 pozostaje do scalenia przez właściciela.
+
+## 8. Wynik POMIARU PRZED (krok 1) i audyt macierzowy (krok 2) — stan 2026-11-16
+
+Sonda: `tools/pmssb90-batch73-petla-sonda.mjs` (49 scenariuszy, **179 wariantów**, 11/11 kart,
+wymiar T=62 / C=31 / S=47 / K=8 + kontrole). Odtworzenie: `node tools/pmssb90-batch73-petla-sonda.mjs`
+(log) i `--json` (dane); `--scen=ID`, `--karta=ID`, `--przebieg` (sekwencja z rozliczeniem stosu).
+Tabela tekstowa pomiaru: `.arena/pmssb90-tabela.txt` (efemeryda — sonda jest źródłem, ten rozdział
+jest śladem trwałym, L24).
+
+### 8.1 Wierność harnessa (poprawki samego pomiaru, wykonane w kroku 1)
+
+| # | Artefakt pomiaru | Skutek | Naprawa w sondzie |
+|---|---|---|---|
+| H-1 | krok `untap` z wymuszonym priorytetem | bot dostawał okno decyzyjne, którego realna gra nie daje | `untap` wyłączony ze skanu timingu (P-01) |
+| H-2 | **pusta biblioteka** (domyślna) | `heuristic-bot.js:5938` (`myLibraryCount(view) <= removalHoldLibraryFloor`, wartość 10) wyłączała bramkę „trzymaj hard removal na godny cel" → CAŁY pomiar removalu (Plummet, Get the Point) był mierzony z mechanizmem trzymania WYŁĄCZONYM | `ROZMIAR_BIBLIOTEKI = 20` na gracza (wierzch = wpisy scenariusza, dalej wypełniacz); po poprawce te same cele: LL-01 74/70 → GT-03 −52/−54 (pass) |
+| H-3 | przebieg nie rozliczał stosu | przeciwnik w sondzie nigdy nie pasuje, więc crew/ETB/explore zostawały na stosie i pomiar sekwencji był niepełny (BC-01 „nie atakuje po crew" — fałsz) | `rozliczStos()`: dla bota wybory z heurystyki (logowane ze score), dla rywala mechaniczne |
+| H-4 | decyzje `resolve_*` logowane samą etykietą | obie gałęzie explore/scry mają TĘ SAMĄ etykietę → nie było widać, którą gałąź bot wybrał | `etykietaCmd()` dokleja parametry (`putInGraveyard:false`, `bottomIds:[...]`) + lista dostępnych gałęzi i ich score'ów |
+| H-5 | stan/wybór nadpisywane przez sekwencję | przy `--przebieg` raport pokazywał stan KOŃCOWY i ostatni wybór jako „decyzję bota" | zrzut PRZED sekwencją (`stanPrzed`/`wybranoPrzed`/`scorePrzed`) + `stanPo` osobno |
+| H-6 | fikcyjne id kart wpisywane „z pamięci" | `put` rzucał „nieznana karta w scenariuszu" | wszystkie id z `createCardRegistry()`; rejestr to frozen `{get,has,all(),supported()}`, NIE Map; pole kosztu to `manaCost`, nie `cmc` |
+| H-7 | podrabianie pola `combat` | `crewValue` czyta `view.combat` — podróbka mierzyłaby fikcję | BC-04 deklaruje atak prawdziwym `declareAttackers(state,'p2',[...])` (CR: akcja turowa) |
+
+Parity z produkcją: sonda tworzy bota z `randomness: 0, lookahead: 0` — dokładnie tak jak
+`src/table/session.js:406` (`createHeuristicBot({ seed, opponentDeck, ownDeck })`, domyślne
+`randomness = 0`, `lookahead = 0`), więc pomiar opisuje bota produkcyjnego, nie wariant B2.
+
+### 8.2 Znaleziska (Fx pętli PMSSB-90) → fale
+
+**F-90/1 — KRYTYCZNY (silnik, L48): Necrosavant jest oferowany bez `sacrificeCreatureId`, a wykonanie odrzuca komendę.**
+- Pomiar: NS-01/NS-02/NS-03/NS-04 (15 wariantów) — bot wybiera `activate_ability(necro-grave#0)`
+  (score 19,00 z fodderem 1/1; 17,00 gdy poświęcany jest tylko 2/1), `execute` → **`ok=false`,
+  `reason=illegal_ability:Nielegalny stwór do poświęcenia (koszt)`**.
+- Root cause: pętla grobowa `legalActivatedAbilities` (`src/engine/abilities.js:1413-1425`) pcha
+  wariant GOŁY `{ objectId, abilityIndex, ability }` bez enumeracji wyborów kosztu, choć pętla
+  polowa dla `cost.sacrificeCreature` wystawia wariant per kandydat (`abilities.js:942-948`),
+  a `performActivation` wymaga `ctx.sacrificeCreatureId ∈ sacrificeCreatureCandidates`
+  (`abilities.js:1728`). To złamanie własnej niezmienniczej projektu L48/M384 („oferta = walidacja
+  = WYKONANIE").
+- Skutek w partii: `src/table/session.js:4009` rzuca `Bot wybrał nielegalną komendę: ...` — partia
+  PRZERYWA się (nie cichy pominięcie ruchu).
+- Maskowanie: `test/real-cards-batch73.test.js:586` dokleja parametr ręcznie
+  (`execute(state, { ...offers[0], sacrificeCreatureId: 'fodder' })`) i pinuje `offers.length === 1`
+  — pin utrwala wadliwy kształt oferty.
+- Zasięg rodziny: 12 zdolności `fromGraveyard` w katalogu, z tego JEDNA z `sacrificeCreature`
+  (necrosavant), żadna z `targets` — ale naprawa ma być generyczna (L41/ADR 0002): ta sama
+  enumeracja co gałąź polowa, nie wyjątek per karta.
+- **Fala A.**
+
+**F-90/2 — scoring: `craft_transform` bez wyceny → bot nigdy nie craftuje (artId 649/650).**
+- Pomiar: SS-03 — `activate_ability(saw#1) = −2,00` zarówno z materiałem na polu (Angel's Feather),
+  jak i w grobie (Cloak of the Bat); poprawnie BRAK oferty bez drugiego artefaktu i przy manie 2.
+- Root cause: `craft_transform` nie ma case'u w wycenie efektów (w `heuristic-bot.js` występuje
+  wyłącznie w zbiorze efektów kumulujących się @1481) → wartość efektu 0 minus koszt.
+- Kontrast wewnętrzny: ten sam bot wycenia animację powstałego Chariota na **+10** (okno ataku,
+  BC-03) i **+13** (okno obrony, BC-04) — permanent PO craft jest używany chętnie, ale droga do
+  niego jest zawsze ujemna.
+- PRO: craft ze śmieciowego artefaktu za {3}{W} (sorcery) zamienia artefakt bez ciała w Vehicle
+  5/5 z dwiema zdolnościami — to upgrade, nie strata. **Fala B.**
+
+**F-90/3 — scoring (S/T): score rzutu Sawblades nie widzi warunku ETB „tapnięty stwór przeciwnika".**
+- Pomiar: SS-04 — **77,40** we wszystkich czterech wariantach (tylko odkręcony 3/3 / tapnięty 3/3 /
+  tapnięty 7/7 / tapnięty 1/1 + odkręcony 6/7); SS-01 pusty stół wroga → 60,30; SS-02 → 77,40 we
+  własnym main1 (wróg odkręcony) i 77,40 w `declare_blockers`/`main2` tury rywala (wróg tapnięty).
+- Czyli +17,1 za „wróg ma JAKIEGOKOLWIEK stwora", 0 za „wróg ma TAPNIĘTEGO" (deskryptor
+  `requiresTarget: tapped_creature, opponentControls`) i 0 za jakość celu.
+- PRO: flash + ETB na tapniętego stwora to karta na OKNO po ataku rywala; rzut w main1 na
+  odkręcony stół marnuje trigger (zostaje goły artefakt za 2).
+- Uściślenie: wybór CELU triggera jest poprawny (SS-01: lethal 3/3 = **44** vs nie-lethal 7/7 =
+  **−80**) — rozjeżdża się decyzja rzutu, nie decyzja celu. **Fala B.**
+
+**F-90/4 — scoring (S): Threshold Seton's Desire jest niewidzialny dla wyceny (artId 648).**
+- Pomiar: SD-01 — 72,00 przy grobie 6 / 7 / 9 kart (próg 7+ nie dodaje nic); SD-05 — host lotnik
+  75,60 vs host lądowy 72,00 IDENTYCZNIE z wrogim 2/2 reach (must-block ściąga go i odsłania mojego
+  lotnika 4/4) i z wrogim 2/1 bez reach (wariant 3); SD-02 — pusty stół wroga 72,00 = stół z
+  blokerami 72,00.
+- Silnik sam wymóg egzekwuje (`combat.js:373 mustBlockHostCounts`; mutacja mA audytu PR #185 →
+  6 fail) — brakuje wyłącznie wyceny po stronie bota.
+- PRO: klauzula Threshold to drugi, często większy efekt aury; wartość hosta powinna zależeć od
+  tego, czy jest co odsłonić (drugi atakujący) i czy wróg ma kim blokować. **Fala B.**
+
+**F-90/5 — scoring (S): decyzja explore (wierzch vs grób) jest kontekstowo ślepa, choć scry NIE jest.**
+- Pomiar: RG-02 A/B/C — zawsze `resolve_explore_choice{putInGraveyard:false}` = **40** vs mill
+  **10**, identycznie przy grobie 3 typy/6 kart (mill = delirium 4 typy + Threshold 7) i 5 typów/
+  12 kart (progi spełnione); RG-01 — 40/10 zarówno dla potrzebnego instantu (Plummet), jak i dla
+  zbędnej drugiej kopii River Herald Guide.
+- Kontrola dodatnia (ta sama klasa decyzji): GT-04 scry 1 — ląd `topOrder` **20** vs `bottomIds`
+  **−10**; drugi Get the Point **23** (spód) vs 20 (wierzch); Guide 3/1 **20** vs **11**. Rodzina
+  scry ma model jakości karty, explore go nie ma → rozjazd L41 w klasie „wierzch vs spód/grob".
+- PRO: mill jest warty więcej, gdy karta uzupełnia delirium/Threshold albo jest zbędna; wierzch —
+  gdy brakuje many/removalu. **Fala B.**
+
+**F-90/6 — scoring (T/sekwencja): bot nie ustawia kolejności rzutów pod progi (MBR przed explore).**
+- Pomiar: RG-04 — przy manie 6/7/10 pierwszy rzut to `cast_spell(mbr-hand->nasz-3-2)` = **72,00**
+  (Guide 67,50); stan PO: Leonin **5/4** (2 liczniki — delirium NIE spełnione, grób 3 typy), a mill
+  artefaktu z explore następuje DOPIERO potem (grób 7 kart/4 typy).
+- PRO: przy manie ≥7 najpierw Guide (explore milluje Angel's Feather → 4 typy = delirium), potem
+  MBR → 3 liczniki (6/5 zamiast 5/4). Stały ordering score'ów oddaje jeden licznik.
+- Root cause: produkcja gra z `lookahead: 0`, a score MBR nie zawiera przewidywanego delirium
+  (istniejący mechanizm `anticipated*` @3260-3416 tego przypadku nie obejmuje). **Fala C.**
+
+**F-90/7 — L41: equip „pierwsze założenie" vs „przeniesienie" — rozjazd 28 punktów dla tej samej pary (sprzęt, host).**
+- Pomiar: LL-05 — Brawler's Plate (+2/+2 trample, equip 4) NIEzałożony: `sprzet#0->leonin` = **20**,
+  `->maly` = **18**; ten sam Plate ZAŁOŻONY na Highland Game → przeniesienie na Leonina = **−8**.
+- Root cause: `equipValuation` (`heuristic-bot.js:10352`) jest współdzielona (PMSSB-34/A:
+  `bodyValue`/`printedBody`), ale gałąź przeniesienia (16814-16840) dolicza utratę pompy na hoście
+  źródłowym inną miarą — pomiar pokazuje 20 → −8 dla tego samego skutku netto (+2/+2 trample
+  przeniesione z 2/1 na 3/2 z bonusem `equipped`).
+- Kontrola procedury (a) L41: rozjazd gałęzi tej samej klasy = finding. **Fala C.**
+
+**F-90/8 — scoring (S): sprzęt z korzyścią z TRIGGERA (bez `pump`/`keywords`) jest zawsze na minusie → Leonin nigdy nie jest wyposażony.**
+- Pomiar: LL-04 — Greatsword of Tyr (equip {W}; trigger `equipped_creature_attacks`: licznik +1/+1
+  i tapnięcie stwora) NIEzałożony: `sprzet#1->leonin` = **−11** i `->maly` = **−11** (bez
+  różnicowania hosta); LL-05 wariant 1/2: −11 w obu gałęziach (spójnie, więc to NIE rozjazd L41,
+  tylko brak modelu).
+- Root cause: `equipValuation` czyta wyłącznie `def.pump` i `def.keywords`; Greatsword ma
+  `pump: null, keywords: []` i trigger → `nothingAdded = true` → kara −12 (`heuristic-bot.js:16766`)
+  na KAŻDEJ parze (sprzęt, host).
+- Skutek dla batcha 73: warunek „+1/+1 as long as it is equipped" Leonina (artId 651) jest w grze
+  bota nieosiągalny; kontrola dodatnia (LL-05 wariant 3: Plate → Leonin 20 > Highland Game 18)
+  dowodzi, że przy `pump` equip działa i że statyka `equipped` JEST widziana. **Fala C.**
+
+**F-90/9 — scoring (S): trigger Kessiga (`damage_each_opponent`) nie skaluje się z życiem przeciwnika i nie widzi lethal.**
+- Pomiar: KF-05 — `cast_spell(plummet-hand->wrona)` = **100,00** przy życiu p2 = 20 / 6 / 2 / **1**
+  (Kessig na stole; 1 obrażenie przy życiu 1 = LETHAL); KF-02 — 100 z Kessigiem vs 98 bez (trigger
+  warty stałe 2 punkty).
+- Kontrast: ta sama sonda mierzy lethal w decyzji ataku na **1032** (KF-04: wróg 1 życie, bloker
+  tapnięty) → model lethal w ataku istnieje, w wycenie obrażeń z triggera nie.
+- PRO: przy życiu 1 przeciwnika rzut czaru odpalającego Kessiga WYGRYWA partię — to musi być
+  score rzędu lethal, nie +2. **Fala B.**
+
+**F-90/10 — scoring (S): wartość Kessiga jako permanentu nie zależy od paliwa w ręce + remis 70/70 (L169).**
+- Pomiar: KF-06 — `cast_permanent(kessig-hand)` = **70,20** w czterech wariantach (z Plummetem,
+  z Get the Point, z samym Leoninem = brak paliwa, z pustą ręką); w wariancie „Kessig + Leonin" bot
+  wybiera Leonina (70) nad Kessigiem (70) — REMIS rozstrzygany kolejnością enumeracji, nie oceną.
+- PRO: 1/3 z triggerem na czary niebędące stworami jest wart więcej, gdy takie czary są w ręce
+  (i gdy życie przeciwnika jest niskie — F-90/9). **Fala C.**
+
+**F-90/11 — scoring (T/S): aura haste wyceniana tak samo po walce jak przed nią i tak samo na hoście tapniętym/chorym jak na gotowym.**
+- Pomiar: M-01 — main1 **78,30** = main2 **78,30** (po walce haste nie daje już nic w tej turze);
+  `beginning_of_combat`/`combat_damage`/`end` → brak oferty rzutu (aura bez flash, timing sorcery —
+  poprawnie); M-04 — TEN SAM host (Leafcrown Dryad 2/2) odkręcony gotowy **79,20** = chory **79,20**
+  = TAPNIĘTY **79,20**; M-02 — `->gotowy-2-2` 79,20 vs `->chory-2-1` 78,30 (różnica 0,9 pkt NA
+  KORZYŚĆ gotowego, choć haste istnieje właśnie po to, by zdjąć chorobę atakową); M-03 — host
+  tapnięty 78,30.
+- Kontrola dodatnia: nadpisanie słów kluczowych JEST widziane — host już z haste **66,60**, host już
+  z trample **67,50** (vs 78,30/79,20 na czystym hoście).
+- PRO: haste jest warte najwięcej na stworze CHORYM i odkręconym (odblokowuje atak natychmiast),
+  prawie zero na tapniętym i po walce. **Fala C.**
+
+### 8.3 Zmierzone POPRAWNE (nie zmieniać; to kotwice anty-over-fix M429)
+
+| Zachowanie | Pomiar |
+|---|---|
+| Trzymanie hard removalu na godny cel | GT-01: 6/7 = **100** vs 2/1 = **−52** → pass; tylko 2/1 → pass; warded 3/2 = **−54** |
+| Wyjątki bramki trzymania | GT-03: życie 9 → **70** (rzuca); lotnik TMC 5 = koszt czaru → **86**; tani lotnik 1/1 bez mojej odpowiedzi w powietrzu → **68**; tani lotnik + mój reach → pass (**−52**) |
+| Kara za removal we własnym upkeep/draw | P-01: cast = **−22** → pass; GT-02: cast = **−20** → pass (`removalUpkeepHoldPenalty: 120`) |
+| Premia za okno EOT przeciwnika | GT-02: p2 `end` = **112** vs 100 w pozostałych oknach |
+| Wybór celu removalu | P-03: 5/5 lotnik **104** > 1/1 lotnik **82** > pass 0; GT-01: 6/7 **100** > warded 3/2 **−54** |
+| Brak legalnego celu | P-04: pass; cast we WŁASNEGO lotnika = **−138** |
+| Ward {2} i dopłata | LL-03: mana 5 → cel z wardem **−200**, bez warda **−52**; mana 7 → **−54** (dopłata możliwa, wraca bramka trzymania) |
+| Scry 1 zależny od karty | GT-04: ląd 20/**−10**; drugi Get the Point **23**/20 → spód; Guide 3/1 **20**/11 → wierzch |
+| Delirium (próg 4 typów) | B-01: 3 typy **72** → 4 typy **94** → 5 typów **94** (+22 na progu) |
+| Cel pompki (matematyka wymiany + ewazja) | B-04: 4/4 lotnik **80** > 3/2 **72** > 1/1 **62**; lotnik vs naziemny 3/3 **85** > ten sam lotnik vs wrogi lotnik **80** |
+| Cel ETB Sawblades (lethal) | SS-01: tapnięty 3/3 **44** vs tapnięty 7/7 **−80** |
+| Crew tylko w oknie walki/obrony | BC-01: main1/main2 → **−10**/pass; `beginning_of_combat`/`declare_attackers` → **+11** i potem `attack[permanent-2]`; BC-03: {T} **10** > crew z lotnikiem 4/4 **8**; BC-04: obrona **13**, atakujący lotnik → pass/**−10** |
+| Bramka `onlyInStep: 'upkeep'` | NS-02: upkeep → oferta; main1/main2/end → BRAK oferty (F-4/F-9 audytu PR #185 stoi) |
+| Wartość poświęcanego stwora | NS-01: fodder 1/1 → **19**, tylko 4/3 → **11** (różnica 8 = `graveyardBodyValue` 13 vs 21 — F-8 audytu PR #185 stoi); brak stwora → **−100**/pass |
+| Atak ciałem 1/3 | KF-03: wrogi 2/2 → **−2**/pass; pusty stół → **12**; KF-04: lethal (bloker tapnięty) → **1032**, bloker odkręcony → **−2** |
+| Kolejność stwór → instant (trigger Kessiga) | KF-01: mana 4 → `cast_permanent(kessig-hand)`; z wrogim lotnikiem → removal **98** > Kessig **70** |
+| Statyka `equipped` Leonina widziana przy `pump` | LL-05 wariant 3: Plate → Leonin **20** > Highland Game **18** |
+
+### 8.4 Kontrole OBOWIĄZKOWE procedury (krok 2)
+
+- **(a) L41** — rozjazdy znalezione: **F-90/7** (equip: 20 vs −8 dla tej samej pary), **F-90/5**
+  (klasa „wierzch vs spód/grob": scry ma model jakości karty, explore nie), **F-90/1** (oferta ≠
+  wykonanie w gałęzi grobowej — ta sama klasa co M384). Trigger-decyzje liczone osobno:
+  `resolve_trigger_target` (SS-01, poprawnie), `resolve_explore_choice` (F-90/5), `resolve_scry`
+  (poprawnie). `damage_each_opponent` (Kessig): wartość jest (98 → 100), ale bez skali życia
+  (F-90/9). Para `cast_permanent(aura->host)` vs `resolve_aura_host` (aura wchodząca z grobu)
+  **NIE jest osiągalna kartami batcha 73** (brak reanimacji aur w 11 wpisach) — kontrola dla tej
+  pary niewykonana, udokumentowana zamiast dorabiana syntetykiem (por. Zgłoszenie V właściciela).
+- **(b) Wymiar kosztu (S11)** — P-05: Plummet (2 many) **98** vs Get the Point (5 many) **86** na
+  TEN SAM cel → różnica 12 = koszt, czary NIE remisują ✓; NS-03: aktywacja za 5 many + stwór **19**
+  (mana 10 i 5) vs pass przy manie 2 ✓; BC-03: {T} (dwa artefakty) **10** = crew (stwór 2/1) **10** —
+  remis dwóch różnych kosztów, do oceny w kroku 3 (crew z lotnikiem 4/4 spada do **8**, więc koszt
+  załogi różnicuje, koszt artefaktów nie).
+- **(c) Anty-over-fix M429** — kotwice PRZED (najsłabsze realne warianty, które po naprawach mają
+  wrócić do tych samych wartości, a nowe wymiary mają być DOPŁATAMI/KARAMI): SS-01 pusty stół wroga
+  **60,30**; SD-02 pusty stół wroga **72,00**; M-03 host z haste **66,60** / z trample **67,50**;
+  GT-03 bazowo pass (cast **−52**); KF-03 atak w odkręconego 2/2 **−2**; LL-05 Plate → Highland Game
+  **18**; B-04 pompka na 1/1 **62**; RG-02 wariant C (progi spełnione) **40/10**; BC-01 crew w main1
+  **−10**; NS-02 brak oferty poza upkeepem.
+
+### 8.5 Fale
+
+- **Fala A (krytyczna, silnik):** F-90/1 — enumeracja wyborów kosztu w gałęzi grobowej
+  `legalActivatedAbilities` (wspólny helper z gałęzią polową, L41), pin oferty BEZ ręcznego
+  doklejania parametru + test, że komenda WYBRANA PRZEZ BOTA się wykonuje.
+- **Fala B (scoring rodzinowy):** F-90/2 (craft), F-90/3 (warunek ETB Sawblades), F-90/4 (Threshold
+  must-block), F-90/5 (explore: model jakości karty jak w scry), F-90/9 (skala życia/lethal w
+  `damage_each_opponent`).
+- **Fala C (dopracowanie):** F-90/6 (sekwencja pod progi), F-90/7 (rozjazd equip), F-90/8 (sprzęt
+  triggerowy), F-90/10 (paliwo Kessiga + remis), F-90/11 (haste: stan hosta i okno po walce).
