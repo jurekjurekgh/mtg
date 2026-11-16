@@ -15410,16 +15410,32 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         const isRegenerateAbility = ability?.keyword === 'regenerate'
           || abilityEffectTypes.includes('regenerate')
           || effects.some((e) => e?.type === 'regenerate');
+        // F-90/12 (audyt/pętla jakości 2026-11-16, Bladewheel Chariot): jedna
+        // reguła dopasowania bliźniaka na stosie — porównujemy znormalizowany
+        // zbiór efektów `entry.abilityEffects` (ADR 0017: pełny deskryptor na
+        // stosie), z bezpiecznym fallbackiem do `abilityIndex` przy braku pola.
+        // Sama zgodność `abilityIndex` omijała dwie różne zdolności tego samego
+        // obiektu o identycznym idempotentnym efekcie EOT (`#0` Tap 2 artefakty
+        // i `#1` Crew 1 na Bladewheel Chariot), pozwalając aktywować obie naraz;
+        // równocześnie nie blokuje dwóch zdolności o RÓŻNYCH skutkach tej samej
+        // rodziny (np. grant `flying` vs `lifelink`).
+        const serializedEffects = JSON.stringify(effects);
+        const serializedTargets = JSON.stringify(cmd.targets ?? []);
+        const hasPendingAbilityTwin = () => (view.zones.stack ?? []).some((entry) => {
+          if (entry.controllerId !== view.playerId || entry.sourceId !== cmd.objectId) return false;
+          if (JSON.stringify(entry.targets ?? []) !== serializedTargets) return false;
+          if (entry.abilityEffects != null) {
+            const entryEffects = Array.isArray(entry.abilityEffects) ? entry.abilityEffects : [entry.abilityEffects];
+            return JSON.stringify(entryEffects) === serializedEffects;
+          }
+          return entry.abilityIndex === (cmd.abilityIndex ?? 0);
+        });
         // M179/B (uogólnienie M175/A2): IDENTYCZNA aktywacja (źródło +
-        // zdolność + cele) już WISI na stosie, a wszystkie efekty są
+        // zdolność/efekt + cele) już WISI na stosie, a wszystkie efekty są
         // idempotentne do EOT — drugi egzemplarz nic nie zmieni w grze.
         if (abilityEffectTypes.length > 0
           && abilityEffectTypes.every((type) => IDEMPOTENT_EOT_EFFECTS.has(type))) {
-          const sameTargets = (entry) => JSON.stringify(entry.targets ?? []) === JSON.stringify(cmd.targets ?? []);
-          const pendingTwin = (view.zones.stack ?? []).some((entry) => entry.controllerId === view.playerId
-            && entry.sourceId === cmd.objectId && entry.abilityIndex === (cmd.abilityIndex ?? 0)
-            && sameTargets(entry));
-          if (pendingTwin) return finish(-10);
+          if (hasPendingAbilityTwin()) return finish(-10);
           // M219 (pętla jakości Żywym Testerem, h9 zendikar vs worek-legend
           // s=44): pendingTwin łapie tylko drugą kopię NA STOSIE. Gdy pierwsza
           // aktywacja już się ROZSTRZYGNĘŁA i nadała trwały-do-EOT stan
@@ -15468,10 +15484,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           const shieldTargets = (cmd.targets ?? []).length > 0 ? cmd.targets : [cmd.objectId];
           const alreadyShielded = (view.regenerationShields ?? [])
             .some((id) => shieldTargets.includes(id));
-          const pendingTwin = (view.zones.stack ?? []).some((entry) => entry.controllerId === view.playerId
-            && entry.sourceId === cmd.objectId && entry.abilityIndex === (cmd.abilityIndex ?? 0)
-            && JSON.stringify(entry.targets ?? []) === JSON.stringify(cmd.targets ?? []));
-          if (alreadyShielded || pendingTwin) return finish(-30);
+          if (alreadyShielded || hasPendingAbilityTwin()) return finish(-30);
         }
         // N (uwagi z testów 2026-10-16, Enduring Sliver): klasa „outlast" —
         // zdolność sorcery-speed z kosztem {T} NA SAMYM źródle, której cały efekt
