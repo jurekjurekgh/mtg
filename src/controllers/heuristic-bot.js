@@ -10710,8 +10710,14 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       toughness: (host.toughness ?? 0) + (pump?.toughness ?? 0),
       keywords: [...(host.keywords ?? []), ...(pump?.keywords ?? [])],
     };
-    const zmuszeni = untappedEnemyBlockers(view).filter((b) => attackerCanBeBlocked(atakujacy, [b]));
-    if (zmuszeni.length === 0) return 0;
+    // F-186/3 (CR 509.1c + 702.111b): `attackerCanBeBlocked(atakujacy, [b])`
+    // zwracało zawsze `false` przy `menace` (1 bloker < 2), więc wymóg znikał
+    // nawet wtedy, gdy wróg miał ≥2 zdolne blokery zmuszone blokować razem.
+    // Najpierw filtrujemy zdolność pojedynczego blokera (flying/moc/typ), a
+    // potem sprawdzamy cały zbiór `zmuszeni` (wymusza ≥2 przy menace).
+    const bezMenace = { ...atakujacy, keywords: atakujacy.keywords.filter((k) => k !== 'menace') };
+    const zmuszeni = untappedEnemyBlockers(view).filter((b) => attackerCanBeBlocked(bezMenace, [b]));
+    if (!attackerCanBeBlocked(atakujacy, zmuszeni)) return 0;
     const wymiana = blockExchangeOf(atakujacy, zmuszeni);
     const zabija = (wymiana?.diedBlockerIds ?? []).length > 0;
     let value = (zabija && !wymiana?.attackerDies) ? 10 : -10;
