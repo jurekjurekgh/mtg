@@ -10240,19 +10240,17 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       + P.millFoePressureWeight * Math.max(0, P.millFoePressureCap - after);
   }
   /**
-   * PMSSB-20: wartość mill SIEBIE — wspólna dla ścieżek celowanych i
-   * niecelowanych (L41). Drabina deck-outu (−120/−20/−10) i synergia grobu
-   * (+6/−25 — M200/R: zakryta biblioteka = MOŻLIWOŚĆ, nie pewność) są
-   * historyczne; NOWE: `millReanimateBonus` za kartę reanimacji w ręce —
-   * self-mill pod reanimację to najlepszy moment zdolności. Targeted bez
-   * synergii = −80 dokładnie jak dawniej (guard −25−55).
+   * PMSSB-20 + decyzja właściciela (2026-11-16): wartość mill SIEBIE —
+   * wspólna dla ścieżek celowanych i niecelowanych (L41). Gracz nie wrzuca
+   * świadomie kart do grobu pod przyszłe wyciąganie/progi, więc self-mill
+   * jest zawsze niekorzystny (−25, z drabiną deck-outu i guardem przy
+   * celowaniu; `millReanimateBonus` domyślnie 0).
    */
   function selfMillValue(view, amount, { targeted = false } = {}) {
     const myLib = (view.zones.library ?? []).filter((o) => o.controllerId === view.playerId).length;
     if (myLib - amount <= 0) return -120; // deck-out — nigdy
     const deckOutRisk = myLib - amount <= 4 ? -20 : myLib - amount <= 8 ? -10 : 0;
-    const graveSynergy = selfMillGraveSynergy(view);
-    return (graveSynergy ? 6 : -25) + holdsReanimation(view) * P.millReanimateBonus
+    return -25 + holdsReanimation(view) * P.millReanimateBonus
       + deckOutRisk - (targeted ? P.millSelfTargetGuard : 0);
   }
   function freeCastTargetPenalty(view, effects, cmd) {

@@ -28,8 +28,11 @@ Poprzedni handoff: `docs/setup/HANDOFF_2026-11-16-pmssb90.md`. Ten plik daje pun
 - `node --test test/dokumentacja-budzet-lektury.test.js`: **2 / 2** po kondensacji `docs/LESSONS.md`.
 - Pełna brama końcowa (`npm run test:all` + `npm run build`) uruchomiona na końcowym commicie dokumentacyjnym — wynik z dokładnymi liczbami odnotowany w opisie PR #187 i w raporcie końcowym sesji.
 
-## 3. Co pozostaje otwarte z wcześniejszej kolejki (bez jednostronnej zmiany)
+## 3. Rozstrzygnięte decyzje właściciela (usunięte z backlogu, 2026-11-16)
 
-1. **F-90/5b + F-90/6 (`graveyardReadingCardsInHand`):** model wartościowania dopełnienia progów Threshold (`minGraveyardCards`) i delirium (CR 207.2c) z kart na ręce (`Seton's Desire`, `Might Beyond Reason`); po wdrożeniu wymaga świadomego przepięcia pina 5a w `test/audyt-pmssb90-batch73.test.js`.
-2. **`declare_attackers` vs CR 508.1 (kolejność priorytetu w silniku):** decyzja architektoniczna właściciela (dotyka bezpośrednio silnika tury/walki).
-3. **F-90/10 (decyzja modelowa właściciela):** skala trwałego triggera na permanencie (`when_you_cast_spell` / `you_cast_noncreature_spell`) vs tymczasowej wypłaty EOT (piny-kotwice `10a/10b` w `test/audyt-pmssb90-batch73.test.js`).
+1. **Świadome wrzucanie do grobu (`F-90/5b`, `F-90/6`, `selfMillValue`, `surveil`/`explore` `graveSynergy`):**
+   właściciel uznał, że gracz nie wrzuca świadomie kart do grobu pod przyszłe wyciąganie ani pod progi (karty wędrują tam naturalnie), a świadome wrzucanie do grobu jest dla bota niekorzystne. Usunięto `+6` z `selfMillGraveSynergy` i wyzerowano domyślne `millReanimateBonus` oraz `surveilGraveSynergyPerSource` (zaktualizowane piny: `test/audyt-pmssb20-mill.test.js`, `test/audyt-pmssb24-scry.test.js`, `test/audyt-pmssb90-batch73.test.js`); `F-90/5b` i `F-90/6` zamknięte bez nowego modelu progów.
+2. **`declare_attackers` vs CR 508.1 (kolejność priorytetu w silniku):** decyzja właściciela — zostaje tak jak jest (zamknięte).
+3. **`F-90/10` (trwały trigger na permanencie vs paliwo z ręki):** decyzja właściciela — zostaje tak jak jest, tj. wypłata tymczasowa (np. prowess) skaluje się paliwem z ręki, a trwały trigger na permanencie nie jest bramkowany chwilowym stanem ręki (zamknięte i zamrożone w pinach `10a/10b`).
+
+Kolejka otwartych wątpliwości z audytu PR #186 i PMSSB-90 jest **pusta**.

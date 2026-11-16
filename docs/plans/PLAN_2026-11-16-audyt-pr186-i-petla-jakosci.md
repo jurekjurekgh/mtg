@@ -40,6 +40,11 @@
 - [x] Aktualizacja dokumentacji (`docs/PROJECT_HISTORY.md`, `docs/setup/HANDOFF_2026-11-16-audyt-pr186.md`, odhaczenie tego planu, aktualizacja opisu PR).
 - [x] Weryfikacja `git status` (czysto, brak tymczasowych plików/talii) i przekazanie raportu końcowego (bez merge — ADR 0007).
 
+### E5. Rozstrzygnięcia po E4 (decyzje właściciela 2026-11-16)
+- [x] Wdrożenie decyzji (1): brak świadomego wrzucania kart do grobu (`selfMillValue` zawsze `-25`, `millReanimateBonus: 0`, `surveilGraveSynergyPerSource: 0`; aktualizacja pinów w `test/audyt-pmssb20-mill.test.js`, `test/audyt-pmssb24-scry.test.js`, `test/audyt-pmssb90-batch73.test.js`).
+- [x] Zapisanie decyzji (2) (`declare_attackers` vs CR 508.1 zostaje jak jest) i (3) (`F-90/10` zostaje jak jest) oraz usunięcie wszystkich 3 wątpliwości z kolejki w `HANDOFF_2026-11-16-audyt-pr186.md`, `docs/PMSSB.md`, `docs/PROJECT_HISTORY.md`.
+- [x] Ponowna weryfikacja pełnych bramek (`npm run test:all` 10 731/10 731, `npm run build` 79 modułów / 5923.5 kB, `node tools/cr-numery.mjs` OK, `node tools/bot-tie-audit.mjs --gry=2`, `test/dokumentacja-budzet-lektury.test.js` 2/2), commit, push i aktualizacja opisu PR #187.
+
 ## Ryzyka i pułapki
 - Budżet lektury startowej na progu: **99 780 / 100 000** tokenów (zapas 220 tokenów). Nie dopisywać do `docs/LESSONS.md` bez uprzedniego skrócenia starych wpisów.
 - `tools/table-tester/` czyta `dist/mtg-table.html`, nie `src/` (L76) — po każdej zmianie w `src/` wymagane `npm run build`.
