@@ -82,9 +82,9 @@ wiersz rejestru rodzin @72, kamień **M465** w `docs/ENGINE_MILESTONES.md`, wpis
   podnoszeniem progu); narrację wynosi się do `docs/LESSONS_PRZYPADKI.md` (poza budżetem)
 - Szybki profil benchmarku **pominięty świadomie** (ADR 0018): `test/bot-benchmark.test.js` z progiem
   vs aggro 0.69 leci w `test:slow`; pełne B0 (~2,5 h) tylko na komendę właściciela
-- CI GitHub Actions (check `test` na PR #186) — **pass, 5m50s** dla HEAD `695727c`
-  (run 43878458255); każdy kolejny push uruchamia go ponownie — stan sprawdzić
-  `gh pr checks 186`
+- CI GitHub Actions (check `test` na PR #186) — **pass** dwukrotnie: 5m50s dla `695727c`
+  (run 43878458255) i **5m7s dla `f066305`** (run 43880590432, drzewo z L194); ten commit
+  dokumentacyjny uruchamia check ponownie — stan sprawdzić `gh pr checks 186`
 - Katalog: **713** `defineCard({`, **649** `supported`, **32** talie (bez zmian — pętla nie dodała kart)
 
 ## 3. Kolejka: co zostało otwarte (z root cause'em, bez cichego skipu)
