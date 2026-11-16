@@ -1072,14 +1072,13 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   searchToBattlefieldBase: 10,
   searchToHandBase: 9,
   searchLandScrewBonus: 5,
-  // Decyzja właściciela (2026-11-16, po PMSSB-90): gracz nie wrzuca świadomie
-  // do grobu pod przyszłe wyciąganie/progi (karty wędrują tam naturalnie),
-  // a świadome mielenie siebie jest zawsze niekorzystne — stąd bazowa
-  // wycena -25 i wyzerowany `millReanimateBonus`.
+  // PMSSB-20 (mill — re-audyt) + korekta właściciela (2026-11-16): presja deck-outu
+  // wroga (wyścig bibliotek) + combo self-mill z reanimacją przy zapasie ≥25 kart
+  // w bibliotece (`GRAVE_SYNERGY_MIN_LIBRARY`). Bazy 20+3n / −80 historyczne (guard).
   millFoeDeckOutWinValue: 400,
   millFoePressureWeight: 4,
   millFoePressureCap: 12,
-  millReanimateBonus: 0,
+  millReanimateBonus: 15,
   millSelfTargetGuard: 55,
   searchTwoCardsValue: 16,
   // (PMSSB-8/F-L1b: ferociousLootExpected usunięte — patrz klucze wyżej.)
@@ -1282,10 +1281,10 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   // śmieciem, tylko schodzi o „pół karty".
   cardDuplicateDiscount: 3,
   cardDuplicateMaxCopies: 2,
-  // Decyzja właściciela (2026-11-16, po PMSSB-90): bot nie wrzuca świadomie
-  // kart do grobu pod delve/reanimację/progi (karty wędrują do grobu
-  // naturalnie), więc domyślna dopłata przy surveil/explore wynosi 0.
-  surveilGraveSynergyPerSource: 0,
+  // PMSSB-24/F3 + korekta właściciela (2026-11-16): 2 pkt za źródło na kartę,
+  // limit 4 — tyle, ile `MILL_CAUTION` (2), więc JEDNO źródło w ręce znosi
+  // ostrożność grobu dla karty na granicy opłacalności przy ≥25 kartach w bibliotece.
+  surveilGraveSynergyPerSource: 2,
   surveilGraveSynergyCap: 4,
   // PMSSB-25/F1: 5 pkt — tyle, ile warta jest różnica między dwiema grywalnymi
   // kartami w regule ciała, więc „niechciana" wygrywa z każdą kartą grywalną

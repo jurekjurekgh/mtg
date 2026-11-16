@@ -10240,17 +10240,24 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       + P.millFoePressureWeight * Math.max(0, P.millFoePressureCap - after);
   }
   /**
-   * PMSSB-20 + decyzja właściciela (2026-11-16): wartość mill SIEBIE —
-   * wspólna dla ścieżek celowanych i niecelowanych (L41). Gracz nie wrzuca
-   * świadomie kart do grobu pod przyszłe wyciąganie/progi, więc self-mill
-   * jest zawsze niekorzystny (−25, z drabiną deck-outu i guardem przy
-   * celowaniu; `millReanimateBonus` domyślnie 0).
+   * PMSSB-20 + korekta właściciela (2026-11-16): wartość mill SIEBIE —
+   * wspólna dla ścieżek celowanych i niecelowanych (L41). Drabina deck-outu
+   * (−120/−20/−10) jest bezwarunkowa, natomiast premia za synergię grobową
+   * (`selfMillGraveSynergy` +6 / `holdsReanimation` × `millReanimateBonus`)
+   * aktywuje się wyłącznie przy zapasie ≥25 kart w własnej bibliotece
+   * (`GRAVE_SYNERGY_MIN_LIBRARY`) — poniżej progu bot nie wrzuca świadomie
+   * kart do grobu pod Gray Slaada ani reanimację.
    */
+  const GRAVE_SYNERGY_MIN_LIBRARY = 25;
+  const allowsGraveSynergyMill = (view) => myLibraryCount(view) >= GRAVE_SYNERGY_MIN_LIBRARY;
   function selfMillValue(view, amount, { targeted = false } = {}) {
-    const myLib = (view.zones.library ?? []).filter((o) => o.controllerId === view.playerId).length;
+    const myLib = myLibraryCount(view);
     if (myLib - amount <= 0) return -120; // deck-out — nigdy
     const deckOutRisk = myLib - amount <= 4 ? -20 : myLib - amount <= 8 ? -10 : 0;
-    return -25 + holdsReanimation(view) * P.millReanimateBonus
+    const allowsSynergy = allowsGraveSynergyMill(view);
+    const graveSynergy = allowsSynergy && selfMillGraveSynergy(view);
+    const reanimateBonus = allowsSynergy ? holdsReanimation(view) * P.millReanimateBonus : 0;
+    return (graveSynergy ? 6 : -25) + reanimateBonus
       + deckOutRisk - (targeted ? P.millSelfTargetGuard : 0);
   }
   function freeCastTargetPenalty(view, effects, cmd) {
@@ -18205,9 +18212,9 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           ? drawDeckingPenalty(view, milled.length) - drawDeckingPenalty(view, 0)
           : 0;
         // PMSSB-24/F3: karta zmielona do grobu jest paliwem, jeśli mamy w ręce
-        // coś, co z grobu czyta (delve / reanimacja). Dopłata za źródło,
-        // z limitem — jedna karta z delve nie usprawiedliwia mielenia talii.
-        const graveSynergy = milled.length > 0
+        // coś, co z grobu czyta (delve / reanimacja) i zapas ≥25 kart w bibliotece.
+        // Dopłata za źródło, z limitem — jedna karta z delve nie usprawiedliwia mielenia talii.
+        const graveSynergy = milled.length > 0 && allowsGraveSynergyMill(view)
           ? Math.min(P.surveilGraveSynergyPerSource * graveyardReadingCardsInHand(view), P.surveilGraveSynergyCap) * milled.length
           : 0;
         return finish(20 + millDelta + libraryOrderValue(view, keptOrder, originalOrder)
@@ -18554,8 +18561,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         if (!cmd.putInGraveyard) return finish(20);
         const MILL_CAUTION = 2; // ta sama stała co w surveil (mielenie jest nieodwracalne)
         const millDecking = drawDeckingPenalty(view, 1) - drawDeckingPenalty(view, 0);
-        const graveSynergy = Math.min(P.surveilGraveSynergyPerSource
-          * graveyardReadingCardsInHand(view), P.surveilGraveSynergyCap);
+        const graveSynergy = allowsGraveSynergyMill(view)
+          ? Math.min(P.surveilGraveSynergyPerSource
+            * graveyardReadingCardsInHand(view), P.surveilGraveSynergyCap)
+          : 0;
         return finish(20 - cardKeepValue(view, exploreCard) - MILL_CAUTION + millDecking + graveSynergy);
       }
       case 'resolve_craft_exile': {

@@ -30,8 +30,8 @@ Poprzedni handoff: `docs/setup/HANDOFF_2026-11-16-pmssb90.md`. Ten plik daje pun
 
 ## 3. Rozstrzygnięte decyzje właściciela (usunięte z backlogu, 2026-11-16)
 
-1. **Świadome wrzucanie do grobu (`F-90/5b`, `F-90/6`, `selfMillValue`, `surveil`/`explore` `graveSynergy`):**
-   właściciel uznał, że gracz nie wrzuca świadomie kart do grobu pod przyszłe wyciąganie ani pod progi (karty wędrują tam naturalnie), a świadome wrzucanie do grobu jest dla bota niekorzystne. Usunięto `+6` z `selfMillGraveSynergy` i wyzerowano domyślne `millReanimateBonus` oraz `surveilGraveSynergyPerSource` (zaktualizowane piny: `test/audyt-pmssb20-mill.test.js`, `test/audyt-pmssb24-scry.test.js`, `test/audyt-pmssb90-batch73.test.js`); `F-90/5b` i `F-90/6` zamknięte bez nowego modelu progów.
+1. **Synergia grobowa (`selfMillValue`, `surveil`/`explore` `graveSynergy`, `F-90/5b`, `F-90/6`):**
+   po doprecyzowaniu właściciel zdecydował przywrócić dotychczasową synergię grobową (`selfMillGraveSynergy` `+6`, `millReanimateBonus: 15`, `surveilGraveSynergyPerSource: 2`), ale z twardym progiem bezpieczeństwa **≥25 kart w własnej bibliotece** (`GRAVE_SYNERGY_MIN_LIBRARY = 25`, wspólna bramka `allowsGraveSynergyMill()` w `src/controllers/heuristic-bot.js`). Przy `<25` kartach w bibliotece bot nie wrzuca świadomie kart do grobu pod Gray Slaada, reanimację ani delve; przy `≥25` działa jak dotychczas (piny: `test/audyt-pmssb20-mill.test.js`, `test/audyt-pmssb24-scry.test.js`). `F-90/5b` i `F-90/6` (nowy model progów Threshold/delirium) zamknięte i usunięte z backlogu.
 2. **`declare_attackers` vs CR 508.1 (kolejność priorytetu w silniku):** decyzja właściciela — zostaje tak jak jest (zamknięte).
 3. **`F-90/10` (trwały trigger na permanencie vs paliwo z ręki):** decyzja właściciela — zostaje tak jak jest, tj. wypłata tymczasowa (np. prowess) skaluje się paliwem z ręki, a trwały trigger na permanencie nie jest bramkowany chwilowym stanem ręki (zamknięte i zamrożone w pinach `10a/10b`).
 

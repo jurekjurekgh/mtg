@@ -56,14 +56,13 @@
     wpisach posiadających już pełną narrację w `docs/LESSONS_PRZYPADKI.md` (z zachowaniem wszystkich nagłówków
     `## L<nr>`) — zapas budżetu wzrósł z 220 do ~2,5 tys. tokenów.
 - **Decyzje właściciela po E4 (2026-11-16 — zamknięcie i usunięcie z backlogu wszystkich 3 otwartych wątpliwości):**
-  1. **Świadome wrzucanie do grobu (`F-90/5b`, `F-90/6`, `selfMillValue`, `surveil`/`explore` `graveSynergy`):**
-     właściciel uznał, że gracz nie wrzuca świadomie kart do grobu (karty trafiają tam naturalnie i mogą być wyciągane),
-     natomiast świadome wrzucanie do grobu jest dla bota niekorzystne. W `src/controllers/heuristic-params.js`
-     wyzerowano domyślne `millReanimateBonus` (`15 → 0`) i `surveilGraveSynergyPerSource` (`2 → 0`), w
-     `src/controllers/heuristic-bot.js` (`selfMillValue`) usunięto warunek `selfMillGraveSynergy ? 6 : -25` (zawsze `-25`),
-     a w `test/audyt-pmssb20-mill.test.js`, `test/audyt-pmssb24-scry.test.js` i `test/audyt-pmssb90-batch73.test.js`
-     zaktualizowano piny (`S05`/`Audyt #144/F3` na `−65`, dodano `S07` na `Gray Slaad` `−25`, `PMSSB-24/C4/C5`).
-     `F-90/5b` i `F-90/6` zamknięte i usunięte z kolejki.
+  1. **Synergia grobowa (`selfMillValue`, `surveil`/`explore` `graveSynergy`, `F-90/5b`, `F-90/6`):**
+     właściciel zdecydował przywrócić dotychczasową synergię grobową (`selfMillGraveSynergy` `+6`,
+     `millReanimateBonus: 15`, `surveilGraveSynergyPerSource: 2`), ograniczając ją wspólną bramką
+     `allowsGraveSynergyMill()` (`GRAVE_SYNERGY_MIN_LIBRARY = 25` w `src/controllers/heuristic-bot.js`):
+     bot może millować pod `Gray Slaad` / reanimację / delve przy zapasie `≥25` kart w bibliotece,
+     a poniżej `25` kart premia jest wyłączona (piny w `test/audyt-pmssb20-mill.test.js` i
+     `test/audyt-pmssb24-scry.test.js`). `F-90/5b` i `F-90/6` zamknięte bez nowego modelu progów.
   2. **`declare_attackers` vs CR 508.1 (priorytet w silniku):** decyzja właściciela — zostaje tak jak jest (usunięte z kolejki).
   3. **`F-90/10` (trwały trigger na permanencie vs paliwo z ręki):** decyzja właściciela — zostaje tak jak jest (usunięte z kolejki; piny `10a/10b`).
 
