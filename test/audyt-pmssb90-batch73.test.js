@@ -650,3 +650,64 @@ test('PMSSB-90/F-90-11f: STRAŻNIK L41 — ścieżka aury bramkuje pośpiech tak
   assert.match(cialo, /summoningSickness === true/, 'bramka choroby nosiciela — jak `equipValuation.hasteAdds`');
   assert.match(cialo, /precombat_main/, 'okno ataku musi być jeszcze przed nami (aura to sorcery — CR 307.1: tylko faza główna)');
 });
+
+// ---------------------------------------------------------------------------
+// F-90/10 (fala C) — ZMIERZONE, ZAMKNIĘTE BEZ ZMIANY KODU (decyzja modelowa
+// poza zakresem pętli, precedens PMSSB-73/74/75). Pomiar PRZED = PO (KF-06,
+// Kessig Flamebreather 1/3 za {2}, trigger „whenever you cast a noncreature
+// spell, this creature deals 1 damage to each opponent"): `cast_permanent(
+// kessig-hand)` = 70,2018 we WSZYSTKICH czterech wariantach ręki: tanie paliwo
+// (Plummet 2), paliwo za drogie na to okno (Get the Point 5), ręka z samym
+// stworzeniem (Leonin) i ręka pusta — wartość permanentu NIE zależy od paliwa.
+//
+// Zmierzona próba naprawy (cofnięta, `.arena/patch-f90-10.py` +
+// `.arena/mutacje-f90-10.py` w dzienniku): bramka dowodu paliwa w
+// `anticipatedTailValue` (`like = 0.5` → `0` bez rzucalnego paliwa, wspólny
+// licznik ze ścieżką prowess PMSSB-65) dawała oczekiwany kontrast na KF-06
+// (70,20 / 68,40 / 68,40 / 68,40 → paliwo 2 > brak paliwa), ale przesuwała 5
+// pinów z pętli PMSSB-10 Wave-A/B1 dla czterech innych kart z tą samą rodziną
+// zdarzeń: Kulrath Mystic 64,8 → 63,9, Tellah 69,3 → 64,8, token_wizard
+// 65,7 → 63,9, Goblin Battle Jester 64,8 → 63,9 ORAZ Illusory Demon
+// 71,7 → 78,00 — bo `when_you_cast_spell` na Demonie to KOSZT (poświęcenie
+// własnego ciała), a bramka „nie ma paliwa w ręce TERAZ" wyciszała ten koszt
+// tak samo jak wypłatę.
+//
+// Wniosek (zasada, którą te piny zamrażają): wypłata TYMCZASOWA (pompka do
+// końca tury — prowess) musi być zrealizowana w tym samym cyklu, więc słusznie
+// skaluje się rzucalnym paliwem z ręki (PMSSB-65); wypłata TRWAŁA (trigger na
+// permanencie, który odpali w przyszłych turach) nie sprowadza się do migawki
+// z ręki — to ta sama zasada, dla której `auraKeywordValue` NIE karze aury
+// poza oknem walki (M179/A1 + M218/3: „aura jest STAŁA"). Zmiana tej zasady
+// jest decyzją właściciela, nie pętli strojenia; piny niżej pilnują, żeby
+// stała się świadoma (jak re-piny PMSSB-67/F2).
+// ---------------------------------------------------------------------------
+
+/** Score rzutu Kessiga z decyzji bota (KF-06: mana 6, Kessig kosztuje 2 → zostają 4). */
+const kessigScore = (indeks) => scoreAlternatywy(decyzja(budowa('KF-06', indeks).state, 'p1'), 'cast_permanent(kessig-hand');
+
+test('PMSSB-90/F-90-10a: ZAMROŻONE — trigger TRWAŁY na permanencie nie jest bramkowany paliwem w ręce', () => {
+  const taniePaliwo = kessigScore(0); // Plummet (2) — rzucalny z 4 many, które zostają po Kessigu
+  const drogiePaliwo = kessigScore(1); // Get the Point (5) — w tym oknie nie do rzucenia
+  // Wszystkie cztery = 70,2018 (pomiar PRZED = PO).
+  const samStwor = kessigScore(2); // ręka: Kessig + Leonin (trigger martwy w tej turze)
+  const pusto = kessigScore(3); // ręka: tylko Kessig
+  assert.equal(taniePaliwo, drogiePaliwo, `paliwo tanie i drogie: ${taniePaliwo} vs ${drogiePaliwo}`);
+  assert.equal(samStwor, pusto, `ręka z stworzeniem i pusta: ${samStwor} vs ${pusto}`);
+  assert.ok(Math.abs(taniePaliwo - pusto) < 0.0001,
+    `wartość permanentu z triggerem trwałym jest niezależna od migawki ręki: ${taniePaliwo} vs ${pusto}`);
+});
+
+test('PMSSB-90/F-90-10b: ZAMROŻONE — pozorny remis L169 z Leoninem to różnica 0,0018, więc wybór nie zależy od enumeracji', () => {
+  // Pomiar wyświetlany jako „70,20 = 70,20" (L169) jest w pełnej precyzji
+  // 70,2036 (Leonin 3/2 z wardem) vs 70,2018 (Kessig 1/3 z triggerem) — bot
+  // wybiera Leonina DETERMINISTYCZNIE, nie kolejnością alternatyw. Pin pilnuje
+  // obu faktów: kierunku wyboru i tego, że różnica jest niezerowa (gdyby kiedyś
+  // zeszła do zera, remis naprawdę rozstrzygałaby enumeracja).
+  const d = decyzja(budowa('KF-06', 2).state, 'p1'); // ręka: Kessig + Leonin
+  const leonin = scoreAlternatywy(d, 'cast_permanent(reszta-0');
+  const kessig = scoreAlternatywy(d, 'cast_permanent(kessig-hand');
+  assert.ok(leonin > kessig, `Leonin ${leonin} musi bić Kessiga ${kessig}`);
+  assert.ok(leonin - kessig > 0 && leonin - kessig < 1,
+    `różnica jest realna, ale poniżej punktu (zmierzona 0,0018): ${(leonin - kessig).toFixed(4)}`);
+  assert.ok(String(d.wybrano).includes('reszta-0'), `wybór bota: ${d.wybrano}`);
+});
