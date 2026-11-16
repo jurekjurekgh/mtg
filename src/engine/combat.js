@@ -2177,6 +2177,37 @@ function completeBlockingAssignment(problem, primary, forbidden = new Set()) {
 }
 
 /**
+ * Podzbiory atakujących dla obowiązkowego blokera: przy jednym slocie wyłącznie
+ * pojedynczy atakujący; przy `slots > 1` (np. Cenn's Tactician z licznikiem
+ * +1/+1) dodatkowo wielocelowe kombinacje atakujących z wymogiem hosta
+ * (`must_block_enchanted`), bo każde takie trafienie dodaje osobny wymóg w
+ * `fulfilledBlockRequirements` (CR 509.1c — F-186/1).
+ */
+function requiredBlockerChoices(targets, slots, hosts) {
+  const choices = targets.map((a) => [a]);
+  if (slots <= 1 || hosts.size === 0) return choices;
+  const hostTargets = targets.filter((a) => (hosts.get(a) ?? 0) > 0);
+  const maxMulti = Math.min(slots, hostTargets.length);
+  if (maxMulti < 2) return choices;
+  const multi = [];
+  const pick = [];
+  const combine = (start, targetSize) => {
+    if (pick.length === targetSize) {
+      multi.push(pick.slice());
+      return;
+    }
+    for (let i = start; i <= hostTargets.length - (targetSize - pick.length); i++) {
+      pick.push(hostTargets[i]);
+      combine(i + 1, targetSize);
+      pick.pop();
+    }
+  };
+  for (let size = 2; size <= maxMulti; size++) combine(0, size);
+  const score = (list) => list.reduce((sum, a) => sum + (hosts.get(a) ?? 0), 0);
+  return [...multi, ...choices].sort((x, y) => score(y) - score(x) || x.length - y.length);
+}
+
+/**
  * CR 509.1c: maksimum LICZBY wymogów, z minimalnym świadkiem do auto-pass.
  * Szukamy tylko podstawowych przypisań wymuszonych stworów (albo pominięcia),
  * nie wszystkich deklaracji. Dopasowanie partnerów przycina niemożliwe prefiksy;
@@ -2216,11 +2247,14 @@ function maximalRequiredBlocks(state, playerId, forced = null, problem = null) {
     }
     if (i === required.length) return;
     const id = required[i];
-    for (const attacker of problem.targets.get(id)) {
-      (primary[attacker] ??= []).push(id);
+    const choices = requiredBlockerChoices(problem.targets.get(id), problem.slots.get(id) ?? 1, hosts);
+    for (const chosenAttackers of choices) {
+      for (const attacker of chosenAttackers) (primary[attacker] ??= []).push(id);
       search(i + 1, count + weights[i]);
-      primary[attacker].pop();
-      if (!primary[attacker].length) delete primary[attacker];
+      for (const attacker of chosenAttackers) {
+        primary[attacker].pop();
+        if (!primary[attacker].length) delete primary[attacker];
+      }
     }
     forbidden.add(id); search(i + 1, count); forbidden.delete(id);
   };
