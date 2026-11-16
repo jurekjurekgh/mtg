@@ -10490,8 +10490,16 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
    * M290), a nie do `printedBody` (druk sprzętu; świadomy zakres właściciela
    * T11/7: pierwsze założenie nie waży jakości nosiciela).
    */
-  function equippedStaticPumpOf(view, creature) {
-    const def = creature?.cardId ? cardDef(creature.cardId) : undefined;
+  function equippedStaticPumpOf(view, creature, source = null) {
+    if (!creature) return { power: 0, toughness: 0 };
+    // CR 301.5a (audyt PR #186, F-186/2): „As long as this creature is equipped"
+    // jest własnością binarną — gdy inny Equipment (różny od `source`) jest już
+    // przyłączony do nosiciela, dołożenie ani zdjęcie `source` nie zmienia tego
+    // warunku i nie dodaje ani nie odbiera `+1/+1`.
+    const alreadyEquippedByOther = (view?.zones?.battlefield ?? []).some((o) =>
+      o && o.id !== source?.id && o.attachedTo === creature.id && o.equipment != null);
+    if (alreadyEquippedByOther) return { power: 0, toughness: 0 };
+    const def = creature.cardId ? cardDef(creature.cardId) : undefined;
     let power = 0;
     let toughness = 0;
     for (const ability of def?.abilities ?? []) {
@@ -10517,7 +10525,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     // `condition.equipped`. Bez tego sprzęt z triggerem był „pusty" (kara −12),
     // a host wyciskający z ekwipunku więcej był nierozróżnialny (F-90/7).
     const tailValue = equipTriggerTailValue(view, source, creature);
-    const hostStatic = equippedStaticPumpOf(view, creature);
+    const hostStatic = equippedStaticPumpOf(view, creature, source);
     const hasteAdds = freshGrants.includes('haste') && creature.summoningSickness === true;
     const blockers = untappedEnemyBlockers(view);
     // Z-1 (audyt PR #135): `creature.power` z widoku to już moc EFEKTYWNA
