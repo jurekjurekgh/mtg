@@ -10435,13 +10435,89 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     };
   }
 
+  /**
+   * PMSSB-90/F-90-8 (L41): zdarzenia triggerów, które odpalają WYŁĄCZNIE przy
+   * ataku nosiciela. Na ciele, które legalnie nie atakuje (defender/detain/
+   * prewencja — flaga `cantAttackStatic` z widoku) taki trigger jest martwym
+   * tekstem, więc nie może podnosić wartości equipu. To ta sama bramka, którą
+   * `equipValuation` już stosuje do grantów ofensywnych (M244/F: „nosiciel,
+   * który nie może atakować, nie wyciąga nic z grantu ofensywnego") — bez niej
+   * naprawa F-90/8 dawałaby bonus z sufitu ciału z defenderem (M429).
+   */
+  const ATTACK_GATED_EQUIP_EVENTS = new Set([
+    'equipped_creature_attacks', 'mentor_attacks', 'attacks', 'attacks_alone',
+    'combat_damage_to_player', 'any_combat_damage_to_player', 'becomes_blocked', 'blocks',
+  ]);
+
+  /**
+   * PMSSB-90/F-90-8 (L41): wartość TRIGGERÓW samego sprzętu w decyzji equipu.
+   *
+   * Pomiar PRZED: `equipValuation` czytała wyłącznie deskryptor `equipment`
+   * (`pump`, `keywords`, `cantBeBlockedMaxPower`, `pumpPerAttachedEquipment`),
+   * więc Greatsword of Tyr — którego CAŁA treść siedzi w triggerze „whenever
+   * equipped creature attacks, put a +1/+1 counter on it and tap up to one
+   * target creature defending player controls" — był widziany jako sprzęt
+   * „niczego nie dodaje": kara -12 i -11,00 dla KAŻDEGO hosta (Leonin 3/2,
+   * Highland Game 2/1, Illusory Demon 4/3), czyli bot nigdy go nie zakładał.
+   *
+   * Ten sam trigger jest już wyceniany, gdy bot rozważa RZUT sprzętu
+   * (`anticipatedTailValue`, likelihood 0.5 dla `equipped_creature_attacks`,
+   * nogi efektów z `ETB_EFFECT_BONUS`) — dwie skale dla jednej informacji to
+   * rozjazd L41, więc equip pyta tę samą miarę zamiast udawać, że karta jest
+   * pusta. Bramka `cantAttackStatic` wyżej: trigger ataku na ciele, które nie
+   * atakuje, nie istnieje.
+   */
+  function equipTriggerTailValue(view, source, creature) {
+    const def = source?.cardId ? cardDef(source.cardId) : undefined;
+    if (!def || !creature) return 0;
+    const atakMartwy = creature.cantAttackStatic === true;
+    const triggers = (def.abilities ?? []).filter((a) => a?.type === 'triggered'
+      && !(atakMartwy && ATTACK_GATED_EQUIP_EVENTS.has(a.trigger?.event)));
+    if (triggers.length === 0) return 0;
+    return anticipatedTailValue(view, { ...def, abilities: triggers }, null);
+  }
+
+  /**
+   * PMSSB-90/F-90-8: pompa z WŁASNYCH zdolności statycznych nosiciela, które
+   * bramkuje fakt bycia wyposażonym — `condition: { equipped: true }` +
+   * `ability.pump` (Leonin Lightbringer: „As long as this creature is equipped,
+   * it gets +1/+1"; silnik: `permanents.js:545` dla warunku i `:634/:710` dla
+   * pompy). Wycena equipu znała wyłącznie treść SPRZĘTU, więc host, który z
+   * tego samego ekwipunku wyciska więcej, był nierozróżnialny od hosta, który
+   * nie wyciska nic (pomiar PRZED: -11,00 = -11,00; Plate 20,00 vs 18,00
+   * różnicowała tylko `2 × moc`). To jakość NOSICIELA, więc wchodzi do `value`/
+   * `bodyValue` (gałąź przeniesienia, gdzie jakość hosta JEST decyzją — M289/
+   * M290), a nie do `printedBody` (druk sprzętu; świadomy zakres właściciela
+   * T11/7: pierwsze założenie nie waży jakości nosiciela).
+   */
+  function equippedStaticPumpOf(view, creature) {
+    const def = creature?.cardId ? cardDef(creature.cardId) : undefined;
+    let power = 0;
+    let toughness = 0;
+    for (const ability of def?.abilities ?? []) {
+      // Typ zdolności jako literał — ten plik nie importuje `ABILITY_TYPE`
+      // (silnikowe `abilities.js:25`); tak samo robi `auraStaticAbilityValue`.
+      if (ability?.type !== 'static') continue;
+      if (ability.condition?.equipped !== true) continue;
+      power += ability.pump?.power ?? 0;
+      toughness += ability.pump?.toughness ?? 0;
+    }
+    return { power, toughness };
+  }
+
   function equipValuation(view, source, creature) {
     const def = source?.equipment;
-    if (!def || !creature) return { value: 0, nothingAdded: true };
+    if (!def || !creature) return { value: 0, nothingAdded: true, tailValue: 0 };
     const grants = def.keywords ?? [];
     const keywords = new Set([...(creature.keywords ?? []), ...(creature.grantedKeywords ?? [])]);
     const freshGrants = grants.filter((kw) => !keywords.has(kw));
     const { power: pumpPower, toughness: pumpToughness } = equipPumpOf(view, def, source, creature);
+    // PMSSB-90/F-90-8: treść karty, której nie ma w deskryptorze `equipment` —
+    // triggery samego sprzętu i pompa z własnej statyki hosta bramkowanej
+    // `condition.equipped`. Bez tego sprzęt z triggerem był „pusty" (kara −12),
+    // a host wyciskający z ekwipunku więcej był nierozróżnialny (F-90/7).
+    const tailValue = equipTriggerTailValue(view, source, creature);
+    const hostStatic = equippedStaticPumpOf(view, creature);
     const hasteAdds = freshGrants.includes('haste') && creature.summoningSickness === true;
     const blockers = untappedEnemyBlockers(view);
     // Z-1 (audyt PR #135): `creature.power` z widoku to już moc EFEKTYWNA
@@ -10480,8 +10556,11 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       || (hasKeyword(creature, 'flying')
         && blockers.every((o) => !hasKeyword(o, 'flying') && !hasKeyword(o, 'reach')));
     const wagaSily = atakJałowy ? 1 : (2 + (bearingEvasion ? 1 : 0));
-    const value = wagaSily * pumpPower + pumpToughness + ofensywne;
-    const nothingAdded = pumpPower === 0 && pumpToughness === 0 && !grantsEvasion && !hasteAdds
+    const value = wagaSily * (pumpPower + hostStatic.power) + (pumpToughness + hostStatic.toughness)
+      + ofensywne + tailValue;
+    const nothingAdded = pumpPower === 0 && pumpToughness === 0
+      && hostStatic.power === 0 && hostStatic.toughness === 0
+      && !grantsEvasion && !hasteAdds && !(tailValue > 0)
       && freshGrants.every((kw) => kw === 'haste');
     // PMSSB-34/A (L41): CIAŁO sprzętu wydzielone — pierwsze założenie (gałąź
     // `activate_ability`) liczyło wyłącznie `10 + 2 × moc nosiciela`, więc
@@ -10496,9 +10575,12 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     //    (T11/7, `test/uwagi-tura11-...`): pierwsze założenie NIE waży jakości
     //    nosiciela — wolno mu doliczyć tylko treść sprzętu. Dzięki temu pin
     //    T11/7 (vanilla 3/2 == latacz 3/3 przy pierwszym założeniu) stoi.
-    const bodyValue = wagaSily * pumpPower + pumpToughness;
+    const bodyValue = wagaSily * (pumpPower + hostStatic.power) + (pumpToughness + hostStatic.toughness)
+      + tailValue;
+    // `printedBody` zostaje DRUKIEM sprzętu (2×P + T) — pompa hosta i trigger
+    // nie są ciałem druku, a gałąź pierwszego założenia dostaje je osobno.
     const printedBody = 2 * pumpPower + pumpToughness;
-    return { value, bodyValue, printedBody, nothingAdded };
+    return { value, bodyValue, printedBody, nothingAdded, tailValue };
   }
 
   /**
@@ -16997,6 +17079,12 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
                 // w gałęzi defendera wyżej) — jakość nosiciela zostaje poza
                 // zakresem tej gałęzi zgodnie z decyzją właściciela (T11/7).
                 score += P.equipPumpBonusPerPoint * equipPayoff.printedBody;
+                // PMSSB-90/F-90-8: trigger sprzętu to jego TREŚĆ (rosnący
+                // licznik, tapnięcie blokera), więc wchodzi do score tak samo
+                // surowo, jak wchodzi przy rzucie karty (`anticipatedTailValue`
+                // dodawane bez mnożnika w czterech ścieżkach cast) — jedna
+                // skala, nie nowa waga (pokrętła-sterują ×0).
+                score += equipPayoff.tailValue;
                 if (grantsEvasion) score += 8;
                 if (grants.includes('haste') && target.summoningSickness) score += 6;
               }

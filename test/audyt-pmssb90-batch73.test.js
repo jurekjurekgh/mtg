@@ -501,3 +501,84 @@ test('PMSSB-90/F-90-5e: presja deck-outu (CR 121.4) obniża wartość mielenia p
   assert.equal(krotka.milled, false, 'przy krótkiej bibliotece karta w zasięgu many zostaje na wierzchu');
   assert.equal(zdrowa.milled, false, 'przy zdrowej bibliotece też (kotwica RG-05)');
 });
+
+// ---------------------------------------------------------------------------
+// F-90/7 + F-90/8 (fala C) — wycena EQUIPU (`equipValuation`, jedna dla obu
+// gałęzi `activate_ability`). Pomiar PRZED: Greatsword of Tyr (cała treść siedzi
+// w triggerze „whenever equipped creature attacks, put a +1/+1 counter on it and
+// tap up to one target creature defending player controls") dawał −11,00 dla
+// KAŻDEGO hosta — Leonina 3/2 (który z własnej statyki `condition.equipped`
+// dostaje dodatkowe +1/+1), Highland Game 2/1 i Illusory Demona 4/3 — więc bot
+// NIGDY go nie zakładał (`nothingAdded` → kara −12). Ten sam trigger jest
+// wyceniany przy RZUCIE sprzętu (`anticipatedTailValue`, likelihood 0.5 dla
+// `equipped_creature_attacks`) — dwie skale dla jednej informacji (L41).
+// Dodatkowo Brawler's Plate: pierwsze założenie 20,00 (Leonin) / 18,00
+// (Highland), a PRZENIESIENIE tego samego Plate z Highland Game na Leonina
+// = −8,00, choć Leonin wyciska z niego więcej (F-90/7: rozjazd gałęzi).
+// ---------------------------------------------------------------------------
+
+/** Score oferty equipu z decyzji bota: `activate_ability(<sprzęt>#<indeks>-><host>)`. */
+const equipScore = (id, indeks, podciag) => scoreAlternatywy(decyzja(budowa(id, indeks).state, 'p1'), podciag);
+
+test('PMSSB-90/F-90-8a: sprzęt, którego treść siedzi w triggerze, jest wart założenia (nie kara „nic nie dodaje")', () => {
+  const s = equipScore('LL-05', 0, 'activate_ability(sprzet#1->leonin)');
+  assert.ok(s > 0,
+    `Greatsword (+1/+1 co atak i tapnięcie blokera) musi bić pass (0,00), pomiar PRZED: −11,00 → ${s}`);
+});
+
+test('PMSSB-90/F-90-8b: ten sam sprzęt rozróżnia hosta — Leonin (+1/+1 dopóki wyposażony) > Highland Game', () => {
+  const leonin = equipScore('LL-05', 0, 'activate_ability(sprzet#1->leonin)');
+  const maly = equipScore('LL-05', 0, 'activate_ability(sprzet#1->maly)');
+  assert.ok(leonin > maly,
+    `host z własną statyką condition.equipped wyciska więcej z tego samego sprzętu: ${leonin} vs ${maly}`);
+});
+
+test('PMSSB-90/F-90-7a: przeniesienie sprzętu na hosta, który wyciska więcej, nie jest karane jak ruch w próżnię', () => {
+  const przeniesienie = equipScore('LL-05', 3, 'activate_ability(sprzet#0->leonin)'); // Plate z Highland Game
+  const pierwsze = equipScore('LL-05', 2, 'activate_ability(sprzet#0->leonin)'); // Plate niezałożony
+  assert.ok(przeniesienie > 0, `przeniesienie na lepszego hosta musi bić pass, pomiar PRZED: −8,00 → ${przeniesienie}`);
+  assert.ok(przeniesienie < pierwsze,
+    `przeniesienie jest warte mniej niż pierwsze założenie (stary host traci pompę): ${przeniesienie} vs ${pierwsze}`);
+});
+
+test('PMSSB-90/F-90-7b: przeniesienie sprzętu z triggerem na lepszego hosta też przechodzi (M288/C, nie reguła większej mocy)', () => {
+  const s = equipScore('LL-05', 1, 'activate_ability(sprzet#1->leonin)'); // Greatsword z Highland Game
+  assert.ok(s > 0, `przeniesienie Greatsworda na Leonina musi bić pass: ${s}`);
+});
+
+test('PMSSB-90/F-90-8c: ANTY-OVER-FIX — trigger ataku jest martwy na hoście, który legalnie nie atakuje (M244/F)', () => {
+  // LL-06 izoluje JEDNĄ zmienną: host 3/2 z defenderem (Wishful Merfolk) kontra
+  // Leonin 3/2. Greatsword odpala się wyłącznie przy ataku nosiciela, więc na
+  // defenderze to martwy tekst i equip musi przegrać z passem — inaczej naprawa
+  // F-90/8 byłaby bonusem z sufitu (M429).
+  const defender = equipScore('LL-06', 0, 'activate_ability(sprzet#1->host)');
+  const leonin = equipScore('LL-06', 1, 'activate_ability(sprzet#1->host)');
+  assert.ok(defender < 0, `trigger ataku na defenderze jest martwy: ${defender} musi być poniżej pass (0,00)`);
+  assert.ok(leonin > defender, `ten sam sprzęt na ciele, które atakuje, jest wart więcej: ${leonin} vs ${defender}`);
+});
+
+test('PMSSB-90/F-90-8d: STRAŻNIK L41 — wycena equipu czyta treść triggerów sprzętu i statykę hosta z jednego źródła', () => {
+  const src = fs.readFileSync('src/controllers/heuristic-bot.js', 'utf8');
+  const start = src.indexOf('const ATTACK_GATED_EQUIP_EVENTS');
+  assert.ok(start > 0, 'bramka triggerów ataku istnieje');
+  const cialo = src.slice(start, start + 12000);
+  assert.ok(cialo.includes('function equipValuation(view, source, creature)'),
+    'helpery muszą siedzieć przy wycenie equipu (jedno źródło, nie osobny model)');
+  for (const wyrazenie of ['equippedStaticPumpOf(', 'equipTriggerTailValue(']) {
+    assert.ok(cialo.includes(wyrazenie),
+      `wycena equipu musi znać ${wyrazenie}… — inaczej treść karty jest niewidzialna (F-90/8)`);
+  }
+  assert.ok(cialo.includes('tailValue'), 'tail sprzętu musi wchodzić do wartości i do bramki „nic nie dodaje"');
+});
+
+test('PMSSB-90/F-90-8e: treść triggera ma wartość, nie tylko brak kary — miecz rosnący > statyczna pompa', () => {
+  // LL-07: ten sam host (Highland Game 2/1, bez własnej statyki `equipped`), więc
+  // różnica może pochodzić WYŁĄCZNIE z treści sprzętu. Bez członu `tailValue`
+  // w gałęzi pierwszego założenia miecz dawałby 14,00 (10 + 2×2) i przegrywał
+  // z Plate 18,00 — czyli naprawa F-90/8 sprowadziłaby się do zdjęcia kary −12,
+  // a treść karty wciąż nie byłaby liczona.
+  const miecz = scoreAlternatywy(decyzja(budowa('LL-07', 0).state, 'p1'), '->host)');
+  const plate = scoreAlternatywy(decyzja(budowa('LL-07', 1).state, 'p1'), '->host)');
+  assert.ok(miecz > plate,
+    `Greatsword (+1/+1 co atak, tapnięcie blokera) musi bić Brawlers Plate (+2/+2 trample): ${miecz} vs ${plate}`);
+});

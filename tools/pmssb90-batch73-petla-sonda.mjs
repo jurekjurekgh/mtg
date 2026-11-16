@@ -1193,6 +1193,54 @@ const SCENARIUSZE = [
     },
   },
   {
+    // PMSSB-90/F-90-8: anty-over-fix dla naprawy „treść triggerów sprzętu".
+    // Greatsword of Tyr odpala się WYŁĄCZNIE przy ataku nosiciela, więc na ciele
+    // z defenderem (Wishful Merfolk 3/2 — te same P/T co Leonin, jedyna różnica
+    // to `cantAttackStatic`) trigger jest martwym tekstem i equip musi przegrać
+    // z passem. Izolacja jednej zmiennej (M429: bez bonusów z sufitu).
+    id: 'LL-06', karta: 'leonin-lightbringer', wymiar: 'S', przelot: false,
+    tytul: 'ANTY-OVER-FIX: trigger ataku na hoście, który legalnie NIE atakuje (defender)',
+    pro: '„Whenever equipped creature attacks" na defenderze nie odpali nigdy — equip musi być poniżej pass, a na Leoninie (3/2, może atakować, +1/+1 dopóki wyposażony) powyżej.',
+    warianty: [
+      { opis: 'host = Wishful Merfolk 3/2 defender (trigger martwy)', host: 'wishful-merfolk' },
+      { opis: 'host = Leonin 3/2 (kontrola dodatnia — trigger żyje)', host: 'leonin-lightbringer' },
+    ],
+    budowa: (w) => stan({
+      krok: 'main1',
+      mana: { p1: 8 },
+      pole: [
+        { id: 'sprzet', karta: 'greatsword-of-tyr', gracz: 'p1' },
+        { id: 'host', karta: w.host, gracz: 'p1' },
+        { id: 'wrog', karta: 'leafcrown-dryad', gracz: 'p2' },
+      ],
+    }),
+  },
+  {
+    // PMSSB-90/F-90-8: WARTOŚĆ treści triggera, nie tylko zdjęcie kary. Ten sam
+    // host (Highland Game 2/1 — bez własnej statyki `equipped`, więc różnica nie
+    // może pochodzić z F-90/8b) i dwa sprzęty: Greatsword of Tyr (cała treść w
+    // triggerze: +1/+1 co atak i tapnięcie stwora broniącego) kontra Brawlers
+    // Plate (+2/+2 i trample za {4}). PRO: miecz, który ROŚNIE przy każdym ataku
+    // i odkręca blokadę, jest wart więcej niż statyczna pompa — a przede
+    // wszystkim wycena musi tę treść liczyć, a nie tylko nie karać.
+    id: 'LL-07', karta: 'leonin-lightbringer', wymiar: 'S', przelot: false,
+    tytul: 'treść triggera ma WARTOŚĆ: miecz rosnący co atak kontra statyczna pompa na tym samym hoście',
+    pro: 'Na Highland Game 2/1 Greatsword of Tyr (+1/+1 co atak, tapnięcie blokera, equip {W}) musi być warty więcej niż Brawlers Plate (+2/+2 trample, equip {4}) — treść triggera jest trwałą przewagą, nie jednorazową pompą.',
+    warianty: [
+      { opis: 'Greatsword of Tyr (trigger ataku, equip {W})', sprzet: 'greatsword-of-tyr' },
+      { opis: 'Brawlers Plate (+2/+2 trample, equip {4})', sprzet: 'brawlers-plate' },
+    ],
+    budowa: (w) => stan({
+      krok: 'main1',
+      mana: { p1: 8 },
+      pole: [
+        { id: 'sprzet', karta: w.sprzet, gracz: 'p1' },
+        { id: 'host', karta: 'highland-game', gracz: 'p1' },
+        { id: 'wrog', karta: 'leafcrown-dryad', gracz: 'p2' },
+      ],
+    }),
+  },
+  {
     id: 'KF-06', karta: 'kessig-flamebreather', wymiar: 'S',
     tytul: 'wartość samego Kessiga jako permanentu: w ręce paliwo (instant) vs tylko stwory vs pusto',
     pro: 'Kessig 1/3 jest wart tyle, co ciało PLUS trigger „gdy rzucasz czar niebędący stworą, zadaj 1 obrażenie każdemu przeciwnikowi". Z paliwem w ręce trigger żyje, bez niego jest martwy — różnica w score rzutu musi to pokazywać (ta sama wartość triggera, którą KF-02 mierzy po drugiej stronie: przy rzucaniu instanta).',
