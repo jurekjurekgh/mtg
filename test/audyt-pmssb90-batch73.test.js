@@ -3,11 +3,12 @@
 // do wiersza sekcji 8 planu `docs/plans/PLAN_2026-11-16-pmssb90-batch73-petla-reczna.md`
 // i do scenariusza sondy `tools/pmssb90-batch73-petla-sonda.mjs` (pomiar i pin mierzą TEN
 // SAM stan — jedno źródło, L41).
+import fs from 'node:fs';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { execute, playerView } from '../src/engine/game-state.js';
 import { createCardRegistry } from '../src/cards/card-data.js';
-import { SCENARIUSZE, decyzja } from '../tools/pmssb90-batch73-petla-sonda.mjs';
+import { SCENARIUSZE, stan, decyzja } from '../tools/pmssb90-batch73-petla-sonda.mjs';
 
 const REGISTRY = createCardRegistry();
 
@@ -110,4 +111,70 @@ test('PMSSB-90/F-90-1e: STRAŻNIK katalogu — oferta grobowa nie pomija żadneg
     }
   }
   assert.deepEqual(luki, [], `oferta z grobu musi wyliczać te wybory (F-90/1): ${luki.join(' | ')}`);
+});
+
+// ---------------------------------------------------------------------------
+// F-90/9 (fala B) — trigger „każdy przeciwnik traci N życia" bez skali życia
+// i bez dobicia. Pomiar PRZED: KF-05 dawał 100,00 przy życiu wroga 20 / 6 / 2 / 1
+// — ten sam wynik, gdy 1 obrażenie KOŃCZY partię. Root cause: piąte miejsce
+// wyceny tej samej instrukcji (`ETB_EFFECT_BONUS.damage_each_opponent`) miało
+// płaskie 4, podczas gdy cztery inne ścieżki (modalny trigger, pętla czarów,
+// `lose_life` z zakresem each_opponent, legacy) używają `opponentLifeEffectValue`
+// = „4×N, a dobicie = 80" (L41: jedna skala dla jednej instrukcji).
+// ---------------------------------------------------------------------------
+
+/** Score konkretnej alternatywy z decyzji bota (etykieta komendy jak w sondzie). */
+function scoreAlternatywy(d, podciag) {
+  const trafienie = (d.opcje ?? []).find((o) => String(o.cmd).includes(podciag));
+  assert.ok(trafienie, `brak alternatywy „${podciag}" wśród: ${(d.opcje ?? []).map((o) => o.cmd).join(' | ')}`);
+  return trafienie.score;
+}
+
+test('PMSSB-90/F-90-9a: chip damage z triggera jest warty więcej, gdy DOBIJA przeciwnika', () => {
+  const pelne = decyzja(budowa('KF-05', 0).state, 'p1'); // wróg 20 życia
+  const lethal = decyzja(budowa('KF-05', 3).state, 'p1'); // wróg 1 życia = dobicie z chipu
+  const sPelne = scoreAlternatywy(pelne, 'cast_spell(plummet-hand');
+  const sLethal = scoreAlternatywy(lethal, 'cast_spell(plummet-hand');
+  assert.ok(sLethal - sPelne >= 20,
+    `dobijający chip musi dominować: ${sLethal} (wróg 1 życia) − ${sPelne} (wróg 20) = ${(sLethal - sPelne).toFixed(2)} < 20`);
+  assert.equal(lethal.cmd.type, 'cast_spell', 'przy życiu 1 bot nadal gra czar (dobicie)');
+});
+
+test('PMSSB-90/F-90-9b: ANTY-OVER-FIX — skala triggera to ilość obrażeń i dobicie, nie „bliskość śmierci"', () => {
+  // Uczciwa granica modelu: `opponentLifeEffectValue` = 4×N albo 80 przy dobięciu.
+  // Przy życiu 20 / 6 / 2 chip NIE dobija, więc wszystkie trzy stany mają tę samą
+  // wartość — pin pilnuje, żeby naprawa nie dodała drugiej arytmetyki „im mniej życia,
+  // tym więcej punktów" (M429: bez bonusów z sufitu).
+  const scores = [0, 1, 2].map((i) => scoreAlternatywy(decyzja(budowa('KF-05', i).state, 'p1'), 'cast_spell(plummet-hand'));
+  assert.deepEqual([scores[1], scores[2]], [scores[0], scores[0]], `życie 20/6/2 musi dawać tę samą wartość: ${scores.join(', ')}`);
+  const zKessigiem = scoreAlternatywy(decyzja(budowa('KF-02', 0).state, 'p1'), 'cast_spell(plummet-hand');
+  const bezKessiga = scoreAlternatywy(decyzja(budowa('KF-02', 1).state, 'p1'), 'cast_spell(plummet-hand');
+  assert.equal(zKessigiem - bezKessiga, 2, 'nosiciel triggera dodaje 2 pkt poza dobięciem (pomiar PRZED: 100 vs 98)');
+});
+
+test('PMSSB-90/F-90-9c: dopłata za nosiciela triggera rośnie do skali dobięcia (ten sam stan minus Kessig)', () => {
+  const z = scoreAlternatywy(decyzja(budowa('KF-05', 3).state, 'p1'), 'cast_spell(plummet-hand');
+  const bez = decyzja(stan({
+    krok: 'main1', mana: { p1: 6 }, zycie: { p1: 20, p2: 1 },
+    reka: [{ id: 'plummet-hand', karta: 'plummet' }],
+    pole: [{ id: 'wrona', karta: 'murder-of-crows', gracz: 'p2' }],
+  }), 'p1');
+  assert.ok(z - scoreAlternatywy(bez, 'cast_spell(plummet-hand') >= 20,
+    'Kessig przy życiu 1 musi być wart znacznie więcej niż ten sam rzut bez niego');
+});
+
+test('PMSSB-90/F-90-9d: STRAŻNIK L41 — jedna skala dla `damage_each_opponent` (bez drugiej arytmetyki)', () => {
+  const zrodlo = fs.readFileSync(new URL('../src/controllers/heuristic-bot.js', import.meta.url), 'utf8');
+  const wpisy = [...zrodlo.matchAll(/^\s*damage_each_opponent:\s*\(([^)]*)\)\s*=>\s*([^\n]+),$/gm)];
+  assert.equal(wpisy.length, 1, `oczekiwany jeden wpis tabeli, znaleziono ${wpisy.length}`);
+  const [, args, cialo] = wpisy[0];
+  assert.match(cialo, /opponentLifeEffectValue\(/,
+    `wpis tabeli musi delegować do wspólnej skali życia: ${cialo.trim()}`);
+  assert.match(args, /view/, 'skala życia potrzebuje widoku (życie przeciwnika)');
+  assert.ok(!/\b\d+\b/.test(cialo.replace(/opponentLifeEffectValue\([^)]*\)/g, '')),
+    `wpis nie może mieć własnej stałej liczbowej: ${cialo.trim()}`);
+  // Wspólna skala musi być JEDYNĄ definicją (cztery ścieżki + tabela = pięć użyć).
+  assert.equal(zrodlo.match(/const opponentLifeEffectValue = /g)?.length ?? 0, 1, 'jedna definicja skali');
+  assert.ok((zrodlo.match(/opponentLifeEffectValue\(view, e/g) ?? []).length >= 5,
+    'tabela ETB/payoff dołączyła do wspólnych użyć skali');
 });

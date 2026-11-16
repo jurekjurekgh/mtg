@@ -3023,7 +3023,14 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     detain: (e, view, req) => (etbEnemyHasTarget(view, req) ? 8 : 0),
     damage: (e, view, req) => (etbEnemyHasTarget(view, req) ? Math.min(3 * (e.amount ?? 1), 15) : 0),
     damage_divided: (e, view, req) => (etbEnemyHasTarget(view, req) ? 15 : 0),
-    damage_each_opponent: (e) => 4,
+    // PMSSB-90/F-90-9 (L41): „zadaj N obrażeń każdemu przeciwnikowi" ma w kodzie
+    // PIĘĆ ścieżek wyceny i cztery z nich liczą to wspólną skalą
+    // `opponentLifeEffectValue` (4×N, a dobicie = 80). Ten wpis był piątym modelem:
+    // płaskie 4 niezależnie od ilości obrażeń i od życia przeciwnika, więc pomiar
+    // KF-05 dawał 100,00 przy życiu wroga 20 / 6 / 2 / 1 — 1 obrażenie kończące
+    // partię było warte tyle samo co kosmetyczny chip. Delegacja do wspólnej skali
+    // zamyka rozjazd bez nowej arytmetyki (M429: żadnego bonusu z sufitu).
+    damage_each_opponent: (e, view) => opponentLifeEffectValue(view, e),
     each_player_loses_life_fraction: () => 3,
     buff_creatures_you_control: () => 8, // wchodzący stwór też jest odbiorcą
     grant_keywords_until_end_of_turn: () => 4,

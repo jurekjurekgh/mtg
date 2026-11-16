@@ -90,15 +90,31 @@ test('PMSSB10-B2: plague-reaver — rzut bez własnych stworów, pusty stół i 
   assert.equal(castScore('plague-reaver', (s) => { foeVanilla(s, 'f1'); foeVanilla(s, 'f2'); foeVanilla(s, 'f3'); }), '78.31');
 });
 // SAME (SKIP-proofs):
-test('PMSSB10-B2: SKIP-proofs SAME (canonized/trostani/silumgar/fear/jyoti/sword/challenger/disa/brute)', () => {
+test('PMSSB10-B2: SKIP-proofs SAME (canonized/trostani/silumgar/jyoti/sword/challenger/disa/brute)', () => {
   assert.equal(castScore('canonized-in-blood'), '60.30');
   assert.equal(castScore('trostani-discordant'), '87.30');
   assert.equal(castScore('silumgar-butcher'), '65.70');
   assert.equal(castScore('gurmag-drowner'), '65.70');
-  assert.equal(castScore('fear-of-burning-alive'), '70.20');
   assert.equal(castScore('jyoti-moag-ancient'), '64.80');
   assert.equal(castScore('greatsword-of-tyr'), '-7.20');
   assert.equal(castScore('boros-challenger'), '65.70');
   assert.equal(castScore('disa-the-restless'), '70.21');
   assert.equal(castScore('homicidal-brute'), '72.91');
+});
+// PMSSB-90/F-90-9: re-pin 70.20 → 81.00 (karta WYJĘTA z listy „SAME" wyżej — jej
+// wartość już nie jest taka sama). Stary pin kodował defekt: wpis tabeli
+// `ETB_EFFECT_BONUS.damage_each_opponent` miał PŁASKIE 4, więc ETB „zadaj 4 obrażenia
+// każdemu przeciwnikowi" był wart tyle samo co ping za 1, a dobijające obrażenia nie
+// były rozpoznawane wcale (pomiar KF-05: 100,00 przy życiu wroga 20 / 6 / 2 / 1).
+// Naprawa deleguje do wspólnej skali `opponentLifeEffectValue` (4×N, dobicie = 80),
+// którą już miały cztery inne ścieżki tej samej instrukcji (modalny trigger, pętla
+// czarów, `lose_life` z zakresem each_opponent, legacy) — L41: jedna skala, nie piąta
+// arytmetyka. Pomiar po naprawie: życie 20 / 5 → 81.00, życie 4 / 3 (dobijające 4) →
+// 138.60. Skala 16 (4×4) jest spójna z `damage` skierowanym (`min(3×N, 15)` = 12):
+// ping „każdemu przeciwnikowi" nie ma celu (ward/hexproof go nie zatrzymują) i w
+// multiplayerze trafia wszystkich.
+test('PMSSB-90/F-90-9: fear-of-burning-alive — ETB „4 obrażenia każdemu przeciwnikowi" w skali życia', () => {
+  assert.equal(castScore('fear-of-burning-alive'), '81.00');
+  assert.equal(castScore('fear-of-burning-alive', (s) => { s.players.find((p) => p.id === 'p2').life = 4; }), '138.60',
+    'dobijające obrażenia z ETB muszą być warte więcej niż chip (wspólna skala życia)');
 });
