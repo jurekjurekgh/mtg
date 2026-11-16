@@ -8,7 +8,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { execute, playerView } from '../src/engine/game-state.js';
 import { createCardRegistry } from '../src/cards/card-data.js';
-import { SCENARIUSZE, stan, decyzja } from '../tools/pmssb90-batch73-petla-sonda.mjs';
+import { SCENARIUSZE, stan, decyzja, pomiarPrzed } from '../tools/pmssb90-batch73-petla-sonda.mjs';
 
 const REGISTRY = createCardRegistry();
 
@@ -243,4 +243,93 @@ test('PMSSB-90/F-90-2e: STRAŻNIK L41 — `craft_transform` ma wycenę, nie tylk
   assert.ok(wystapienia >= 2, `oczekiwane ≥2 wystąpienia typu (zbiór kumulujący + wycena), jest ${wystapienia}`);
   assert.match(zrodlo, /effect\.type === 'craft_transform'/, 'pętla efektów aktywacji musi rozpoznawać craft');
   assert.match(zrodlo, /function craftTransformValue\(/, 'wycena craft ma jedną nazwaną funkcję (L41)');
+});
+
+// ---------------------------------------------------------------------------
+// F-90/3 (fala B) — warunek celu ETB nie był wyceniany. Spring-Loaded Sawblades:
+// „gdy wchodzi, zadaj 5 obrażeń CELowanemu TAPNIĘTEMU stworowi, który kontroluje
+// przeciwnik". Pomiar PRZED: SS-04 = 77,40 we WSZYSTKICH czterech wariantach —
+// wróg odkręcony 3/3 (trigger NIE MA celu i fizzluje), tapnięty 3/3, tapnięty 7/7
+// i tapnięty 1/1 obok odkręconego 6/7; SS-02 = 77,40 we własnym main1 (wróg
+// odkręcony) i tyle samo w turze rywala po jego ataku. Pusty stół wroga 60,30,
+// więc dopłata za „jakiegokolwiek wroga" wynosiła 17,10, a za „tapniętego" i za
+// jakość celu — 0. Root cause: `etbEnemyHasTarget` dla specy celów zależnych od
+// STANU PUBLICZNEGO spadał do `foes.length > 0`, a `publicEtbTargets` w ogóle nie
+// znał typu `tapped_creature` ani flagi `opponentControls`.
+// ---------------------------------------------------------------------------
+
+const castScore = (d, podciag = 'cast_permanent(ss-hand') => scoreAlternatywy(d, podciag);
+
+test('PMSSB-90/F-90-3a: bez TAPNIĘTEGO stwora wroga ETB nie dostaje premii (trigger fizzluje)', () => {
+  const odkrecony = decyzja(budowa('SS-04', 0).state, 'p1'); // wróg ma tylko odkręconego 3/3
+  const tapniety = decyzja(budowa('SS-04', 1).state, 'p1'); // wróg ma tapniętego 3/3
+  const sOdk = castScore(odkrecony);
+  const sTap = castScore(tapniety);
+  assert.ok(sTap - sOdk >= 10,
+    `legalny cel ETB musi być warty więcej niż jego brak: tapnięty ${sTap} vs odkręcony ${sOdk} (Δ ${(sTap - sOdk).toFixed(2)})`);
+  assert.ok(sOdk < 65,
+    `bez legalnego celu karta jest gołym artefaktem za {1}{W} (pusty stół wroga = 60,30), a nie ${sOdk}`);
+});
+
+test('PMSSB-90/F-90-3b: flash na turę rywala jest warte więcej, gdy jego stwory są tapnięte po ataku', () => {
+  // SS-02: ta sama karta, ten sam wróg 3/3 — różni się TYLKO tapnięciem i oknem.
+  const naszaTura = castScore(decyzja(budowa('SS-02', 0).state, 'p1')); // wróg odkręcony
+  const poAtaku = castScore(decyzja(budowa('SS-02', 1).state, 'p1')); // declare_blockers rywala, wróg tapnięty
+  assert.ok(poAtaku > naszaTura + 10,
+    `okno z tapniętym celem musi być lepsze: tura rywala ${poAtaku} vs nasza ${naszaTura}`);
+});
+
+test('PMSSB-90/F-90-3c: `opponentControls` — mój własny tapnięty stwór NIE jest legalnym celem ETB', () => {
+  // Porównanie izoluje SAMĄ flagę: ten sam kształt stołu (mój 3/3), różnica tylko w
+  // tapnięciu — oraz kontrast z wrogim tapniętym stworem (cel legalny).
+  const buduj = ({ tap, gracz, wrog }) => stan({
+    krok: 'main1', mana: { p1: 4 },
+    reka: [{ id: 'ss-hand', karta: 'spring-loaded-sawblades' }],
+    pole: [
+      { id: 'nasz', karta: 'burning-yard-trainer', gracz, tap },
+      ...(wrog ? [{ id: 'wrog-tap', karta: 'soulmender', gracz: 'p2', tap: true }] : []),
+    ],
+  });
+  const mojTapniety = castScore(decyzja(buduj({ tap: true, gracz: 'p1' }), 'p1'));
+  const mojOdkrecony = castScore(decyzja(buduj({ tap: false, gracz: 'p1' }), 'p1'));
+  const wrogTapniety = castScore(decyzja(buduj({ tap: true, gracz: 'p1', wrog: true }), 'p1'));
+  assert.ok(Math.abs(mojTapniety - mojOdkrecony) < 0.01,
+    `tapnięcie WŁASNEGO stwora nie może tworzyć celu ETB: ${mojTapniety} vs ${mojOdkrecony}`);
+  assert.ok(wrogTapniety - mojTapniety >= 10,
+    `dopiero TAPNIĘTY STWÓR WROGA daje premię: ${wrogTapniety} vs ${mojTapniety}`);
+  assert.ok(mojTapniety < 65, `bez wrogiego celu karta jest gołym artefaktem (60,30), nie ${mojTapniety}`);
+});
+
+test('PMSSB-90/F-90-3d: ANTY-OVER-FIX — premia za ETB jest płaska jak inne wpisy tabeli (destroy/exile/damage)', () => {
+  // Granica modelu zapisana uczciwie: przy ISTNIEJĄCYM legalnym celu premia za ETB
+  // jest stała (tapnięty 3/3 = tapnięty 7/7 = tapnięty 1/1) — tak samo jak wpisy
+  // `destroy_permanent` (18) i `exile_target_creature` (20). Jakość celu wycenia
+  // ścieżka WYBORU celu (pin 3e: 44 vs −80), nie premia za rzut. Pin pilnuje, żeby
+  // naprawa warunku nie dodała drugiej skali jakości do tabeli ETB (M429).
+  const scores = [1, 2, 3].map((i) => castScore(decyzja(budowa('SS-04', i).state, 'p1')));
+  assert.deepEqual([scores[1], scores[2]], [scores[0], scores[0]],
+    `tapnięty 3/3 / 7/7 / 1/1 muszą dawać tę samą premię za rzut: ${scores.join(', ')}`);
+});
+
+test('PMSSB-90/F-90-3e: KOTWICA — wybór CELU triggera rozróżnia lethal od chipu (44 vs −80)', () => {
+  const [w] = pomiarPrzed({ scen: 'SS-01', przelot: true });
+  const wybor = (w.przebieg ?? []).find((k) => String(k.cmd).startsWith('resolve_trigger_target'));
+  assert.ok(wybor, `brak wyboru celu ETB w przebiegu: ${(w.przebieg ?? []).map((k) => k.cmd).join(' | ')}`);
+  const opcje = wybor.scoreOpcji.map(Number);
+  assert.equal(opcje.length, 2, 'dwa tapnięte cele = dwie gałęzie');
+  assert.ok(opcje[0] > 0 && opcje[1] < -60 && opcje[0] - opcje[1] > 100,
+    `5 obrażeń na tapniętego 3/3 (zabija) musi dominować nad 7/7 (chip): ${wybor.scoreOpcji.join(' vs ')}`);
+  assert.match(wybor.cmd, /tap-3-3/, 'bot wybiera cel, który 5 obrażeń zabija');
+});
+
+test('PMSSB-90/F-90-3f: STRAŻNIK L41 — jedna lista legalnych celów ETB zna stan publiczny (tap/kontrola)', () => {
+  const zrodlo = fs.readFileSync(new URL('../src/controllers/heuristic-bot.js', import.meta.url), 'utf8');
+  const predykat = zrodlo.slice(zrodlo.indexOf('function publicEtbTargets('), zrodlo.indexOf('function battleDefenseValue('));
+  assert.ok(predykat.length > 200, 'nie znaleziono `publicEtbTargets`');
+  assert.match(predykat, /'tapped_creature'/, 'predykat celów musi znać typ `tapped_creature`');
+  assert.match(predykat, /object\.tapped/, 'typ `tapped_creature` wymaga sprawdzenia tapnięcia');
+  assert.match(predykat, /spec\.opponentControls/, 'flaga `opponentControls` musi być honorowana');
+  const bramka = zrodlo.slice(zrodlo.indexOf('const etbEnemyHasTarget = '), zrodlo.indexOf('const THIS_TURN_STATE_TARGET_SPECS'));
+  assert.match(bramka, /publicEtbTargets\(/,
+    'bramka ETB musi pytać TĘ SAMĄ listę celów, co ścieżka wyboru celu (L41), nie `foes.length > 0`');
 });

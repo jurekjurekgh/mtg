@@ -2445,6 +2445,15 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     // samo ISTNIENIE wrogiego permanentu — bez tego ETB dostawał premię
     // `destroy_permanent` (18) w Głównej 1, gdzie nie ma jeszcze legalnego
     // celu, więc bot płacił kartę za trigger, który nigdy nie wchodzi na stos.
+    // PMSSB-90/F-90-3: cel zależny od STANU PUBLICZNEGO (tapnięcie) — `foes.length > 0`
+    // widziało „jakiegokolwiek wroga", więc ETB Spring-Loaded Sawblades („5 obrażeń
+    // w tapniętego stwora przeciwnika") dostawał premię 17,10 także wtedy, gdy trigger
+    // NIE MA legalnego celu i fizzluje (pomiar SS-04: 77,40 przy wrogim odkręconym 3/3
+    // = 77,40 przy tapniętym 7/7; SS-02: tyle samo we własnym main1, co w turze rywala
+    // po jego ataku). Pytamy TĘ SAMĄ listę, z której korzysta wybór celu (L41).
+    if (raw === 'tapped_creature' || raw === 'untapped_creature') {
+      return publicEtbTargets(view, typeof spec === 'string' ? { type: spec } : spec, source).length > 0;
+    }
     if (raw === 'creature_opponent_damaged_this_turn') {
       // To stworzenie może być również lądem. Nie stosujemy filtra
       // enemyNonlandPermanents; ten sam publiczny predykat co wycena
@@ -11043,9 +11052,19 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     if (spec.type === 'player') return view.players.map(p => p.id);
     let candidates = (view.zones.battlefield ?? []).filter(object => {
       if (spec.type === 'battle') return isBattle(object);
+      // PMSSB-90/F-90-3 (L41/L48): lustro silnika — rodzina `tapped_creature` /
+      // `untapped_creature` istnieje w spells.js:1751 (cele czarów) i triggers.js:594
+      // (cele triggerów, dodane w audycie PR #185 F-3), ale NIE tutaj, więc bot pytał
+      // o legalność celu ETB predykatem, który takiego typu nie rozpoznawał (pusta
+      // lista) i spadał do „czy wróg ma JAKIEGOŚ permanenta".
       if (!['creature', 'creature_you_control', 'creature_opponent_controls',
-        'creature_opponent_damaged_this_turn', 'creature_with_power_at_most'].includes(spec.type)) return false;
+        'creature_opponent_damaged_this_turn', 'creature_with_power_at_most',
+        'tapped_creature', 'untapped_creature'].includes(spec.type)) return false;
       if (object.kind !== 'creature') return false;
+      if (spec.type === 'tapped_creature' && !object.tapped) return false;
+      if (spec.type === 'untapped_creature' && object.tapped) return false;
+      // „an opponent controls" (CR 109.5) — ta sama flaga co w silniku.
+      if (spec.opponentControls && object.controllerId === view.playerId) return false;
       if (spec.type === 'creature_you_control' && object.controllerId !== view.playerId) return false;
       if (['creature_opponent_controls','creature_opponent_damaged_this_turn'].includes(spec.type)
         && object.controllerId === view.playerId) return false;
