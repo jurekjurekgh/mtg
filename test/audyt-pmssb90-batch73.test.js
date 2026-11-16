@@ -333,3 +333,88 @@ test('PMSSB-90/F-90-3f: STRAŻNIK L41 — jedna lista legalnych celów ETB zna s
   assert.match(bramka, /publicEtbTargets\(/,
     'bramka ETB musi pytać TĘ SAMĄ listę celów, co ścieżka wyboru celu (L41), nie `foes.length > 0`');
 });
+
+// ---------------------------------------------------------------------------
+// F-90/4 (fala B) — Threshold „all creatures able to block enchanted creature
+// block it" (Seton's Desire, artId 648) nie miał ŻADNEJ wyceny: w
+// heuristic-bot.js nie istniały ani typ efektu `must_block_enchanted`, ani klucz
+// warunku `minGraveyardCards`, choć silnik wymóg egzekwuje (permanents.js:468 —
+// warunek ciągły, combat.js:373 `mustBlockHostCounts` przy deklaracji bloków).
+// Pomiar PRZED: SD-01 = 72,00 przy grobie 6 / 7 / 9 kart (próg nic nie dodaje);
+// SD-02 pusty stół wroga 72,00 = stół z blokerami; SD-05 host z drugim
+// atakującym 75,60 = host bez niego i = wariant z wrogim 2/1 BEZ reach (nie ma
+// czego ściągać z lotnika).
+// ---------------------------------------------------------------------------
+
+const sdScore = (d, host = 'nasz-3-2') => scoreAlternatywy(d, `cast_permanent(sd-hand->${host}`);
+
+test('PMSSB-90/F-90-4a: próg Threshold (7+ kart we własnym grobie) jest schodkiem, nie ciągłą skalą', () => {
+  const [ponizej, prog, powyzej] = [0, 1, 2].map((i) => sdScore(decyzja(budowa('SD-01', i).state, 'p1')));
+  assert.ok(prog - ponizej >= 5, `spełniony próg musi dodawać wartość wymogu bloku: ${prog} vs ${ponizej}`);
+  assert.equal(powyzej, prog, '9 kart = 7 kart (próg, nie skala „im więcej grobu, tym lepiej")');
+  assert.equal(ponizej, 72.0, 'KOTWICA M429: poniżej progu aura jest warta tyle, co przed naprawą (samo +2/+2)');
+});
+
+test('PMSSB-90/F-90-4b: wymóg bloku jest wart coś tylko wtedy, gdy rywal MA czym blokować (CR 509.1c)', () => {
+  const zBlokerami = sdScore(decyzja(budowa('SD-02', 0).state, 'p1'), 'host');
+  const pustyWrog = sdScore(decyzja(budowa('SD-02', 2).state, 'p1'), 'host');
+  assert.ok(zBlokerami - pustyWrog >= 5,
+    `wrogowie zdolni blokować muszą podnosić wartość aury: ${zBlokerami} vs pusty stół ${pustyWrog}`);
+});
+
+test('PMSSB-90/F-90-4c: ściągnięcie jedynego reach-blokera na hosta odsłania MOJEGO lotnika', () => {
+  // SD-05: (0) host 3/2 + mój lotnik 4/4, u wroga 2/2 REACH — musi blokować hosta,
+  // więc lotnik idzie nieblokowany; (2) ten sam układ, ale wrogi 2/1 BEZ reach —
+  // lotnika i tak nigdy nie blokował, więc wymóg niczego nie odsłania.
+  const zLotnikiem = sdScore(decyzja(budowa('SD-05', 0).state, 'p1'), 'host');
+  const bezDrugiego = sdScore(decyzja(budowa('SD-05', 1).state, 'p1'), 'host');
+  const bezReach = sdScore(decyzja(budowa('SD-05', 2).state, 'p1'), 'host');
+  assert.ok(zLotnikiem > bezReach,
+    `wymóg bloku musi być warty więcej, gdy odsłania innego atakującego: ${zLotnikiem} vs ${bezReach}`);
+  assert.ok(zLotnikiem > bezDrugiego, `drugi atakujący podnosi wartość wymogu: ${zLotnikiem} vs ${bezDrugiego}`);
+});
+
+test('PMSSB-90/F-90-4d: host aury — największe ciało z ewazją, nie drobiazg (ten sam wymóg bloku)', () => {
+  const d = decyzja(budowa('SD-04', 0).state, 'p1'); // mam 1/1, 3/2 i 4/4 flying; u wroga 2/2 reach
+  const drobiazg = sdScore(d, 'nasz-0');
+  const lotnik = sdScore(d, 'nasz-2');
+  assert.ok(lotnik > drobiazg, `4/4 z lataniem → 6/6 musi być lepszym hostem niż 1/1 → 3/3: ${lotnik} vs ${drobiazg}`);
+  assert.match(d.cmd.targetId ?? d.cmd.targets?.[0] ?? '', /nasz-2/, 'bot zakłada aurę na lotnika');
+});
+
+test('PMSSB-90/F-90-4f: „YOUR graveyard" (CR 109.5) — grób przeciwnika nie spełnia mojego progu', () => {
+  // Mutacja kontrolna mJ3 (liczenie wszystkich obiektów w grobie bez filtra
+  // właściciela i bez wykluczenia tokenów) PRZEŻYŁA pierwszy zestaw pinów: scenariusze
+  // SD mają pusty grób wroga, więc filtr nic nie zmieniał. Ten pin buduje stan, w
+  // którym to rozróżnienie jest jedyną różnicą — grób WROGA ma 9 kart, mój 3.
+  const karty = ['plummet', 'basic-forest', 'leonin-lightbringer', 'setons-desire',
+    'spring-loaded-sawblades', 'get-the-point', 'necrosavant', 'messengers-speed', 'might-beyond-reason'];
+  const state = stan({
+    krok: 'main1',
+    mana: { p1: 6 },
+    reka: [{ id: 'sd-hand', karta: 'setons-desire' }],
+    pole: [
+      { id: 'nasz-3-2', karta: 'leonin-lightbringer', gracz: 'p1' },
+      { id: 'bloker-1', karta: 'leafcrown-dryad', gracz: 'p2' },
+      { id: 'bloker-2', karta: 'soulmender', gracz: 'p2' },
+    ],
+    grob: [
+      ...karty.slice(0, 3).map((karta, i) => ({ id: `moj-${i}`, karta, gracz: 'p1' })),
+      ...karty.slice(0, 9).map((karta, i) => ({ id: `wrogi-${i}`, karta, gracz: 'p2' })),
+    ],
+  });
+  const score = sdScore(decyzja(state, 'p1'));
+  assert.equal(score, 72.0, '9 kart w grobie WROGA i 3 w moim = próg NIESPEŁNIONY (samo +2/+2)');
+});
+
+test('PMSSB-90/F-90-4e: STRAŻNIK L41 — wymóg bloku i próg Threshold mają po jednej regule w bocie', () => {
+  const zrodlo = fs.readFileSync(new URL('../src/controllers/heuristic-bot.js', import.meta.url), 'utf8');
+  assert.match(zrodlo, /'must_block_enchanted'/, 'typ efektu musi być rozpoznany w wycenie');
+  assert.match(zrodlo, /function mustBlockEnchantedValue\(/, 'jedna nazwana funkcja wyceny wymogu bloku');
+  assert.match(zrodlo, /minGraveyardCards/, 'klucz warunku Threshold musi być czytany z widoku');
+  assert.equal(zrodlo.match(/function myGraveyardCardCount|const myGraveyardCardCount/g)?.length ?? 0, 1,
+    'jedna reguła liczenia KART we własnym grobie (CR 108.2b: tokeny nie są kartami)');
+  const cialo = zrodlo.slice(zrodlo.indexOf('function mustBlockEnchantedValue('), zrodlo.indexOf('function auraStaticAbilityValue('));
+  assert.match(cialo, /attackerCanBeBlocked\(/, 'zdolność do blokowania liczy ten sam predykat co reszta bota');
+  assert.match(cialo, /cantBlockRemovalValue\(/, 'ściągnięcie blokera liczy ta sama miara co „cel nie może blokować"');
+});

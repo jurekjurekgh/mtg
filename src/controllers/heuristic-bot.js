@@ -8925,6 +8925,29 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     }
     return null;
   };
+  /**
+   * PMSSB-90/F-90-4 (L41/L48): liczba KART we WŁASNYM grobie — lustro silnikowego
+   * `staticConditionHolds` (`permanents.js:468`) czytane z widoku, bo decydent nie
+   * ma stanu gry (ADR 0017). „Karta" = obiekt bez jawnej flagi `isToken`
+   * (CR 108.2b: tokeny nie są kartami), a grób jest strefą JAWNĄ, więc widok niesie
+   * także grób przeciwnika — „your graveyard" (CR 109.5) filtrujemy po kontrolerze.
+   */
+  const myGraveyardCardCount = (view) => (view?.zones?.graveyard ?? [])
+    .filter((o) => o && o.isToken !== true && (o.controllerId ?? o.ownerId) === view.playerId).length;
+
+  /**
+   * Warunek CIĄGŁY zdolności statycznej (CR 611.3a) czytany z widoku:
+   * true = zachodzi, false = nie zachodzi (efekt nie działa), null = nieznany tu
+   * (zostaw bez zmian). Dziś jedna rodzina: Threshold (`minGraveyardCards`).
+   * Bliźniak `effectConditionHolds` (warunek na pojedynczym efekcie) — oba czytają
+   * ten sam grób tą samą regułą, żeby nie było dwóch arytmetyk progu (L41).
+   */
+  const staticConditionHoldsFromView = (view, condition) => {
+    if (!condition || typeof condition !== 'object') return null;
+    if (condition.minGraveyardCards != null) return myGraveyardCardCount(view) >= condition.minGraveyardCards;
+    return null;
+  };
+
   // Efekty po rozwinięciu wrapperów `conditional` (gałąź wg warunku).
   function unwrapConditionals(view, effects) {
     const flat = [];
@@ -10548,6 +10571,65 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     // przy grantach-do-EOT).
     if (swieze.includes('vigilance') && canAttackNow(host) && myTurn(view)) score += 4;
     return score;
+  }
+
+  /**
+   * PMSSB-90/F-90-4 (L41/L48): wartość wymogu bloku „all creatures able to block
+   * enchanted creature block it" (CR 509.1c, Seton's Desire z Thresholdem).
+   * Silnik wymóg EGZEKWUJE (`combat.js:373` `mustBlockHostCounts`), ale bot nie
+   * miał tu żadnej liczby, więc aura była warta samo +2/+2 w każdym stanie
+   * (pomiar SD-01/SD-02/SD-05: 72,00 przy progu spełnionym i niespełnionym, przy
+   * wrogich blokerach i przy pustym stole).
+   *
+   * Model składa się z DWÓCH istniejących miar, bez nowych stałych:
+   *  1. matematyka wymuszonego bloku — gospodarz kontra WSZYSCY zdolni blokować
+   *     (`blockExchangeOf`, ten sam symulator co przy wyborze bloków), wyceniona
+   *     skalą bliźniaka `blocks_if_able_until_end_of_turn` (+10 kill-block, −10
+   *     blok stratny — `heuristic-bot.js` gałąź aktywacji i czaru);
+   *  2. ściągnięcie blokerów z MOICH INNYCH atakujących — `cantBlockRemovalValue`
+   *     (Batch60-followup/2: jakość bloku), czyli ta sama miara co „cel nie może
+   *     blokować", bo skutek jest ten sam: bloker jest zajęty moim gospodarzem.
+   * Brak wrogów ZDOLNYCH blokować (CR 509.1c „able to") = 0: wymóg jest pusty,
+   * a nie „bonus za tekst karty" (M429).
+   */
+  function mustBlockEnchantedValue(view, host, pump = null) {
+    if (!host) return 0;
+    const atakujacy = {
+      ...host,
+      power: (host.power ?? 0) + (pump?.power ?? 0),
+      toughness: (host.toughness ?? 0) + (pump?.toughness ?? 0),
+      keywords: [...(host.keywords ?? []), ...(pump?.keywords ?? [])],
+    };
+    const zmuszeni = untappedEnemyBlockers(view).filter((b) => attackerCanBeBlocked(atakujacy, [b]));
+    if (zmuszeni.length === 0) return 0;
+    const wymiana = blockExchangeOf(atakujacy, zmuszeni);
+    const zabija = (wymiana?.diedBlockerIds ?? []).length > 0;
+    let value = (zabija && !wymiana?.attackerDies) ? 10 : -10;
+    const inni = (attackWindowAttackerIds(view) ?? []).filter((id) => id !== host.id);
+    for (const bloker of zmuszeni) value += cantBlockRemovalValue(view, bloker, inni) ?? 0;
+    return value;
+  }
+
+  /**
+   * Zdolności STATYCZNE aury z warunkiem ciągłym (Threshold) — dotąd wycena aury
+   * czytała wyłącznie `aura.pump` i granty słów kluczowych (`auraKeywordValue`),
+   * więc cała rodzina efektów statycznych z warunkiem była niewidzialna. Warunek
+   * niespełniony albo nieznany = efekt nie działa (jak w silniku, CR 611.3a).
+   */
+  function auraStaticAbilityValue(view, def, host, pump = null) {
+    if (!def || !host) return 0;
+    let value = 0;
+    for (const ability of def.abilities ?? []) {
+      // Typ zdolności jako literał — ten plik nie importuje `ABILITY_TYPE`
+      // (silnikowe `abilities.js:25`), a pozostałe gałęzie bota też porównują
+      // literały (`ability?.type !== 'triggered'`), więc jedno źródło zostaje.
+      if (ability?.type !== 'static') continue;
+      if (ability.condition && staticConditionHoldsFromView(view, ability.condition) !== true) continue;
+      for (const effect of (Array.isArray(ability.effect) ? ability.effect : [ability.effect])) {
+        if (effect?.type === 'must_block_enchanted') value += mustBlockEnchantedValue(view, host, pump);
+      }
+    }
+    return value;
   }
 
   /**
@@ -12991,6 +13073,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           // anticipację-ogona (trigger-gospodarza!).
           return finish(P.auraBase + P.auraBuffWorthWeight * ((target.power ?? 0) + pump.power) + ((target.toughness ?? 0) + pump.toughness)
             + auraKeywordValue(view, descriptor, target)
+            + auraStaticAbilityValue(view, cardDef(card?.cardId), target, pump)
             - offWindowFlashProtectionPenalty
             + anticipatedTailValue(view, cardDef(card?.cardId), cmd));
         }
@@ -18870,7 +18953,11 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // M431/L41: TA SAMA reguła co przy rzucie aury z reki — inaczej dwie
         // sciezki zalozenia aury mieilyby dwa modele swiata (L28).
         const kwValue = mine ? auraKeywordValue(view, auraCard?.aura ?? auraCard?.bestow, host) : 0;
-        return finish(mine ? P.auraBase + worth + kwValue : -P.auraHostileEnemyBase - worth);
+        // PMSSB-90/F-90-4: druga ścieżka założenia aury musi znać tę samą regułę
+        // (L41) — inaczej wybór gospodarza po rozstrzygnięciu ignorował Threshold.
+        const statValue = mine
+          ? auraStaticAbilityValue(view, cardDef(auraCard?.cardId), host, (auraCard?.aura ?? auraCard?.bestow)?.pump) : 0;
+        return finish(mine ? P.auraBase + worth + kwValue + statValue : -P.auraHostileEnemyBase - worth);
       }
       case 'resolve_hand_free_cast': {
         // Batch 57/B6a (Baral and Kari Zev): darmowy rzut czaru z ręki to
