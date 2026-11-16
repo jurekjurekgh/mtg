@@ -462,3 +462,84 @@ Parity z produkcją: sonda tworzy bota z `randomness: 0, lookahead: 0` — dokł
   `damage_each_opponent`).
 - **Fala C (dopracowanie):** F-90/6 (sekwencja pod progi), F-90/7 (rozjazd equip), F-90/8 (sprzęt
   triggerowy), F-90/10 (paliwo Kessiga + remis), F-90/11 (haste: stan hosta i okno po walce).
+
+## 9. Wynik pętli (kroki 3–7) — stan 2026-11-16, DONE
+
+**Sonda po pętli:** 53 scenariusze / **189 rekordów** (PRZED: 49/179). Przybyły scenariusze
+wprowadzające JEDNĄ nową zmienną każdy (zasada z kroku 2 — `d.opcje` są filtrowane po etykiecie bez
+gwarancji kolejności, a `playerView().legalCommands` nie zawiera `resolve_explore_choice`, więc
+izolacja zmiennej musi być w STANIE, nie w assertach): RG-05/RG-06 (explore: wartość karty i presja
+deck-outu), LL-06/LL-07 (defender i porównanie dwóch sprzętów na tym samym hoście), warianty M-04
+(cztery stany hosta + nosiciel z własnym haste), warianty KF-06 (cztery ręce). Rozmiar sondy
+20 399 → 81 329 B. Pomiar PO: `.arena/pmssb90-po.{json,log}` + `.arena/pmssb90-tabela-po.txt`
+(817 linii); tabela PRZED zachowana jako `.arena/pmssb90-tabela-przed.txt` (743 linie).
+
+**Statusy findingów:** NAPRAWIONE 9 (F-90/1, F-90/2, F-90/3, F-90/4, F-90/5, F-90/7, F-90/8, F-90/9,
+F-90/11 — F-90/7 i F-90/8 zamknięte jednym commitem `0816c42`); ZMIERZONE BEZ ZMIANY KODU 1
+(F-90/10 — decyzja modelowa właściciela); OTWARTE 3 (F-90/5b — rezyduum F-90/5; F-90/6 — zablokowane
+przez F-90/5b; **F-90/12 — NOWE z pomiaru BC-03/BC-04**). Liczby PRZED→PO i root cause'y:
+`docs/PMSSB.md` → §PMSSB-90 (tabela 12 wierszy) oraz kamień **M465**.
+
+**F-90/12 (nowe, otwarte — root cause wskazany, BEZ pinu zamrażającego):** Bladewheel Chariot ma dwie
+zdolności o tym samym idempotentnym efekcie do EOT (`#0` koszt `{tapOtherArtifacts: 2}`, `#1` koszt
+`{crewPower: 1}`, obie `animate_permanent_until_end_of_turn`). Bot aktywuje jedną PO DRUGIEJ
+(BC-03 w0: 10,00 → 10,00; BC-04 w0: 13,00 → 13,00), tapując kolejne permanenty za nic. Straż M179/B
+(`pendingTwin`) porównuje `sourceId + abilityIndex + targets`, więc INNY indeks zdolności o tym samym
+efekcie nie jest bliźniakiem; straż M230 (`source.animatedUntilEOT`) działa dopiero PO rozliczeniu
+pierwszej aktywacji (wtedy obie wiszą na stosie). Rekomendacja: `pendingTwin` po ZBIORZE typów
+efektów idempotentnych. Defektu NIE zamrażamy pinem — zamrożenie wyglądałoby jak regresja przy
+naprawie; reprodukcja `node tools/pmssb90-batch73-petla-sonda.mjs --scen=BC-03 --przebieg`.
+
+**Wymiar T pojazdu (BC-01) zmierzony POPRAWNY** — oczekiwanie z §4 („bot nie atakuje po crew") było
+artefaktem harnessa (H-3), nie defektem: main1 → pass (crew −10), `beginning_of_combat` → crew 11,00,
+`declare_attackers` → crew 11,00 a po rozliczeniu stosu `attack[permanent-2]` 8,00, main2 → pass.
+Obrona: wrogie 4/4 z lataniem → pass (pojazd nie zablokuje), wrogie 6/7 bez latania → crew 13,00.
+**Uwaga do właściciela (mechanika, poza scoringiem):** silnik daje aktywnemu graczowi priorytet w
+`declare_attackers` PRZED turową akcją deklaracji atakujących, więc crew w tym kroku wciąż pozwala
+zaatakować; w realnej grze (CR 508.1 — akcja turowa na początku kroku, bez stosu) byłoby za późno.
+Zmierzone, nie zmienione.
+
+**Piny:** `test/audyt-pmssb90-batch73.test.js` = **46 testów / 46 pass** (1a–1e, 9a–9d, 2a–2e, 3a–3f,
+4a–4f, 5a–5e, 7a–7b, 8a–8e, 10a–10b, 11a–11f). Każdy RED przed naprawą i GREEN po; helpery czytają
+scenariusze Z SONDY (L41 — jedno źródło stanu). Mutacje: 26 w 9 skryptach `.arena/mutacje-f90-*.py`,
+wszystkie zgodne z oczekiwaniem, TRZY udokumentowane jako PRZEŻYŁE z powodem nieobserwowalności
+(mK4, mN4, mO4 — patrz §PMSSB-90). Re-piny świadome (wzór PMSSB-67/F2):
+`test/pmssb10-ogon-wave-b2.test.js` (skala F-90/9) i
+`test/uwagi-tura9-bot-rowne-ciala-equip.test.js` T9/8 (wyrażenie `equipValuation` zyskało dwa
+składniki sumy; pin liczy teraz `wagaSily *` == 2, czyli pilnuje INTENCJI reguły).
+
+**Ewaluacja (krok 5):** `bot-scoring-snapshot` **4/4 BEZ regeneracji** (golden-master bit w bit);
+`bot-tie-audit --gry=2` RC=0 z profilem remisów IDENTYCZNYM jak przed pętlą (24 partie, 11 364
+decyzje, single 0, tie_top 569, tie_all 0, 2055 decyzji akcyjnych z 569 remisami = 27,7%, 172 remisów
+realnych = 10,4%, GROZY block=2 / attack=9 / cast_spell=3 — bazowy stan PMSSB-89, zmierzony, nie
+naprawiony); `tools/mirror-eval.mjs` NIE uruchamiany osobno — lustro porównuje kandydata (nowe
+parametry) z baseline (domyślne), a ta pętla nie dodaje żadnego klucza parametrów
+(`heuristic-params.js` nietknięty, `git diff` pusty); test `bot-mirror-eval.test.js` jest w bramce
+`all` i zielony. **Żywy Tester PO:** 3 partie × 400 kroków na artefakcie PO naprawach, karty batcha
+73 po obu stronach (`ixalan`↔`innistrad-brg` s42, `ravnica-bg`↔`forgotten-realms-wug` s7,
+`theros`↔`dominaria-wrg` s9): w każdej `DETEKTORY: brak zgłoszeń` i `NIEWYCENIONE == brak`, wszystkie
+z naturalnym końcem partii; transkrypty poza repo (`.gitignore:30`).
+
+**Bramy (krok 7):** fast **10 437/10 437** (`.arena/f90-10b-fast.log`, FAST_RC=0; PRZED pętlą
+10 390), slow 282, `test:all` **10 719/10 719** (ALL_RC=0), `npm run build` RC=0 (79 modułów /
+5920,2 kB), `node tools/cr-numery.mjs` OK (561 unikalnych numerów w 6805 cytatach; w pętli poprawiony
+jeden cytat — explore to **CR 701.44a**, bo 701.40 w wydaniu CR 2026-11-06 to manifest). Talie
+chwilowe z etapu E3 audytu usunięte PRZED bramkami + rebuild (M331).
+
+**Commity pętli (11 + dokumentacja):** `386bee8` plan → `6e98350` krok 1+2 → `41407d3` F-90/1 →
+`c402ee5` F-90/9 → `f3ca0af` F-90/2 → `70b0fe7` F-90/3 → `7d422f1` F-90/4 → `69be35f` F-90/5 →
+`0816c42` F-90/7+8 → `1c34b4e` F-90/11 → `bc58123` F-90/10 (piny-kotwice, bez kodu) → dokumentacja
+(§PMSSB-90 + rejestr + M465 + dziennik + ten rozdział + handoff + body PR #186).
+
+**Definicja ukończenia (§7) — odpowiedź punkt po punkcie:**
+
+| Kryterium | Stan |
+|---|---|
+| Sonda macierzowa z odpowiedzią na (T)/(C)/(S) dla 11 wpisów | ✓ 53 scenariusze / 189 rekordów, wymiary S/C/T/K + kontrole; tabele PRZED/PO w `.arena/` |
+| Każdy finding ma root cause, naprawę generyczną, piny RED→GREEN i mutacje | ✓ dla 9 naprawionych + 1 zmierzonego bez kodu; 3 otwarte mają root cause i JAWNY status (F-90/5b, F-90/6, F-90/12) — bez cichego skipu |
+| Ewaluacja: snapshot bez regeneracji, tie-audit, mirror, Żywy Tester | ✓ 4/4; ✓ RC=0 (profil bez zmian); mirror — nieuruchamiany z podanym powodem (brak nowych parametrów); ✓ 3 partie bez zgłoszeń |
+| §PMSSB-90 + rejestr + PROJECT_HISTORY + M465 + opis PR | ✓ `docs/PMSSB.md` (sekcja @4307, wiersz rejestru @72), ✓ M465, ✓ dziennik, ✓ handoff, ✓ body PR #186 |
+| Bramy zielone (fast/slow/all/build) | ✓ 10 437 / 282 / 10 719 / RC=0 |
+| Talie chwilowe usunięte | ✓ `rm decks/audyt-batch73*.txt` + rebuild PRZED bramką (M331) |
+| Handoff i blok przekazania w czacie | ✓ `docs/setup/HANDOFF_2026-11-16-pmssb90.md` + blok w czacie |
+| PR #186 do scalenia przez właściciela | ✓ autor nie scala; `Squash and merge` po decyzji właściciela (ADR 0007) |

@@ -19,6 +19,70 @@
 > w drzewie. Obowiązująca reguła: `docs/setup/TESTER_STOLU.md` → „Transkrypty
 > nie trafiają do repozytorium".
 
+## 2026-11-16 — PMSSB-90: pętla RĘCZNEGO strojenia scoringu bota na Batchu 73 (PR #186, `arena/4fa65e47-mtg`)
+
+- **Zlecenie właściciela (dosłownie):** „Nie potrzebuję ani pełnego B0 ani tuningu. Wystarczy mi
+  uczciwy PMSSB, czyli Pętla MANUALNEGO Strojenia Scoringu Bota. Czyli weryfikacja z punktu widzenia
+  pro-playera MtG czy karta jest rzucana przez Bota w optymalnym momencie (tura, faza), w optymalny
+  cel, w kontekście aktualnego stanu gry (co na stole, jaka ręka, jaka biblioteka, jaki cmentarz) itd."
+  Bez pełnego B0 i bez maszynowego tuningu wag: **`src/controllers/heuristic-params.js` nietknięty**
+  (zero nowych kluczy), wszystkie zmiany to STRUKTURA modelu. Plan
+  `docs/plans/PLAN_2026-11-16-pmssb90-batch73-petla-reczna.md` (§0–§9), raport `docs/PMSSB.md` →
+  §PMSSB-90, kamień **M465**, handoff `docs/setup/HANDOFF_2026-11-16-pmssb90.md`.
+- **Sonda i pomiar PRZED/PO (krok 1):** `tools/pmssb90-batch73-petla-sonda.mjs` (81 329 B) — 53
+  scenariusze / 189 rekordów / 11 kart, wymiary S (stan), C (cel), T (timing), K (koszt); zrzuty
+  `.arena/pmssb90-{przed,po}.{json,log}` + `tabela-{przed,po}.txt`. Audyt wierności harnessa H-1…H-7
+  podważył dwa założenia planu: `untap` był poza skanem timingu (H-1), a PUSTA biblioteka wyłączała
+  `hardRemovalHeldForWorthierTarget` przez `myLibraryCount <= 10`, więc cały pomiar removalu był
+  niewierny (H-2 → `ROZMIAR_BIBLIOTEKI = 20`); `rozliczStos()` ze score w przebiegu (H-3) pokazał, że
+  „bot nie atakuje po crew" to artefakt pomiaru, nie defekt.
+- **Naprawione (9 findingów, każdy z pinem RED→GREEN i mutacją):** F-90/1 SILNIK — brak ofert
+  aktywacji z grobu dla `sacrificeCreature` w `requiredParameters` (`session.js:4009` przerywał
+  partię; wspólny `sacrificeCreatureVariants` + walidacja po `sourceId` zdolności, `41407d3`); F-90/9
+  `damage_each_opponent` dołącza do `opponentLifeEffectValue` (chip dobijający dominuje, Δ ≥ 20;
+  `c402ee5`); F-90/2 `craft_transform` bez wyceny → `craftTransformValue` (`f3ca0af`); F-90/3 warunek
+  ETB `tapped_creature`+`opponentControls` — delegacja po TYPIE celu, nie po fladze, bo routing po
+  fladze byłby over-fixem (`70b0fe7`); F-90/4 Threshold `must_block_enchanted` jako wyceniana statyka
+  (`myGraveyardCardCount` + `staticConditionHoldsFromView` + `mustBlockEnchantedValue`, `7d422f1`);
+  F-90/5 explore = wspólna skala z surveil (`69be35f`); F-90/7+8 equip: treść triggera sprzętu
+  (`equipTriggerTailValue`) i statyka hosta (`equippedStaticPumpOf`) + rozjazd „przeniesienie −8,00 vs
+  pierwsze założenie 20,00" (`0816c42`); F-90/11 haste w aurze czyta chorobę hosta i okno
+  `precombat_main` (`1c34b4e`).
+- **Zmierzone BEZ zmiany kodu (F-90/10, `bc58123`):** `cast_permanent(kessig-hand)` = 70,2018 w każdym
+  wariancie ręki; pozorny remis z Leoninem to 70,2036 vs 70,2018 (Δ 0,0018, wybór deterministyczny).
+  Naprawa (bramka dowodu paliwa, wspólny licznik ze ścieżką prowess PMSSB-65) działała na KF-06 i
+  przechodziła własne piny, ale przesuwała 5 pinów PMSSB-10 Wave-A/B1 — w tym **Illusory Demon
+  71,7 → 78,00**, bo bramka wyciszała KOSZT (`when_you_cast_spell` bywa poświęceniem ciała) tak samo
+  jak wypłatę. Patch cofnięty (`git checkout` do `1c34b4e`), piny-kotwice 10a/10b zostały. **Zasada do
+  decyzji właściciela:** wypłata TYMCZASOWA (pompka do EOT — prowess) skaluje się rzucalnym paliwem z
+  ręki; wypłata TRWAŁA (trigger na permanencie) nie sprowadza się do migawki ręki — ta sama, dla której
+  `auraKeywordValue` nie karze aury poza oknem walki (M179/A1 + M218/3).
+- **Otwarte (jawne, z root cause'em):** **F-90/5b** — `graveyardReadingCardsInHand` zna delve i
+  reanimację, ale nie progów po LICZBIE kart (Threshold) ani po TYPACH (delirium, CR 207.2c), więc
+  dopełnienie progu jedną zmieloną kartą nie podnosi wartości mielenia (RG-02 A/B zostaje na wierzchu;
+  domknięcie wymaga wyceny „co odblokowuje próg" — nowy model, nie druga stała); **F-90/6** — sekwencja
+  rzutów pod progi, zablokowana przez F-90/5b; **F-90/12** (nowe z BC-03/BC-04) — Bladewheel Chariot ma
+  dwie zdolności o tym samym idempotentnym efekcie do EOT i bot aktywuje jedną po drugiej: straż M179/B
+  `pendingTwin` porównuje `sourceId + abilityIndex + targets`, więc inny indeks tego samego efektu nie
+  jest bliźniakiem, a straż M230 `animatedUntilEOT` działa dopiero po rozliczeniu. Rekomendacja:
+  `pendingTwin` po zbiorze typów efektów. BEZ pinu zamrażającego defekt.
+- **Dowód i bramy:** 46 pinów `test/audyt-pmssb90-batch73.test.js` (46/46); 26 mutacji w 9 skryptach
+  `.arena/mutacje-f90-*.py`, trzy udokumentowane jako PRZEŻYŁE (mK4/mN4/mO4 — z powodem
+  nieobserwowalności, zamiast udawać że każdy człon ma pin); re-piny świadome
+  `test/pmssb10-ogon-wave-b2.test.js` i `test/uwagi-tura9-bot-rowne-ciala-equip.test.js` T9/8. Bramki:
+  fast **10 437/10 437** (PRZED pętlą 10 390), `test:all` **10 719/10 719**, build RC=0 (79 modułów /
+  5920,2 kB), `cr-numery` OK (561/6805; explore = **CR 701.44a**, nie 701.40), `bot-tie-audit --gry=2`
+  RC=0 z profilem remisów IDENTYCZNYM jak przed pętlą, `bot-scoring-snapshot` **4/4 bez regeneracji**.
+  Żywy Tester PO: 3 partie × 400 kroków, karty batcha 73 po obu stronach, 0 zgłoszeń detektorów i 0
+  niewycenionych ruchów. Talie chwilowe usunięte PRZED bramką + rebuild (M331).
+- **Lekcje zapisane w §PMSSB-90 i w handoffie:** (1) stare piny na DOSŁOWNE wyrażenia/wartości padają
+  przy rozbudowie modelu — przed bramką `grep -rln "equipValuation\|printedBody\|nothingAdded\|auraKeywordValue\|anticipatedTailValue\|prowessCastValue" test/`;
+  (2) asserty „większe niż" przechodzą bez naprawy przy różnicy śladowej (Δ 0,0018) — izolować JEDNĄ
+  zmienną i wprowadzać ją JAKO SCENARIUSZ sondy; (3) mutacje nieobserwowalne zgłaszać JAWNIE
+  (`oczekiwana='PRZEZYWA'`); (4) re-pin po zmianie skali musi objąć piny „SAME/SKIP-proofs" — zawsze
+  `grep -rn "<karta>" test/`; (5) importowanie sondy z `node -e` pada na
+  `fs.realpathSync(process.argv[1])` — używać `--scen=X --json`.
+
 ## 2026-11-11 — audyt techniczny PR #184, naprawy F-1..F-5 i pętla jakości (PR #185, `arena/ae91191e-mtg`)
 
 - **Audyt PR #184 (`0d0a12b`, 39 commitów, 54 pliki, +7081/−404):** pełna mapa

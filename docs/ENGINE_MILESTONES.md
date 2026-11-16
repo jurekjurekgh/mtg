@@ -9268,3 +9268,175 @@ ADR 0018) — `test/bot-benchmark.test.js` with the 0.69 aggro threshold runs
 inside `test:slow`. Plan:
 `docs/plans/PLAN_2026-11-15-audyt-pr185-batch73.md`; batch plan:
 `docs/plans/PLAN_2026-11-11-batch73-kolekcja-645-655.md`.
+
+## M465 — Batch 73: manual scoring-tuning loop (PMSSB-90), eleven real cards (2026-11-16, PR #186)
+
+**Scope:** the owner asked for an honest *manual* loop — no full B0, no machine
+tuning of weights: "verify, from the point of view of an MTG pro player, whether a
+card is cast by the bot at the optimal moment (turn, phase), at the optimal
+target, in the context of the current game state (what is on the board, which
+hand, which library, which graveyard)". Procedure 0–7 of `docs/PMSSB.md`
+(finding → root cause → minimal fix → mutation-proof pin), the 11 real cards of
+Batch 73 (collection 645–655), four audit dimensions S (state), C (target),
+T (timing), K (cost). **`src/controllers/heuristic-params.js` untouched** — the
+loop produced no new knob; every change is model structure (delegation to an
+existing scale, a missing value, a missing offer), which is exactly what the
+manual loop is for. Plan:
+`docs/plans/PLAN_2026-11-16-pmssb90-batch73-petla-reczna.md`. Report:
+`docs/PMSSB.md` → §PMSSB-90.
+
+**Probe.** `tools/pmssb90-batch73-petla-sonda.mjs` (81 329 B): 53 scenarios /
+189 records, CLI `--scen|--karta|--json|--przebieg`, exports
+`pomiarPrzed/SCENARIUSZE/stan/put/decyzja/opisStanu/pt`. Measurements frozen as
+`.arena/pmssb90-przed.{json,log}` + `tabela-przed.txt` (179 records) and
+`.arena/pmssb90-po.{json,log}` + `tabela-po.txt` (189 records). Harness
+fidelity H-1…H-7 was audited first and two of its findings invalidated parts of
+the plan's premises: the untap step was outside the timing scan (H-1), and an
+empty library made `myLibraryCount <= 10` disable
+`hardRemovalHeldForWorthierTarget`, so the whole removal measurement was
+unfaithful (H-2, `ROZMIAR_BIBLIOTEKI = 20`); `rozliczStos()` with a score in the
+run-through (H-3) showed that "the bot does not attack after crew" was a probe
+artifact, not a defect.
+
+**Fixed (nine findings, all with a mutation-proofed pin and a M429
+anti-over-fix anchor):**
+
+- **Engine (L48) — activation offers from the graveyard, `41407d3`:**
+  `sacrificeCreature` as a *required* parameter had no offer generator, so
+  `activate_ability(necrosavant#0)` never carried `sacrificeCreatureId`; the
+  validation rejected it (`illegal_ability`) and in a real game
+  `session.js:4009` interrupted the match. One shared
+  `sacrificeCreatureVariants(view, state, cmd, ability)` now builds offers for
+  `requiredParameters` in `generateOptionsForCommand` (as
+  `generateSacrificeCostVariants` did for optional costs), and
+  `sacrificeCreatureVariantsWithSource` validates against the ability's own
+  `sourceId` (before, `validateActivationCommand` read the *command's* source,
+  so a permanent's own sacrifice cost rejected every offer). Measured: one offer
+  per sacrificable creature (15 broken variants → all `ok=true`), no offer and
+  `pass_priority` when no creature is available, the 1/1 sacrificed in front of
+  a 4/4 flyer.
+- **`damage_each_opponent` joins the life scale, `c402ee5`:** the fifth scoring
+  site for that instruction used a flat 4 while four others used
+  `opponentLifeEffectValue`, so KF-05 scored 100,00 at opponent life 20 / 6 / 2 /
+  1 — identical when one point of damage ends the game. Now the lethal bonus
+  dominates (Δ ≥ 20), the carrier's own bonus grows with the finishing scale,
+  and life 20/6/2 keep the same values (anti-over-fix pin).
+- **`craft_transform` gains a value, `f3ca0af`:** the effect had a single
+  mention in the bot (the effect-type set) and fell to the `default` branch, so
+  the bot never crafted. `craftTransformValue` = back material − front material
+  − the cheapest material in play (`permanentMaterialValue = 2P + T + cost`).
+- **ETB condition `tapped_creature` + `opponentControls`, `70b0fe7`:** the cast
+  score ignored both, so the value was flat 77,3973 in all four states. Now a
+  flat 13,50 ETB bonus plus 3,60 for an opponent-controlled creature: 77,40 /
+  77,40 / 63,90 (untapped creatures) / 60,30 (empty board); our own main phase
+  63,90 vs the opponent's turn 77,40. Delegated by *target type*, never by the
+  `opponentControls` flag — routing on the flag would have over-fixed
+  `nonland_permanent` (which also carries it); target quality itself stays the
+  target-choice path's job (M429).
+- **Threshold as a scored static, `7d422f1`:** `must_block_enchanted` was
+  invisible to the bot (`grep` empty), so Seton's Desire scored 72,00 at
+  graveyard 6/7/9 alike and 75,60 on a flyer regardless of the enemy's reach.
+  Now `myGraveyardCardCount` + `staticConditionHoldsFromView` (the view-side
+  twin of the engine's `staticConditionHolds`, CR 611.3a) +
+  `mustBlockEnchantedValue` + `auraStaticAbilityValue`, wired into both the aura
+  cast score and `resolve_aura_host`: 72,00 / 81,00 / 81,00 (step, graveyard 6
+  kept exactly as before), host choice 91,80 (4/4 flyer) > 85,50 > 84,60.
+- **Explore shares the surveil scale, `69be35f`:**
+  `resolve_explore_choice` was `finish(cmd.putInGraveyard ? 10 : 40)` — the bot
+  always put the card on top, 40/10 for a Marut 7/7 costing 8 (out of mana
+  reach, `cardKeepValue` = −3) and for a Plummet costing 2 alike. Now
+  `20 − cardKeepValue − MILL_CAUTION + drawDeckingPenalty + graveSynergy`, the
+  same expression as surveil: Marut → mill 21,00 > top 20,00; Plummet → top
+  20,00 > mill 15,00; library pressure (3 vs 20 cards) moves the decision by
+  −6,00 (CR 121.4). The view now carries `pendingExplore.cardId` and the
+  descriptors are read from the registry, exactly as `resolve_clash_choice`
+  does.
+- **Equipment: trigger content and the host's static pump, `0816c42`:**
+  `equipValuation` read only `equipment.pump/keywords/cantBeBlockedMaxPower`, so
+  Greatsword of Tyr (all of its content sits in an attack trigger) hit
+  `nothingAdded` → −12 → **−11,00 for every host**. New `equipTriggerTailValue`
+  (the existing `anticipatedTailValue` behind an `ATTACK_GATED_EQUIP_EVENTS`
+  gate + `cantAttackStatic`) and `equippedStaticPumpOf` (`condition.equipped` +
+  `ability.pump` on the host): 24,00 on a Leonin 3/2, 22,00 on a Highland Game
+  2/1, 26,00 on a 4/3 demon; −11,00 kept on a Wishful Merfolk (defender — the
+  attack trigger is dead). The same commit fixed the L41 split between the two
+  `activate_ability` branches: *moving* Brawler's Plate from one host to a
+  better one was −8,00 against a first equip of 20,00 (a 28-point divergence for
+  the same (equipment, host) pair); it is now 5,00 — below the first equip
+  (20,00), because the old host loses the pump.
+- **Haste grant reads the host and the window, `1c34b4e`:**
+  `auraKeywordValue` scored haste without any window, so Messenger's Speed gave
+  79,20 for a ready host, a sick host, a **tapped** host and a tapped-and-sick
+  host alike (M-04), main phase one equalled main phase two (M-01), and the bot
+  preferred the ready 2/2 over the sick 2/1 — the opposite of what haste means.
+  Now +6 (mirroring `ofensywne`'s `hasteAdds` weight in `equipValuation`, M243)
+  only when `summoningSickness && !tapped && !cantAttackStatic && myTurn &&
+  phase === 'precombat_main'`: 79,20 / **84,60** / 79,20 / 79,20, main1 83,70 >
+  main2 78,30, and the bot picks the sick creature (CR 702.10, 302.6, 508.1a,
+  307.1). Redundant haste is not paid (Relic Robber 66,60).
+
+**Measured, closed without a code change:**
+
+- **F-90/10 (Kessig Flamebreather):** `cast_permanent` scores 70,2018 whatever
+  the hand holds — cheap fuel (Plummet 2), out-of-reach fuel (Get the Point 5),
+  no fuel. The apparent tie with Leonin Lightbringer is not a tie: 70,2036 vs
+  70,2018, a deterministic 0,0018 difference. A fuel-proof gate was implemented
+  and mutation-proved, then **reverted** because it moved five PMSSB-10
+  Wave-A/B1 pins (Kulrath Mystic 64,8→63,9; Tellah 69,3→64,8; token_wizard
+  65,7→63,9; Goblin Battle Jester 64,8→63,9; **Illusory Demon 71,7→78,00** —
+  the gate silenced a *cost*, not only a payout). Rule recorded for the owner's
+  decision: a *temporary* payout (an EOT pump — prowess) may scale with castable
+  fuel in hand (PMSSB-65); a *lasting* payout (a trigger on a permanent) cannot
+  be reduced to a snapshot of the hand — the same reason `auraKeywordValue` does
+  not penalise an aura outside the combat window (M179/A1 + M218/3). Pins 10a/10b
+  freeze the measurement as anti-over-fix anchors.
+
+**Open findings (measured, root-caused, deliberately not fixed):**
+
+- **F-90/5b:** `graveyardReadingCardsInHand` knows delve and reanimation but not
+  graveyard conditions by *count* (Threshold) or by *card types* (delirium, CR
+  207.2c), so completing a threshold with one milled card does not raise the
+  value of milling (RG-02 keeps the card on top). Closing it needs the value of
+  "what the completed threshold unlocks" — a card in hand, i.e. a new model, not
+  a second constant.
+- **F-90/6** (cast order under a threshold) is blocked by F-90/5b: without
+  threshold awareness the bot does not mill for delirium, so the order has
+  nothing to differ by.
+- **F-90/12:** Bladewheel Chariot has two abilities with the same
+  end-of-turn-idempotent effect (`{tapOtherArtifacts: 2}` and `{crewPower: 1}`)
+  and the bot activates them one after another, tapping more permanents for
+  nothing. Root cause: the M179/B `pendingTwin` guard compares
+  `sourceId + abilityIndex + targets`, so a *different* ability index with the
+  same effect is not a twin, and the M230 `source.animatedUntilEOT` guard only
+  bites after the first activation resolves. Recommended fix: match `pendingTwin`
+  on the *set* of idempotent effect types. No pin freezes the defect — freezing
+  it would make the future fix look like a regression.
+
+**Proof.** 26 mutations across nine `.arena/mutacje-f90-*.py` scripts, each with
+a sha256-checked copy of the original and restoration in `finally`; all matched
+their expectation, and three are documented as SURVIVED with the reason they are
+unobservable in this batch's states (a flat 0 in a term that never reaches the
+decision; a redundant `myTurn` gate for a sorcery aura; excluding the cast card
+from its own fuel when no card with that event is cast). Two older pins were
+re-pinned with the reason recorded (PMSSB-67/F2 pattern):
+`test/pmssb10-ogon-wave-b2.test.js` (`fear-of-burning-alive` 70,20 → 81,00 /
+138,60 after F-90/9) and
+`test/uwagi-tura9-bot-rowne-ciala-equip.test.js` T9/8 (the literal
+`equipValuation` expression gained two summands; the pin now counts
+`wagaSily *` == 2, which guards the *intent* — one power weight, no equip branch
+multiplying its own).
+
+**Gates:** fast **10 437/10 437**, slow 282, `test:all` **10 719/10 719**,
+build RC=0 (79 modules / 5920.2 kB), `tools/cr-numery.mjs` OK (561 unique
+numbers in 6805 citations; the loop corrected one citation — explore is
+**CR 701.44a**, since 701.40 in the 2026-11-06 release is the manifest),
+`bot-tie-audit --gry=2` RC=0 with the tie profile byte-identical to the
+pre-loop run (24 games, 11 364 decisions, single 0, tie_top 569, tie_all 0,
+2055 action decisions of which 569 tied = 27.7%, 172 ties between real
+variants = 10.4%; "dangerous" ties block=2, attack=9, cast_spell=3 — the
+known PMSSB-89 baseline, measured, not fixed), `bot-scoring-snapshot` **4/4 without
+regeneration** (bit-identical golden master — a measured result, not an
+assumption), live Tester three matches × 400 steps on the post-fix
+`dist/mtg-table.html` with Batch 73 cards on both sides (ixalan vs innistrad-brg
+s42, ravnica-bg vs forgotten-realms-wug s7, theros vs dominaria-wrg s9): zero
+detector reports and `NIEWYCENIONE == none` in all three.
