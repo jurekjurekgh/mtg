@@ -194,8 +194,17 @@ test('T9/8: „czy nosiciel umie użyć pompy" ma JEDNO miejsce w modelu (L28)',
   assert.match(cialo, /creature\.cantAttackStatic === true/, 'obrona przed defenderem/detainem liczona w tej samej funkcji');
   assert.match(cialo, /const wagaSily = atakJa\u0142owy \? 1 : \(2 \+ \(bearingEvasion \? 1 : 0\)\);/,
     'waga pompy zależy od spożytkowania: pół na ciele, które nie atakuje, +1 za to, że cios dojdzie (M289 + M290)');
-  assert.match(cialo, /const value = wagaSily \* pumpPower \+ pumpToughness \+ ofensywne;/,
+  // RE-PIN (PMSSB-90/F-90-8, świadomy — wzorzec PMSSB-67/F2): wyrażenie `value`
+  // urosło o dwa SKŁADNIKI SUMY (pompa z własnej statyki nosiciela bramkowanej
+  // `condition.equipped` i treść triggerów sprzętu), bo sprzęt taki jak
+  // Greatsword of Tyr był dla wyceny pusty (kara −12, pomiar LL-04/LL-05: −11,00
+  // dla każdego hosta). INTENCJA tej reguły zostaje: `wagaSily` jest nadal
+  // JEDYNYM mnożnikiem siły i występuje dokładnie w `value` i `bodyValue` —
+  // żadna gałąź equipu nie mnoży własnych wag (poniżej licznik wystąpień).
+  assert.match(cialo, /const value = wagaSily \* \(pumpPower \+ hostStatic\.power\) \+ \(pumpToughness \+ hostStatic\.toughness\)\s*\n\s*\+ ofensywne \+ tailValue;/,
     'value liczy się z tej jednej wagi — gałęzie equipu nie mogą mnożyć własnych mnożników');
+  assert.equal((cialo.match(/wagaSily \*/g) ?? []).length, 2,
+    'jedna waga siły: `value` i `bodyValue` (L28 — nie osobny mnożnik na gałąź)');
   assert.equal((cialo.match(/hasKeyword\(creature, 'flying'\)/g) ?? []).length, 1,
     'latanie nosiciela czytane raz (w definicji), nie raz na gałąź');
   const uses = (src.match(/equipValuation\(view, source,/g) ?? []).length;

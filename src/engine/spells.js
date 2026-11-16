@@ -512,6 +512,12 @@ export function validateTargets(state, targetSpec, chosen, casterId, sourceColor
     if (spec?.type === 'tapped_creature') {
       if (!object || object.zone !== 'battlefield' || object.kind !== 'creature') throw new Error(`Nielegalny cel: ${targetId}`);
       if (!object.tapped) throw new Error(`Nielegalny cel: ${targetId} (nie jest tapped)`);
+      // Audyt PR #185 (F-3): walidacja MUSI znać to samo zawężenie co oferta
+      // (pułapka M82/L48 — oferta ≠ walidacja kończy się odrzuceniem komendy,
+      // którą sami zaproponowaliśmy, albo przyjęciem celu spoza Oracle).
+      if (spec.opponentControls && object.controllerId === casterId) {
+        throw new Error(`Nielegalny cel: ${targetId} (własny stwór — „an opponent controls")`);
+      }
       return object;
     }
     if (spec?.type === 'untapped_creature') {
@@ -1738,12 +1744,17 @@ function targetCandidatesBySpec(state, playerId, spec, targetOrderPreference = n
         return !hasHexproofAgainst(state, object, playerId);
       });
     }
-    // Batch 22: Selesnya Charm tryb 2 — stwór z mocą ≥ N na polu bitwy.
+    // Audyt PR #185 (F-3, Spring-Loaded Sawblades): „target TAPPED creature AN
+    // OPPONENT controls" — `opponentControls` zawęża pulę do przeciwników
+    // (ta sama flaga co `nonland_permanent`, CR 109.5 „opponent”). Bez niej
+    // deskryptor nie umiał wyrazić złożenia dwóch istniejących ograniczeń.
     case 'tapped_creature': {
       return state.zones.battlefield.filter((objectId) => {
         const object = state.objects.get(objectId);
-        return object?.zone === 'battlefield' && object.kind === 'creature' && object.tapped
-          && !hasHexproofAgainst(state, object, playerId);
+        if (!object || object.zone !== 'battlefield' || object.kind !== 'creature') return false;
+        if (!object.tapped) return false;
+        if (spec.opponentControls && object.controllerId === playerId) return false;
+        return !hasHexproofAgainst(state, object, playerId);
       });
     }
     case 'untapped_creature': {
@@ -1767,6 +1778,9 @@ function targetCandidatesBySpec(state, playerId, spec, targetOrderPreference = n
         return !hasHexproofAgainst(state, object, playerId);
       });
     }
+    // Batch 22: Selesnya Charm tryb 2 — stwór z mocą ≥ N na polu bitwy.
+    // (Komentarz przeniesiony spod `tapped_creature` przy naprawie F-3 — opisywał
+    // ten case, nie sąsiedni.)
     case 'creature_with_power_at_least': {
       const min = spec.min ?? 5;
       return state.zones.battlefield.filter((objectId) => {

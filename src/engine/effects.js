@@ -5681,6 +5681,16 @@ function markTemporaryExile(state, exileId, sourceObject) {
     return true;
   }
   if (effect.type === 'explore') {
+    /**
+     * Kto eksploruje (CR 701.44a — „that permanent's controller reveals the top
+     * card of their library … Otherwise, that player puts a +1/+1 counter on the
+     * exploring permanent"): cel zdolności, gdy explore celuje (Guidestone
+     * Compass), a w przeciwnym razie ŹRÓDŁO zdolności („it explores" — River
+     * Herald Guide, audyt PR #185 F-19: licznik brał się wyłącznie z `targets[0]`,
+     * więc ETB bez celu nie dawał licznika wcale). Jedno źródło dla obu gałęzi
+     * explore — pustej biblioteki i nie-lądu (L41).
+     */
+    const explorerOfExplore = (effectTargets, source) => effectTargets?.[0] ?? source?.id ?? null;
     // Explore (Lodestone Needle back — Guidestone Compass, CR 701.44a):
     // odsłoń wierzchnią kartę biblioteki. Jeśli to land — do ręki. Wpp
     // połóż licznik +1/+1 na docelowym stworze, potem odłóż kartę na wierzch
@@ -5694,11 +5704,11 @@ function markTemporaryExile(state, exileId, sourceObject) {
       // permanent i tak „explores” (CR 701.44b — nawet gdy część kroków była
       // niemożliwa). Wcześniej zwracaliśmy bez licznika, choć log pisał
       // „+1/+1 na stworze” — uproszczenie niezgodne z CR (audyt PR #134, §7).
-      const creatureId = targets[0];
-      if (creatureId && state.objects.get(creatureId)?.zone === 'battlefield') {
-        addCounter(state, creatureId, '+1/+1', 1);
+      const explorerId = explorerOfExplore(targets, sourceObject);
+      if (state.objects.get(explorerId)?.zone === 'battlefield') {
+        addCounter(state, explorerId, '+1/+1', 1);
       }
-      state.events.push(event('explore_resolved', { playerId: ownerId, found: false, objectId: creatureId ?? null }));
+      state.events.push(event('explore_resolved', { playerId: ownerId, found: false, objectId: explorerId }));
       return;
     }
     const topCard = state.objects.get(topId);
@@ -5711,10 +5721,12 @@ function markTemporaryExile(state, exileId, sourceObject) {
       state.events.push(event('explore_resolved', { playerId: ownerId, foundCardId: topCard.cardId, isLand: true }));
       return;
     }
-    // Nie-land: +1/+1 na docelowym stworze (cel z targets[0]).
-    const creatureId = targets[0];
-    if (creatureId) {
-      addCounter(state, creatureId, '+1/+1', 1);
+    // Nie-land: +1/+1 na EKSPLORUJĄCYM permanentie (CR 701.44a) — cel zdolności
+    // (Guidestone Compass: „Target creature you control explores") albo źródło,
+    // gdy zdolność nie celuje (River Herald Guide: „it explores", F-19).
+    const explorerId = explorerOfExplore(targets, sourceObject);
+    if (state.objects.get(explorerId)?.zone === 'battlefield') {
+      addCounter(state, explorerId, '+1/+1', 1);
     }
     // Blokująca decyzja: wierzch albo grób.
     state.pendingExplore = {
@@ -7506,15 +7518,12 @@ function markTemporaryExile(state, exileId, sourceObject) {
     state.events.push(event('keyword_granted', { objectId: object.id, cardId: object.cardId, keywords: ['saddled'] }));
     return;
   }
-  if (effect.type === 'must_block_enchanted') {
-    // Seton's Desire Threshold: zaklęte stworzenie musi być blokowane przez
-    // wszystkie stworzenia które mogą je blokować (CR 509.1c — wymagania
-    // blokowania są egzekwowane przy deklarowaniu blokatorów). Flaga egzekwowana
-    // w declareBlockers (combat.js) oraz przy ofertach blokowania.
-    const object = state.objects.get(sourceObject.id);
-    if (!object) return;
-    state.objects.set(object.id, Object.freeze({ ...object, mustBlockEnchanted: true }));
-    return;
-  }
+  // `must_block_enchanted` (Seton's Desire — Threshold) NIE MA tu gałęzi:
+  // to deskryptor efektu CIĄGŁEGO zdolności statycznej, czytany przy każdej
+  // deklaracji bloków (`combat.mustBlockHostCounts`). Audyt PR #185 (F-1):
+  // poprzednio stała tu gałąź stawiająca flagę `mustBlockEnchanted` na AURZE,
+  // której nie czytał żaden konsument (grep: jedno trafienie — producent), więc
+  // wymóg z Oracle nie istniał (pusty blob `declare_blockers` dawał ok=true).
+  // Zdolność statyczna nie wchodzi na stos, więc `applyEffect` jej nie dostaje.
     throw new Error(`Nieznany typ efektu: ${effect.type}`);
 }

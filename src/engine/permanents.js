@@ -7,7 +7,7 @@ import { nextTimestamp, timestampOf, attachmentTimestampOf } from './timestamps.
 // reguły stamtąd robiłoby cykl, a build odmawia cykli (ADR 0011; L171).
 import { countGraveyardCardTypes } from './graveyard-types.js';
 import { LINKED_EXILE_CAST_DURATION, isLinkedExileCastGrant } from './linked-exile-cast.js';
-import { attachmentGrant, attachmentsAttachedTo, effectiveColors, effectiveProtectionFromColors, effectiveProtectionQualities, isProtectedFromSource, isTargetingBlockedByProtection, sourceHasProtectionQuality } from './attachments.js';
+import { attachmentGrant, attachmentsAttachedTo, effectiveColors, effectiveProtectionFromColors, effectiveProtectionQualities, isAttachedEquipment, isProtectedFromSource, isTargetingBlockedByProtection, sourceHasProtectionQuality } from './attachments.js';
 // M110: helpery ochrony przed JAKOŚCIĄ mieszkają w attachments.js (razem
 // z ochroną kolorową); permanents.js re-eksportuje je, bo stamtąd biorą je
 // combat.js, effects.js i spells.js (i żeby nie robić cyklu importów).
@@ -456,6 +456,25 @@ export function staticConditionHolds(state, object, condition) {
   if (condition.hasCounter != null) {
     return (object.counters?.[condition.hasCounter] ?? 0) > 0;
   }
+  // Seton's Desire (Batch 73, audyt PR #185 F-1) — „Threshold — As long as
+  // there are seven or more cards in your graveyard…”: liczba KART w grobie
+  // kontrolera źródła (CR 108.2b — tokeny NIE są kartami; „your” = kontroler,
+  // CR 109.5). Threshold nie jest już słowem kluczowym, tylko słowem-zdolnością
+  // bez znaczenia regułowego (glossary CR: „It is now an ability word and has no
+  // rules meaning”), więc liczy się dosłowny tekst: warunek CIĄGŁY liczony przy
+  // każdym odczycie (CR 611.3a). Dotąd klucza nie było w tej funkcji, więc
+  // nieznany warunek dawał `false` (cichy no-op, klasa L21) i próg nigdy nie
+  // zachodził.
+  if (condition.minGraveyardCards != null) {
+    let count = 0;
+    for (const objectId of state.zones.graveyard) {
+      const candidate = state.objects.get(objectId);
+      if (!candidate || candidate.controllerId !== object.controllerId) continue;
+      if (!isCardObject(candidate)) continue; // tokeny nie są kartami (CR 108.2b)
+      count += 1;
+    }
+    return count >= condition.minGraveyardCards;
+  }
   // „As long as there are four or more creature cards in your graveyard\"
   // (Gray Slaad — menace i deathtouch): liczba KART-stworów (nie tokenów)
   // w grobie kontrolera źródła.
@@ -513,6 +532,19 @@ export function staticConditionHolds(state, object, condition) {
   // Resurrected Cultist i triggery; L41/L48). Próg 4 z reguły, nie z karty.
   if (condition.delirium) {
     return countGraveyardCardTypes(state, object.controllerId, CARD_TYPES) >= 4;
+  }
+  // Leonin Lightbringer (Batch 73, audyt PR #185 F-2): „As long as this creature
+  // is equipped, it gets +1/+1." CR 301.5a: „The creature an Equipment is
+  // attached to is called the ‘equipped creature.' The Equipment is attached to,
+  // or ‘equips,' that creature." — czyli WARUNEK dotyczy wyłącznie Equipmentu:
+  // aura „enchant creature" nie wyposaża (CR 303.4b: obiekt załączony aurą jest „enchanted", nie „equipped"). Dotąd klucza
+  // `equipped` nie było w tej funkcji, więc nieznany warunek zwracał `false`
+  // (cichy no-op, klasa L21) i karta zostawała 3/2 zamiast 4/3.
+  // Jedno źródło: ten sam predykat załączenia, który czyta reszta silnika
+  // (`attachments.js` → `isAttachedEquipment`, L41/L48).
+  if (condition.equipped != null) {
+    const equipped = attachmentsAttachedTo(state, object.id).some(isAttachedEquipment);
+    return condition.equipped ? equipped : !equipped;
   }
   return false;
 }
@@ -1286,10 +1318,22 @@ export function effectiveSubtypesOnBattlefield(state, object) {
  * jedyne źródło w katalogu to zakryte permanenty (cloak/disguise,
  * CR 701.58a: „2/2 creature with ward {2}").
  */
+/**
+ * Kwota warda (CR 702.21a — „Ward [cost]"): tyle dopłaca przeciwnik, żeby
+ * czar/zdolność NIE została skontrowana. `null` = permanent nie ma warda.
+ *
+ * Audyt PR #185 (F-7): był tu fallback `object.ward ?? 2`. Kwota jest częścią
+ * mechaniki i podróżuje z danymi karty (rejestr → `gameObjectDataOf` →
+ * `installDeck` → kontrakt `addObject`), więc zgadywanie 2 maskowało dziurę
+ * w ścieżce danych: Leonin Lightbringer (ward {2}) działał przypadkiem, a karta
+ * z ward {1} albo {3} dostałaby złą kwotę bez żadnego błędu (klasa M379/L21).
+ * Zakrycie cloak/disguise nadaje kwotę jawnie (CR 701.58a i 702.168a — `ward: 2`
+ * w effects.js oraz resources.js), więc tu nie ma czego zgadywać.
+ */
 export function wardAmountOf(object, state = null) {
   if (!object) return null;
   if (!effectiveKeywords(object, state).includes('ward')) return null;
-  return object.ward ?? 2;
+  return object.ward ?? null;
 }
 
 export function effectiveKeywords(object, state = null) {

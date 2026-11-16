@@ -186,10 +186,13 @@ test('Springbloom Druid: ETB springbloom_sacrifice_search', () => {
 // --- Deck validation ---------------------------------------------------------
 
 test('Batch 25: karty w taliach singleton', () => {
-  const deckFiles = ['tarkir-bg', 'dominaria-brg', 'warhammer-ubr', 'innistrad-brg', 'wiedzmin-bg', 'wiedzmin-wur', 'alara', 'ravnica-bg', 'ravnica-wur', 'zendikar-rg', 'zendikar-wu', 'mirrodin-brg'];
+  const deckFiles = ['tarkir-bg', 'dominaria-wrg', 'warhammer-ubr', 'innistrad-brg', 'wiedzmin-bg', 'wiedzmin-wur', 'alara', 'ravnica-bg', 'ravnica-wur', 'zendikar-rg', 'zendikar-wu', 'mirrodin-brg'];
   for (const name of deckFiles) {
     const path = `decks/${name}.txt`;
-    if (!fs.existsSync(path)) continue;
+    // Audyt PR #185 (F-22, klasa L21): `if (!fs.existsSync(path)) continue;`
+    // pomijało talię usuniętą przez migrację Dominarii BEZ śladu — test był
+    // zielony, a pokrycie o jedną talię mniejsze. Brak pliku to błąd listy.
+    assert.ok(fs.existsSync(path), `${path}: talia z listy deckFiles nie istnieje (martwa nazwa)`);
     const text = fs.readFileSync(path, 'utf8');
     const { cardIds } = parseDeckText(text, registry);
     assert.ok(cardIds.length > 0, `${name}: pusta talia`);

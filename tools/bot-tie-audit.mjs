@@ -46,11 +46,20 @@ const REPO = path.resolve(import.meta.dirname, '..');
  * Pary talii SPOZA próbki benchmarkowej (tools/benchmark.mjs BENCH_DECKS) plus
  * świeże talie audytowe — inaczej audyt kręciłby się na tym samym rozkładzie
  * decyzji co tuning i przestawał być niezależnym pomiarem.
+
+ *
+ * Audyt PR #185 (F-22): migracja talii Dominaria w `5df0e96` usunęła
+ * `decks/dominaria-wu.txt`, a ta lista została przy starej nazwie — narzędzie
+ * padało ENOENT w `deckOf`, więc domyślny pomiar remisów nie działał wcale
+ * (test bramkowy `test/audyt-bot-walka-remisy.test.js` podaje własną listę par
+ * i był zielony). Wpis brzmi teraz jak w bramce: `dominaria-ub`. Strażnikiem
+ * istnienia nazw jest `test/audyt-pr185-f22-martwe-nazwy-talii.test.js` — bez
+ * niego następna rotacja talii (ADR 0024 §3) znów zostawiłaby martwy audyt.
  */
 export const AUDIT_PAIRS = Object.freeze([
   ['ravnica-wur', 'innistrad-wu'], ['dominaria-wrg', 'mirrodin-wu'], ['tarkir-bg', 'warhammer-ubr'],
   ['wiedzmin-bg', 'tarkir-bg'], ['worek-legend', 'wiedzmin-bg'], ['srodziemie', 'theros'],
-  ['kaladesh', 'zendikar-wu'], ['warhammer-wg', 'innistrad-brg'], ['dominaria-wu', 'worek-mroczny'],
+  ['kaladesh', 'zendikar-wu'], ['warhammer-wg', 'innistrad-brg'], ['dominaria-ub', 'worek-mroczny'],
   ['forgotten-realms-br', 'worek-dziki'], ['tarkir-wur', 'wiedzmin-bg'], ['worek-basni', 'mirrodin-brg'],
 ].map((p) => Object.freeze(p)));
 

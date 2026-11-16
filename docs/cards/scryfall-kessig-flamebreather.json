@@ -9,10 +9,15 @@
   "power": "1",
   "toughness": "3",
   "colors": ["R"],
+  "color_identity": ["R"],
+  "keywords": [],
   "set": "vow",
   "set_name": "Innistrad: Crimson Vow",
   "collector_number": "164",
   "rarity": "common",
   "image_uris": { "large": "https://cards.scryfall.io/large/front/3/0/303ad78a-b02a-44dc-afe6-7f95781a5062.jpg?1783924832", "normal": "https://cards.scryfall.io/normal/front/3/0/303ad78a-b02a-44dc-afe6-7f95781a5062.jpg?1783924832" },
+  "rulings": [],
+  "rulingsSource": "https://api.scryfall.com/cards/vow/164/rulings",
+  "rulingsPobrano": "2026-11-15",
   "pobrano": "2026-11-11"
 }

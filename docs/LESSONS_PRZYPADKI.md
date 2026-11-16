@@ -3837,3 +3837,224 @@ opisywał model, którego już nie było. Naprawa: dociągnięcie komentarzy do
 faktyki (commit 40e0873 i 9615133); ENGINE_MILESTONES M463 i plan PMSSB-72
 dostały adnotację poprawki zamiast przepisania historii (L41: jeden powód,
 jedna miara; L5: strażnik pilnuje reguły).
+
+## L192 (2026-11-15) — audyt PR #185: czerwone commity z etykietą „pre-existing" przy zmierzonej zielonej bazie
+
+**Zdarzenie:** PR #185 (Batch 73, kolekcja 645–655) wypchnął do `main` serię
+commitów, których opisy nazywały czerwone testy „pre-existing": „Batch 73: naprawa
+failures po weryfikacji na czystym stanie (`0d0a12be` = 0 fail)", potem „npm test:
+10234/10280 (46 fail pre-existing: M100/M200, mulligany, modal-impulse, README,
+M178/M203/M419, snapshot orphans), batch 73 czysty", „10251/10280 (29 fail -
+wszystkie pre-existing z partii/symulacji)", „10253/10280 (27 fail - testy
+partii/symulacji, prawdopodobnie związane ze zmianą talii dominaria-brg→
+dominaria-wrg)", „10274/10280 (6 fail - pozostałe: CR cytaty 3815/3818, batch3
+1015, M228 8493, M205 8554, D/2 9494)", „10279/10280 (1 fail - D/2 Malamet Battle
+Glyph, apply(cmd).ok=false, do wyjaśnienia)". Pierwszy z tych cytatów jest
+samodzielnym pomiarem autora: baza PR miała **0** faili.
+**Przebieg weryfikacji (audyt):** stan końcowy PR zmierzony na czysto — `npm test`
+**10 280/10 280** (fail 0), `npm run build` **79 modułów / 5863,0 kB**, a
+`node --test test/ability-cost-pips.test.js` → **9/9, EXIT 0**. Deklaracja z
+`docs/PMSSB.md` §PMSSB-89 („10278/10280, 2 pre-existing fail w `ability-cost-pips`
+— niestandardowe zdolności kart testowych batcha 73 bez nagłówków kosztów w
+Oracle, niezwiązane z pracą") opisywała więc STAN POŚREDNI jako końcowy, a
+przyczynę podawała niezgodnie z faktem: fail czerwieniły FABRYKOWANE zdolności
+aktywowane kart PRODUKCYJNYCH w `src/cards/card-data.js` (Leonin Lightbringer
+„{W},{T} tap", Kessig Flamebreather „{2}{R},{T} damage"), których Oracle nie zna —
+usunął je ostatni commit tego samego PR. Pozostałe fail (D/2 Malamet, CR cytaty)
+pochodziły z migracji nazw talii i z harnessa testu (F-13), nie „z partii/symulacji".
+**Wniosek procesowy:** etykieta „pre-existing" jest twierdzeniem o stanie bazy PR i
+bez jej pomiaru jest nieodróżnialna od usprawiedliwienia. ADR 0020 A–D wymaga, żeby
+każdy commit był samodzielnie zielony przed pushem, a praca istnieje dopiero po
+pushu — więc czerwone stany weszły do historii `main` i każda kolejna sesja musiała
+je odsiewać od własnych regresji (koszt przerzucony na czytelnika). Sprostowania
+trafiły do `docs/PMSSB.md` §PMSSB-89 (F-16), a pinem jest sam raport audytu
+(`docs/audits/AUDYT_PR185_2026-11-15.md` §F-15 — dosłowne cytaty z commitów).
+
+## L193 (2026-11-15) — audyt PR #185: rotacja próbki benchmarku i regeneracja golden-mastera bez śladu
+
+**Zdarzenie:** Batch 73 dołożył 11 kart i przepuścił generator talii
+(`node tools/generate-plan-decks.mjs`), co zmieniło `decks/*.txt`: rename
+`dominaria-brg` → `dominaria-wrg` (27 linii), usunięty `dominaria-wu` (26 linii),
+nowy `dominaria-ub` (28 linii), a karty batcha weszły do 9 innych talii
+(`forgotten-realms-br`/`-wug`, `innistrad-brg`/`-wu`, `ixalan`, `mirrodin-wu`,
+`ravnica-bg`, `theros`, `worek-dziki`, `worek-legend`). `selectBenchDecks()`
+(deterministyczny wybór 6 pierwszych talii jednoplanowych, ADR 0024) zwrócił więc
+inną próbkę: `alara, dominaria-ub, dominaria-wrg, eldraine, final-fantasy,
+forgotten-realms-br`. PR zregenerował `test/fixtures/bot-scoring-snapshot.json`
+(`overallHash` `95f3692a4fc89914…` → `ada1d349d18e97a3…`), ale nie przeliczył
+progów regresji (`MIN_WIN_RATE_VS_RANDOM = 0.82`, `MIN_WIN_RATE_VS_AGGRO = 0.63`
+zostały z pomiaru audytu PR #145 z 2026-09-29) i nie zostawił śladu PRZED/PO.
+**Przebieg weryfikacji (E2.12):** pełny pomiar `node tools/benchmark.mjs` na
+HEAD `f00e581` — 672 mecze, 8 seedów (baza 2026), 2m45s, **0 niedokończonych**:
+heuristic **97.0% (326/336)** vs random i **84.2% (283/336)** vs aggro; regułą
+„zmierzone −15 p.p., tylko w górę" próg vs aggro podniesiony **0.63 → 0.69**, próg
+vs random **0.82 bez zmian** (97.0 → 0.820, równy obecnej wartości);
+`node --test test/bot-benchmark.test.js` → 10/10 po zmianie. Ślad golden-mastera
+(L176) per wpis fixture: `dominaria-brg|mirrodin-wu` → `dominaria-wrg|mirrodin-wu`
+(migracja nazwy + Leonin Lightbringer w `mirrodin-wu`): decyzje 203→202 i 356→280,
+`scoreSum` 3046.3063→2916.1126 i 3980.2998→4412.4735; `ravnica-wur|innistrad-wu`
+(jedna karta w talii: Scroll of Avacyn → Ghoulcaller's Bell, `ravnica-wur` bez
+zmian): decyzje 235→217 i 256→309, `scoreSum` 2825.82→1584.9844 i
+1963.8357→2494.5772; `tarkir-bg|warhammer-ubr` **bit w bit bez zmian** (174/174 i
+164/164 decyzji, `scoreSum` 2531.0099 i 2503.0099) — żadna z tych talii nie była w
+PR ruszona, co koryguje zapis audytu o „wszystkich 6 parach". `node
+tools/bot-scoring-snapshot.mjs` na HEAD daje hash i 6/6 wpisów IDENTYCZNYCH z
+fixture: po zmianach wycen bota w PR #186 (`wardTargetTax` F-7, wspólny
+`graveyardBodyValue` F-8) dryfu nie ma, czyli golden-master NIE pokrywa scen ward
+ani reanimacji — te pilnują piny F-7 i F-8, a nie fixture.
+**Wniosek procesowy:** rotująca próbka (ADR 0024 §3) jest świadomym kosztem: każdy
+podział/zmiana nazwy talii wymusza rekalibrację progów i regenerację
+golden-mastera, a oba muszą zostawić ślad (L176/L180). Bez śladu kolejny audyt nie
+odróżni „próg przeliczony" od „próg zapomniany", a fixture bez PRZED/PO nie mówi,
+która decyzja bota się zmieniła i dlaczego.
+
+## L94 (2026-08-30) — Fabryka z destrukturyzacją configu gubi nieznane pola PO CICHU
+
+→ Pełna klasa i reguła: [L21].
+
+`create_copy_token` od lat przekazywał `manaCost` do `createBattlefieldToken`,
+a destrukturyzacja w `tokens.js` tego pola nie znała — KAŻDY token-kopia wchodził
+z MV 0 (CR 707.2: koszt many jest wartością kopiowalną). Bez błędu, ostrzeżenia
+i testu; piny kopiowania sprawdzały `transformTo`/`station`/`saga`, nigdy kosztu.
+Ujawnione pytaniem o CR 202.3b zadanym WSZYSTKIM ścieżkom rodziny.
+
+(Przeniesione z `docs/LESSONS.md` przy kondensacji budżetu lektury startowej, 2026-11-15 —
+w rejestrze została reguła i strażnik.)
+
+## L93 (2026-08-30) — Jawna lista pól w warstwie TRANSPORTOWEJ musi pokrywać generator
+
+→ Pełna klasa i reguła: [L21].
+Tu dodatkowo: pełne partie botów (`real-cards-batch3`) łapią zakleszczenia decyzji,
+których unit nie widzi — po zmianie warstwy decyzji odpal choć jeden taki test.
+
+Crawling Chorus (`toxic: 1`) bił gracza trzy razy bez znaku trucizny: `installDeck`
+(`deck.js`) kładzie na obiekcie jawną listę pól, a `toxic`, `echo`, `madness`,
+`surge` i `warp` na niej nie było. Testy mechanik omijały tę warstwę, bo budowały
+obiekt helperem `putCard`.
+
+(Przeniesione z `docs/LESSONS.md` przy kondensacji budżetu lektury startowej, 2026-11-15 —
+w rejestrze została reguła i strażnik.)
+
+## L75 (2026-08-25) — Fałszywy alarm detektora: napraw POMIAR, nie ucisz objawu
+
+→ Pełna klasa: [L27].** Fałszywy alarm kosztuje więcej niż cisza, ale zanim go
+uciszysz — sprawdź, czy nie kłamie pomiar.
+
+M213: Żywy Tester zgłosił 4 no-opy na „{2}, {T}: Tap target creature". Sonda
+dowiodła, że silnik działa poprawnie — zdolność tapuje DWA permanenty naraz
+(źródło jako koszt, cel jako skutek), a detektor liczył oba jednym licznikiem,
+więc warunek „jedyna zmiana to zapłacony koszt" wychodził prawdą. Rozróżnienie
+jest strukturalne: płacących wskazuje KOMENDA (`objectId` + `tapCreatureId`).
+
+(Przeniesione z `docs/LESSONS.md` przy kondensacji budżetu lektury startowej, 2026-11-15 —
+w rejestrze została reguła i strażnik.)
+
+## L70 (2026-08-25) — Weryfikacja mutacyjna wykrywa też kod NADMIAROWY
+
+→ Pełna procedura: [L13].** Mutuj per gałąź; gałąź bez czerwieni jest
+podejrzana — najpierw pytaj, czy powinna istnieć.
+
+M210: mutacja gałęzi „obiekt typu Land → kolor pusty" (`effectiveColors`,
+CR 202.2) nie uczyniła żadnego testu czerwonym, bo regułę egzekwowały już dane
+kart. Gałąź była martwa **i błędna**: efekt animujący może kolor nadać (Genju of
+the Spires, CR 613 warstwa 5), a zerowanie po typie by go zgubiło.
+
+(Przeniesione z `docs/LESSONS.md` przy kondensacji budżetu lektury startowej, 2026-11-15 —
+w rejestrze została reguła i strażnik.)
+
+## L26 (2026-08-17) — Strażnik z klauzulą „brak danych = pomijam" nie jest strażnikiem
+
+→ Pełna klasa: [L5].** Każde „nie mam danych, więc przepuszczam" wymaga
+drugiego testu na OBECNOŚĆ danych.
+
+W katalogu siedział zmyślony adres ilustracji (nazwa karty w miejscu UUID) —
+404 i karta bez obrazka, mimo testu „imageUri zgadza się z plikiem Scryfall".
+Test miał `if (!expected) continue`, a 20 kart weszło BEZ pliku źródłowego
+(ADR 0010 §2a): im więcej kart z pominięciem procedury, tym mniejszy zasięg
+testu — a zielony wynik sugerował coś odwrotnego.
+
+(Przeniesione z `docs/LESSONS.md` przy kondensacji budżetu lektury startowej, 2026-11-15 —
+w rejestrze została reguła i strażnik.)
+
+## L40 (2026-08-18) — Każdy detektor koduje JEDNĄ hipotezę; druga przekątna jest niepilnowana
+
+**Reguła:** po audycie pytaj o KLASĘ — jaka reguła znalazłaby to automatycznie?
+→ Pełna klasa: [L27].
+
+22 partie i pusta sekcja `== DETEKTORY ==`; ręczna lektura tych samych
+transkryptów dała DZIESIĘĆ znalezisk. `detectBotSelfTargeting` pilnował efektu
+SZKODLIWEGO w SIEBIE — wariant „efekt KORZYSTNY w PRZECIWNIKA" (bot wzmacniał
+moje stwory 24 razy w partii) nie miał strażnika. `detectNoEffectOffers` mierzył
+oferty, nie OPISY, więc kafel kłamiący o koszcie przechodził bez echa.
+
+(Przeniesione z `docs/LESSONS.md` przy kondensacji budżetu lektury startowej, 2026-11-15 —
+w rejestrze została reguła i strażnik.)
+
+## L90 (2026-08-29) — Trzecia powtórka klasy: oferta i walidacja rozjechały się PORZĄDKIEM
+
+To nie dwie kopie jednej reguły, lecz **dwa porządki tej samej reguły**.
+
+→ Pełna klasa i reguła: [L48].
+
+Pierwsza pełna macierz, która dobiegła do sensownego momentu, stanęła na 58,5%:
+`exploit_unresolved — aggro(tarkir-bg) vs random(theros), seed 1003`. Bot dostał
+w ofercie `resolve_trigger_target`, a odrzuciła go bramka exploitu, której
+w ofercie nie było widać: `firstPendingDecisionPlayerId` układał decyzje „cel
+triggera → exploit", a bramki w `execute` stały odwrotnie.
+
+(Przeniesione z `docs/LESSONS.md` przy kondensacji budżetu lektury startowej, 2026-11-15 —
+w rejestrze została reguła i strażnik.)
+
+## L194 (2026-11-16) — PMSSB-90/F-90-10: remis, który nie był remisem, i dwie zmienne w jednym pomiarze
+
+**Zdarzenie:** pętla PMSSB-90 (Batch 73, 11 kart realnych) mierzyła, czy bot ceni
+Kessig Flamebreathera (trigger „whenever you cast a noncreature spell → 1 damage to
+each opponent") zależnie od tego, czy w ręce jest rzucalne paliwo. Sonda KF-06 dała
+`cast_permanent(kessig-hand)` = **70,2018** we wszystkich czterech wariantach ręki
+(Plummet za 2 — tanie paliwo; Get the Point za 5 — za drogie na okno; sam Leonin;
+ręka pusta), czyli trigger trwały był wyceniany tak samo bez względu na paliwo.
+Obok stał Leonin Lightbringer z **70,2036**. Log partii drukuje dwie cyfry po
+przecinku, więc obie opcje wyglądały na remis **70,20 = 70,20**, a pierwszy pin
+pętli („Kessig z paliwem > Kessig bez paliwa", assert `>`) przechodził **bez
+naprawy**: różnica 0,0018 wystarczyła, by `>` był prawdziwy.
+
+**Drugi problem tego samego pomiaru:** próba naprawy (bramka dowodu rzucalnego
+paliwa, wspólny licznik ze ścieżką prowess PMSSB-65) była testowana na scenariuszu,
+w którym jednocześnie zmieniały się dwie rzeczy — zawartość ręki i stan hosta — więc
+nie było wiadomo, która przesunęła wartość. Dopiero rozbicie na warianty (cztery
+ręce przy tym samym stanie stołu) pokazało skutek: 70,20 / 68,40 / 68,40 / 68,40.
+
+**Przebieg weryfikacji:** bramka `npm test` po naprawie dała **5 fail** w
+`test/pmssb10-ogon-wave-{a,b1}.test.js` (Kulrath Mystic 64,8→63,9; Tellah
+69,3→64,8; token_wizard 65,7→63,9; Goblin Battle Jester 64,8→63,9; **Illusory
+Demon 71,7→78,00**). Przyczyna: `when_you_cast_spell` bywa **kosztem** (poświęcenie
+ciała), a bramka „brak paliwa TERAZ" wyciszała koszt tak samo jak wypłatę —
+permanetna pułapka zaczęła wyglądać na darmowego lotnika 4/3. Patch cofnięty
+(`git checkout -- src/controllers/heuristic-bot.js` do `1c34b4e`), piny-kotwice
+10a/10b zostały i noszą pełne uzasadnienie; finding zamknięty jako ZMIERZONY, a
+decyzja modelowa (wypłata TYMCZASOWA skaluje się paliwem z ręki, wypłata TRWAŁA
+nie) została przedstawiona właścicielowi zamiast być rozstrzygnięta jednostronnie.
+
+**Reguła (trwała):**
+1. Pin porządku (`>`, `<`) musi mieć **próg decyzji** — Δ ≥ 1 wyświetlany punkt,
+   bo log partii i UI drukują dwie cyfry; assert bez progu przechodzi na szumie
+   0,0018 i nie dowodzi naprawy.
+2. Wartości w pinie cytuje się **z pełną precyzją silnika** (70,2018), a nie z
+   wyświetlenia (70,20) — inaczej pin nie odróżnia remisu od porządku.
+3. Każdą nową zmienną wprowadza się **JAKO scenariusz/wariant sondy** (jedna
+   zmienna na wariant): `d.opcje` są filtrowane po etykiecie bez gwarancji
+   kolejności, więc izolacja musi być w STANIE, nie w assertach.
+4. Pin na **DOSŁOWNE wyrażenie źródła** (regex na `const value = wagaSily *
+   pumpPower + …`) pada przy każdej rozbudowie modelu — przepisuje się go na
+   licznik intencji (`(cialo.match(/wagaSily \*/g)).length === 2`: jedna waga
+   siły, żadna gałąź equipu nie mnoży własnej), świadomie i z powodem w
+   komentarzu (klasa L186/L5). Przed bramką: `grep -rln
+   "equipValuation\|printedBody\|nothingAdded\|auraKeywordValue\|anticipatedTailValue\|prowessCastValue" test/`.
+5. Zmiana skali wyceny wymaga `grep -rn "<karta>" test/` — re-pin musi objąć także
+   piny „SAME/SKIP-proofs" (w tej pętli: `test/pmssb10-ogon-wave-b2.test.js` dla
+   `fear-of-burning-alive` 70,20 → 81,00 / 138,60).
+
+**Strażnik:** `test/audyt-pmssb90-batch73.test.js` (piny 10a/10b),
+`test/uwagi-tura9-bot-rowne-ciala-equip.test.js` T9/8, warianty KF-06/M-04 w
+`tools/pmssb90-batch73-petla-sonda.mjs`; raport `docs/PMSSB.md` §PMSSB-90 i kamień
+**M465** w `docs/ENGINE_MILESTONES.md`.

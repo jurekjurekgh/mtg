@@ -7,10 +7,21 @@
   "type_line": "Instant",
   "oracle_text": "Destroy target creature. Scry 1.",
   "colors": ["B", "R"],
+  "color_identity": ["B","R"],
+  "keywords": ["Scry"],
   "set": "rna",
   "set_name": "Ravnica Allegiance",
   "collector_number": "176",
   "rarity": "common",
   "image_uris": { "large": "https://cards.scryfall.io/large/front/8/2/821c4ab5-eb75-445a-bbec-e50af54dba7a.jpg?1783933649", "normal": "https://cards.scryfall.io/normal/front/8/2/821c4ab5-eb75-445a-bbec-e50af54dba7a.jpg?1783933649" },
+  "rulings": [
+    {
+      "date": "2019-01-25",
+      "source": "wotc",
+      "comment": "If the chosen target becomes an illegal target for Get the Point, the spell doesn’t resolve. You don’t scry 1. If the target is legal but not destroyed (most likely because it has indestructible), you do scry 1."
+    }
+  ],
+  "rulingsSource": "https://api.scryfall.com/cards/rna/176/rulings",
+  "rulingsPobrano": "2026-11-15",
   "pobrano": "2026-11-11"
 }

@@ -7,10 +7,21 @@
   "type_line": "Enchantment — Aura",
   "oracle_text": "Enchant creature\nEnchanted creature gets +2/+2.\nThreshold — As long as there are seven or more cards in your graveyard, all creatures able to block enchanted creature do so.",
   "colors": ["G"],
+  "color_identity": ["G"],
+  "keywords": ["Enchant","Threshold"],
   "set": "dmr",
   "set_name": "Dominaria Remastered",
   "collector_number": "176",
   "rarity": "common",
   "image_uris": { "large": "https://cards.scryfall.io/large/front/7/2/72c7f922-c334-4a75-9f5a-e68595049318.jpg?1783918436", "normal": "https://cards.scryfall.io/normal/front/7/2/72c7f922-c334-4a75-9f5a-e68595049318.jpg?1783918436" },
+  "rulings": [
+    {
+      "date": "2022-12-08",
+      "source": "wotc",
+      "comment": "If a creature the defending player controls can't block the enchanted creature for any reason (such as being tapped), then it doesn't block that creature. If there's a cost associated with having a creature block the enchanted creature, the defending player isn't forced to pay that cost, so it doesn't have to block in that case either."
+    }
+  ],
+  "rulingsSource": "https://api.scryfall.com/cards/dmr/176/rulings",
+  "rulingsPobrano": "2026-11-15",
   "pobrano": "2026-11-11"
 }

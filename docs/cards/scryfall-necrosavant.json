@@ -9,10 +9,21 @@
   "power": "5",
   "toughness": "5",
   "colors": ["B"],
+  "color_identity": ["B"],
+  "keywords": [],
   "set": "dmr",
   "set_name": "Dominaria Remastered",
   "collector_number": "93",
   "rarity": "uncommon",
   "image_uris": { "large": "https://cards.scryfall.io/large/front/8/7/87ce2548-38d3-4763-960a-d5d802094a0c.jpg?1783918475", "normal": "https://cards.scryfall.io/normal/front/8/7/87ce2548-38d3-4763-960a-d5d802094a0c.jpg?1783918475" },
+  "rulings": [
+    {
+      "date": "2004-10-04",
+      "source": "wotc",
+      "comment": "The ability is activated while this card is in the graveyard."
+    }
+  ],
+  "rulingsSource": "https://api.scryfall.com/cards/dmr/93/rulings",
+  "rulingsPobrano": "2026-11-15",
   "pobrano": "2026-11-11"
 }

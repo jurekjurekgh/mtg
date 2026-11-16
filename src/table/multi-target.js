@@ -1670,10 +1670,23 @@ export function tapXArtifactsPlanOf(commands) {
  */
 export function commandForTapXSelection(plan, selected, xValue) {
   if (!plan?.tapXMode || !Array.isArray(selected)) return null;
-  if (!Number.isInteger(xValue) || xValue < 0 || xValue > (plan.xMax ?? 0)) return null;
-  if (selected.length !== xValue) return null;
   if (new Set(selected).size !== selected.length) return null;
   if (selected.some((id) => !plan.targets.includes(id))) return null;
+  // Batch 73 (Bladewheel Chariot, audyt PR #185 F-6): koszt o STAŁEJ liczbie
+  // artefaktów („Tap two other untapped artifacts you control") — ten sam
+  // kreator bez steppera X, bramka to dokładnie `tapFixedCount` zaznaczeń.
+  if (Number.isInteger(plan.tapFixedCount)) {
+    if (selected.length !== plan.tapFixedCount) return null;
+    return {
+      type: 'activate_ability',
+      playerId: plan.playerId,
+      objectId: plan.objectId,
+      abilityIndex: plan.abilityIndex,
+      tapArtifactIds: [...selected],
+    };
+  }
+  if (!Number.isInteger(xValue) || xValue < 0 || xValue > (plan.xMax ?? 0)) return null;
+  if (selected.length !== xValue) return null;
   return {
     type: 'activate_ability',
     playerId: plan.playerId,
@@ -1681,6 +1694,44 @@ export function commandForTapXSelection(plan, selected, xValue) {
     abilityIndex: plan.abilityIndex,
     xValue,
     tapArtifactIds: [...selected],
+  };
+}
+
+// ===========================================================================
+// Batch 73 (Bladewheel Chariot, audyt PR #185 F-6): koszt „Tap two other
+// untapped artifacts you control" — STAŁA liczba artefaktów, nie X (Merchant's
+// Dockhand). Jeden przycisk „Aktywuj" i ten sam kreator (`tapXMode`) BEZ
+// steppera X: gracz zaznacza dokładnie N wierszy. Kontrakt jak crewMode/tapXMode
+// (kardynalna zasada właściciela: żadnej enumeracji wariantów — oferta silnika
+// niesie default, człowiek wybiera, silnik re-waliduje przy aktywacji, L48).
+// ===========================================================================
+
+/**
+ * Plan kreatora „tapnij N innych artefaktów" z oferty silnika albo null.
+ * Filtr to LUSTRO puli silnika (`otherUntappedArtifactIds` w abilities.js):
+ * własne, nietapnięte, ARTEFAKTY, poza źródłem zdolności („other"). Mniejsza
+ * pula niż N = koszt niezapłacalny (CR 118.3) → brak planu (brak kreatora).
+ */
+export function tapOtherArtifactsPlanFor({ cmd, playerId, needed, battlefield }) {
+  if (cmd?.type !== 'activate_ability' || !Array.isArray(cmd.tapArtifactIds)) return null;
+  if (cmd.crewCreatureIds != null) return null; // crew/saddle ma własny kreator
+  if (cmd.playerId !== playerId) return null;
+  if (!Number.isInteger(needed) || needed < 1) return null;
+  const pool = (battlefield ?? []).filter((o) => o && o.id !== cmd.objectId
+    && o.controllerId === playerId && !o.tapped
+    && (o.kind === 'artifact' || (o.types ?? []).includes('Artifact')));
+  if (pool.length < needed) return null;
+  return {
+    tapXMode: true,
+    hasX: false,
+    tapFixedCount: needed,
+    minTargets: needed,
+    maxTargets: needed,
+    targets: pool.map((o) => o.id),
+    objectId: cmd.objectId,
+    abilityIndex: cmd.abilityIndex,
+    playerId: cmd.playerId,
+    itemLabel: 'artefakty',
   };
 }
 

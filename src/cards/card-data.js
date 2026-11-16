@@ -5169,7 +5169,17 @@ export const REAL_CARDS = Object.freeze([
     abilities: [
       createAbility({
         type: ABILITY_TYPE.triggered,
-        trigger: { event: 'enter_battlefield', requiresTarget: { type: 'creature', qualifier: { tapped: true, controller: 'opponent' } } },
+        // Audyt PR #185 (F-3): poprzedni zapis `{ type: 'creature', qualifier:
+        // { tapped: true, controller: 'opponent' } }` używał klucza `qualifier`,
+        // którego język deskryptorów celu NIE ZNA (silnik ma `qualifier` tylko
+        // dla przeszukiwań biblioteki) — filtr był cicho ignorowany, więc ETB
+        // oznaczał 5 obrażeń na własnym, odkręconym stworze. Składamy regułę
+        // z istniejących elementów: typ `tapped_creature` (spells.js, od
+        // Batcha 22) + flaga `opponentControls` (jak `nonland_permanent`).
+        trigger: {
+          event: 'enter_battlefield',
+          requiresTarget: { type: 'tapped_creature', opponentControls: true },
+        },
         effect: { type: 'damage', amount: 5 },
       }),
       createAbility({
@@ -5192,6 +5202,32 @@ export const REAL_CARDS = Object.freeze([
     oracleText: 'Tap two other untapped artifacts you control: This Vehicle becomes an artifact creature until end of turn.\nCrew 1 (Tap any number of creatures you control with total power 1 or more: This Vehicle becomes an artifact creature until end of turn.)',
     imageUri: 'https://cards.scryfall.io/large/back/2/4/24417388-f2bb-4783-bdce-264774531838.jpg?1783913808',
     power: 5, toughness: 5,
+    // Audyt PR #185 (F-6): wpis tyłu nie miał ŻADNEJ zdolności, więc po craft
+    // obiekt (`transformTo.abilities` → obiekt gry) miał `abilities=[]` i zero
+    // ofert — Vehicle 5/5, który nigdy nie staje się stworem (CR 702.122a:
+    // „Crew is an activated ability of Vehicle cards"). Oba zdania Oracle tyłu
+    // istniejącymi deskryptorami: crew jak inne pojazdy (`cost.crewPower`,
+    // Irontread Crusher), a „Tap two other untapped artifacts you control"
+    // jako `cost.tapOtherArtifacts: 2` (stała liczba; X ma Merchant's Dockhand).
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        timing: 'instant',
+        cost: { tapOtherArtifacts: 2 },
+        effect: { type: 'animate_permanent_until_end_of_turn', typesAdd: ['Creature'] },
+      }),
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        timing: 'instant',
+        // Bez `keyword: 'crew'`: katalog wyraża Crew przez `cost.crewPower`
+        // (Irontread Crusher, Bomat Bazaar Barge, Mobile Garrison, Balamb
+        // Garden) — dwie nazwy tej samej mechaniki to dwa źródła reguły (L41),
+        // a UI czyta koszt (`załoga N`) i dedykowaną etykietę akcji
+        // („Obsadź … (moc ≥ N)"), nie keyword.
+        cost: { crewPower: 1 },
+        effect: { type: 'animate_permanent_until_end_of_turn', typesAdd: ['Creature'] },
+      }),
+    ],
     plan: 'Forgotten Realms',
     support: { status: 'back', limitations: ['Tył karty dwustronnej (Spring-Loaded Sawblades) — nie do talii ani kreatora; do gry trafia wyłącznie przez transform frontu'] },
   }),
@@ -5229,6 +5265,12 @@ export const REAL_CARDS = Object.freeze([
       createAbility({
         type: ABILITY_TYPE.activated,
         fromGraveyard: true,
+        // Audyt PR #185 (F-4/F-9): „Activate only during your upkeep" nie było
+        // wyrażone ŻADNYM deskryptorem — restrykcję egzekwowała wyłącznie kara
+        // w heurystyce bota, więc silnik przyjmował aktywację w main1 i w end
+        // (`execute` z ok=true). CR 602.1b/602.5: to ograniczenie aktywacji,
+        // nie część efektu, więc należy do deskryptora zdolności.
+        onlyInStep: 'upkeep',
         cost: { mana: 5, colors: ['B', 'B'], sacrificeCreature: true },
         effect: { type: 'reanimate_under_your_control' },
       }),
@@ -5249,7 +5291,16 @@ export const REAL_CARDS = Object.freeze([
       createAbility({
         type: ABILITY_TYPE.triggered,
         trigger: { event: 'you_cast_noncreature_spell' },
-        effect: { type: 'damage', amount: 1, toEachOpponent: true },
+        // Audyt PR #185 (F-5): wpis z Batch 73 niósł `{ type: 'damage', amount: 1,
+        // toEachOpponent: true }`, a pole `toEachOpponent` nie występuje w silniku
+        // NIGDZIE (grep: jedno trafienie — ten wpis), więc efekt `damage` bez celu
+        // fizzlował: `ability_triggered` → `damage_fizzled`, życie 20/20 zamiast
+        // 19 u przeciwnika. Silnik ma gotowy deskryptor tej klasy —
+        // `damage_each_opponent` (effects.js:1879): obrażenia nie-combat dla
+        // każdego gracza poza kontrolerem źródła, źródłem jest SAM stwór
+        // (CR 608.2h — „this creature deals"), etykiety UI istnieją
+        // (render.js:1449, session.js:509).
+        effect: { type: 'damage_each_opponent', amount: 1 },
       }),
     ],
     plan: 'Innistrad',
@@ -5267,6 +5318,13 @@ export const REAL_CARDS = Object.freeze([
     abilities: [
       createAbility({
         type: ABILITY_TYPE.static,
+        // Threshold (słowo-zdolność bez znaczenia regułowego — liczy się tekst):
+        // warunek ciągły `minGraveyardCards` ewaluuje `staticConditionHolds`
+        // (CR 611.3a), a deskryptor efektu czyta `combat.mustBlockHostCounts`
+        // przy każdej deklaracji bloków (CR 509.1c) — jak `start_engines`
+        // w state-based.js. Audyt PR #185 (F-1): poprzednio ten efekt miał
+        // gałąź w `applyEffect`, która stawiała flagę `mustBlockEnchanted`
+        // na aurze; nie czytał jej żaden konsument, więc wymóg nie istniał.
         condition: { minGraveyardCards: 7 },
         effect: { type: 'must_block_enchanted' },
       }),

@@ -2445,6 +2445,15 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     // samo ISTNIENIE wrogiego permanentu — bez tego ETB dostawał premię
     // `destroy_permanent` (18) w Głównej 1, gdzie nie ma jeszcze legalnego
     // celu, więc bot płacił kartę za trigger, który nigdy nie wchodzi na stos.
+    // PMSSB-90/F-90-3: cel zależny od STANU PUBLICZNEGO (tapnięcie) — `foes.length > 0`
+    // widziało „jakiegokolwiek wroga", więc ETB Spring-Loaded Sawblades („5 obrażeń
+    // w tapniętego stwora przeciwnika") dostawał premię 17,10 także wtedy, gdy trigger
+    // NIE MA legalnego celu i fizzluje (pomiar SS-04: 77,40 przy wrogim odkręconym 3/3
+    // = 77,40 przy tapniętym 7/7; SS-02: tyle samo we własnym main1, co w turze rywala
+    // po jego ataku). Pytamy TĘ SAMĄ listę, z której korzysta wybór celu (L41).
+    if (raw === 'tapped_creature' || raw === 'untapped_creature') {
+      return publicEtbTargets(view, typeof spec === 'string' ? { type: spec } : spec, source).length > 0;
+    }
     if (raw === 'creature_opponent_damaged_this_turn') {
       // To stworzenie może być również lądem. Nie stosujemy filtra
       // enemyNonlandPermanents; ten sam publiczny predykat co wycena
@@ -3023,7 +3032,14 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     detain: (e, view, req) => (etbEnemyHasTarget(view, req) ? 8 : 0),
     damage: (e, view, req) => (etbEnemyHasTarget(view, req) ? Math.min(3 * (e.amount ?? 1), 15) : 0),
     damage_divided: (e, view, req) => (etbEnemyHasTarget(view, req) ? 15 : 0),
-    damage_each_opponent: (e) => 4,
+    // PMSSB-90/F-90-9 (L41): „zadaj N obrażeń każdemu przeciwnikowi" ma w kodzie
+    // PIĘĆ ścieżek wyceny i cztery z nich liczą to wspólną skalą
+    // `opponentLifeEffectValue` (4×N, a dobicie = 80). Ten wpis był piątym modelem:
+    // płaskie 4 niezależnie od ilości obrażeń i od życia przeciwnika, więc pomiar
+    // KF-05 dawał 100,00 przy życiu wroga 20 / 6 / 2 / 1 — 1 obrażenie kończące
+    // partię było warte tyle samo co kosmetyczny chip. Delegacja do wspólnej skali
+    // zamyka rozjazd bez nowej arytmetyki (M429: żadnego bonusu z sufitu).
+    damage_each_opponent: (e, view) => opponentLifeEffectValue(view, e),
     each_player_loses_life_fraction: () => 3,
     buff_creatures_you_control: () => 8, // wchodzący stwór też jest odbiorcą
     grant_keywords_until_end_of_turn: () => 4,
@@ -7980,6 +7996,33 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   const cardDef = (cardId) => (cardId ? registry.get(cardId) : undefined);
 
   /**
+   * Wartość ciała karty leżącej w grobie: skala `10 + 2*P + T`.
+   *
+   * JEDNO źródło dla wszystkich trzech gałęzi reanimacji (L41): czar z efektem
+   * `return_permanent_from_graveyard`, zdolność aktywowana z tym efektem
+   * (M157/Batch 60 — Xu-Ifit, Osteoharmonist) oraz aktywacja Z GROBU zwracająca
+   * własne źródło (`reanimate_under_your_control` + `fromGraveyard` +
+   * `cost.sacrificeCreature`). P/T z widoku grobu (ADR 0017), z definicji karty
+   * jako zapas.
+   *
+   * Audyt PR #185 (F-8): trzecia gałąź miała tu STAŁE `10 + (5 * 2) + 5` — P/T
+   * Necrosavanta wpisane w kod bota, wbrew ADR 0002: predykat gałęzi jest
+   * generyczny, więc każda inna karta o tym deskryptorze (np. 1/1 za {1}{B})
+   * była wyceniana jak 5/5. Zmierzone: score aktywacji identyczny (19/15/4) dla
+   * ciał 1/1, 5/5 i 7/7 przy tym samym fodderze — wartość ciała nie zależała od
+   * ciała, a mutacja stałych na `10 + (1*2) + 1` przeżywała wszystkie testy.
+   */
+  const graveyardBodyValue = (view, graveObjectId) => {
+    if (!graveObjectId) return 0;
+    const card = (view.zones.graveyard ?? []).find((o) => o.id === graveObjectId);
+    if (!card) return 0;
+    const def = cardDef(card.cardId);
+    const power = card.power ?? def?.power ?? 0;
+    const toughness = card.toughness ?? def?.toughness ?? 0;
+    return 10 + (power * 2) + toughness;
+  };
+
+  /**
    * Czy dowolna zdolność/efekt karty to `springbloom_sacrifice_search`
    * (Roiling Regrowth, Springbloom Druid). MUSI stać za `cardDef` — stała
    * `const` zdefiniowana wyżej sięgałaby w TDZ i po cichu zwracała 0 efektów
@@ -8882,6 +8925,29 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     }
     return null;
   };
+  /**
+   * PMSSB-90/F-90-4 (L41/L48): liczba KART we WŁASNYM grobie — lustro silnikowego
+   * `staticConditionHolds` (`permanents.js:468`) czytane z widoku, bo decydent nie
+   * ma stanu gry (ADR 0017). „Karta" = obiekt bez jawnej flagi `isToken`
+   * (CR 108.2b: tokeny nie są kartami), a grób jest strefą JAWNĄ, więc widok niesie
+   * także grób przeciwnika — „your graveyard" (CR 109.5) filtrujemy po kontrolerze.
+   */
+  const myGraveyardCardCount = (view) => (view?.zones?.graveyard ?? [])
+    .filter((o) => o && o.isToken !== true && (o.controllerId ?? o.ownerId) === view.playerId).length;
+
+  /**
+   * Warunek CIĄGŁY zdolności statycznej (CR 611.3a) czytany z widoku:
+   * true = zachodzi, false = nie zachodzi (efekt nie działa), null = nieznany tu
+   * (zostaw bez zmian). Dziś jedna rodzina: Threshold (`minGraveyardCards`).
+   * Bliźniak `effectConditionHolds` (warunek na pojedynczym efekcie) — oba czytają
+   * ten sam grób tą samą regułą, żeby nie było dwóch arytmetyk progu (L41).
+   */
+  const staticConditionHoldsFromView = (view, condition) => {
+    if (!condition || typeof condition !== 'object') return null;
+    if (condition.minGraveyardCards != null) return myGraveyardCardCount(view) >= condition.minGraveyardCards;
+    return null;
+  };
+
   // Efekty po rozwinięciu wrapperów `conditional` (gałąź wg warunku).
   function unwrapConditionals(view, effects) {
     const flat = [];
@@ -9595,6 +9661,53 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   /** Wartość ciała stwora (skala M149/A3/sac-economics: 2p+t+mv) — R4. */
   function bodyWorth(object) {
     return permanentMaterialValue(object);
+  }
+
+  /**
+   * PMSSB-90/F-90-2 (L50/L41): wartość CRAFT (CR 702.167a) — „{3}{W}, wygnaj ten
+   * artefakt i drugi artefakt, który kontrolujesz, ALBO kartę artefaktu z twojego
+   * grobu: wraca do gry przemieniony". Typ `craft_transform` miał w tym pliku
+   * JEDEN ślad — wpis w zbiorze efektów kumulujących — więc pętla efektów
+   * aktywacji nie wyceniała skutku wcale i `activate_ability(saw#1)` dostawało
+   * 0 minus koszt many (pomiar SS-03: −2,00 z materiałem na polu I w grobie, czyli
+   * bot nigdy nie craftował, choć animację powstałego Vehicle 5/5 wycenia na
+   * +10 w oknie ataku i +13 w oknie obrony).
+   *
+   * Model = bilans MATERIAŁU, tą samą miarą co `bodyWorth`/`resolve_craft_exile`
+   * (`permanentMaterialValue` = 2×P + T + koszt many): tył DFC minus wygnany front
+   * minus najsłabszy dostępny materiał. Wybór ofiary robi `resolve_craft_exile`
+   * (`finish(40 − value)`, audyt PR #131/F7), czyli bot realnie oddaje NAJSŁABSZY
+   * artefakt — dlatego koszt liczymy po minimum, nie po sumie. Brak drugiej strony
+   * (M155: craft bez `transformTo` to no-op) i brak materiału (silnik wtedy w ogóle
+   * nie oferuje craft) dają 0 — żadnego bonusu z sufitu (M429).
+   */
+  function craftMaterialValueOf(object) {
+    const d = cardDef(object?.cardId) ?? {};
+    return permanentMaterialValue({
+      power: object?.power ?? d.power,
+      toughness: object?.toughness ?? d.toughness,
+      manaCost: object?.manaCost ?? d.manaCost,
+    });
+  }
+
+  /** Kandydaci na materiał craft: własne artefakty z pola (bez źródła) + własne karty artefaktów z grobu. */
+  function craftMaterialCandidates(view, source) {
+    const artefakt = (o) => Boolean(o) && (o.kind === 'artifact' || (o.types ?? []).includes('Artifact'));
+    const moj = (o) => (o.controllerId ?? o.ownerId) === view.playerId;
+    const zPola = (view.zones?.battlefield ?? []).filter((o) => artefakt(o) && moj(o) && o.id !== source?.id);
+    // Grób jest strefą JAWNĄ, więc widok niesie też grób przeciwnika — craft mówi
+    // „z TWOJEGO grobu" (M125/B: przynależność po właścicielu).
+    const zGrob = (view.zones?.graveyard ?? []).filter((o) => artefakt(o) && moj(o));
+    return [...zPola, ...zGrob];
+  }
+
+  function craftTransformValue(view, source, def) {
+    const backDef = cardDef(def?.transformTo ?? source?.transformTo);
+    if (!source || !backDef) return 0;
+    const material = craftMaterialCandidates(view, source);
+    if (material.length === 0) return 0;
+    return craftMaterialValueOf(backDef) - craftMaterialValueOf(source)
+      - Math.min(...material.map((o) => craftMaterialValueOf(o)));
   }
 
   /**
@@ -10322,13 +10435,89 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     };
   }
 
+  /**
+   * PMSSB-90/F-90-8 (L41): zdarzenia triggerów, które odpalają WYŁĄCZNIE przy
+   * ataku nosiciela. Na ciele, które legalnie nie atakuje (defender/detain/
+   * prewencja — flaga `cantAttackStatic` z widoku) taki trigger jest martwym
+   * tekstem, więc nie może podnosić wartości equipu. To ta sama bramka, którą
+   * `equipValuation` już stosuje do grantów ofensywnych (M244/F: „nosiciel,
+   * który nie może atakować, nie wyciąga nic z grantu ofensywnego") — bez niej
+   * naprawa F-90/8 dawałaby bonus z sufitu ciału z defenderem (M429).
+   */
+  const ATTACK_GATED_EQUIP_EVENTS = new Set([
+    'equipped_creature_attacks', 'mentor_attacks', 'attacks', 'attacks_alone',
+    'combat_damage_to_player', 'any_combat_damage_to_player', 'becomes_blocked', 'blocks',
+  ]);
+
+  /**
+   * PMSSB-90/F-90-8 (L41): wartość TRIGGERÓW samego sprzętu w decyzji equipu.
+   *
+   * Pomiar PRZED: `equipValuation` czytała wyłącznie deskryptor `equipment`
+   * (`pump`, `keywords`, `cantBeBlockedMaxPower`, `pumpPerAttachedEquipment`),
+   * więc Greatsword of Tyr — którego CAŁA treść siedzi w triggerze „whenever
+   * equipped creature attacks, put a +1/+1 counter on it and tap up to one
+   * target creature defending player controls" — był widziany jako sprzęt
+   * „niczego nie dodaje": kara -12 i -11,00 dla KAŻDEGO hosta (Leonin 3/2,
+   * Highland Game 2/1, Illusory Demon 4/3), czyli bot nigdy go nie zakładał.
+   *
+   * Ten sam trigger jest już wyceniany, gdy bot rozważa RZUT sprzętu
+   * (`anticipatedTailValue`, likelihood 0.5 dla `equipped_creature_attacks`,
+   * nogi efektów z `ETB_EFFECT_BONUS`) — dwie skale dla jednej informacji to
+   * rozjazd L41, więc equip pyta tę samą miarę zamiast udawać, że karta jest
+   * pusta. Bramka `cantAttackStatic` wyżej: trigger ataku na ciele, które nie
+   * atakuje, nie istnieje.
+   */
+  function equipTriggerTailValue(view, source, creature) {
+    const def = source?.cardId ? cardDef(source.cardId) : undefined;
+    if (!def || !creature) return 0;
+    const atakMartwy = creature.cantAttackStatic === true;
+    const triggers = (def.abilities ?? []).filter((a) => a?.type === 'triggered'
+      && !(atakMartwy && ATTACK_GATED_EQUIP_EVENTS.has(a.trigger?.event)));
+    if (triggers.length === 0) return 0;
+    return anticipatedTailValue(view, { ...def, abilities: triggers }, null);
+  }
+
+  /**
+   * PMSSB-90/F-90-8: pompa z WŁASNYCH zdolności statycznych nosiciela, które
+   * bramkuje fakt bycia wyposażonym — `condition: { equipped: true }` +
+   * `ability.pump` (Leonin Lightbringer: „As long as this creature is equipped,
+   * it gets +1/+1"; silnik: `permanents.js:545` dla warunku i `:634/:710` dla
+   * pompy). Wycena equipu znała wyłącznie treść SPRZĘTU, więc host, który z
+   * tego samego ekwipunku wyciska więcej, był nierozróżnialny od hosta, który
+   * nie wyciska nic (pomiar PRZED: -11,00 = -11,00; Plate 20,00 vs 18,00
+   * różnicowała tylko `2 × moc`). To jakość NOSICIELA, więc wchodzi do `value`/
+   * `bodyValue` (gałąź przeniesienia, gdzie jakość hosta JEST decyzją — M289/
+   * M290), a nie do `printedBody` (druk sprzętu; świadomy zakres właściciela
+   * T11/7: pierwsze założenie nie waży jakości nosiciela).
+   */
+  function equippedStaticPumpOf(view, creature) {
+    const def = creature?.cardId ? cardDef(creature.cardId) : undefined;
+    let power = 0;
+    let toughness = 0;
+    for (const ability of def?.abilities ?? []) {
+      // Typ zdolności jako literał — ten plik nie importuje `ABILITY_TYPE`
+      // (silnikowe `abilities.js:25`); tak samo robi `auraStaticAbilityValue`.
+      if (ability?.type !== 'static') continue;
+      if (ability.condition?.equipped !== true) continue;
+      power += ability.pump?.power ?? 0;
+      toughness += ability.pump?.toughness ?? 0;
+    }
+    return { power, toughness };
+  }
+
   function equipValuation(view, source, creature) {
     const def = source?.equipment;
-    if (!def || !creature) return { value: 0, nothingAdded: true };
+    if (!def || !creature) return { value: 0, nothingAdded: true, tailValue: 0 };
     const grants = def.keywords ?? [];
     const keywords = new Set([...(creature.keywords ?? []), ...(creature.grantedKeywords ?? [])]);
     const freshGrants = grants.filter((kw) => !keywords.has(kw));
     const { power: pumpPower, toughness: pumpToughness } = equipPumpOf(view, def, source, creature);
+    // PMSSB-90/F-90-8: treść karty, której nie ma w deskryptorze `equipment` —
+    // triggery samego sprzętu i pompa z własnej statyki hosta bramkowanej
+    // `condition.equipped`. Bez tego sprzęt z triggerem był „pusty" (kara −12),
+    // a host wyciskający z ekwipunku więcej był nierozróżnialny (F-90/7).
+    const tailValue = equipTriggerTailValue(view, source, creature);
+    const hostStatic = equippedStaticPumpOf(view, creature);
     const hasteAdds = freshGrants.includes('haste') && creature.summoningSickness === true;
     const blockers = untappedEnemyBlockers(view);
     // Z-1 (audyt PR #135): `creature.power` z widoku to już moc EFEKTYWNA
@@ -10367,8 +10556,11 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       || (hasKeyword(creature, 'flying')
         && blockers.every((o) => !hasKeyword(o, 'flying') && !hasKeyword(o, 'reach')));
     const wagaSily = atakJałowy ? 1 : (2 + (bearingEvasion ? 1 : 0));
-    const value = wagaSily * pumpPower + pumpToughness + ofensywne;
-    const nothingAdded = pumpPower === 0 && pumpToughness === 0 && !grantsEvasion && !hasteAdds
+    const value = wagaSily * (pumpPower + hostStatic.power) + (pumpToughness + hostStatic.toughness)
+      + ofensywne + tailValue;
+    const nothingAdded = pumpPower === 0 && pumpToughness === 0
+      && hostStatic.power === 0 && hostStatic.toughness === 0
+      && !grantsEvasion && !hasteAdds && !(tailValue > 0)
       && freshGrants.every((kw) => kw === 'haste');
     // PMSSB-34/A (L41): CIAŁO sprzętu wydzielone — pierwsze założenie (gałąź
     // `activate_ability`) liczyło wyłącznie `10 + 2 × moc nosiciela`, więc
@@ -10383,9 +10575,12 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     //    (T11/7, `test/uwagi-tura11-...`): pierwsze założenie NIE waży jakości
     //    nosiciela — wolno mu doliczyć tylko treść sprzętu. Dzięki temu pin
     //    T11/7 (vanilla 3/2 == latacz 3/3 przy pierwszym założeniu) stoi.
-    const bodyValue = wagaSily * pumpPower + pumpToughness;
+    const bodyValue = wagaSily * (pumpPower + hostStatic.power) + (pumpToughness + hostStatic.toughness)
+      + tailValue;
+    // `printedBody` zostaje DRUKIEM sprzętu (2×P + T) — pompa hosta i trigger
+    // nie są ciałem druku, a gałąź pierwszego założenia dostaje je osobno.
     const printedBody = 2 * pumpPower + pumpToughness;
-    return { value, bodyValue, printedBody, nothingAdded };
+    return { value, bodyValue, printedBody, nothingAdded, tailValue };
   }
 
   /**
@@ -10457,7 +10652,86 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     // w kolejnych — aura zostaje, wiec nie karzemy poza oknem (inaczej niz
     // przy grantach-do-EOT).
     if (swieze.includes('vigilance') && canAttackNow(host) && myTurn(view)) score += 4;
+    // PMSSB-90/F-90-11 (L41): POŚPIECH (CR 702.10) odblokowuje atak wyłącznie
+    // ciału CHOREMU (summoning sickness, CR 302.6) i wyłącznie wtedy, gdy okno
+    // ataku jest jeszcze przed nami — aura to sorcery (CR 307.1: tylko faza
+    // główna własnej tury), więc w main2 pośpiech nie wypłaci się w tej turze, a
+    // do kolejnej choroba i tak minie (CR 302.6: stworzenie jest chore tylko do
+    // początku tury kontrolera). Ciało tapnięte nie atakuje niezależnie od
+    // pośpiechu (CR 508.1a), a `cantAttackStatic` (defender/detain/prewencja)
+    // blokuje atak nawet z pośpiechem.
+    // To TA SAMA bramka, którą ścieżka EQUIPU ma od M243/D-G
+    // (`equipValuation.hasteAdds` = świeży grant && `summoningSickness === true`
+    // → +6 w `ofensywne`): dwie ścieżki grantu tego samego słowa kluczowego nie
+    // mogą mieć dwóch modeli świata (L41/L28). Kwota +6 jest lustrzana do +8 za
+    // latanie wyżej („flying wart jest tyle, ile `ofensywne` w equipValuation"),
+    // czyli nowa stała NIE powstaje — istniejąca waga dostaje tylko warunek.
+    // Pomiar PRZED (M-04/M-01): 79,20 = 79,20 = 79,20 = 79,20 (host gotowy,
+    // chory, tapnięty, tapnięty-chory) i main1 = main2 = 78,30.
+    if (swieze.includes('haste') && host.summoningSickness === true && !host.tapped
+      && host.cantAttackStatic !== true && myTurn(view) && view.turn.phase === 'precombat_main') {
+      score += 6;
+    }
     return score;
+  }
+
+  /**
+   * PMSSB-90/F-90-4 (L41/L48): wartość wymogu bloku „all creatures able to block
+   * enchanted creature block it" (CR 509.1c, Seton's Desire z Thresholdem).
+   * Silnik wymóg EGZEKWUJE (`combat.js:373` `mustBlockHostCounts`), ale bot nie
+   * miał tu żadnej liczby, więc aura była warta samo +2/+2 w każdym stanie
+   * (pomiar SD-01/SD-02/SD-05: 72,00 przy progu spełnionym i niespełnionym, przy
+   * wrogich blokerach i przy pustym stole).
+   *
+   * Model składa się z DWÓCH istniejących miar, bez nowych stałych:
+   *  1. matematyka wymuszonego bloku — gospodarz kontra WSZYSCY zdolni blokować
+   *     (`blockExchangeOf`, ten sam symulator co przy wyborze bloków), wyceniona
+   *     skalą bliźniaka `blocks_if_able_until_end_of_turn` (+10 kill-block, −10
+   *     blok stratny — `heuristic-bot.js` gałąź aktywacji i czaru);
+   *  2. ściągnięcie blokerów z MOICH INNYCH atakujących — `cantBlockRemovalValue`
+   *     (Batch60-followup/2: jakość bloku), czyli ta sama miara co „cel nie może
+   *     blokować", bo skutek jest ten sam: bloker jest zajęty moim gospodarzem.
+   * Brak wrogów ZDOLNYCH blokować (CR 509.1c „able to") = 0: wymóg jest pusty,
+   * a nie „bonus za tekst karty" (M429).
+   */
+  function mustBlockEnchantedValue(view, host, pump = null) {
+    if (!host) return 0;
+    const atakujacy = {
+      ...host,
+      power: (host.power ?? 0) + (pump?.power ?? 0),
+      toughness: (host.toughness ?? 0) + (pump?.toughness ?? 0),
+      keywords: [...(host.keywords ?? []), ...(pump?.keywords ?? [])],
+    };
+    const zmuszeni = untappedEnemyBlockers(view).filter((b) => attackerCanBeBlocked(atakujacy, [b]));
+    if (zmuszeni.length === 0) return 0;
+    const wymiana = blockExchangeOf(atakujacy, zmuszeni);
+    const zabija = (wymiana?.diedBlockerIds ?? []).length > 0;
+    let value = (zabija && !wymiana?.attackerDies) ? 10 : -10;
+    const inni = (attackWindowAttackerIds(view) ?? []).filter((id) => id !== host.id);
+    for (const bloker of zmuszeni) value += cantBlockRemovalValue(view, bloker, inni) ?? 0;
+    return value;
+  }
+
+  /**
+   * Zdolności STATYCZNE aury z warunkiem ciągłym (Threshold) — dotąd wycena aury
+   * czytała wyłącznie `aura.pump` i granty słów kluczowych (`auraKeywordValue`),
+   * więc cała rodzina efektów statycznych z warunkiem była niewidzialna. Warunek
+   * niespełniony albo nieznany = efekt nie działa (jak w silniku, CR 611.3a).
+   */
+  function auraStaticAbilityValue(view, def, host, pump = null) {
+    if (!def || !host) return 0;
+    let value = 0;
+    for (const ability of def.abilities ?? []) {
+      // Typ zdolności jako literał — ten plik nie importuje `ABILITY_TYPE`
+      // (silnikowe `abilities.js:25`), a pozostałe gałęzie bota też porównują
+      // literały (`ability?.type !== 'triggered'`), więc jedno źródło zostaje.
+      if (ability?.type !== 'static') continue;
+      if (ability.condition && staticConditionHoldsFromView(view, ability.condition) !== true) continue;
+      for (const effect of (Array.isArray(ability.effect) ? ability.effect : [ability.effect])) {
+        if (effect?.type === 'must_block_enchanted') value += mustBlockEnchantedValue(view, host, pump);
+      }
+    }
+    return value;
   }
 
   /**
@@ -10941,7 +11215,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     for (const id of targetIds ?? []) {
       const o = objectOnBoard(view, id);
       if (!o || o.controllerId === view.playerId) continue;
-      const amount = o.ward ?? ((o.keywords ?? []).includes('ward') ? 2 : null);
+      // Audyt PR #185 (F-7): kwota z PlayerView (`entry.ward`, ADR 0017) — była
+      // tu druga kopia reguły „ward wynosi 2, skoro jest keyword" (L41), która
+      // zgadywała kwotę zamiast ją czytać.
+      const amount = o.ward ?? null;
       if (amount == null || amount <= 0) continue;
       if (open >= amount) { tax += amount; open -= amount; }
       else { tax += 200; } // brak many na dopłatę → wariant fiknie, poniżej passu
@@ -10959,9 +11236,19 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     if (spec.type === 'player') return view.players.map(p => p.id);
     let candidates = (view.zones.battlefield ?? []).filter(object => {
       if (spec.type === 'battle') return isBattle(object);
+      // PMSSB-90/F-90-3 (L41/L48): lustro silnika — rodzina `tapped_creature` /
+      // `untapped_creature` istnieje w spells.js:1751 (cele czarów) i triggers.js:594
+      // (cele triggerów, dodane w audycie PR #185 F-3), ale NIE tutaj, więc bot pytał
+      // o legalność celu ETB predykatem, który takiego typu nie rozpoznawał (pusta
+      // lista) i spadał do „czy wróg ma JAKIEGOŚ permanenta".
       if (!['creature', 'creature_you_control', 'creature_opponent_controls',
-        'creature_opponent_damaged_this_turn', 'creature_with_power_at_most'].includes(spec.type)) return false;
+        'creature_opponent_damaged_this_turn', 'creature_with_power_at_most',
+        'tapped_creature', 'untapped_creature'].includes(spec.type)) return false;
       if (object.kind !== 'creature') return false;
+      if (spec.type === 'tapped_creature' && !object.tapped) return false;
+      if (spec.type === 'untapped_creature' && object.tapped) return false;
+      // „an opponent controls" (CR 109.5) — ta sama flaga co w silniku.
+      if (spec.opponentControls && object.controllerId === view.playerId) return false;
       if (spec.type === 'creature_you_control' && object.controllerId !== view.playerId) return false;
       if (['creature_opponent_controls','creature_opponent_damaged_this_turn'].includes(spec.type)
         && object.controllerId === view.playerId) return false;
@@ -11659,6 +11946,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       const member = objectOnBoard(view, cid);
       return suma + (member && !member.summoningSickness ? (member.power ?? 0) : 0);
     }, 0);
+    // Batch 73 (Bladewheel Chariot, F-6): koszt tapu artefaktów — utracone
+    // aktywacje w tej turze, 1 za artefakt (ta sama waga, co przy koszcie
+    // „Tap X untapped artifacts" Merchant's Dockhand).
+    const artifactCost = (cmd.tapArtifactIds ?? []).length;
     const moc = effect.power ?? body?.power ?? 0;
     const gotowy = Boolean(body) && !body.tapped && !body.animatedUntilEOT;
     // (a) MOJE okno ataku: faza walki przed deklaracją atakujących.
@@ -11673,7 +11964,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       let zysk = moc * 2;
       if (hasKeyword(body, 'flying')
         && untappedEnemyBlockers(view).every((o) => !hasKeyword(o, 'flying') && !hasKeyword(o, 'reach'))) zysk += 8;
-      return zysk - crewCost;
+      return zysk - crewCost - artifactCost;
     }
     // (b) OKNO OBRONY: tura przeciwnika, deklaracja atakujących już jest,
     // bloki jeszcze nie — pojazd ma kogo zablokować.
@@ -11690,7 +11981,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         }]));
       if (blokowalni.length === 0) return -12;
       const najwiekszaMoc = blokowalni.reduce((max, a) => Math.max(max, a.power ?? 0), 0);
-      return 8 + Math.min(najwiekszaMoc, effect.toughness ?? body.toughness ?? 0) - crewCost;
+      return 8 + Math.min(najwiekszaMoc, effect.toughness ?? body.toughness ?? 0) - crewCost - artifactCost;
     }
     // Każde inne okno (główna faza, upkeep, po deklaracjach, end step):
     // animacja wygaśnie bez ataku i bez bloku, a tap załogi przepada.
@@ -12884,6 +13175,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           // anticipację-ogona (trigger-gospodarza!).
           return finish(P.auraBase + P.auraBuffWorthWeight * ((target.power ?? 0) + pump.power) + ((target.toughness ?? 0) + pump.toughness)
             + auraKeywordValue(view, descriptor, target)
+            + auraStaticAbilityValue(view, cardDef(card?.cardId), target, pump)
             - offWindowFlashProtectionPenalty
             + anticipatedTailValue(view, cardDef(card?.cardId), cmd));
         }
@@ -14517,14 +14809,9 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           // Bond) — remis wariantów zwracał pierwszą kartę; premiujemy
           // najcenniejszego stwora w grobie (P/T z widoku grobu).
           if (effect.type === 'return_permanent_from_graveyard') {
-            const slot = cmd.targets?.[effect.targetIndex ?? 0] ?? null;
-            const gyCard = slot ? (view.zones.graveyard ?? []).find((o) => o.id === slot) : null;
-            if (gyCard) {
-              const gyDef = cardDef(gyCard.cardId);
-              const gyValue = ((gyCard.power ?? gyDef?.power ?? 0) * 2)
-                + (gyCard.toughness ?? gyDef?.toughness ?? 0);
-              score += 10 + gyValue;
-            }
+            // F-8 (audyt PR #185): skala ciała z grobu w jednym helperze (L41) —
+            // bliźniacze gałęzie cast_spell i activate_ability liczyły to samo inline.
+            score += graveyardBodyValue(view, cmd.targets?.[effect.targetIndex ?? 0] ?? null);
           }
           // Batch 52 (Cemetery Recruitment): zwrot karty STWORA z grobu do
           // RĘKI to card advantage (jak dobranie) + ciało karty. Bez wyceny
@@ -15461,6 +15748,12 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             && effect.duration === 'until_source_cast_from_exile') {
             score += linkedManaGrantValue(view, effect, target);
           }
+          // PMSSB-90/F-90-2: craft — bilans materiału (tył DFC minus wygnany front
+          // minus najsłabszy dostępny artefakt). Bez tego wpis lądował w `default`
+          // i aktywacja miała wartość 0 (pomiar: −2,00 z materiałem na polu).
+          if (effect.type === 'craft_transform') {
+            score += craftTransformValue(view, source, def);
+          }
           // B54/s4008: ta rodzina miała wycenę tylko w czarach, aktywacja
           // zostawała na bazie 2 nawet gdy zabijała przeciwnika.
           if (effect.type === 'damage_each_opponent' || effect.type === 'lose_life_each_opponent') {
@@ -15530,7 +15823,12 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           // chory pojazd). Wycena generyczna po koszcie i stanie z PlayerView
           // (ADR 0002/0017): zysk = nowy atakujący (moc ×2 jak ninjutsu +
           // evasion), koszt = moc załogi, która w tej turze nie zaatakuje.
-          if (effect.type === 'animate_permanent_until_end_of_turn' && ability?.cost?.crewPower != null) {
+          // Batch 73 (Bladewheel Chariot, audyt PR #185 F-6): ten sam efekt
+          // animacji bywa płacony tapem STAŁEJ liczby artefaktów („Tap two
+          // other untapped artifacts you control"), nie tylko załogą — wycena
+          // okna (atak/blok) jest ta sama, różni się tylko koszt.
+          if (effect.type === 'animate_permanent_until_end_of_turn'
+            && (ability?.cost?.crewPower != null || ability?.cost?.tapOtherArtifacts != null)) {
             score += crewValue(view, cmd, effect, source);
           }
           // M96 (audyt Żywym Testerem): `pump_enchanted_creature`
@@ -16032,14 +16330,9 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           // 5/5). Ta sama skala 10+2P+T co czar; stripAbilities/addSubtypes
           // z deskryptora nie zmieniają wyceny (cierniste P/T wraca na stół).
           if (effect.type === 'return_permanent_from_graveyard') {
-            const slot = cmd.targets?.[effect.targetIndex ?? 0] ?? null;
-            const gyCard = slot ? (view.zones.graveyard ?? []).find((o) => o.id === slot) : null;
-            if (gyCard) {
-              const gyDef = cardDef(gyCard.cardId);
-              const gyValue = ((gyCard.power ?? gyDef?.power ?? 0) * 2)
-                + (gyCard.toughness ?? gyDef?.toughness ?? 0);
-              score += 10 + gyValue;
-            }
+            // F-8 (audyt PR #185): skala ciała z grobu w jednym helperze (L41) —
+            // bliźniacze gałęzie cast_spell i activate_ability liczyły to samo inline.
+            score += graveyardBodyValue(view, cmd.targets?.[effect.targetIndex ?? 0] ?? null);
           }
           // M162/B (uwaga właściciela, Ghoulcaller's Bell): symetryczny mill
           // bez celu („each player mills") — ta sama wycena wyścigu bibliotek
@@ -16806,6 +17099,12 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
                 // w gałęzi defendera wyżej) — jakość nosiciela zostaje poza
                 // zakresem tej gałęzi zgodnie z decyzją właściciela (T11/7).
                 score += P.equipPumpBonusPerPoint * equipPayoff.printedBody;
+                // PMSSB-90/F-90-8: trigger sprzętu to jego TREŚĆ (rosnący
+                // licznik, tapnięcie blokera), więc wchodzi do score tak samo
+                // surowo, jak wchodzi przy rzucie karty (`anticipatedTailValue`
+                // dodawane bez mnożnika w czterech ścieżkach cast) — jedna
+                // skala, nie nowa waga (pokrętła-sterują ×0).
+                score += equipPayoff.tailValue;
                 if (grantsEvasion) score += 8;
                 if (grants.includes('haste') && target.summoningSickness) score += 6;
               }
@@ -16849,19 +17148,20 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // Replacing shallow scoring with genuine play-pattern analysis:
         // WHEN (phase/step), WHO (target selection), WHAT (opportunity cost),
         // WHICH (sacrifice choice), and WHETHER (hard gates from card text).
-
-        // PMSSB-89: Proper pro-player scoring for Batch 73 activated abilities.
-        // Replacing shallow scoring with genuine play-pattern analysis:
-        // WHEN (phase/step), WHO (target selection), WHAT (opportunity cost),
-        // WHICH (sacrifice choice), and WHETHER (hard gates from card text).
         // Wszystkie rozpoznawane po deskryptorach (ADR 0002), nie po nazwach kart.
+        // Audyt PR #185 (F-10): ten akapit stał tu DOSŁOWNIE dwa razy pod rząd.
 
         // === Graveyard reanimate + sacrificeCreature (Necrosavant pattern) ===
         // Karta: „{3}{B}{B}, Sacrifice a creature: Return this card from your
         // graveyard to the battlefield. Activate only during your upkeep."
         if (isGraveyardReanimate) {
-          // Hard gate from card text: only during your upkeep.
-          if (view.turn.step !== 'upkeep') return finish(-100);
+          // Audyt PR #185 (F-9): stała tu regułowa bramka „only during your
+          // upkeep" jako kara -100. Reguła należy do RDZENIA, nie do heurystyki:
+          // deskryptor `onlyInStep: 'upkeep'` egzekwuje `abilityConditionFailure`
+          // (abilities.js) w ofercie I w walidacji (CR 602.1b/602.5), więc
+          // nielegalna aktywacja w ogóle nie trafia do `view.legalCommands` —
+          // kara w bocie maskowała brak bramki w silniku (F-4) i byłaby drugim
+          // źródłem tej samej reguły (L41). Zostaje wyłącznie WYCENA.
 
           // Must have a creature on battlefield to sacrifice as cost.
           const myCreatures = (view.zones.battlefield ?? [])
@@ -16880,21 +17180,36 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
 
           const sacrificeLoss = sacrificePermanentLoss(view, worstCreature);
 
-          // Value of reanimated body — same scale as return_permanent_from_graveyard
-          // (10 + 2*P + T). For Necrosavant (5/5): 10 + 10 + 5 = 25.
-          const reanimatedValue = 10 + (5 * 2) + 5; // = 25
+          // Wartość zwracanego ciała — TA sama skala co `return_permanent_from_graveyard`
+          // (10 + 2*P + T), więc liczona przez wspólny helper (L41). Reanimacja z grobu
+          // zwraca ŹRÓDŁO zdolności („Return this card from your graveyard"), czyli
+          // obiekt o `cmd.objectId` leżący w grobie — P/T bierzemy z widoku, nie ze
+          // stałej (F-8, audyt PR #185; ADR 0002 + ADR 0017). Dla Necrosavanta 5/5
+          // daje to dokładnie tyle, ile dawały stałe: 10 + 10 + 5 = 25.
+          const reanimatedValue = graveyardBodyValue(view, cmd.objectId);
 
           // Only worth it if the reanimated body exceeds the sacrifice cost.
           // Mana cost {3}{B}{B} is already penalized via abilityManaCost above.
           score += reanimatedValue - sacrificeLoss;
         }
 
-        // Note: Leonin Lightbringer ({W},{T} tap) and Kessig Flamebreather
-        // ({2}{R},{T} damage) already get proper scoring via existing generic
-        // paths — tapTargetValue for tap effects, damageTargetValue for damage,
-        // and tapBodyCost for the opportunity cost of tapping the source. Those
-        // generic scorings already encode the pro-player logic (target value,
-        // timing, lethal vs chip). No card-specific override needed here.
+        // Audyt PR #185 (F-10, ADR 0030/L57): poprzedni komentarz w tym miejscu
+        // twierdził, że „Leonin Lightbringer ({W},{T} tap)" i „Kessig Flamebreather
+        // ({2}{R},{T} damage)" są już wyceniane przez `tapTargetValue`,
+        // `damageTargetValue` i `tapBodyCost`. Snapshoty Oracle tego PR
+        // (`docs/cards/scryfall-leonin-lightbringer.json`,
+        // `docs/cards/scryfall-kessig-flamebreather.json`) nie znają takich zdolności:
+        //   Leonin Lightbringer — „Ward {2} (…) As long as this creature is
+        //     equipped, it gets +1/+1." (ward wycenia `wardTargetTax` — audyt
+        //     F-7; warunkowy pump statyczny nie jest zdolnością aktywowaną),
+        //   Kessig Flamebreather — „Whenever you cast a noncreature spell, this
+        //     creature deals 1 damage to each opponent." (trigger, nie aktywacja).
+        // W ścieżce `activate_ability` nie ma więc dla tych dwóch kart czego
+        // wyceniać. Fabrykowane zdolności aktywowane zostały z katalogu usunięte
+        // (ostatni commit PR #185), a pin Oracle stoi w
+        // `test/real-cards-batch73.test.js` (F-10: zero zdolności aktywowanych,
+        // ward {2} + pump `equipped` u Leonina, trigger `you_cast_noncreature_spell`
+        // u Kessiga) — powrót fabrykacji czerwieni test, nie komentarz.
         // PMSSB-66: ODROCZENIE. Poza oknem end step przeciwnika (i poza walką) zdolność za manę o
         // trwałym skutku nie jest grywalna teraz — tę samą manę zapłacimy za darmo w oknie. Wynik ≤ −koszt,
         // więc pass wygrywa. Walka wyłączona: licznik +1/+1 może zmienić blok/atak w tym samym kroku.
@@ -18183,9 +18498,40 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         return finish(60);
       }
       case 'resolve_explore_choice': {
-        // Guidestone Compass: karta na wierzch albo do grobu.
-        // Bot odkłada na wierzch (zachowuje kartę).
-        return finish(cmd.putInGraveyard ? 10 : 40);
+        // Guidestone Compass / River Herald Guide: odsłonięta karta na wierzch albo
+        // do grobu. PMSSB-90/F-90-5 (L41): explore (CR 701.44a) kończy się TĄ SAMĄ
+        // decyzją co surveil (CR 701.25) — „put the revealed card into your
+        // graveyard" — a był wyceniony PŁASKO (`putInGraveyard ? 10 : 40`), więc bot
+        // zawsze odkładał na wierzch, niezależnie od karty: pomiar RG-01/RG-02/RG-05
+        // dawał 40/10 dla Maruta 7/7 za 8 (dobro poza zasięgiem many, `cardKeepValue`
+        // = −3: „chętnie oddamy") i dla Plummeta za 2 (w zasięgu). Wspólna skala z
+        // surveil: wartość karty, bufor nieodwracalności mielenia (MILL_CAUTION),
+        // presja deck-outu (`drawDeckingPenalty`, CR 121.4 — mielona karta to
+        // dobranie, którego już nie będzie) i paliwo grobu (delve/reanimacja w ręce).
+        // Widok niesie `pendingExplore.cardId` (karta odsłonięta = informacja
+        // publiczna), więc deskryptory bierzemy z rejestru i składamy kartę w
+        // kształcie, jakiego oczekuje wycena — dokładnie jak `resolve_clash_choice`.
+        const exploreDef = view.pendingExplore?.cardId ? cardDef(view.pendingExplore.cardId) : undefined;
+        // Nieznana karta (brak `cardId` w widoku) = brak informacji: zostaje sam bufor
+        // ostrożności, czyli mielenie jest o MILL_CAUTION gorsze od zostawienia. Żadnej
+        // drugiej płaskiej stałej (dawne 40/10) — jedna skala dla wszystkich gałęzi.
+        const exploreCard = exploreDef ? {
+          cardId: exploreDef.id,
+          kind: (exploreDef.types ?? []).includes('Land') ? 'land' : 'spell',
+          types: exploreDef.types ?? [],
+          manaCost: exploreDef.manaCost ?? 0,
+          power: exploreDef.power ?? null,
+          toughness: exploreDef.toughness ?? null,
+        } : null;
+        // Punkt odniesienia = karta zostaje na wierzchu (jak „zostaw wszystko" w
+        // scry/surveil: 20). Mielenie opłaca się dokładnie wtedy, gdy karty nie
+        // chcemy dobrać, albo gdy grób jest paliwem (delve/reanimacja w ręce).
+        if (!cmd.putInGraveyard) return finish(20);
+        const MILL_CAUTION = 2; // ta sama stała co w surveil (mielenie jest nieodwracalne)
+        const millDecking = drawDeckingPenalty(view, 1) - drawDeckingPenalty(view, 0);
+        const graveSynergy = Math.min(P.surveilGraveSynergyPerSource
+          * graveyardReadingCardsInHand(view), P.surveilGraveSynergyCap);
+        return finish(20 - cardKeepValue(view, exploreCard) - MILL_CAUTION + millDecking + graveSynergy);
       }
       case 'resolve_craft_exile': {
         // Lodestone Needle: exile artifact do craft. Bot wybiera
@@ -18746,7 +19092,11 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // M431/L41: TA SAMA reguła co przy rzucie aury z reki — inaczej dwie
         // sciezki zalozenia aury mieilyby dwa modele swiata (L28).
         const kwValue = mine ? auraKeywordValue(view, auraCard?.aura ?? auraCard?.bestow, host) : 0;
-        return finish(mine ? P.auraBase + worth + kwValue : -P.auraHostileEnemyBase - worth);
+        // PMSSB-90/F-90-4: druga ścieżka założenia aury musi znać tę samą regułę
+        // (L41) — inaczej wybór gospodarza po rozstrzygnięciu ignorował Threshold.
+        const statValue = mine
+          ? auraStaticAbilityValue(view, cardDef(auraCard?.cardId), host, (auraCard?.aura ?? auraCard?.bestow)?.pump) : 0;
+        return finish(mine ? P.auraBase + worth + kwValue + statValue : -P.auraHostileEnemyBase - worth);
       }
       case 'resolve_hand_free_cast': {
         // Batch 57/B6a (Baral and Kari Zev): darmowy rzut czaru z ręki to

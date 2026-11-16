@@ -111,6 +111,20 @@ function maxSpeedHolds(state, playerId, ability) {
  */
 function abilityConditionFailure(state, playerId, ability, sourceObject = null) {
   if (!maxSpeedHolds(state, playerId, ability)) return 'Zdolność wymaga max speed (4)';
+  // Necrosavant (Batch 73, audyt PR #185 F-4): „Activate only during your
+  // upkeep" — CR 602.1b (tekst ograniczający CZAS aktywacji działa w każdej
+  // chwili i nie jest częścią efektu) + CR 602.5 (nie wolno zacząć aktywacji
+  // zabronionej). Bramka siedzi w tym JEDNYM miejscu, więc oferta
+  // (`legalActivatedAbilities`) i walidacja (`activateAbility`) czytają tę samą
+  // regułę i nie mogą się rozjechać (L41/L48). „YOUR upkeep" = krok tury
+  // AKTYWNEGO gracza — lustro bramki forecastu niżej w tym pliku.
+  // Dotąd reguła istniała TYLKO jako kara w heurystyce bota
+  // (`step !== 'upkeep' → finish(-100)`), więc silnik przyjmował aktywację
+  // w fazie głównej i w kroku końcowym (F-9).
+  if (ability?.onlyInStep != null
+    && (state.turn?.step !== ability.onlyInStep || state.turn.activePlayerId !== playerId)) {
+    return `Zdolność można aktywować tylko w kroku ${ability.onlyInStep} swojej tury`;
+  }
   if (ability?.condition?.delirium === true && graveyardCardTypeCount(state, playerId) < 4) {
     return 'Delirium wymaga czterech typów kart w grobie';
   }
@@ -202,7 +216,7 @@ export function effectiveAbilityManaCost(state, playerId, ability, sourceObject)
   return base;
 }
 
-export function createAbility({ type, cost = null, effect, trigger, keyword = null, targets = null, cycling = null, channel = null, reinforce = null, bloodrush = null, forecast = false, grantsExtraBlockWithCounter = null, condition = null, pump = null, keywords = null, timing = 'instant', oncePerTurn = false, mustAttack = false, cantBeBlocked = false, scope = null, costModifier = null, costReduction = null, fromHand = false, fromGraveyard = false, cantAttackAlone = false, cantBlockAlone = false, cantAttackUnlessDefenderHasFlying = false, cantAttackUnlessDefenderPoisoned = false, opponentChoosesTarget = null, faceDownEnterFlyingCounter = false, cantBeBlockedExceptByColors = null, cantBeBlockedBySubtypes = null, cantBeBlockedByKeywords = null, cantBeBlockedByTypes = null, cantBeBlockedByPower = null, storied = false, landwalk = null, onNthResolve = null, preventDamageByRemovingCounter = null, preventCombatDamageToController = null, entersUntapped = null, characteristicDefining = false }) {
+export function createAbility({ type, cost = null, effect, trigger, keyword = null, targets = null, cycling = null, channel = null, reinforce = null, bloodrush = null, forecast = false, grantsExtraBlockWithCounter = null, condition = null, pump = null, keywords = null, timing = 'instant', oncePerTurn = false, mustAttack = false, cantBeBlocked = false, scope = null, costModifier = null, costReduction = null, fromHand = false, fromGraveyard = false, cantAttackAlone = false, cantBlockAlone = false, cantAttackUnlessDefenderHasFlying = false, cantAttackUnlessDefenderPoisoned = false, opponentChoosesTarget = null, faceDownEnterFlyingCounter = false, cantBeBlockedExceptByColors = null, cantBeBlockedBySubtypes = null, cantBeBlockedByKeywords = null, cantBeBlockedByTypes = null, cantBeBlockedByPower = null, storied = false, onlyInStep = null, landwalk = null, onNthResolve = null, preventDamageByRemovingCounter = null, preventCombatDamageToController = null, entersUntapped = null, characteristicDefining = false }) {
   if (!Object.values(ABILITY_TYPE).includes(type)) throw new TypeError('Nieprawidłowy typ zdolności');
   if (!['instant', 'sorcery'].includes(timing)) throw new RangeError('Nieprawidłowa szybkość zdolności');
   const effects = Array.isArray(effect)
@@ -240,6 +254,14 @@ export function createAbility({ type, cost = null, effect, trigger, keyword = nu
     // Tarmogoyfa) — warstwa 7a, nie modyfikator 7c. Pole tylko gdy prawda,
     // żeby kształt pozostałych zdolności się nie zmienił.
     ...(characteristicDefining ? { characteristicDefining: true } : {}),
+    // Necrosavant (Batch 73, audyt PR #185 F-4): „Activate only during your
+    // upkeep" — restrykcja CZASU aktywacji z tekstu po dwukropku (CR 602.1b:
+    // taki tekst „functions at all times" i nie jest częścią efektu; CR 602.5:
+    // gracz nie może zacząć aktywować zdolności, której aktywacja jest
+    // zabroniona). Nazwa kroku z `turn.js`; semantyka „YOUR" = krok tury
+    // AKTYWNEGO gracza (lustro bramki forecastu). Pole tylko gdy ustawione,
+    // żeby kształt pozostałych zdolności się nie zmienił.
+    ...(onlyInStep ? { onlyInStep } : {}),
     keywords: keywords ? Object.freeze([...keywords]) : null,
     // „Activate only once each turn\" (Snarling Wolf): limit aktywacji tej
     // zdolności do raz na turę na źródło (tracking w state.abilityActivatedThisTurn).
@@ -653,6 +675,22 @@ function defaultCrewSubset(state, crewableIds, neededPower, vehiclePower = null)
   return out.reverse();
 }
 
+/**
+ * Pula „other untapped artifacts you control" — Crew (CR 702.122a) używa tego
+ * samego słowa „other": własne, nietapnięte artefakty na polu bitwy, POZA źródłem
+ * zdolności. Jedno źródło dla oferty (`legalActivatedAbilities`) i walidacji
+ * kosztu (`performActivation`) — Merchant's Dockhand (M177/E, „Tap X untapped
+ * artifacts you control") i Bladewheel Chariot (Batch 73, audyt PR #185 F-6,
+ * „Tap two other untapped artifacts you control") czytają tę samą regułę (L41).
+ */
+function otherUntappedArtifactIds(state, playerId, sourceId) {
+  return state.zones.battlefield.filter((aid) => {
+    const cand = state.objects.get(aid);
+    return cand && cand.id !== sourceId && cand.controllerId === playerId && !cand.tapped
+      && (cand.kind === 'artifact' || (cand.types ?? []).includes('Artifact'));
+  });
+}
+
 /** Moc pojazdu/wierzchowca do reguły „nie tapuj większych” (drukowana, gdy nie animowany). */
 function crewVehiclePowerOf(state, id) {
   const object = state.objects.get(id);
@@ -668,6 +706,21 @@ function sacrificeCreatureCandidates(state, playerId, source, cost) {
     return o?.controllerId === playerId && o.kind === 'creature'
       && (!cost.sacrificeCreature?.another || id !== source.id);
   });
+}
+
+/**
+ * A-6/L41 (PMSSB-90/F-90-1): JEDNA enumeracja wariantów komendy dla kosztu „poświęć
+ * stwora" — wspólna dla oferty z pola bitwy i oferty z GROBU. Wcześniej gałąź grobowa
+ * pchała wariant GOŁY `{ objectId, abilityIndex, ability }`, a `performActivation`
+ * wymaga `ctx.sacrificeCreatureId` z listy kandydatów, więc oferowana (i wybierana przez
+ * bota) komenda była odrzucana: `illegal_ability:Nielegalny stwór do poświęcenia
+ * (koszt)`. To złamanie niezmienniczki L48/M384 „oferta = walidacja = wykonanie", a w
+ * partii na żywo `session.js:4009` rzuca „Bot wybrał nielegalną komendę" i przerywa grę.
+ * Brak kandydatów = brak wariantów = brak oferty (jak w gałęzi polowej).
+ */
+function sacrificeCreatureVariants(state, playerId, object, ability, id, index) {
+  return sacrificeCreatureCandidates(state, playerId, object, ability.cost)
+    .map((sacrificeCreatureId) => ({ objectId: id, abilityIndex: index, ability, sacrificeCreatureId }));
 }
 
 /** A-6: jeden predykat gospodarza dla oferty, walidacji i płatności (L41/L48). */
@@ -905,9 +958,7 @@ export function legalActivatedAbilities(state, playerId) {
         if (effectiveAbilityManaCost(state, playerId, ability, object) > mana) continue;
         if (ability.cost.tap && (object.tapped || tapBlockedBySummoningSickness(state, object, ability))) continue;
         if (!canPayColoredCost(state, playerId, colorRequirementsOf(ability.cost), colorExcludeId, manaPurposeForAbility(ability))) continue;
-        for (const sacrificeCreatureId of sacrificeCreatureCandidates(state, playerId, object, ability.cost)) {
-          out.push({ objectId: id, abilityIndex: index, ability, sacrificeCreatureId });
-        }
+        for (const wariant of sacrificeCreatureVariants(state, playerId, object, ability, id, index)) out.push(wariant);
         continue;
       }
       // Batch 44 (Angel's Herald): koszt „Sacrifice a green creature, a white
@@ -1066,14 +1117,29 @@ export function legalActivatedAbilities(state, playerId) {
         if (ability.cost?.tap && object.tapped) continue;
         if (ability.cost?.tap && tapBlockedBySummoningSickness(state, object, ability)) continue;
         if (!canPayColoredCost(state, playerId, colorRequirementsOf(ability.cost), colorExcludeId, manaPurposeForAbility(ability))) continue;
-        const artifactPool = state.zones.battlefield.filter((aid) => {
-          const cand = state.objects.get(aid);
-          return cand && cand.id !== id && cand.controllerId === playerId && !cand.tapped
-            && (cand.kind === 'artifact' || (cand.types ?? []).includes('Artifact'));
-        });
+        const artifactPool = otherUntappedArtifactIds(state, playerId, id);
         for (let x = 0; x <= artifactPool.length; x += 1) {
           out.push({ objectId: id, abilityIndex: index, ability, xValue: x, tapArtifactIds: artifactPool.slice(0, x) });
         }
+        continue;
+      }
+      // Bladewheel Chariot (Batch 73, audyt PR #185 F-6): „Tap two other
+      // untapped artifacts you control: This Vehicle becomes an artifact
+      // creature until end of turn." — STAŁA liczba artefaktów w koszcie, nie X
+      // (jak Merchant's Dockhand wyżej). Wzór crew (A2/A3): JEDNA oferta
+      // z domyślnym podzbiorem — człowiek zmienia wybór w kreatorze, silnik
+      // re-waliduje każdy podzbiór przy aktywacji (L48), bez enumeracji
+      // kombinacji (kardynalna zasada właściciela). Mniej niż N innych
+      // nietapniętych artefaktów = koszt niezapłacalny (CR 118.3) → brak oferty.
+      if (targetSpec.length === 0 && ability.cost?.tapOtherArtifacts != null) {
+        const needed = ability.cost.tapOtherArtifacts;
+        if ((ability.cost?.mana ?? 0) > mana) continue;
+        if (ability.cost?.tap && object.tapped) continue;
+        if (ability.cost?.tap && tapBlockedBySummoningSickness(state, object, ability)) continue;
+        if (!canPayColoredCost(state, playerId, colorRequirementsOf(ability.cost), colorExcludeId, manaPurposeForAbility(ability))) continue;
+        const pool = otherUntappedArtifactIds(state, playerId, id);
+        if (pool.length < needed) continue;
+        out.push({ objectId: id, abilityIndex: index, ability, tapArtifactIds: pool.slice(0, needed) });
         continue;
       }
       if (targetSpec.length === 0 && ability.cost?.manaX && ability.cost?.payLifeX) {
@@ -1367,6 +1433,13 @@ export function legalActivatedAbilities(state, playerId) {
       if (abilityConditionFailure(state, playerId, ability, object) !== null) continue;
       if ((ability.cost?.mana ?? 0) > producibleMana(state, playerId, null, {}, colorRequirementsOf(ability.cost))) continue;
       if (!canPayColoredCost(state, playerId, colorRequirementsOf(ability.cost), null, manaPurposeForAbility(ability))) continue;
+      // PMSSB-90/F-90-1: koszt niosący WYBÓR musi jechać w komendzie, inaczej oferta nie
+      // przechodzi walidacji (Necrosavant: „{3}{B}{B}, Sacrifice a creature"). Ta sama
+      // enumeracja co w gałęzi polowej (L41) — brak kandydatów daje brak oferty.
+      if (ability.cost?.sacrificeCreature) {
+        for (const wariant of sacrificeCreatureVariants(state, playerId, object, ability, id, index)) out.push(wariant);
+        continue;
+      }
       out.push({ objectId: id, abilityIndex: index, ability });
     }
   }
@@ -1810,20 +1883,31 @@ export function performActivation(state, ctx) {
   // M177/E (Merchant's Dockhand): walidacja artefaktów do kosztu „Tap X”
   // PRZED jakąkolwiek mutacją (CR 601.2h — odrzucona komenda nie tapuje).
   let artifactsToTap = null;
-  if (cost.tapXArtifacts) {
+  if (cost.tapXArtifacts || cost.tapOtherArtifacts != null) {
     const list = Array.isArray(tapArtifactIds) ? tapArtifactIds : [];
-    if ((xValue ?? list.length) !== list.length) throw new Error('X musi równać się liczbie tapowanych artefaktów');
+    // Bladewheel Chariot (Batch 73, audyt PR #185 F-6): „Tap two other untapped
+    // artifacts" to STAŁA liczba w koszcie; Merchant's Dockhand (M177/E) ma X.
+    // Różni je tylko sposób ustalenia wymaganej liczby — sama reguła „inne,
+    // nietapnięte, własne artefakty" siedzi w `otherUntappedArtifactIds`
+    // i jest TA sama, którą czyta oferta (L41/L48).
+    const fixedCount = cost.tapOtherArtifacts ?? null;
+    if (fixedCount != null) {
+      if (list.length !== fixedCount) throw new Error(`Koszt wymaga dokładnie ${fixedCount} innych nietapniętych artefaktów`);
+    } else if ((xValue ?? list.length) !== list.length) {
+      throw new Error('X musi równać się liczbie tapowanych artefaktów');
+    }
     // Uwaga C1 właściciela (2026-09-19): pusta lista jest legalna WYŁĄCZNIE
     // dla X=0 (CR 107.3 — X może być 0; aktywacja jałowa, ale legalna).
+    // Przy stałej liczbie ≥ 1 pusta lista odpada już wyżej.
     if (list.length === 0) {
-      if ((xValue ?? 0) !== 0) throw new Error('Pusta lista artefaktów legalna tylko przy X=0');
+      if (fixedCount == null && (xValue ?? 0) !== 0) throw new Error('Pusta lista artefaktów legalna tylko przy X=0');
     } else {
-      if (new Set(list).size !== list.length) throw new Error('Koszt Tap X artifacts wymaga listy różnych artefaktów');
+      if (new Set(list).size !== list.length) throw new Error('Koszt tapu artefaktów wymaga listy różnych artefaktów');
+      const pool = otherUntappedArtifactIds(state, playerId, objectId);
       for (const aid of list) {
         const cand = state.objects.get(aid);
-        const isArtifact = cand && (cand.kind === 'artifact' || (cand.types ?? []).includes('Artifact'));
-        if (!cand || cand.zone !== 'battlefield' || cand.controllerId !== playerId || cand.tapped || !isArtifact || cand.id === objectId) {
-          throw new Error('Nielegalny artefakt w koszcie Tap X artifacts');
+        if (!cand || cand.zone !== 'battlefield' || !pool.includes(aid)) {
+          throw new Error('Nielegalny artefakt w koszcie tapu artefaktów');
         }
       }
     }

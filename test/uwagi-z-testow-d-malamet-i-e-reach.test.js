@@ -38,12 +38,34 @@ function sesja(seed = 7) {
     [BOT_ID, parseDeckText(fs.readFileSync('decks/ixalan.txt', 'utf8'), registry).cardIds],
   ]);
   const session = createSession({ seed, registry, decks, pauseOnBotMoves: true });
-  for (let i = 0; i < 4; i += 1) {
+  // `pauseOnBotMoves: true` to tryb PRODUKTOWY (`src/table/main.js` — jedyny
+  // produktowy `createSession`): sesja zatrzymuje się po każdym istotnym
+  // zagraniu bota i czeka na klik „Rozumiem" w modalu „Ruch bota", a wznawia ją
+  // `session.continueBotPlay()`. Harness potwierdzający wyłącznie WŁASNE decyzje
+  // człowieka zostawia więc sesję w pauzie, a widok człowieka ma wtedy 0 komend.
+  // Audyt PR #185 (F-13): przy seed 9 `starterId` wypada inaczej i to BOT
+  // mulliganuje — gra stawała na `pendingMulligans=["p2"]`, `botPausePending=true`,
+  // a „naprawą" była zmiana seeda 9 → 7, nie harnessa (przesiew seeda maskuje
+  // lukę, która wraca przy każdej kolejnej partii danych). Pauzy potwierdzamy
+  // przed każdą własną decyzją i na końcu — aż do pełnego widoku.
+  let pauzyPotwierdzone = 0;
+  const potwierdźPauzyBota = () => {
+    for (let i = 0; i < 12 && session.botPausePending; i += 1) { session.continueBotPlay(); pauzyPotwierdzone += 1; }
+  };
+  // Drenowanie pauz na POCZĄTKU każdego obiegu łapie też pauzę, którą bot robi
+  // PO poprzedniej decyzji człowieka (przy seed 7: po mulliganie człowieka bot
+  // gra swój untap/upkeep i staje z `botPausePending=true` — stary harness
+  // oddawał wtedy testom sesję w pauzie, czyli dokładnie stan z F-13). Końcowe
+  // potwierdzenie po pętli byłoby martwe: pętla przerywa, gdy nie ma już decyzji
+  // mulliganu, a pauzy są w tym momencie zdrenowane (zmierzone mutacją F13-c —
+  // usunięcie go niczego nie czerwieni, więc go nie ma; L21: bez martwego kodu).
+  for (let i = 0; i < 8; i += 1) {
+    potwierdźPauzyBota();
     const m = session.view().legalCommands.find((c) => c.type === 'resolve_mulligan_choice');
     if (!m) break;
     session.apply(m);
   }
-  return { session, registry };
+  return { session, registry, pauzyPotwierdzone };
 }
 function put(session, registry, cardId, id, zone, controller) {
   const def = registry.get(cardId);
@@ -55,6 +77,30 @@ function put(session, registry, cardId, id, zone, controller) {
     ...(def.keywords?.length ? { keywords: [...def.keywords] } : {}),
   });
 }
+
+test('D/0: harness sesji potwierdza pauzy bota — przy seed 9 bot mulliganuje, a gra i tak dochodzi do main1 (F-13)', () => {
+  // Pomiar audytu (`.arena/probe9-session-mulligan.mjs` + sonda E2.10): stary
+  // harness przy seed 9 kończył z `botPausePending=true`, `pendingMulligans=["p2"]`,
+  // krokiem `untap` i ZEREM komend w widoku człowieka; po potwierdzeniu pauz
+  // (dwa–trzy kliknięcia „Rozumiem") ta sama sesja stoi w `main1` z pełnymi
+  // ofertami. Produkt nie wieszał się nigdy — wieszał się test (L21: harness
+  // mierzy siebie, nie produkt).
+  const { session, pauzyPotwierdzone } = sesja(9);
+  assert.ok(pauzyPotwierdzone > 0,
+    'harness działa w trybie produktowym `pauseOnBotMoves` i faktycznie potwierdził pauzę bota');
+  assert.equal(session.botPausePending, false, 'sesja nie stoi w pauzie na ruch bota');
+  assert.deepEqual(session.state.pendingMulligans, [], 'mulligan bota rozliczony, nie został w poczekalni');
+  assert.equal(session.state.turn.step, 'main1', 'gra doszła do pierwszej fazy głównej');
+  assert.ok(session.view().legalCommands.length > 0,
+    `widok człowieka ma komendy (stary harness: 0): ${session.view().legalCommands.length}`);
+  // Seed 7 (domyślny dla reszty pliku): bot NIE mulliganuje, ale i tak robi pauzę
+  // po decyzji człowieka — stary harness zostawiał tu sesję w `upkeep` z pauzą,
+  // więc ten seed też musi wyjść czysty (inaczej luka harnessa wraca po cichu).
+  const seedSiedem = sesja(7);
+  assert.equal(seedSiedem.session.botPausePending, false, 'seed 7: sesja też nie zostaje w pauzie');
+  assert.equal(seedSiedem.session.state.turn.step, 'main1', 'seed 7: gra w main1');
+  assert.ok(seedSiedem.session.view().legalCommands.length > 0, 'seed 7: widok ma komendy');
+});
 
 test('D/1: walka z Malamet Battle Glyph (rzut człowieka) — linie efektów w buforze modala „Rozgrywka”', () => {
   const { session, registry } = sesja();
@@ -84,7 +130,7 @@ test('D/1: walka z Malamet Battle Glyph (rzut człowieka) — linie efektów w b
 });
 
 test('D/2: walka z Malamet Battle Glyph trafia też do przebiegu tur (panel „Przebieg tur”)', () => {
-  const { session, registry } = sesja(7);
+  const { session, registry } = sesja(9);
   const state = session.state;
   state.turn = jumpToStep(state.turn, 'main', HUMAN_ID);
   state.turn.activePlayerId = HUMAN_ID;

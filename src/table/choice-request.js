@@ -1758,7 +1758,14 @@ export function renderMultiTargetWizard(host, { view, session, plan, commands, s
     } else if (tapXMode) {
       // Uwaga C1 właściciela (2026-09-19): status sprzęga licznik X
       // z zaznaczeniami — „wybierz dokładnie X artefaktów” (X=0 = pusto).
-      if (cmd) {
+      // Batch 73 (Bladewheel Chariot, audyt PR #185 F-6): przy STAŁEJ liczbie
+      // (`tapFixedCount`) nie ma steppera X, więc status mówi tylko o liczbie
+      // zaznaczeń — inaczej ekran pokazywałby „X = null" (L29: wyciek stanu).
+      const fixed = Number.isInteger(plan.tapFixedCount) ? plan.tapFixedCount : null;
+      if (fixed != null) {
+        if (cmd) setStatus(`Zaznaczono ${chosen.size}/${fixed} artefaktów — gotowe`, false);
+        else setStatus(`Zaznacz dokładnie ${fixed} artefakty (masz ${chosen.size})`, true);
+      } else if (cmd) {
         setStatus(xValue === 0
           ? 'X = 0 — aktywacja bez efektu (jałowa, ale legalna)'
           : `X = ${xValue} — zaznaczono ${chosen.size}/${xValue} artefaktów — gotowe`, false);

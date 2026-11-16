@@ -7,10 +7,41 @@
   "type_line": "Instant",
   "oracle_text": "Put two +1/+1 counters on target creature.\nDelirium — Put three +1/+1 counters on that creature instead if there are four or more card types among cards in your graveyard.",
   "colors": ["G"],
+  "color_identity": ["G"],
+  "keywords": ["Delirium"],
   "set": "soi",
   "set_name": "Shadows over Innistrad",
   "collector_number": "217",
   "rarity": "common",
   "image_uris": { "large": "https://cards.scryfall.io/large/front/5/a/5a274689-82f1-488a-baf8-cd8ef3477b72.jpg?1783937725", "normal": "https://cards.scryfall.io/normal/front/5/a/5a274689-82f1-488a-baf8-cd8ef3477b72.jpg?1783937725" },
+  "rulings": [
+    {
+      "date": "2016-04-08",
+      "source": "wotc",
+      "comment": "The card types in Magic are artifact, battle, creature, enchantment, instant, kindred, land, planeswalker, and sorcery. Supertypes (such as legendary and basic) and subtypes (such as Human and Equipment) are not counted."
+    },
+    {
+      "date": "2016-04-08",
+      "source": "wotc",
+      "comment": "The number of card types matters, not the number of cards. For example, Wicker Witch (an artifact creature) along with Catalog (an instant) and Chaplain's Blessing (a sorcery) will enable delirium."
+    },
+    {
+      "date": "2016-04-08",
+      "source": "wotc",
+      "comment": "Because you consider only the characteristics of a double-faced card's front face while it's not on the battlefield, the types of its back face won't be counted for delirium."
+    },
+    {
+      "date": "2016-04-08",
+      "source": "wotc",
+      "comment": "In some rare cases, you can have a token or a copy of a spell in your graveyard at the moment that an object's delirium ability counts the card types among cards in your graveyard, before that token or copy ceases to exist. Because tokens and copies of spells are not cards, even if they are copies of cards, their types will never be counted."
+    },
+    {
+      "date": "2016-04-08",
+      "source": "wotc",
+      "comment": "Some delirium abilities that appear on instants and sorceries use the word \"instead.\" These spells have an upgraded effect when they resolve if there are four or more card types among cards in your graveyard. They check that number only while they're resolving and don't count themselves, since they aren't in your graveyard yet. You only get the upgraded effect, not both effects."
+    }
+  ],
+  "rulingsSource": "https://api.scryfall.com/cards/soi/217/rulings",
+  "rulingsPobrano": "2026-11-15",
   "pobrano": "2026-11-11"
 }

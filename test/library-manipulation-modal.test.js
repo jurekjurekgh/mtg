@@ -152,6 +152,52 @@ function playCollectingModals(session, { maxMoves = 400 } = {}) {
 }
 
 test('E4 (modal): własny surveil z Curate — nazwy w modalu; surveil bota — bez nazw (FoW)', () => {
+  // F-14 (audyt PR #185): ten przebieg INTEGRACYJNY został w PR #185 zastąpiony
+  // wywołaniem `describeGameEvent` na ręcznie zbudowanym zdarzeniu, pod hasłem
+  // „napraw czerwone CI". Jednostkowy opis zdarzenia nie sprawdza drogi zdarzenia
+  // do modala (`playCollectingModals` → `noteBotMove` → bufor modala), więc
+  // regresja FoW w produkcie (nazwy kart przeciwnika w modalu człowieka) albo
+  // zaginięcie linii surveil w ogóle przeszłyby bez czerwieni. Test jednostkowy
+  // został jako DODATEK (niżej), a przebieg integracyjny wraca.
+  //
+  // Czerwone CI nie było wadą produktu: dawne seedy [3, 45] przestały dawać
+  // OBA warunki po kolejnych zmianach talii i bota. Pomiar RED (E2.11, hunter
+  // `.arena/hunter-e211.mjs` na obecnych taliach): seed 3 → własne=1, bota=0;
+  // seed 45 → własne=0, bota=0. Naprawa to re-hunt seedów (konwencja L25),
+  // nie usunięcie pinu. Hunter 1–16 na lustrze forgotten-realms-wug:
+  // OBA warunki naraz dają 1, 7 i 13 (kolejne po 16 niepotrzebne — trzy
+  // wystarczą, żeby pin nie wisiał na jednym rozdaniu).
+  const NAZWY_TALII = new Set(
+    parseDeckText(fs.readFileSync('decks/forgotten-realms-wug.txt', 'utf8'), REGISTRY)
+      .cardIds.map((cardId) => REGISTRY.get(cardId)?.name),
+  );
+  let checkedMine = 0;
+  let checkedBots = 0;
+  for (const seed of [1, 7, 13]) {
+    const { modalTexts } = playCollectingModals(makeSession(seed));
+    for (const line of modalTexts.filter((t) => /^Wykonujesz surveil/.test(t ?? ''))) {
+      checkedMine += 1;
+      // M100/E10 (P4): poprawna odmiana — „1 kartę / 2 karty / 5 kart" — i nazwy.
+      assert.match(line, /patrzy na \d+ (kartę|karty|kart): \S/, `własne surveil bez nazw: ${line}`);
+      // Nazwy po dwukropku to PRAWDZIWE nazwy kart z talii (a nie surowe cardId
+      // ani '?' z niedziałającego helpera): surveil patrzy na własną bibliotekę.
+      const podane = line.replace(/\)$/, '').split(': ').slice(1).join(': ').split(', ');
+      assert.ok(podane.length > 0 && podane.every((n) => NAZWY_TALII.has(n)),
+        `nazwy w modalu nie pochodzą z talii (cardId zamiast nazwy?): ${line}`);
+    }
+    for (const line of modalTexts.filter((t) => /^Nieprzyjaciel wykonuje surveil/.test(t ?? ''))) {
+      checkedBots += 1;
+      assert.ok(!/patrzy na \d+ (kartę|karty|kart): /.test(line),
+        `surveil BOTA z nazwami (wyciek FoW): ${line}`);
+      assert.ok(![...NAZWY_TALII].some((n) => n && line.includes(n)),
+        `nazwa karty w linii surveil bota (wyciek FoW): ${line}`);
+    }
+  }
+  assert.ok(checkedMine > 0, 'żaden seed nie dał własnego surveil w modalu — test nic nie sprawdził');
+  assert.ok(checkedBots > 0, 'żaden seed nie dał surveil bota w modalu — test nic nie sprawdził');
+});
+
+test('E4 (opis zdarzenia): surveil_started — własny z nazwami, bota bez (FoW)', () => {
   // surveil_started: własny gracz widzi nazwy kart, przeciwnika nie (FoW).
   const mine = describeGameEvent(
     { type: 'surveil_started', playerId: 'p1', amount: 2, cardIds: ['curate-stx', 'basic-island'] },

@@ -582,6 +582,25 @@ export function triggerTargetCandidates(state, spec, sourceObject, extra = {}) {
         && (!hexproofBlocked(object) && !protectedBlocked(object));
     });
   }
+  // Audyt PR #185 (F-3, Spring-Loaded Sawblades — „When this artifact enters,
+  // it deals 5 damage to target tapped creature an opponent controls"): typ
+  // `tapped_creature` istniał w ścieżce CZARÓW (spells.js: oferta + walidacja)
+  // i w renderze, ale NIE w triggerach — zdolność triggerowana nie miała więc
+  // jak wyrazić „tapnięty stwór", a wpis batcha zastąpił brak podrabianym
+  // kluczem `qualifier`, którego nie czytał nikt (celował w dowolnego stwora).
+  // Lustro spells.js (L41/L48): ten sam predykat + flaga `opponentControls`,
+  // z hexproof/shroud i ochroną liczoną WZGLĘDEM ŹRÓDŁA triggera (CR 702.11/
+  // 702.18/702.16b), jak w pozostałych gałęziach tej funkcji.
+  if (spec.type === 'tapped_creature' || spec.type === 'untapped_creature') {
+    const wantTapped = spec.type === 'tapped_creature';
+    return state.zones.battlefield.filter((objectId) => {
+      const object = state.objects.get(objectId);
+      if (!object || object.zone !== 'battlefield' || object.kind !== 'creature') return false;
+      if (Boolean(object.tapped) !== wantTapped) return false;
+      if (spec.opponentControls && object.controllerId === sourceObject.controllerId) return false;
+      return !hexproofBlocked(object) && !protectedBlocked(object);
+    });
+  }
   if (spec.type === 'land_opponent_controls') {
     // Batch60 (Stensia Innkeeper, EMN): „tap target land an opponent
     // controls" — lądy PRZECIWNIKA kontrolera źródła (nie własne).
