@@ -178,3 +178,69 @@ test('PMSSB-90/F-90-9d: STRAŻNIK L41 — jedna skala dla `damage_each_opponent`
   assert.ok((zrodlo.match(/opponentLifeEffectValue\(view, e/g) ?? []).length >= 5,
     'tabela ETB/payoff dołączyła do wspólnych użyć skali');
 });
+
+// ---------------------------------------------------------------------------
+// F-90/2 (fala B) — craft bez wyceny. Pomiar PRZED: `activate_ability(saw#1)` =
+// −2,00 z materiałem na polu (Angel's Feather) i w grobie (Cloak of the Bat),
+// czyli 0 za skutek minus koszt many — bot NIGDY nie craftował, choć tył DFC to
+// Vehicle 5/5 z dwiema zdolnościami, a animację tego samego pojazdu bot wycenia
+// na +10 (okno ataku) / +13 (okno obrony). Jedyny ślad `craft_transform` w
+// heuristic-bot.js to wpis w zbiorze efektów KUMULUJĄCYCH (żadnej wyceny), więc
+// pętla efektów aktywacji kończyła na `default` (L50: „akcja bez wyceny").
+// Poprawne dziś (kotwice): brak oferty bez drugiego artefaktu i przy manie 2.
+// ---------------------------------------------------------------------------
+
+/** Oferta craft w decyzji bota (etykieta `activate_ability(<id>#1)`). */
+const craftScore = (d, id = 'saw') => (d.opcje ?? []).find((o) => String(o.cmd).startsWith(`activate_ability(${id}#1`));
+
+test('PMSSB-90/F-90-2a: craft z materiałem na polu jest wyceniony dodatnio i bot go WYBIERA', () => {
+  const { state, wariant } = budowa('SS-03', 0);
+  const d = decyzja(state, 'p1');
+  const oferta = craftScore(d);
+  assert.ok(oferta, `${wariant}: brak oferty craft wśród ${(d.opcje ?? []).map((o) => o.cmd).join(' | ')}`);
+  assert.ok(oferta.score > 0, `${wariant}: craft z materiałem musi być warty więcej niż 0 (pomiar PRZED: −2,00)`);
+  assert.equal(d.cmd.type, 'activate_ability', `${wariant}: bot gra craft, a nie pasuje`);
+});
+
+test('PMSSB-90/F-90-2b: craft z materiałem w GROBIE jest wyceniony tak samo (CR 702.167a: artefakt z pola albo karta z grobu)', () => {
+  const { state, wariant } = budowa('SS-03', 1);
+  const d = decyzja(state, 'p1');
+  const oferta = craftScore(d);
+  assert.ok(oferta, `${wariant}: brak oferty craft`);
+  assert.ok(oferta.score > 0, `${wariant}: materiał w grobie też umożliwia craft (pomiar PRZED: −2,00)`);
+});
+
+test('PMSSB-90/F-90-2c: KOTWICA — bez drugiego artefaktu i przy manie 2 oferty craft NIE MA', () => {
+  for (const i of [2, 3]) {
+    const { state, wariant } = budowa('SS-03', i);
+    const d = decyzja(state, 'p1');
+    assert.equal(craftScore(d), undefined, `${wariant}: oferta craft nie może istnieć (silnik jej nie daje)`);
+    assert.notEqual(d.cmd?.type, 'activate_ability', `${wariant}: bot nie próbuje craftować bez materiału/many`);
+  }
+});
+
+test('PMSSB-90/F-90-2d: wartość craftu płaci za WYGNANY materiał (drogi artefakt = mniejszy zysk)', () => {
+  // `resolve_craft_exile` wybiera NAJSŁABSZY artefakt (`finish(40 − value)`), więc
+  // wycena craftu musi odejmować ten sam materiał: śmieć (Angel's Feather, koszt 2)
+  // zostawia więcej niż cenny sprzęt (Warrior's Sword, koszt 4).
+  const budowaZ = (material) => stan({
+    krok: 'main1',
+    mana: { p1: 8 },
+    pole: [
+      { id: 'saw', karta: 'spring-loaded-sawblades', gracz: 'p1' },
+      { id: 'material', karta: material, gracz: 'p1' },
+    ],
+  });
+  const smieć = craftScore(decyzja(budowaZ('angels-feather'), 'p1'))?.score;
+  const drogi = craftScore(decyzja(budowaZ('warriors-sword'), 'p1'))?.score;
+  assert.ok(typeof smieć === 'number' && typeof drogi === 'number', `brak ofert: ${smieć} / ${drogi}`);
+  assert.ok(smieć > drogi, `materiał musi być kosztem: śmieć ${smieć} vs Warrior's Sword ${drogi}`);
+});
+
+test('PMSSB-90/F-90-2e: STRAŻNIK L41 — `craft_transform` ma wycenę, nie tylko wpis w zbiorze efektów kumulujących', () => {
+  const zrodlo = fs.readFileSync(new URL('../src/controllers/heuristic-bot.js', import.meta.url), 'utf8');
+  const wystapienia = (zrodlo.match(/'craft_transform'/g) ?? []).length;
+  assert.ok(wystapienia >= 2, `oczekiwane ≥2 wystąpienia typu (zbiór kumulujący + wycena), jest ${wystapienia}`);
+  assert.match(zrodlo, /effect\.type === 'craft_transform'/, 'pętla efektów aktywacji musi rozpoznawać craft');
+  assert.match(zrodlo, /function craftTransformValue\(/, 'wycena craft ma jedną nazwaną funkcję (L41)');
+});

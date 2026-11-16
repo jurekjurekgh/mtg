@@ -9632,6 +9632,53 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   }
 
   /**
+   * PMSSB-90/F-90-2 (L50/L41): wartość CRAFT (CR 702.167a) — „{3}{W}, wygnaj ten
+   * artefakt i drugi artefakt, który kontrolujesz, ALBO kartę artefaktu z twojego
+   * grobu: wraca do gry przemieniony". Typ `craft_transform` miał w tym pliku
+   * JEDEN ślad — wpis w zbiorze efektów kumulujących — więc pętla efektów
+   * aktywacji nie wyceniała skutku wcale i `activate_ability(saw#1)` dostawało
+   * 0 minus koszt many (pomiar SS-03: −2,00 z materiałem na polu I w grobie, czyli
+   * bot nigdy nie craftował, choć animację powstałego Vehicle 5/5 wycenia na
+   * +10 w oknie ataku i +13 w oknie obrony).
+   *
+   * Model = bilans MATERIAŁU, tą samą miarą co `bodyWorth`/`resolve_craft_exile`
+   * (`permanentMaterialValue` = 2×P + T + koszt many): tył DFC minus wygnany front
+   * minus najsłabszy dostępny materiał. Wybór ofiary robi `resolve_craft_exile`
+   * (`finish(40 − value)`, audyt PR #131/F7), czyli bot realnie oddaje NAJSŁABSZY
+   * artefakt — dlatego koszt liczymy po minimum, nie po sumie. Brak drugiej strony
+   * (M155: craft bez `transformTo` to no-op) i brak materiału (silnik wtedy w ogóle
+   * nie oferuje craft) dają 0 — żadnego bonusu z sufitu (M429).
+   */
+  function craftMaterialValueOf(object) {
+    const d = cardDef(object?.cardId) ?? {};
+    return permanentMaterialValue({
+      power: object?.power ?? d.power,
+      toughness: object?.toughness ?? d.toughness,
+      manaCost: object?.manaCost ?? d.manaCost,
+    });
+  }
+
+  /** Kandydaci na materiał craft: własne artefakty z pola (bez źródła) + własne karty artefaktów z grobu. */
+  function craftMaterialCandidates(view, source) {
+    const artefakt = (o) => Boolean(o) && (o.kind === 'artifact' || (o.types ?? []).includes('Artifact'));
+    const moj = (o) => (o.controllerId ?? o.ownerId) === view.playerId;
+    const zPola = (view.zones?.battlefield ?? []).filter((o) => artefakt(o) && moj(o) && o.id !== source?.id);
+    // Grób jest strefą JAWNĄ, więc widok niesie też grób przeciwnika — craft mówi
+    // „z TWOJEGO grobu" (M125/B: przynależność po właścicielu).
+    const zGrob = (view.zones?.graveyard ?? []).filter((o) => artefakt(o) && moj(o));
+    return [...zPola, ...zGrob];
+  }
+
+  function craftTransformValue(view, source, def) {
+    const backDef = cardDef(def?.transformTo ?? source?.transformTo);
+    if (!source || !backDef) return 0;
+    const material = craftMaterialCandidates(view, source);
+    if (material.length === 0) return 0;
+    return craftMaterialValueOf(backDef) - craftMaterialValueOf(source)
+      - Math.min(...material.map((o) => craftMaterialValueOf(o)));
+  }
+
+  /**
    * L (zgłoszenie właściciela 2026-10-29, Ambulatory Edifice): „bot korzysta
    * z ETB i płaci 2 życia praktycznie za nic — nadaje −1/−1 kreaturze 2/2.
    * Ta zdolność ma sens TYLKO wtedy, gdy zadaje lethal damage. Ale nawet
@@ -15496,6 +15543,12 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           if (effect.type === 'grant_abilities'
             && effect.duration === 'until_source_cast_from_exile') {
             score += linkedManaGrantValue(view, effect, target);
+          }
+          // PMSSB-90/F-90-2: craft — bilans materiału (tył DFC minus wygnany front
+          // minus najsłabszy dostępny artefakt). Bez tego wpis lądował w `default`
+          // i aktywacja miała wartość 0 (pomiar: −2,00 z materiałem na polu).
+          if (effect.type === 'craft_transform') {
+            score += craftTransformValue(view, source, def);
           }
           // B54/s4008: ta rodzina miała wycenę tylko w czarach, aktywacja
           // zostawała na bazie 2 nawet gdy zabijała przeciwnika.
