@@ -192,7 +192,7 @@ GREEN → mutacja kontrolna → `npm test` + `npm run build` → commit + push**
       (Oracle: ward {2} + statyczny `equipped`; trigger `you_cast_noncreature_spell`), punkt
       „Tap-zdolności" (połączony z F-20), „Bramki" (`npm test` 10 280/10 280 i `ability-cost-pips`
       9/9 na stanie końcowym PR — przyczyną czerwieni były FABRYKOWANE zdolności, nie „2
-      pre-existing fail"), „Otwarte" (wszystkie 10 kart talio­walnych jest w 9 taliach, nie w
+      pre-existing fail"), „Otwarte" (wszystkie 10 kart taliowalnych jest w 9 taliach, nie w
       żadnej) i „Jawne granice". Brakujące wpisy dokumentacyjne dopisane w commicie `a764f63`:
       „2026-11-11 — Batch 73" i „2026-11-15 — Audyt techniczny PR #185" w
       `docs/PROJECT_HISTORY.md` oraz **M464** w `docs/ENGINE_MILESTONES.md`.
@@ -251,24 +251,97 @@ GREEN → mutacja kontrolna → `npm test` + `npm run build` → commit + push**
       craft i ward działają end-to-end (wadą była ścieżka DANYCH `ward`, czyli F-7),
       sesja przy seed 9 nie jest zepsuta (luką był helper `sesja()`, czyli F-13).
 
+- [x] E2.14 — F-21 (znaleziony w E3, Żywy Tester): warunek zdolności statycznej bez
+      klauzuli na kaflu. `describeStatic` miał ręczny łańcuch `if` na **11 z 17** kluczy
+      `condition`, więc sześć kart drukowało SAM skutek — Leonin Lightbringer (Batch 73)
+      pokazywał „Ward {2} · +1/+1" zamiast „+1/+1 · gdy ma wyposażenie", choć silnik od
+      naprawy F-2 (`staticConditionHolds`, CR 301.5a/303.4b) liczy ten bonus tylko z
+      wyposażeniem. Naprawa: jedna eksportowana tabela `STATIC_CONDITION_CLAUSES`
+      (17 wpisów = wszystkie klucze obecne w danych, wraz z negacjami `equipped: false`
+      i `activePlayerIsController: false`) + `staticConditionClauses(ability)`;
+      `describeStatic` iteruje tabelę, słownictwo wspólne z `triggerConditionClause`
+      („delirium") i z badge'em (`STATIC_CONDITION_MECHANIC_LABELS` → „Storied"), próg
+      Threshold dalej z jednego źródła (F-17). Pomiar: cenzus katalogu
+      (`.arena/probe-e3d-linie.mjs` — 19 kart / 22 zdolności statyczne z warunkiem /
+      17 kluczy), migawka linii reguł 713 kart PRZED/PO (`.arena/f21-rules-przed.json` vs
+      `-po.json`) — zmieniło się **6 z 713** linii, dokładnie te sześć kart; partia
+      kontrolna na tym samym seedzie 25 (`.arena/zt-e3-g11-f21.txt`): wynik i liczby akcji
+      identyczne (12/9, noop 50), kafel z klauzulą, detektory 0. Piny: 6
+      (`test/audyt-pr185-f21-warunki-statyczne-batch73.test.js`), w tym strażnik zbioru
+      kluczy w OBIE strony (brak klauzuli = RED, martwy wpis = RED), strażnik skuteczności
+      dla wszystkich 22 zdolności i regresja 12 linii PRZED. Mutacje **7/7**
+      (`.arena/mutacje-f21.py`).
+- [x] E2.15 — F-22 (znaleziony w E3, audyty strukturalne): migracja talii Dominaria
+      w PR #185 zostawiła martwe nazwy. `tools/bot-tie-audit.mjs` (`AUDIT_PAIRS`, para 9)
+      wskazywał usunięty `decks/dominaria-wu.txt`, więc domyślny audyt remisów bota padał
+      `ENOENT` w `deckOf` — pomiar E3 nie istniał, a bramy były zielone, bo
+      `test/audyt-bot-walka-remisy.test.js` podaje własną listę par (ma już `dominaria-ub`).
+      Drugi ślad tej samej migracji: `deckFiles` w `test/real-cards-batch25.test.js` i
+      `-batch26.test.js` wymieniały `dominaria-brg` przy `if (!fs.existsSync(path)) continue;`
+      — talia znikała z pomiaru BEZ śladu (L21). Naprawa: `dominaria-ub` w `AUDIT_PAIRS`
+      (jedna migracja, nie dwie prawdy), `dominaria-wrg` + głośny
+      `assert.ok(fs.existsSync(path), …)` w obu testach batchy. Pomiar PO
+      (`.arena/e3-bot-tie-audit-po.log`, `--gry=2`): audyt działa — **24 partie, 11 364
+      decyzje**, single 0, decided 10 795, tie_top 569, tie_all **0**, rozróznialne 14
+      (`attack` 9, `cast_spell` 3, `block` 2, `play_land` **0** — zgodnie z bramką).
+      Nakładanie `AUDIT_PAIRS` na `BENCH_DECKS` = 3 talie i jest PRE-ISTNIEJĄCE (pomiar bazy
+      `0d0a12b`: te same trzy pod starymi nazwami, L192) — przypięte pinem, żeby nie rosło
+      po cichu. Piny: 4 (`test/audyt-pr185-f22-martwe-nazwy-talii.test.js`), mutacje **5/5**
+      (`.arena/mutacje-f22.py`).
+
 ## E3. Pętla jakości (ADR 0021 pkt 4)
 
-- [ ] Żywy Tester na taliach z kartami batcha 73 (`ixalan`, `dominaria-wrg`,
+- [x] Żywy Tester na taliach z kartami batcha 73 (`ixalan`, `dominaria-wrg`,
       `mirrodin-wu`, `innistrad-brg`, `theros`, `ravnica-bg`,
       `forgotten-realms-wug`, `worek-legend`, `worek-dziki`) — osie audytu
       z `TESTER_STOLU.md`: sensowność działań bota, kompletność logu/modala,
       ptaszki auto-pass. Wymaga `npm run build` przed każdym pomiarem (L76).
-- [ ] Audyty strukturalne: `tools/event-contract-audit.mjs`,
+      **Stan (2026-11-15):** **13 partii** (g1–g12 + powtórka seeda 25 po naprawie
+      F-21), wszystkie `== DETEKTORY: brak zgłoszeń ==` i `== NIEWYCENIONE == brak`;
+      transkrypty `.arena/zt-e3-g*.txt`, tabela partii i pokrycie kart w raporcie §9.
+      Pokrycie kolekcji 645–655 na żywym stole: **11/11 wpisów** (w tym tył DFC
+      Bladewheel Chariot przez craft). Partie produkcyjne (g1–g6) nie odwiedziły czterech
+      kart (każda ma jedną kopię w jednej talii), więc powstały talie chwilowe
+      `decks/audyt-batch73.txt` i `decks/audyt-batch73-ward.txt` (procedura M331 z
+      `docs/setup/TESTER_STOLU.md`: talia + `npm run build`, bo lista talii jest wpięta
+      w artefakt) — obie USUNIĘTE przed bramką i artefakt przebudowany (katalog wrócił
+      do 32 talii, strażnik M178/ADR 0023 zielony). Z E3 wyszły dwa znaleziska:
+      **F-21** (kafel Leonina: skutek bez warunku — naprawa E2.14) i **F-22** (martwy
+      `bot-tie-audit` — naprawa E2.15).
+- [x] Audyty strukturalne: `tools/event-contract-audit.mjs`,
       `tools/bot-tie-audit.mjs`, `tools/scoring-unvalued-audit.mjs`,
       `tools/family-audit.mjs`, `node tools/cr-numery.mjs --cr …`.
-- [ ] Szybki profil benchmarku TYLKO jeśli zmieniam wyceny bota
+      **Stan (2026-11-15):** event-contract — „Kontrakty zdarzeń: brak naruszeń.
+      Kasowanie obiektów z pola bitwy: brak naruszeń."; family — „Rodziny efektów
+      i mutacje pól: brak naruszeń."; scoring-unvalued — 12 partii (niedokończone 0),
+      6381 komend, „decyzje bez dedykowanej wyceny: BRAK"; `cr-numery --cr` — tabela 581
+      numerów (CR 2026-11-06), kod 561 unikalnych w **6771** cytatach, „WYNIK: OK"
+      (+4 cytaty z komentarzy F-21: 611.3a, 301.5a, 303.4b, 207.2c); bot-tie-audit —
+      PRZED: `ENOENT` (F-22), PO: 24 partie / 11 364 decyzje / tie_all 0 / rozróznialne 14
+      (`play_land` 0). Logi `.arena/e3-*.log`.
+- [x] Szybki profil benchmarku TYLKO jeśli zmieniam wyceny bota
       (`node tools/benchmark.mjs`, ~2–4 min); pełne B0 wyłącznie na komendę
       właściciela (ADR 0018).
+      **Stan (2026-11-15):** wyceny bota NIE były zmieniane (F-21 to prezenter, F-22 to
+      narzędzia i testy), więc szybki profil nie był potrzebny; bramka
+      `test/bot-benchmark.test.js` (10/10) i golden-master `test/bot-scoring-snapshot.test.js`
+      lecą w `npm run test:slow` — wynik w E4.
 
 ## E4. Bramy i domknięcie sesji
 
-- [ ] `npm test` (szybki rdzeń) i `npm run build` zielone po każdym commicie.
-- [ ] `npm run test:all` (brama PR) z cichym logowaniem i zapisem liczb.
+- [x] `npm test` (szybki rdzeń) i `npm run build` zielone po każdym commicie.
+      **Stan (2026-11-15, drzewo końcowe):** `npm test` **10 390/10 390** (fail 0,
+      skipped 0, EXIT 0, ~150 s), `npm run test:slow` **282/282** (EXIT 0),
+      `npm run build` **79 modułów / 5900,7 kB** (EXIT 0); logi `.arena/e4-*.log`
+      z kodem powrotu w pliku. Pojedyncze commity F-21 (`7424245`, 10 386/10 386)
+      i F-22 (`e35be93`) mierzone osobno — ADR 0020 A–D.
+- [x] `npm run test:all` (brama PR) z cichym logowaniem i zapisem liczb.
+      **Stan (2026-11-15):** **10 672/10 672**, fail 0, skipped 0, EXIT 0
+      (= rozłączne klasy fast 10 390 + slow 282 z `tools/test-manifest.json`),
+      log `.arena/e4-all.log`. Szybki profil benchmarku POMINIĘTY świadomie:
+      wyceny bota niezmienione, a bramka `test/bot-benchmark.test.js` (próg vs
+      aggro **0.69** z F-12) leci w `test:slow` — pełne B0 tylko na komendę
+      właściciela (ADR 0018). Tabela bramy: raport §10.
 - [ ] `docs/PROJECT_HISTORY.md` + `docs/setup/HANDOFF_2026-11-15.md`
       (stan, decyzje, kolejka) + aktualizacja opisu PR kumulatywnie.
 - [ ] Lekcje: nowe wpisy do `docs/LESSONS.md` TYLKO jeśli klasa jest nowa;
