@@ -59,8 +59,10 @@ wiersz rejestru rodzin @72, kamień **M465** w `docs/ENGINE_MILESTONES.md`, wpis
 
 ## 2. Bramy na drzewie końcowym (pomiar 2026-11-16, po `bc58123` + dokumentacja)
 
-- `npm test` (fast) — **10 437 / 10 437**, `fail 0`, `skipped 0`, EXIT 0 (`.arena/f90-10b-fast.log`;
-  PRZED pętlą 10 390 — przybyło 46 pinów pętli + 1 z fali F-90/9)
+- `npm test` (fast) — **10 437 / 10 437**, `fail 0`, `skipped 0`, EXIT 0 — zmierzone
+  dwukrotnie: po `bc58123` (`.arena/f90-10b-fast.log`) i ponownie na HEAD `695727c`
+  (commit dokumentacyjny, `.arena/dok-fast.log`); PRZED pętlą 10 390 — przybyło 46 pinów
+  pętli + 1 z fali F-90/9
 - `npm run test:slow` — **282 / 282**, EXIT 0
 - `npm run test:all` (brama PR) — **10 719 / 10 719**, `fail 0`, EXIT 0 (`.arena/pmssb90-all.log`;
   PRZED pętlą 10 672)
@@ -77,7 +79,9 @@ wiersz rejestru rodzin @72, kamień **M465** w `docs/ENGINE_MILESTONES.md`, wpis
   PROJECT_HISTORY.md, plany, handoffy) go NIE obciążają
 - Szybki profil benchmarku **pominięty świadomie** (ADR 0018): `test/bot-benchmark.test.js` z progiem
   vs aggro 0.69 leci w `test:slow`; pełne B0 (~2,5 h) tylko na komendę właściciela
-- CI GitHub Actions (check `test` na PR #186) — sprawdzić po pushu: `gh pr checks 186`
+- CI GitHub Actions (check `test` na PR #186) — **pass, 5m50s** dla HEAD `695727c`
+  (run 43878458255); każdy kolejny push uruchamia go ponownie — stan sprawdzić
+  `gh pr checks 186`
 - Katalog: **713** `defineCard({`, **649** `supported`, **32** talie (bez zmian — pętla nie dodała kart)
 
 ## 3. Kolejka: co zostało otwarte (z root cause'em, bez cichego skipu)
