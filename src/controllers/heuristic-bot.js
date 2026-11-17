@@ -15520,6 +15520,14 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         if (wastefulStep(view) && !isGraveyardReanimate) {
           return finish(taps || tapsCreature ? -30 : -5);
         }
+        // Vaan (`pendingExileCast`): w trakcie okna decyzji z exile bot nie
+        // potrzebuje ręcznej aktywacji many (oferta `cast: true` wymaga już
+        // tylko `producibleMana`, a kart z ręki nie wolno tu rzucać) — nie
+        // marnujemy zasobów ani nie rywalizujemy z `cast: false`.
+        if (effects.some((e) => e?.type === 'add_mana')
+          && (view.legalCommands ?? []).some((c) => c.type === 'resolve_exile_cast')) {
+          return finish(taps || tapsCreature ? -30 : -5);
+        }
         // M167/D (Apprentice Wizard): zdolność produkująca MANĘ bez niczego
         // zagrawalnego w ręce to marnotrawstwo — mana wyparuje, a artefakt/
         // stwór zostaje tapowany (ta sama reguła co tap_for_mana, M127).

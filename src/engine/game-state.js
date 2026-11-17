@@ -3871,7 +3871,10 @@ export function execute(state, input) {
   // (treasure) — jak pay_x_cast_from_graveyard ogranicza się do prostych
   // czarów. abilityWindowCast w castSpell/castPermanent omija bramki timingu (CR 601.2b
   // ignorowany, gdyż rzut następuje w trakcie rozstrzygania zdolności).
-  if (state.pendingExileCast) {
+  if (state.pendingExileCast && !manaGeneratingCommandFor(state, cmd, state.pendingExileCast.playerId)) {
+    // M200/E (wzór pay_or_sacrifice / counter_pay): zdolności many gracza
+    // podejmującego decyzję (tap_for_mana / manowe activate_ability) muszą
+    // działać w oknie Vaana, żeby kreator many mógł tapować źródła przed rzutem.
     if (cmd.type !== 'resolve_exile_cast') return reject('exile_cast_unresolved');
     if (cmd.playerId !== state.pendingExileCast.playerId) return reject('exile_cast_not_your_decision');
     const pending = state.pendingExileCast;
@@ -5272,7 +5275,7 @@ export function execute(state, input) {
   // płacącego musi nadal działać, nawet gdy jej wcześniejsza aktywacja
   // wyzwoliła oczekujący wybór celu. Sam cel pozostaje zablokowany wyżej
   // przez decyzję dopłaty; to nie rozwiązuje kolejności APNAP triggerów.
-  const pendingManaPayment = state.pendingPayOrSacrifice ?? state.pendingCounterPay ?? state.pendingWardPay ?? state.pendingOptionalPay;
+  const pendingManaPayment = state.pendingPayOrSacrifice ?? state.pendingCounterPay ?? state.pendingWardPay ?? state.pendingOptionalPay ?? state.pendingExileCast;
   if (state.pendingTriggerTargets.length > 0
     && !(pendingManaPayment && manaGeneratingCommandFor(state, cmd, pendingManaPayment.playerId))) {
     const pending = state.pendingTriggerTargets[0];
@@ -7965,6 +7968,8 @@ export function playerView(state, playerId) {
         // Wygnanie jest jawne (CR 406.3), koszt to publiczny Oracle.
         if (object.warpReady) waiting.warpReady = true;
         if (object.warp) waiting.warp = object.warp;
+        if (object.bestow) waiting.bestow = object.bestow;
+        if (object.surge) waiting.surge = object.surge;
         // Publiczny skutek rozstrzygniętej zdolności: ten konkretny obiekt
         // można rzucić z exile. UI/bot nie muszą wnioskować wyłącznie z listy
         // komend, a ponowne wygnanie nowego obiektu pola nie odziedziczy.
@@ -9296,6 +9301,12 @@ export function playerView(state, playerId) {
       cast: false, objectId: exilePending.objectId, cardId: exilePending.cardId,
     }));
     if (exileCastable && exileCard.zone === 'exile') {
+      // CR 109.4: podczas rzutu z okna Vaana kontrolerem czaru staje się
+      // `playerId` — zniżki kosztów i legalne cele (bestow/X) liczą się dla
+      // rzucającego, tak jak po przełączeniu controllerId w `execute`.
+      const exileCastObj = exileCard.controllerId !== playerId
+        ? Object.freeze({ ...exileCard, controllerId: playerId })
+        : exileCard;
       // Jeden wzorzec komendy dla WSZYSTKICH wariantów rzutu (cele, tryb,
       // koszt dodatkowy, X, gospodarz aury) — L48: oferta niesie dokładnie to,
       // co potem rozlicza bramka `resolve_exile_cast`.
@@ -9319,20 +9330,20 @@ export function playerView(state, playerId) {
           ...(offer.damageDivision ? { damageDivision: offer.damageDivision } : {}),
         }));
       };
-      if (exileCard.aura || exileCard.bestow) {
+      if (exileCastObj.aura || exileCastObj.bestow) {
         // Aura (CR 303.4a, znalezisko E audytu PR #93): gospodarza wybiera
         // gracz, a wariant bestow ma WŁASNY koszt — jedno i drugie wylicza
         // `legalAuraCastsForObject` (ten sam generator co dla ręki).
-        for (const offer of epicCastOffers(state, playerId, exileCard, { aura: true })) pushExileCast(offer);
+        for (const offer of epicCastOffers(state, playerId, exileCastObj, { aura: true })) pushExileCast(offer);
       } else {
-        const budget = producibleMana(state, playerId, null, spellManaPurpose(exileCard), coloredPipsOf(exileCard.cardId, 0));
-        const cost = effectiveSpellManaCost(state, exileCard);
-        if (cost <= budget && hasColorForCardId(state, playerId, exileCard.cardId, 0, spellManaPurpose(exileCard))) {
-          if (exileCard.kind === 'spell') {
+        const budget = producibleMana(state, playerId, null, spellManaPurpose(exileCastObj), coloredPipsOf(exileCastObj.cardId, 0));
+        const cost = effectiveSpellManaCost(state, exileCastObj);
+        if (cost <= budget && hasColorForCardId(state, playerId, exileCastObj.cardId, 0, spellManaPurpose(exileCastObj))) {
+          if (exileCastObj.kind === 'spell') {
             // Vaan idzie przez `castSpell`: płaci PEŁNY koszt, więc potrafi
             // rozliczyć tryb z celami zmiennymi (CR 601.2c) i wybranego X
             // (CR 107.3a) — oferta enumeruje jedno i drugie.
-            for (const offer of epicCastOffers(state, playerId, exileCard, {
+            for (const offer of epicCastOffers(state, playerId, exileCastObj, {
               variableTargets: true, xCost: true, divided: true,
             })) pushExileCast(offer);
           } else {
@@ -9340,6 +9351,11 @@ export function playerView(state, playerId) {
           }
         }
       }
+    }
+    // CR 605.3a / 601.2g: legalne zdolności many (Skarb, dork, itp.) przed
+    // wyborem rzutu w oknie Vaana — źródła dla kreatora many.
+    for (const { ability, ...offer } of legalManaAbilities(state, playerId)) {
+      legalCommands.push(command('activate_ability', playerId, offer));
     }
   } else if (state.status === 'active' && !blockedByOthersDecision && activeMadnessCast) {
     // M158/Batch 39: Madness — rzuć za koszt madness albo do cmentarza.
