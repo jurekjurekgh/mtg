@@ -51,7 +51,7 @@ import { detectImageMode } from './card-images.js';
 // w aplikacji — import i montaż zakomentowane (kod modułu w src/table/
 // deck-builder.js zostaje; ADR 0012 bez zmian).
 // import { mountDeckBuilder } from './deck-builder.js';
-import { createArtShowcaseQueue, isCastHiddenFromViewer } from './art-showcase.js';
+import { createArtShowcaseQueue, isCastHiddenFromViewer, castShowcaseVerbOf } from './art-showcase.js';
 import { clashSourceCardIdOf, lookWizardKindOf, previewCardIdOfOption, renderChoiceRequest, renderLookWizard, renderCombatWizard, renderDamageWizard, renderDamageDivisionWizard, renderMultiTargetWizard, renderEscapeExileWizard, renderDelveExileWizard, renderPeekPickOrderWizard, renderPickOneRestBottomWizard, renderSearchBatchWizard } from './choice-request.js';
 import { crewWizardPlanFor, tapOtherArtifactsPlanFor, discardPlanOf, multiTargetPlanOf, upToTargetsPlanOf, mulliganBottomPlanOf, sacrificeCastPlanOf, dividedCastPlanOf, commandForDivisionSelection, proliferatePlanOf, singleTargetPlanOf, mulliganKeepPlanOf, castWindowPlanOf, buttonsPlanOf, searchBatchPlanOf, searchBatchStepOf, tapXArtifactsPlanOf, castModePlanOf, chooseOneOrBothPlanOf, chooseModesPlanOf, epicChoiceCardPlanOf, epicChoiceModePlanOf, epicChoiceTargetPlanOf, epicChoiceDiscardPlanOf } from './multi-target.js';
 import { choiceRequestGroupKey, choiceGroupLabel, choiceGroupTitle, groupCombatDecisions, polishPluralCount, targetTypeLabel } from './render.js';
@@ -1804,7 +1804,7 @@ function bootstrapTable() {
    * Gdy tryb jest wyłączony albo karta nie ma ilustracji — zwraca false
    * (gra toczy się dalej bez pauzy, dokładnie jak dotąd).
    */
-  function onCastShowcase({ cardId, playerId, faceDown }) {
+  function onCastShowcase({ cardId, playerId, eventType, faceDown }) {
     // M257 r3 (uwaga A właściciela + doprecyzowanie): karta twarzą w dół
     // (Morph, CR 708.2) ukrywa tożsamość PRZED PRZECIWNIKIEM — warstwa
     // ilustracji (FOT/KON/Scryfall + podpis „Rzuca: Nieprzyjaciel") nie
@@ -1829,7 +1829,8 @@ function bootstrapTable() {
     }
     // 'opened' | 'queued' — w obu przypadkach gra ma stanąć; dźwięk gra
     // w openArtShowcase, czyli RAZEM z obrazem (bez rozjazdu kolejki).
-    return artShowcaseQueue.push({ cardId, playerId }) != null;
+    const verb = castShowcaseVerbOf(eventType);
+    return artShowcaseQueue.push({ cardId, playerId, verb }) != null;
   }
 
   /**
@@ -2869,7 +2870,7 @@ function bootstrapTable() {
   // vm-odporna (brak registry → fail-closed, patrz O1 audytu #121 w ciele),
   // wyjmowana w testach razem z konsumentem.
   function restrictedSpellBlockedFor(cmd, descriptor) {
-    if (!cmd || !String(cmd.type ?? '').startsWith('cast_')) return false;
+    if (!cmd || !(String(cmd.type ?? '').startsWith('cast_') || (cmd.type === 'resolve_exile_cast' && cmd.cast === true))) return false;
     // Bestow zawsze tworzy nieartefaktowy czar Aury (CR 702.103b).
     if (cmd.bestow) return true;
     const cardId = descriptor?.cardId ?? session.state?.objects?.get(cmd.objectId)?.cardId ?? null;
@@ -3087,6 +3088,8 @@ function bootstrapTable() {
   }
 
   function manaWizardFor(cmd, { guardParentReservations = false } = {}) {
+    if (cmd?.type === 'resolve_exile_cast' && !cmd.cast) return null;
+    const isExileCast = cmd?.type === 'resolve_exile_cast' && cmd.cast === true;
     const view = session.view();
     // Kreator płaci koszt EFEKTYWNY (CR 601.2f): obniżki z permanentów
     // (Etherium Sculptor) i warunkowe z karty (Metalcraft) liczy silnik na
@@ -3102,16 +3105,23 @@ function bootstrapTable() {
       if (ability?.cost && Number.isInteger(ability.cost.mana)) opts.ability = ability;
       else return null; // zdolność bez kosztu many — bez kreatora
     }
-    const stateObject = session.state?.objects?.get(cmd.objectId);
+    const rawStateObject = session.state?.objects?.get(cmd.objectId);
+    // Vaan (`resolve_exile_cast`): wygnana karta w exile nosi controllerId
+    // właściciela, a podczas rzutu jej kontrolerem staje się rzucający
+    // (CR 109.4) — zniżki i cechy kosztu muszą liczyć się dla `HUMAN_ID`.
+    const stateObject = isExileCast && rawStateObject && rawStateObject.controllerId !== HUMAN_ID
+      ? { ...rawStateObject, controllerId: HUMAN_ID }
+      : rawStateObject;
     const parsed = stateObject ? parseManaCost(MANA_COSTS[stateObject.cardId] ?? null) : null;
     if (stateObject && parsed) {
       const nonGeneric = parsed.colored.length + parsed.hybrid.length + parsed.phyrexian.length;
       opts.effectiveGeneric = Math.max(0, effectiveSpellManaCost(session.state, stateObject) - nonGeneric);
     }
     // Koszt alternatywny zna OBA kształty rzutu: permanent (bestow/surge) oraz
-    // instant/sorcery (surge, Batch 58/B1) — bez tego kreator liczyłby koszt
-    // bazowy karty i zapłaciłby więcej, niż obiecuje etykieta (L48/L93).
-    if ((cmd.type === 'cast_permanent' || cmd.type === 'cast_spell') && (cmd.surgeCast || cmd.bestow)) {
+    // instant/sorcery (surge, Batch 58/B1) i rzut z okna Vaana (`resolve_exile_cast`)
+    // — bez tego kreator liczyłby koszt bazowy karty i zapłaciłby więcej, niż
+    // obiecuje etykieta (L48/L93).
+    if ((cmd.type === 'cast_permanent' || cmd.type === 'cast_spell' || isExileCast) && (cmd.surgeCast || cmd.bestow)) {
       const alternative = cmd.surgeCast ? stateObject?.surge : stateObject?.bestow;
       if (alternative) opts.alternativeCost = reduceAlternativeCost(
         session.state, cmd.bestow ? bestowedSpellCharacteristics(stateObject) : stateObject,
@@ -3137,7 +3147,7 @@ function bootstrapTable() {
     // traktował X jako część generyczną i gracz mógł płacić X generyczną
     // maną z puli, kreator zamykał `progress.done=true`, dopiero silnik
     // odrzucał z "Brak kolorowej many" (komunikat ginął w kreatorze).
-    if (cmd.type === 'cast_spell' || cmd.type === 'cast_permanent') {
+    if (cmd.type === 'cast_spell' || cmd.type === 'cast_permanent' || isExileCast) {
       if (stateObject?.spell?.xCost?.black === true) opts.xBlack = true;
     }
     // M327 (audyt PR #102, F7): koszt ODSŁONIĘCIA (CR 701.58b cloaka,
@@ -3207,7 +3217,7 @@ function bootstrapTable() {
     // nawet przy jednym kształcie płatności (patrz shouldOpenManaWizard).
     const autoPayableMana = session.state
       ? producibleMana(session.state, HUMAN_ID, excludedSources,
-        cmd.bestow ? { castingSpell: true, artifactSpell: false } : {}, []) : null;
+        restrictedBlocked ? { castingSpell: true, artifactSpell: false } : {}, []) : null;
     const autoPayableColors = session.state && descriptor.requirements.length
       ? canPayColoredCost(session.state, HUMAN_ID, descriptor.requirements, excludedSources,
         restrictedBlocked ? { castingSpell: true, artifactSpell: false } : {})
@@ -3257,7 +3267,7 @@ function bootstrapTable() {
   /** Krótki opis rzutu porzuconego przy zamknięciu kreatora many (M106/Z10). */
   function describeAbandonedCast(cmd) {
     const view = session?.view?.();
-    const object = ['hand', 'battlefield', 'graveyard'].flatMap((z) => view?.zones?.[z] ?? [])
+    const object = ['hand', 'battlefield', 'graveyard', 'exile'].flatMap((z) => view?.zones?.[z] ?? [])
       .find((o) => o.id === cmd.objectId);
     return object?.cardId ? session.nameOf(object.cardId) : 'wstrzymana akcja';
   }

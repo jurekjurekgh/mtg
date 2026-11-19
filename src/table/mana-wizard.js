@@ -330,7 +330,10 @@ const PAYMENT_DECISION_TYPES = new Set([
   'resolve_ward_pay_choice',
 ]);
 
-const WIZARD_CAST_TYPES = new Set(['cast_permanent', 'cast_spell', 'cast_cleave', 'cast_escape', 'cast_adventure', 'cast_adventure_creature']);
+const WIZARD_CAST_TYPES = new Set([
+  'cast_permanent', 'cast_spell', 'cast_cleave', 'cast_escape', 'cast_adventure', 'cast_adventure_creature',
+  'resolve_exile_cast',
+]);
 
 /**
  * M327 (audyt PR #102, F7): ODSŁONIĘCIE zakrycia. To jedyne nie-rzutowe
@@ -468,6 +471,9 @@ export function paymentDescriptorOf(cmd, view, opts = {}) {
     return buildDescriptor(object, totalNeeded, requirements, label, Math.max(0, totalNeeded - requirements.length));
   }
   if (!WIZARD_CAST_TYPES.has(cmd.type)) return null;
+  if (cmd.type === 'resolve_exile_cast' && !cmd.cast) return null;
+  const isStandardCast = cmd.type === 'cast_permanent' || cmd.type === 'cast_spell'
+    || (cmd.type === 'resolve_exile_cast' && cmd.cast === true);
   const allCards = Object.values(view?.zones ?? {}).flat();
   const object = allCards.find((o) => o.id === cmd.objectId);
   if (!object) return null;
@@ -477,7 +483,8 @@ export function paymentDescriptorOf(cmd, view, opts = {}) {
   // więc gracz tapował lądy i „płacił" za rzut, który silnik rozlicza jako
   // darmowy (mana z puli przepadała). Zero kreatora = zero płatności.
   // Reguła jest wspólna z etykietą oferty (jedno źródło, klasa L102/1).
-  if (castsWithoutPayingMana(object)) return null;
+  // `resolve_exile_cast` (Vaan) ZAWSZE płaci koszt many rzucanej karty.
+  if (cmd.type !== 'resolve_exile_cast' && castsWithoutPayingMana(object)) return null;
   const costStr = MANA_COSTS[object.cardId];
   if (!costStr) return null;
   const parsed = parseManaCost(costStr);
@@ -506,10 +513,10 @@ export function paymentDescriptorOf(cmd, view, opts = {}) {
     if (requirements.length > totalNeeded) return null;
     return buildDescriptor(object, totalNeeded, requirements, `Escape (${totalNeeded})`, totalNeeded - requirements.length);
   }
-  // Bestow istnieje tylko na ścieżce permanentów; surge (CR 702.117) także na
-  // instantach/sorcerych — oba kształty rzutu muszą mieć własny koszt
+  // Bestow istnieje tylko na ścieżce permanentów (i okna Vaana); surge (CR 702.117)
+  // także na instantach/sorcerych — oba kształty rzutu muszą mieć własny koszt
   // w deskryptorze (Batch 58/B1: Boulder Salvo {1}{R}, nie {4}{R}).
-  if ((cmd.type === 'cast_permanent' || cmd.type === 'cast_spell') && (cmd.surgeCast || cmd.bestow)) {
+  if (isStandardCast && (cmd.surgeCast || cmd.bestow)) {
     const alternative = cmd.surgeCast ? object.surge : object.bestow;
     if (!alternative || !Number.isInteger(alternative.cost)) return null;
     const requirements = (alternative.colors ?? []).map(c => [c]);
@@ -591,7 +598,7 @@ export function paymentDescriptorOf(cmd, view, opts = {}) {
   // szła auto-tapem bez wyboru źródeł. Część bezbarwna = generic + X (pipy
   // z wydruku bez zmian), a etykieta pokazuje X w miejscu liczby — jedno źródło
   // z tytułem oferty (L41).
-  if ((cmd.type === 'cast_spell' || cmd.type === 'cast_permanent')
+  if (isStandardCast
     && cmd.xValue != null && !cmd.kicked) {
     const lifePaid = Math.max(0, Math.min(cmd.phyrexianPayWithLife ?? 0, parsed.phyrexian.length));
     const requirements = baseColorRequirements(parsed, lifePaid);
@@ -1269,9 +1276,13 @@ export function finishWizardPayment(session, pending, {
   for (let i = 0; i <= maxPasses; i += 1) {
     const view = session.view();
     const stackLen = view.zones?.stack?.length ?? 0;
+    const canHumanPass = (view.legalCommands ?? []).some((c) => c.type === 'pass_priority');
     // Commit dopiero, gdy nad linią odcięcia nie wisi już żaden trigger
-    // z płatności (kolejność CR: trigger PRZED opłacaną komendą).
-    if (isWizardCommandLegal(view, paidCommand) && stackLen <= baseline) {
+    // z płatności (kolejność CR: trigger PRZED opłacaną komendą) — albo gdy
+    // sama opłacana komenda jest blokującą decyzją bez okna priorytetu
+    // (`pendingExileCast` / `pendingPayOrSacrifice` itp.: pass_priority nie
+    // istnieje, dopóki decyzja nie zapadnie).
+    if (isWizardCommandLegal(view, paidCommand) && (stackLen <= baseline || !canHumanPass)) {
       onCloseWizard();
       // F-OGŁ: commit DOMYKA jednostkę ogłoszeń płatności (paymentUnit: 'end'
       // — dokleja się do skutków drenażu zamiast je wycierać).
@@ -1285,7 +1296,6 @@ export function finishWizardPayment(session, pending, {
       return { committed: true };
     }
     if (stackLen <= baseline || i === maxPasses || session.artPausePending) break;
-    const canHumanPass = (view.legalCommands ?? []).some((c) => c.type === 'pass_priority');
     if (!canHumanPass) {
       onCloseWizard();
       if (mutatedDuringDrain) onSyncUi();

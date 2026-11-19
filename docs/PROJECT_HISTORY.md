@@ -19,6 +19,53 @@
 > w drzewie. Obowiązująca reguła: `docs/setup/TESTER_STOLU.md` → „Transkrypty
 > nie trafiają do repozytorium".
 
+## 2026-11-16 — Audyt techniczny PR #186 (PMSSB-90) i pętla jakości (PR #187, `arena/b87ffeb4-mtg`)
+
+- **Tryb (ADR 0020 / ADR 0021):** pełny audyt wszystkich 62 plików scalonego PR #186 (`c9a2200`, `+9574/−412`),
+  weryfikacja 1:1 diffu i REST `pulls/186/files` → `docs/audits/PR186_MAPA_PLIKOW_2026-11-16.md`, raport
+  `docs/audits/AUDYT_PR186_2026-11-16.md`, plan `docs/plans/PLAN_2026-11-16-audyt-pr186-i-petla-jakosci.md`,
+  handoff `docs/setup/HANDOFF_2026-11-16-audyt-pr186.md`.
+- **Naprawy znalezisk audytu PR #186 (E2 — po 1 samodzielnym, zielonym commicie z testem RED→GREEN):**
+  - **F-186/1 (`73a7028`, `src/engine/combat.js`):** w `maximalRequiredBlocks` (`requiredBlockerChoices`) wybór
+    pierwszego wolnego atakującego w kolejności tablicy potrafił zablokować wspólny slot z późniejszym wymagającym
+    gospodarzem (`Goliath Sphinx` + dwa stwory z „must be blocked" na 2 blokerach: 1 blok zamiast maksymalnych 2,
+    CR 509.1c). Zastąpione zachłanne przypisanie maksymalnym skojarzeniem w grafie dwudzielnym (`augment()`).
+    Strażnik: `test/audyt-pr186-f1-maximal-required-slots.test.js` (3 testy).
+  - **F-186/2 (`9cb93d6`, `src/controllers/heuristic-bot.js`):** podwójne liczenie statycznego pumpu z wyposażonego
+    sprzętu w `bodyScore` (czyta `effectivePower/Toughness` z widoku) i w `equipmentHoldValue` (`bodyDelta`,
+    dodawał `+12` drugi raz w porównaniu nosiciela bez equipmentu vs już wyposażonego). Wyzerowanie statycznego
+    pumpu w `equipmentHoldValue` dla sprzętu już przypiętego do tego nosiciela. Strażnik:
+    `test/audyt-pr186-f2-equipped-static-double.test.js` (3 testy).
+  - **F-186/3 (`cab0d5e`, `src/controllers/heuristic-bot.js`):** `mustBlockEnchantedValue` (aura `must_block_enchanted`
+    typu `Seton's Desire`) zakładało, że pojedynczy zdolny bloker wystarczy, by ściągnąć blok — przy `menace`
+    (CR 702.111b) i dokładnie jednym niechronionym blokerze wróg nie może legalnie zablokować samotnym stworem,
+    więc bonus ściągnięcia był mylny. Dodana bramka minimalnej liczby blokerów (`menace ? 2 : 1` z wyłączeniem
+    `cantBlockAlone`). Strażnik: `test/audyt-pr186-f3-must-block-menace.test.js` (2 testy).
+- **Pętla jakości (E3):**
+  - **F-90/12 (`b05da03`, `src/controllers/heuristic-bot.js`):** domknięcie otwartego punktu z `HANDOFF_2026-11-16-pmssb90.md`
+    §3 (`Bladewheel Chariot` `#0` tap 2 artefakty vs `#1` Crew 1): wspólny helper `hasPendingAbilityTwin()`
+    porównuje znormalizowane `entry.abilityEffects` ze stosu (ADR 0017) zamiast samego `abilityIndex`, z zachowaniem
+    anty-over-fix dla zdolności nadających różne słowa kluczowe (`lifelink` vs `flying`). Strażnik:
+    `test/audyt-pr186-f90-12-pending-twin-effects.test.js` (3 testy).
+  - **Żywy Tester (`tools/table-tester/`):** zbudowano `dist/mtg-table.html` (79 modułów / 5923,5 kB) i rozegrano
+    8 partii × 400 kroków na świeżych parach talii (`lorwyn` vs `dominaria-wrg`, `forgotten-realms-wug` vs
+    `mirrodin-wu`, `kaldheim` vs `the-edge`, `eldraine` vs `final-fantasy`, `wiedzmin-wur` vs `tarkir-wur`,
+    `kaladesh` vs `warhammer-wg`, `srodziemie` vs `alara`, `worek-legend` vs `ixalan`) — **0 zgłoszeń detektorów,
+    0 niewycenionych ruchów, 0 błędów runtime**.
+  - **Budżet lektury (`900ac5e`, `docs/LESSONS.md`):** kondensacja zduplikowanych akapitów `**Przypadek:**` przy
+    wpisach posiadających już pełną narrację w `docs/LESSONS_PRZYPADKI.md` (z zachowaniem wszystkich nagłówków
+    `## L<nr>`) — zapas budżetu wzrósł z 220 do ~2,5 tys. tokenów.
+- **Decyzje właściciela po E4 (2026-11-16 — zamknięcie i usunięcie z backlogu wszystkich 3 otwartych wątpliwości):**
+  1. **Synergia grobowa (`selfMillValue`, `surveil`/`explore` `graveSynergy`, `F-90/5b`, `F-90/6`):**
+     właściciel zdecydował przywrócić dotychczasową synergię grobową (`selfMillGraveSynergy` `+6`,
+     `millReanimateBonus: 15`, `surveilGraveSynergyPerSource: 2`), ograniczając ją wspólną bramką
+     `allowsGraveSynergyMill()` (`GRAVE_SYNERGY_MIN_LIBRARY = 25` w `src/controllers/heuristic-bot.js`):
+     bot może millować pod `Gray Slaad` / reanimację / delve przy zapasie `≥25` kart w bibliotece,
+     a poniżej `25` kart premia jest wyłączona (piny w `test/audyt-pmssb20-mill.test.js` i
+     `test/audyt-pmssb24-scry.test.js`). `F-90/5b` i `F-90/6` zamknięte bez nowego modelu progów.
+  2. **`declare_attackers` vs CR 508.1 (priorytet w silniku):** decyzja właściciela — zostaje tak jak jest (usunięte z kolejki).
+  3. **`F-90/10` (trwały trigger na permanencie vs paliwo z ręki):** decyzja właściciela — zostaje tak jak jest (usunięte z kolejki; piny `10a/10b`).
+
 ## 2026-11-16 — PMSSB-90: pętla RĘCZNEGO strojenia scoringu bota na Batchu 73 (PR #186, `arena/4fa65e47-mtg`)
 
 - **Zlecenie właściciela (dosłownie):** „Nie potrzebuję ani pełnego B0 ani tuningu. Wystarczy mi

@@ -38,6 +38,16 @@ export function isCastHiddenFromViewer({ faceDown, playerId }, viewerId) {
   return Boolean(faceDown) && playerId !== viewerId;
 }
 
+const CAST_SHOWCASE_VERBS = Object.freeze({
+  card_suspended: 'Zawiesza',
+  card_plotted: 'Plotuje',
+});
+
+/** Czasownik nagłówka warstwy wysoko-graficznej dla zdarzeń rzutu / Suspend / Plot. */
+export function castShowcaseVerbOf(eventType) {
+  return CAST_SHOWCASE_VERBS[eventType] ?? 'Rzuca';
+}
+
 export function createArtShowcaseQueue({ isOpen, open }) {
   if (typeof isOpen !== 'function' || typeof open !== 'function') {
     throw new TypeError('Kolejka wymaga funkcji isOpen i open');

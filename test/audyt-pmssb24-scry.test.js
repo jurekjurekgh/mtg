@@ -282,21 +282,22 @@ test('PMSSB-24/C3: lądy są poza regułą duplikatów (ich nasycenie ma własny
 });
 
 // ---------------------------------------------------------------------------
-// F3 — surveil: grób bywa zasobem (Delve CR 702.66 / reanimacja).
+// F3 — surveil: grób bywa zasobem (Delve CR 702.66 / reanimacja) przy ≥25 kartach w bibliotece.
 // ---------------------------------------------------------------------------
 
-test('PMSSB-24/C4: zmielenie karty jest warte więcej, gdy ręka czyta z grobu', () => {
+test('PMSSB-24/C4: zmielenie karty jest warte więcej przy ≥25 kartach w bibliotece, gdy ręka czyta z grobu', () => {
   // Surveil 2, wierzch [land, stwór], 6 lądów i 3 landy w ręce ⇒ land zbędny.
-  // Bez źródła w grobie: mill 24. Z Hooting Mandrills (Delve) w ręce: 26 —
-  // dopłata 2 za źródło znosi `MILL_CAUTION` dla karty na granicy. PRZED:
-  // 25 = 25 (P4) — jedyną różnicą scry/surveil był stały MILL_CAUTION.
-  const bezDelve = base({ top: ['secluded-steppe', 'highland-game'], kind: 'surveil', lands: 6, hand: ['secluded-steppe', 'secluded-steppe', 'secluded-steppe'] });
-  const zDelve = base({ top: ['secluded-steppe', 'highland-game'], kind: 'surveil', lands: 6, hand: ['secluded-steppe', 'secluded-steppe', 'secluded-steppe', 'hooting-mandrills'] });
+  // Przy bibliotece ≥25 kart (extra=23 + top=2 = 25): bez źródła 24, z Delve 26.
+  // Poniżej 25 kart w bibliotece (extra=22 + top=2 = 24): premia wyłączona (24 = 24).
+  const bezDelve = base({ top: ['secluded-steppe', 'highland-game'], kind: 'surveil', lands: 6, extra: 23, hand: ['secluded-steppe', 'secluded-steppe', 'secluded-steppe'] });
+  const zDelve = base({ top: ['secluded-steppe', 'highland-game'], kind: 'surveil', lands: 6, extra: 23, hand: ['secluded-steppe', 'secluded-steppe', 'secluded-steppe', 'hooting-mandrills'] });
+  const zDelvePonizej25 = base({ top: ['secluded-steppe', 'highland-game'], kind: 'surveil', lands: 6, extra: 22, hand: ['secluded-steppe', 'secluded-steppe', 'secluded-steppe', 'hooting-mandrills'] });
   assert.equal(scoreOf(bezDelve.state, 'resolve_surveil(mill:t0)'), 24);
   assert.equal(scoreOf(zDelve.state, 'resolve_surveil(mill:t0)'), 26);
+  assert.equal(scoreOf(zDelvePonizej25.state, 'resolve_surveil(mill:t0)'), 24);
 });
 
 test('PMSSB-24/C5 (anty-over-fix): surveilGraveSynergyPerSource ×0 przywraca 24', () => {
-  const zDelve = base({ top: ['secluded-steppe', 'highland-game'], kind: 'surveil', lands: 6, hand: ['secluded-steppe', 'secluded-steppe', 'secluded-steppe', 'hooting-mandrills'] });
+  const zDelve = base({ top: ['secluded-steppe', 'highland-game'], kind: 'surveil', lands: 6, extra: 23, hand: ['secluded-steppe', 'secluded-steppe', 'secluded-steppe', 'hooting-mandrills'] });
   assert.equal(scoreOf(zDelve.state, 'resolve_surveil(mill:t0)', { surveilGraveSynergyPerSource: 0 }), 24);
 });

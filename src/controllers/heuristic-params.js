@@ -739,6 +739,15 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   'suspendMain1Penalty',         // surcharge za zawieszenie w Głównej 1 (przed walką)
   // PMSSB-69 (inicjatywa, take_initiative): dopłata za kradzież, kara za ryzyko, limit kary.
   'initiativeStealBonus', 'initiativeExposurePenalty', 'initiativeExposureCap',
+  // Zgłoszenie E (2026-11-16, Forever Young — `graveyard_creatures_to_library_top_choice`):
+  // bez celów w grobie czar tylko marnuje kartę/manę i skraca bibliotekę;
+  // wyjątek to desperacka presja niskiego życia (kopanie po ratunek).
+  'graveLibraryTopEmptyPenalty',
+  'graveLibraryTopDesperatePenalty',
+  'graveLibraryTopLowLifeThreshold',
+  'graveLibraryTopMinCreatureBody',
+  'graveLibraryTopCreatureWeight',
+  'graveLibraryTopAntiDrainBonus',
 ]);
 
 export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
@@ -1072,8 +1081,9 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   searchToBattlefieldBase: 10,
   searchToHandBase: 9,
   searchLandScrewBonus: 5,
-  // PMSSB-20 (mill — re-audyt): presja deck-outu wroga (wyścig bibliotek)
-  // + combo self-mill z reanimacją. Bazy 20+3n / −80 historyczne (guard).
+  // PMSSB-20 (mill — re-audyt) + korekta właściciela (2026-11-16): presja deck-outu
+  // wroga (wyścig bibliotek) + combo self-mill z reanimacją przy zapasie ≥25 kart
+  // w bibliotece (`GRAVE_SYNERGY_MIN_LIBRARY`). Bazy 20+3n / −80 historyczne (guard).
   millFoeDeckOutWinValue: 400,
   millFoePressureWeight: 4,
   millFoePressureCap: 12,
@@ -1280,9 +1290,9 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   // śmieciem, tylko schodzi o „pół karty".
   cardDuplicateDiscount: 3,
   cardDuplicateMaxCopies: 2,
-  // PMSSB-24/F3: 2 pkt za źródło na kartę, limit 4 — dokładnie tyle, ile
-  // `MILL_CAUTION` (2), więc JEDNO źródło w ręce znosi ostrożność grobu dla
-  // karty na granicy opłacalności, a nie dla każdej.
+  // PMSSB-24/F3 + korekta właściciela (2026-11-16): 2 pkt za źródło na kartę,
+  // limit 4 — tyle, ile `MILL_CAUTION` (2), więc JEDNO źródło w ręce znosi
+  // ostrożność grobu dla karty na granicy opłacalności przy ≥25 kartach w bibliotece.
   surveilGraveSynergyPerSource: 2,
   surveilGraveSynergyCap: 4,
   // PMSSB-25/F1: 5 pkt — tyle, ile warta jest różnica między dwiema grywalnymi
@@ -1428,6 +1438,15 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   initiativeExposurePenalty: 2,
   // initiativeExposureCap 6 = jedna venture: kara nie zjada więcej niż dawny składnik ETB (wynik ≥ 0).
   initiativeExposureCap: 6,
+  // Zgłoszenie E (2026-11-16, Forever Young): bez stworów do odzyskania
+  // `spellBase (50) + drawCardValue (6) - 75 = -19 < 0`; w desperacji
+  // (`life <= 5` lub śmiertelny stół) spada do `-35` → `+21 > 0` (kopie po ratunek).
+  graveLibraryTopEmptyPenalty: 75,
+  graveLibraryTopDesperatePenalty: 35,
+  graveLibraryTopLowLifeThreshold: 5,
+  graveLibraryTopMinCreatureBody: 5,
+  graveLibraryTopCreatureWeight: 4,
+  graveLibraryTopAntiDrainBonus: 6,
 });
 
 /**
