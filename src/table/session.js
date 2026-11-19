@@ -2779,6 +2779,9 @@ export function botMovesPaintedUpdate({ moves, painted = 0 } = {}) {
 export const HUMAN_DIGEST_EVENTS = new Set([
   'spell_cast', 'permanent_cast', 'aura_spell_cast', 'land_played',
   'ability_activated', 'permanent_entered_battlefield', 'object_transformed',
+  // Zgłoszenie D (2026-11-16): Suspend i Plot to specjalne akcje z ręki
+  // (nie używają stosu) — muszą trafić do „Rozgrywki" gracza tak jak rzut/ląd.
+  'card_suspended', 'card_plotted',
   // I (zgłoszenie właściciela 2026-09-20): bieg i wynik discover to WŁASNE
   // zagranie gracza (jego biblioteka, jego karty) — musi trafić do panelu
   // „Rozgrywka” także wtedy, gdy trigger zdążył już zejść ze stosu
@@ -3417,7 +3420,12 @@ export function createSession(config) {
    * kart OBU stron. Filtr: czary/permanenty/aury zawsze; land TYLKO gdy
    * NIE jest basic (basic-lądy są nieciekawe wizualnie i nie mają artId).
    */
-  const CAST_EVENT_TYPES = new Set(['spell_cast', 'permanent_cast', 'aura_spell_cast', 'land_played']);
+  const CAST_EVENT_TYPES = new Set([
+    'spell_cast', 'permanent_cast', 'aura_spell_cast', 'land_played',
+    // Zgłoszenie D (2026-11-16): Suspend i Plot odpalają też warstwę
+    // wysoko-graficzną (jak rzut czaru / non-basic ląd).
+    'card_suspended', 'card_plotted',
+  ]);
   function emitCastEvent(e) {
     if (!onCast || !CAST_EVENT_TYPES.has(e.type)) return;
     const cardId = e.cardId ?? e.object?.cardId ?? null;
@@ -3543,6 +3551,9 @@ export function createSession(config) {
     // Wcześniej token_created było w BOT_PAUSE_EVENTS (pauza), ale brak
     // cardId w botMoves powodował pominięcie wpisu w modalu.
     'token_created',
+    // Zgłoszenie D (2026-11-16): Suspend i Plot przenoszą jawną kartę do
+    // wygnania (CR 400.2) — wpis w „Rozgrywce" obu graczy nosi jej miniaturę.
+    'card_suspended', 'card_plotted',
   ]);
 
   /**

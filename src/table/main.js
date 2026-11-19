@@ -51,7 +51,7 @@ import { detectImageMode } from './card-images.js';
 // w aplikacji — import i montaż zakomentowane (kod modułu w src/table/
 // deck-builder.js zostaje; ADR 0012 bez zmian).
 // import { mountDeckBuilder } from './deck-builder.js';
-import { createArtShowcaseQueue, isCastHiddenFromViewer } from './art-showcase.js';
+import { createArtShowcaseQueue, isCastHiddenFromViewer, castShowcaseVerbOf } from './art-showcase.js';
 import { clashSourceCardIdOf, lookWizardKindOf, previewCardIdOfOption, renderChoiceRequest, renderLookWizard, renderCombatWizard, renderDamageWizard, renderDamageDivisionWizard, renderMultiTargetWizard, renderEscapeExileWizard, renderDelveExileWizard, renderPeekPickOrderWizard, renderPickOneRestBottomWizard, renderSearchBatchWizard } from './choice-request.js';
 import { crewWizardPlanFor, tapOtherArtifactsPlanFor, discardPlanOf, multiTargetPlanOf, upToTargetsPlanOf, mulliganBottomPlanOf, sacrificeCastPlanOf, dividedCastPlanOf, commandForDivisionSelection, proliferatePlanOf, singleTargetPlanOf, mulliganKeepPlanOf, castWindowPlanOf, buttonsPlanOf, searchBatchPlanOf, searchBatchStepOf, tapXArtifactsPlanOf, castModePlanOf, chooseOneOrBothPlanOf, chooseModesPlanOf, epicChoiceCardPlanOf, epicChoiceModePlanOf, epicChoiceTargetPlanOf, epicChoiceDiscardPlanOf } from './multi-target.js';
 import { choiceRequestGroupKey, choiceGroupLabel, choiceGroupTitle, groupCombatDecisions, polishPluralCount, targetTypeLabel } from './render.js';
@@ -1804,7 +1804,7 @@ function bootstrapTable() {
    * Gdy tryb jest wyłączony albo karta nie ma ilustracji — zwraca false
    * (gra toczy się dalej bez pauzy, dokładnie jak dotąd).
    */
-  function onCastShowcase({ cardId, playerId, faceDown }) {
+  function onCastShowcase({ cardId, playerId, eventType, faceDown }) {
     // M257 r3 (uwaga A właściciela + doprecyzowanie): karta twarzą w dół
     // (Morph, CR 708.2) ukrywa tożsamość PRZED PRZECIWNIKIEM — warstwa
     // ilustracji (FOT/KON/Scryfall + podpis „Rzuca: Nieprzyjaciel") nie
@@ -1829,7 +1829,8 @@ function bootstrapTable() {
     }
     // 'opened' | 'queued' — w obu przypadkach gra ma stanąć; dźwięk gra
     // w openArtShowcase, czyli RAZEM z obrazem (bez rozjazdu kolejki).
-    return artShowcaseQueue.push({ cardId, playerId }) != null;
+    const verb = castShowcaseVerbOf(eventType);
+    return artShowcaseQueue.push({ cardId, playerId, verb }) != null;
   }
 
   /**
