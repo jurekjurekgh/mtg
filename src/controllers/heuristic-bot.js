@@ -9268,7 +9268,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     if (effects.length > 0 && allEffectsInertNow(view, effects, inertCmd)) return -40;
     let score = base - freeCastTargetPenalty(view, effects, cmd);
     for (const effect of effects) score += wrapTargetsValue(view, effect, cmd) + fogWindowValue(view, effect)
-      + dividedDamageValue(view, effect, cmd, effects); // FJ/L41: netto podziału jak w cast_spell
+      + dividedDamageValue(view, effect, cmd, effects) // FJ/L41: netto podziału jak w cast_spell
+      + (effect?.type === 'graveyard_creatures_to_library_top_choice'
+        ? graveyardToLibraryTopValue(view, effects, { penalizeEmpty: !FREE_CAST_NO_HOLD_OPTION_TYPES.has(cmd.type) })
+        : 0);
     // Etap F/4b: koszt dodatkowy płaci się także przy rzucie bez kosztu many
     // (CR 601.2h), a oferta enumeruje JEGO warianty — bez wyceny bot brałby
     // pierwszą ofiarę / pierwszą parę kart z brzegu. Ofiara: wartość ciała
@@ -11454,6 +11457,67 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       value += P.drawCardValue + drawDeckingPenalty(view, 1);
     }
     return (effect.type === 'return_creature_card_to_hand' ? P.graveReturnAliasWeight : 1) * value;
+  }
+
+  function graveyardTopCreatureScore(card) {
+    if (!card) return 0;
+    const def = cardDef(card.cardId);
+    return 2 * (card.power ?? def?.power ?? 0) + (card.toughness ?? def?.toughness ?? 0);
+  }
+
+  function graveyardTopWorthyCreatures(view) {
+    const lib = myLibraryCount(view);
+    const thinLibrary = lib <= P.graveReturnDrawLibraryMargin;
+    return (view.zones.graveyard ?? []).filter((o) => {
+      if (o.controllerId !== view.playerId) return false;
+      if (o.kind !== 'creature' && !(o.types ?? []).includes('Creature')) return false;
+      return thinLibrary || graveyardTopCreatureScore(o) >= P.graveLibraryTopMinCreatureBody;
+    });
+  }
+
+  /**
+   * Zgłoszenie E (2026-11-16, Forever Young): wycena efektu
+   * `graveyard_creatures_to_library_top_choice` (z uwzględnieniem łączonego
+   * `draw_cards` z tego samego czaru, ponieważ przeniesienia na wierzch
+   * biblioteki dzieją się PRZED dobraniem).
+   */
+  function graveyardToLibraryTopValue(view, effects, { penalizeEmpty = true } = {}) {
+    const lib = myLibraryCount(view);
+    const picked = graveyardTopWorthyCreatures(view);
+    const drawAmount = drawTotalOf(effects);
+    const life = myLife(view);
+    const threat = enemyAttackPower(view);
+    const lethalBoard = threat > 0 && threat >= life;
+    const lowLifePressure = life <= P.graveLibraryTopLowLifeThreshold || lethalBoard;
+
+    if (picked.length === 0) {
+      if (!penalizeEmpty) return 0;
+      const rawDrawPenalty = drawAmount > 0 ? drawDeckingPenalty(view, drawAmount) : 0;
+      if (!lowLifePressure) return -P.graveLibraryTopEmptyPenalty;
+      // Desperackie kopanie po odpowiedź przy niskim życiu / śmiertelnym stole:
+      // nie popełniamy natychmiastowego samobójstwa z 1-kartową/pustą biblioteką
+      // (`lib <= drawAmount`), ale pod śmiertelnym atakiem przy ≥2 kartach
+      // zdejmujemy zachowawczą karę małego zapasu (lepiej dobrać niż zginąć w walce).
+      const rescueOffset = lethalBoard && lib > drawAmount && rawDrawPenalty < 0
+        ? -rawDrawPenalty : 0;
+      return -P.graveLibraryTopDesperatePenalty + rescueOffset;
+    }
+
+    const bestBody = picked.reduce((best, o) => Math.max(best, graveyardTopCreatureScore(o)), 0);
+    const creatureValue = Math.min(picked.length, 4) * P.graveLibraryTopCreatureWeight + Math.min(bestBody, 12);
+    const rawDrawPenalty = drawAmount > 0 ? drawDeckingPenalty(view, drawAmount) : 0;
+    const effectiveRemaining = lib + picked.length - drawAmount;
+    const effectiveDrawPenalty = drawAmount > 0
+      ? (effectiveRemaining <= 0
+        ? -(120 + P.drawCardValue * drawAmount)
+        : effectiveRemaining <= 3
+          ? -(60 + P.drawCardValue * drawAmount)
+          : 0)
+      : 0;
+    const antiDrainBonus = lib <= P.graveReturnDrawLibraryMargin && picked.length >= 2
+      ? Math.min(picked.length - 1, 4) * P.graveLibraryTopAntiDrainBonus
+      : 0;
+    return creatureValue + (effectiveDrawPenalty - rawDrawPenalty) + antiDrainBonus;
   }
 
   /** M320/NA2: mana zarezerwowana na sam koszt czaru/zdolności (przed ward). */
@@ -14863,6 +14927,9 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             // nadal niesie własną karę biblioteczną (`drawDeckingPenalty`
             // w gałęzi draw + `libraryDrainTax` w finish — L41).
             if (!graveReturnSlotCard(view, effect, cmd)) score -= P.graveReturnEmptySlotPenalty;
+          }
+          if (effect.type === 'graveyard_creatures_to_library_top_choice') {
+            score += graveyardToLibraryTopValue(view, scoredEffects, { penalizeEmpty: true });
           }
           // M156/Q1 + B (zgłoszenie właściciela 2026-09-28e, taktyka
           // właściciela): prewencja celowana ma JEDNO źródło prawdy
@@ -19013,14 +19080,17 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       }
       case 'resolve_graveyard_top_choice': {
         // Forever Young: odkupienie stwora z grobu na wierzch biblioteki.
-        // Bot bierze tylko naprawdę wartościowe stwory (i kończy, gdy reszta
-        // nie jest warta zatykania dobrań). Widok grobu niesie statystyki
-        // własnych kart — powerOf polega na polach widoku.
+        // Bot bierze wartościowe stwory (albo dowolne przy cienkiej bibliotece,
+        // by odwlec deck-out) i kończy, gdy reszta nie jest warta zatykania
+        // dobrań. Punktacja 16 + body przebija ściśle done=15 (bez remisu na 2/1).
         if (cmd.done === true) return finish(15);
         const card = view.zones.graveyard.find((o) => o.id === cmd.targetId) ?? null;
-        const def = card ? cardDef(card.cardId) : undefined;
-        const value = (def?.power ?? 0) * 2 + (def?.toughness ?? 0);
-        return finish(value >= 5 ? 10 + value : 5);
+        const value = graveyardTopCreatureScore(card);
+        const thinLibrary = myLibraryCount(view) <= P.graveReturnDrawLibraryMargin;
+        if (value >= P.graveLibraryTopMinCreatureBody || thinLibrary) {
+          return finish(16 + value);
+        }
+        return finish(5);
       }
       case 'resolve_legend_choice': {
         // Prawo legend (CR 704.5j): bot zostawia najsilniejszą kopię (ta

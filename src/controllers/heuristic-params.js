@@ -739,6 +739,15 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   'suspendMain1Penalty',         // surcharge za zawieszenie w Głównej 1 (przed walką)
   // PMSSB-69 (inicjatywa, take_initiative): dopłata za kradzież, kara za ryzyko, limit kary.
   'initiativeStealBonus', 'initiativeExposurePenalty', 'initiativeExposureCap',
+  // Zgłoszenie E (2026-11-16, Forever Young — `graveyard_creatures_to_library_top_choice`):
+  // bez celów w grobie czar tylko marnuje kartę/manę i skraca bibliotekę;
+  // wyjątek to desperacka presja niskiego życia (kopanie po ratunek).
+  'graveLibraryTopEmptyPenalty',
+  'graveLibraryTopDesperatePenalty',
+  'graveLibraryTopLowLifeThreshold',
+  'graveLibraryTopMinCreatureBody',
+  'graveLibraryTopCreatureWeight',
+  'graveLibraryTopAntiDrainBonus',
 ]);
 
 export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
@@ -1429,6 +1438,15 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   initiativeExposurePenalty: 2,
   // initiativeExposureCap 6 = jedna venture: kara nie zjada więcej niż dawny składnik ETB (wynik ≥ 0).
   initiativeExposureCap: 6,
+  // Zgłoszenie E (2026-11-16, Forever Young): bez stworów do odzyskania
+  // `spellBase (50) + drawCardValue (6) - 75 = -19 < 0`; w desperacji
+  // (`life <= 5` lub śmiertelny stół) spada do `-35` → `+21 > 0` (kopie po ratunek).
+  graveLibraryTopEmptyPenalty: 75,
+  graveLibraryTopDesperatePenalty: 35,
+  graveLibraryTopLowLifeThreshold: 5,
+  graveLibraryTopMinCreatureBody: 5,
+  graveLibraryTopCreatureWeight: 4,
+  graveLibraryTopAntiDrainBonus: 6,
 });
 
 /**
