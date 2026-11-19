@@ -9360,7 +9360,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
    *    karę co przedwczesny fog (`fogWindowWastedValue`, L41), więc baza czaru
    *    i cantrip nie przebijają passu. Bez nowego pokrętła i bez nazwy karty.
    */
-  function preventShieldValue(view, slot, amount) {
+  function preventShieldValue(view, slot, amount, { penalizeIdle = true } = {}) {
     if (slot == null) return 0;
     const n = Number.isInteger(amount) ? amount : 1;
     const meId = view.playerId;
@@ -9372,15 +9372,15 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       const stackDamage = incomingDamageOnStack(view, victim.id);
       const threatened = isCreatureThreatened(view, victim)
         || incomingDamageOnStackIsLethal(view, victim);
-      if (!threatened) return P.fogWindowWastedValue;
+      if (!threatened) return penalizeIdle ? P.fogWindowWastedValue : 0;
       const covers = preventCovers(view, victim, n, stackDamage);
       return covers
         ? 18 + (victim.power ?? 0) * 2 + (victim.toughness ?? 0)
-        : P.fogWindowWastedValue;
+        : (penalizeIdle ? P.fogWindowWastedValue : 0);
     }
     // Własny gracz — „albo u siebie jeśli któryś z kreatur przeciwnika go zrani”.
     const incoming = faceDamageIncoming(view) + incomingDamageOnStack(view, meId);
-    return incoming > 0 ? 8 + Math.min(n, incoming) : P.fogWindowWastedValue;
+    return incoming > 0 ? 8 + Math.min(n, incoming) : (penalizeIdle ? P.fogWindowWastedValue : 0);
   }
 
   /** Czy tarcza N realnie ratuje stwora (pokrywa nadmiar obrażeń ponad P). */
@@ -9457,12 +9457,12 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   }
 
   /** Suma wartości tarcz prewencji w wariancie (cel = slot per effect.targetIndex). */
-  function preventShieldTargetValue(view, effects, cmd) {
+  function preventShieldTargetValue(view, effects, cmd, options = {}) {
     let total = 0;
     const targets = cmd.targets ?? [];
     for (const effect of effects ?? []) {
       if (effect?.type !== 'prevent_next_damage') continue;
-      total += preventShieldValue(view, targets[effect.targetIndex ?? 0] ?? null, effect.amount ?? 1);
+      total += preventShieldValue(view, targets[effect.targetIndex ?? 0] ?? null, effect.amount ?? 1, options);
     }
     return total;
   }
@@ -10260,8 +10260,21 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     return (graveSynergy ? 6 : -25) + reanimateBonus
       + deckOutRisk - (targeted ? P.millSelfTargetGuard : 0);
   }
+  // Zgłoszenie C (2026-11-16, Epic Experiment + Withstand): w oknach darmowego
+  // rzutu za 0 many, w których odmowa bezpowrotnie traci szansę rzutu
+  // (Epic/suspend/rebound/grave_free — jak `cantBlockCantripHoldPenalty`),
+  // tarcza prewencji na własnym celu bez nadchodzących obrażeń nie jest
+  // marnowaniem tricku z ręki (`fogWindowWastedValue`), więc nie ściąga w dół
+  // darmowego dobrania karty; cel na przeciwniku nadal dostaje −80.
+  const FREE_CAST_NO_HOLD_OPTION_TYPES = new Set([
+    'resolve_epic_choice',
+    'resolve_suspend_cast',
+    'resolve_rebound_cast',
+    'resolve_grave_free_cast',
+  ]);
   function freeCastTargetPenalty(view, effects, cmd) {
     const target = objectOnBoard(view, (cmd.targets ?? [])[0]) ?? null;
+    const penalizeIdle = !FREE_CAST_NO_HOLD_OPTION_TYPES.has(cmd?.type);
     // B (2026-09-28e): wartość tarczy prewencji ODEJMUJE się od kary — cel
     // z wartością (ratunek z lethala, fog) obniża karę poniżej zera = premia,
     // cel na wrogu podnosi ją. Jeden lejek dla całej rodziny darmowych rzutów
@@ -10269,7 +10282,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     // w Epic Experiment nie kończą się już pierwszym celem z brzegu.
     return selfHarmPenalty(view, effects, cmd, target)
       + friendlyMisaimPenalty(view, effects, cmd, target)
-      - preventShieldTargetValue(view, effects, cmd);
+      - preventShieldTargetValue(view, effects, cmd, { penalizeIdle });
   }
 
   /**
