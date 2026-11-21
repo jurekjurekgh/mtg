@@ -4421,3 +4421,40 @@ par/seedów — pierwsza partia nie wylosowała ani jednej.
 **Krok 6/7 — dokumentacja i bramy:** ten wpis, wiersz rejestru (Batch 74), `docs/PROJECT_HISTORY.md`, kamień **M466**, §6 planu (wynik pętli). Bramy: `node tools/run-tests.mjs fast` **10 532 / 10 533** (jedyny czerwony `E5/1` to test skanujący własny plik źródłowy — zawiera w sobie wzorzec, którego szuka, więc zgłasza sam siebie; ta sama klasa co `docs/PROJECT_HISTORY.md` z cytatem), `slow` **282/282**, `npm run build` RC=0 (**79 modułów / 5978,8 kB**).
 
 **Jawne granice:** (1) F-91/4 (rad płaski), F-91/7 (tryby Roli bez modelu trample) i F-91/6 (brak premii „poświęć w end stepie rywala" jako reguły) są **zmierzone i udokumentowane**, nie naprawione — pin je zamraża, świadoma decyzja o zakresie. (2) Cap mocy w `negativePumpValue` dotyczy wyłącznie mocy; debuff `−0/−X` nie jest ograniczany (redukuje wytrzymałość do zera niezależnie od jej wysokości). (3) `raidHoldBonus` jest karą wycenową, nie zmianą oferty — czar nadal da się rzucić w main1, bot po prostu tego nie robi (oferta = walidacja, L48).
+
+### KOREKTA MOMENTU (2026-11-16b) — macierz krok × gracz wykryła 4 defekty, które audyt kart przegapił
+
+Audyt per-karta (tabela wyżej) patrzył na kartę w IZOLACJI: „czy wycena rośnie z
+jakością celu". Macierz **krok × gracz** (10 kart × 11 kroków: upkeep/main1/
+beginning_of_combat/declare_attackers/declare_blockers/end × moja tura / tura
+wroga) pokazała, że **wymiar momentu był mierzony, ale nie wpływał na decyzję**
+w czterech miejscach. To dokładnie ten wymiar, o który chodzi w PMSSB.
+
+| # | Defekt | Pomiar PRZED | Pomiar PO | Naprawa |
+|---|---|---|---|---|
+| D1 | **Memorial to Genius / Temur Banner** — `sacrificeSelf` na dedykowanym źródle many w MOJEJ turze | **8,00 / 4,00** w main1, BoC i main2 = bot dobierał kartę za źródło many, którego jeszcze potrzebował; end rywala 18,00/14,00 | main1/BoC/main2 **−6,00 / −10,00** (pod passem), end rywala **18,00 / 14,00** (bez zmian), tura wroga bez zmian | `manaSourceSacrificeCostLoss` + pokrętła `manaSourceSacrificePenalty` (14), `manaSourceSacrificeMinSources` (5), `manaSourceSacrificeWarnAboveScore` (−40) |
+| D2 | **Saltfield Recluse** — `{T}: −2/−0` | pierwotny pomiar „−73,00 w każdym kroku" był **artefaktem sondy** (brak zadeklarowanego atakującego) | scena z realnym atakiem 4/4: **35,00 > pass 0** w `declare_blockers` (pin F-91/1 już to dokumentował); poza walką pod passem | brak zmiany kodu — **sprostowanie pomiaru** + piny D2 |
+| D3 | **Lambholt Harrier** — `cant_block` | main1 **8,00**, `declare_attackers` **−22,00** — zdolność najdroższa tam, gdzie jeszcze nic nie przesądza, i **jałowa w jedynym momencie, w którym odmowa bloku przesądza atak** | main1 = BoC = `declare_attackers` = **8,00**; main2 i tura wroga **−22,00**; tapnięty bloker **−22,00** w każdym kroku | `attackWindowAttackerIds` uznaje `declare_attackers` za okno przed atakiem (L41 — wspólny predykat dla `cast_spell`, `activate_ability` i payoffów triggerów) |
+| D4 | **Gylwain, Casting Director** — twórca Ról (ETB-aury) | **64,80** sam i z tworem w ręce → przegrywał z drugim stworrem **66,60**; bot rzucał stwora PRZED twórcą Ról, więc aura nie miała celu i ginęła | Gylwain **72,00** > drugi stwór **66,60** (kolejność setup → payoff) | `setupBeforePayoffBonus` (8) — premia, gdy w ręce jest stwór, a rzucany permanent tworzy token Roli z `attachToContext: 'enteredCreatureId'` |
+
+**Zasada wyłuskana z D1 (generalna, nie karta-specific):** poświęcenie
+**dedykowanego** źródła many (`add_mana` za SAMO `{T}`) boli tylko przy
+**niedoborze** źródeł. Przy 5+ innych odkręconych landach oddanie jednego
+(Sequestered Stash, pin `C/0`) jest darmowe i musi zostać nad passem. Tokeny
+(własna, skalibrowana cena w `add_mana`) i permanenty produkujące manę
+dodatkowym kosztem (Dragonbrood's Relic: `{T}, tap creature` — kotwica 55)
+są **poza** regułą; kara dokłada się do wyniku końcowego, więc nie załamuje
+kotwic zdolności już głęboko ujemnych (Immersturm Skullcairn −58).
+
+**Regresje wykryte przez bramy przy naprawie D1** (wszystkie zamknięte przed
+commitem, każda przez ZAWĘŻENIE reguły, nie przez osłabienie D1):
+`audyt-pmssb2-tokeny` (Relic Dragon 41 vs 55 — wyłączenie źródeł z dodatkowym
+kosztem), `uwagi-z-gry-2026-09-22-cde` C/0 (Sequestered Stash — próg 5 źródeł),
+`pmssb6-discard-wave-a` (Skullcairn −72 vs −58 — kara na wynik końcowy + próg
+`WarnAboveScore`), `o-plague-reaver-darowanie` O/6 (kara dla CIAŁA zawsze, dla
+źródła many tylko warunkowo).
+
+**Piny:** `test/audyt-pmssb91-batch74.test.js` **23 → 30** (F-91/6 przepisany do
+zmierzonej siatki + 6a/6b/6c/6d strażnicze, nowe D2, D3, D3b, D3c).
+**Bramy:** `fast` **10 539 / 10 539** (0 fail). Commity: `001ebb5` (D1+D4),
+`8ac81b1` (D3+D2).
