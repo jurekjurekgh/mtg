@@ -3,7 +3,7 @@ import { destroyPermanents, regeneratePermanent } from './destruction.js';
 import { event } from '../protocol/types.js';
 import { moveObjectDirectly, removeFromCombat } from './objects.js';
 import { isPlaneswalker, deathZoneFor, effectiveKeywords, effectiveToughness, hasEnduringStory } from './permanents.js';
-import { removeIllegalAttachments, detachAttachmentsFromHost } from './attachments.js';
+import { removeIllegalAttachments, removeExcessRoleAttachments, detachAttachmentsFromHost } from './attachments.js';
 import { removeCounter } from './counters.js';
 import { effectiveAbilities } from './permanents.js';
 import { startEnginesFor } from './players.js';
@@ -307,6 +307,8 @@ export function runStateBasedActions(state) {
   // rodziny (bestow→stwór na polu bitwy, equipment→odłączony artefakt,
   // czysta aura→grób — CR 704.5m/n).
   events.push(...removeIllegalAttachments(state));
+  // Nadmiarowe Role tego samego kontrolera na jednym permanencie (zostaje najnowsza).
+  events.push(...removeExcessRoleAttachments(state));
   // CR 704.5e / CR 111.7: token, który znalazł się w strefie innej niż
   // pole bitwy, PRZESTAJE ISTNIEĆ. Bez tej reguły duch tokena zostawał w grobie
   // lub wygnaniu jako pełnoprawny obiekt i dawał się wskazać jako cel

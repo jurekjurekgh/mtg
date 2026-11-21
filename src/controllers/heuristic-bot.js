@@ -2709,14 +2709,37 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           counterHostValue(view, host, counterGrant.counter ?? '+1/+1', counterGrant.amount ?? 1));
       }
     }
+    let auraWorth = 0;
+    if (effect.kind === 'aura' && effect.aura) {
+      const aura = effect.aura;
+      const enteredId = effect.attachToContext === 'enteredCreatureId'
+        ? view.pendingModalTrigger?.extra?.enteredCreatureId : null;
+      const host = (enteredId ? objectOnBoard(view, enteredId) : null) ?? entering ?? source;
+      const hostPower = Math.max(1, host?.power ?? 2);
+      const pumpPower = aura.pump?.power ?? 0;
+      const pumpTough = aura.pump?.toughness ?? 0;
+      auraWorth += pumpPower * P.creaturePowerWeight + pumpTough * P.creatureToughnessWeight;
+      const kws = aura.keywords ?? [];
+      if (kws.includes('trample')) {
+        const oppBlockers = enemyCreatures(view).filter((o) => !o.tapped).length;
+        auraWorth += oppBlockers > 0 ? 1.5 + 0.6 * (hostPower + pumpPower) : 0.8 + 0.3 * (hostPower + pumpPower);
+      }
+      if (aura.ward != null || kws.includes('ward')) {
+        const hostValue = Math.max(1, host?.manaCost ?? 2);
+        auraWorth += 1.6 + 0.45 * hostValue;
+      }
+      if (Array.isArray(aura.grantAbilities) && aura.grantAbilities.length > 0) {
+        auraWorth += 2.2;
+      }
+    }
     // PMSSB-2/C (F5): ZNAK roli — token wroga (Robber: controllerFromEvent)
     // to ujemna rola (symetryczna negacja — lustro konserwatywne); rider
     // jest kierunkowy sam w sobie (obrażenia w kontrolera/twarz), więc
     // znak go nie dotyczy.
     const controller = tokenControllerId ?? view.playerId;
     const sign = controller === view.playerId ? 1 : -1;
-    return count * (sign * Math.max(bodyWorth, manaWorth, counterWorth, tokenDrawBankValue(view, effect),
-      tokenLifeBankValue(view, effect))
+    return count * (sign * Math.max(bodyWorth, manaWorth, counterWorth, auraWorth,
+      tokenDrawBankValue(view, effect), tokenLifeBankValue(view, effect))
       + tokenRiderDamage(view, effect, controller));
   };
   // PMSSB-2/C (F5): RIDERZY bezwarunkowe — token, który sam zadaje obrażenia

@@ -1130,14 +1130,23 @@ function abilityRemovalTimestamp(object) {
  * (abilityGrants — np. Fake Your Own Death nadaje stworowi trigger dies).
  * Triggery i legalne aktywacje czytają zawsze tę listę, nie object.abilities.
  */
-export function effectiveAbilities(object) {
+export function effectiveAbilities(object, state = null) {
   // Xu-Ifit (Batch60, „has no abilities", ruling 2 EOE 2025-07-25): strip
   // tłumi ZDOLNOŚCI WYDRUKOWANE; granty nadane PO wejściu działają.
   // Triggery, aktywacje i statyki własne czytają tę listę — jeden choke point.
-  if (object?.abilitiesStripped) return [...(object?.abilityGrants ?? [])];
-  const grants = object?.abilityGrants ?? [];
-  if (grants.length === 0) return object?.abilities ?? [];
-  return [...(object.abilities ?? []), ...grants];
+  const own = object?.abilitiesStripped
+    ? [...(object?.abilityGrants ?? [])]
+    : ((object?.abilityGrants ?? []).length === 0 ? (object?.abilities ?? []) : [...(object.abilities ?? []), ...(object.abilityGrants ?? [])]);
+  if (!state || object?.zone !== 'battlefield') return own;
+  const removedAt = abilityRemovalTimestamp(object);
+  const grantedByAttachments = [];
+  for (const attachment of attachmentsAttachedTo(state, object.id)) {
+    const grant = attachmentGrant(attachment);
+    if (!grant.grantAbilities?.length) continue;
+    if (removedAt != null && attachmentTimestampOf(attachment) <= removedAt) continue;
+    grantedByAttachments.push(...grant.grantAbilities);
+  }
+  return grantedByAttachments.length === 0 ? own : [...own, ...grantedByAttachments];
 }
 
 /**
@@ -1333,7 +1342,14 @@ export function effectiveSubtypesOnBattlefield(state, object) {
 export function wardAmountOf(object, state = null) {
   if (!object) return null;
   if (!effectiveKeywords(object, state).includes('ward')) return null;
-  return object.ward ?? null;
+  if (object.ward != null) return object.ward;
+  if (state && object.zone === 'battlefield') {
+    for (const attachment of attachmentsAttachedTo(state, object.id)) {
+      const ward = attachmentGrant(attachment)?.ward;
+      if (ward != null) return ward;
+    }
+  }
+  return null;
 }
 
 export function effectiveKeywords(object, state = null) {

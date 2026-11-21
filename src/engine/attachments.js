@@ -1,7 +1,7 @@
 import { event } from '../protocol/types.js';
 import { deathZoneFor } from './zones.js';
 import { moveObject } from './mover.js';
-import { nextTimestamp } from './timestamps.js';
+import { nextTimestamp, attachmentTimestampOf } from './timestamps.js';
 
 /**
  * Załączniki — aury (bestow i czyste) oraz equipmenty (CR 301.5, 303.4,
@@ -83,6 +83,13 @@ export function attachmentGrant(object) {
   // aura potrzebuje tej samej reguły bez daty ważności.
   if (descriptor.protection) {
     result.protection = { ...descriptor.protection };
+  }
+  if (descriptor.ward != null) {
+    result.ward = descriptor.ward;
+    if (!result.keywords.includes('ward')) result.keywords.push('ward');
+  }
+  if (Array.isArray(descriptor.grantAbilities) && descriptor.grantAbilities.length > 0) {
+    result.grantAbilities = [...descriptor.grantAbilities];
   }
   return result;
 }
@@ -539,6 +546,9 @@ export function sourceHasProtectionQuality(quality, source) {
   if (quality.kind === 'creature') {
     const isCreature = source.kind === 'creature' || (source.types ?? []).includes('Creature');
     if (!isCreature) return false;
+  } else if (quality.kind) {
+    const expectedType = quality.kind[0].toUpperCase() + quality.kind.slice(1);
+    if (source.kind !== quality.kind && !(source.types ?? []).includes(expectedType)) return false;
   }
   if (quality.subtype && !(source.subtypes ?? []).includes(quality.subtype)) return false;
   if (quality.notSubtype && (source.subtypes ?? []).includes(quality.notSubtype)) return false;
@@ -667,6 +677,38 @@ export function removeIllegalAttachments(state) {
     // mające tę jakość (np. „protection from Equipment").
     if (isProtectedFromSource(state, host, object)) {
       detachOrphanedAttachment(state, object, object.attachedTo, events);
+    }
+  }
+  return events;
+}
+
+/**
+ * Akcja stanowa Role (ruling WotC WOC 2023-09-01): jeśli permanent ma
+ * przypiętych więcej niż jedną Aurę z podtypem Role kontrolowaną przez TEGO
+ * SAMEGO gracza, wszystkie poza najnowszą (najwyższy znacznik czasu
+ * przypięcia) trafiają do grobu właściciela. Role różnych graczy współistnieją.
+ */
+export function removeExcessRoleAttachments(state) {
+  const events = [];
+  const groups = new Map();
+  for (const objectId of state.zones.battlefield) {
+    const object = state.objects.get(objectId);
+    if (!object || object.zone !== 'battlefield' || object.faceDown) continue;
+    if (!object.attachedTo || !(object.subtypes ?? []).includes('Role')) continue;
+    const key = `${object.attachedTo}|${object.controllerId}`;
+    const list = groups.get(key) ?? [];
+    list.push(object);
+    groups.set(key, list);
+  }
+  for (const list of groups.values()) {
+    if (list.length < 2) continue;
+    const ordered = [...list].sort((a, b) => {
+      const diff = attachmentTimestampOf(a) - attachmentTimestampOf(b);
+      if (diff !== 0) return diff;
+      return state.zones.battlefield.indexOf(a.id) - state.zones.battlefield.indexOf(b.id);
+    });
+    for (const stale of ordered.slice(0, -1)) {
+      detachOrphanedAttachment(state, stale, stale.attachedTo, events);
     }
   }
   return events;

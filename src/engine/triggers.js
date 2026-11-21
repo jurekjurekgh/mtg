@@ -2669,6 +2669,15 @@ function fireEnterBattlefieldTriggers(state, entered, events, context = {}) {
         if (entered.kind === 'creature' && source.id !== entered.id && controlOk && colorOk) {
           tryFire(state, ability, source, [], events);
         }
+      } else if (triggerEvent === 'self_or_another_creature_you_control_enters') {
+        const tt = ability.trigger ?? {};
+        const nontokenOk = entered.id === source.id || !tt.nontokenOnly || !entered.isToken;
+        if (entered.kind === 'creature' && entered.controllerId === source.controllerId && nontokenOk) {
+          tryFire(state, ability, source, [], events, {
+            enteredCreatureId: entered.id,
+            enteredCreatureCardId: entered.cardId ?? null,
+          });
+        }
       } else if (triggerEvent === 'land_entered_under_your_control') {
         if (entered.kind === 'land' && entered.controllerId === source.controllerId) {
           tryFire(state, ability, source, [], events);
@@ -4218,7 +4227,7 @@ function processTriggersScan(state, recentEvents) {
       for (const attackerId of ev.attackerIds ?? []) {
         const attacker = state.objects.get(attackerId);
         if (!attacker || attacker.zone !== 'battlefield') continue;
-        for (const ability of effectiveAbilities(attacker)) {
+        for (const ability of effectiveAbilities(attacker, state)) {
           // Kontekst zdarzenia dla triggerów ataku: lista współdeklarowanych
           // atakujących ORAZ wynik testu „z innym atakującym o większej sile"
           // (Training/trening, CR 702.149) — liczone RAZ, na mocy z chwili deklaracji

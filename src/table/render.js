@@ -1270,7 +1270,8 @@ function describeEffect(e, ctx = {}) {
       const dynamicNote = typeof e.amount === 'string' ? ` (${dynamicAmount(e.amount)})` : '';
       // Batch 68 (Secure the Scene): token dla kontrolera celu — etykieta mówi kto go dostaje.
       const controllerNote = e.controllerFromCapture ? ' (kontroler celu)' : '';
-      return `stwórz ${count}token ${e.name ?? ''}${dynamicNote}${controllerNote}`;
+      const attachNote = e.attachToContext ? ' (przypięty do wchodzącego stwora)' : '';
+      return `stwórz ${count}token ${e.name ?? ''}${dynamicNote}${controllerNote}${attachNote}`;
     },
     damage: () => {
       const amt = e.amount;
@@ -2316,6 +2317,10 @@ function describeTriggered(ability, controllerId = HUMAN_ID) {
   if (trigger.event === 'card_put_into_graveyard_from_nonbattlefield') return `Gdy karta trafia do grobu spoza pola bitwy: ${parts}.`;
   if (trigger.event === 'cards_exiled_from_your_graveyard') return `Ilekroć karty trafiają na wygnanie z twojego grobu: ${parts}.`;
   if (trigger.event === 'spell_targets_this_creature') return `Gdy czar celuje w tę kartę: ${parts}.`;
+  if (trigger.event === 'self_or_another_creature_you_control_enters') {
+    const nontokenPart = trigger.nontokenOnly ? 'nietokenowy ' : '';
+    return `Gdy ta karta lub inny ${nontokenPart}stwór pod ${mine ? 'twoją kontrolą' : 'kontrolą gracza'} wchodzi na pole bitwy: ${parts}.`;
+  }
   if (trigger.event === 'another_creature_enters') {
     // M186/Z4 (Żywy Tester, g7): Ivy Lane Denizen — filtry triggera
     // (youControl, colorsInclude) muszą być w opisie, inaczej kafel obiecuje
@@ -2522,6 +2527,8 @@ export function rulesText(info) {
       aura.exileIfDiesFromEnchantedDamage
         ? 'stwór, któremu zaczarowany zadał obrażenia w tej turze, zamiast umrzeć zostaje wygnany'
         : '',
+      aura.ward != null ? `stwór ma ward {${aura.ward}}` : '',
+      (aura.grantAbilities ?? []).length ? `stwór ma zdolność: ${aura.grantAbilities.map((a) => describeAbility(a, info.controllerId)).join('; ')}` : '',
     ].filter(Boolean).join(' · ')
     : '';
   // M192/Z4 (weryfikacja M193 Zywym Testerem): produkcja many ladu opisywana
@@ -5228,7 +5235,7 @@ export function cardInfo(session, object, combat = null) {
     // („Aura: Moonlit Meditation", „Equipment: …"). Scan pola bitwy w widoku.
     attachments: object.zone === 'battlefield' && object.id
       ? (session.view()?.zones?.battlefield ?? []).filter((o) => o.attachedTo === object.id && o.id !== object.id)
-          .map((o) => ({ name: o.cardId ? (session.nameOf(o.cardId) || o.cardId) : o.cardId, kind: (o.aura || o.bestow) ? 'aura' : 'equip' }))
+          .map((o) => ({ name: o.name || (o.cardId ? (session.nameOf(o.cardId) || o.cardId) : o.cardId), kind: (o.aura || o.bestow) ? 'aura' : 'equip' }))
       : [],
     // G (Altar of the Goyf): aktualny X = liczba typów w grobach (Oracle karty;
     // typy kart wg CR 205.2a) — badge na kafle

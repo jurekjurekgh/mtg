@@ -7506,7 +7506,8 @@ export function playerView(state, playerId) {
         // pola prawdziwy kafel (renderBattlefield czyta wpis z playerView)
         // nie pokazywał „Ward {2}\", a test W8 sprawdzał cardInfo na SUROWYM
         // obiekcie i luki nie widział.
-        if (object.ward != null) entry.ward = object.ward;
+        const wardVal = wardAmountOf(object, state);
+        if (wardVal != null) entry.ward = wardVal;
         // M315: mechanika zakrycia JAWNA dla kontrolera (CR 708.5 — swój
         // permanent możesz obejrzeć; kafel podpisuje „Cloak" zamiast „Morph").
         // Przeciwnik nie dostaje tej flagi — cloak-vs-morph to informacja

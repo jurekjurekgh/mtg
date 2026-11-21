@@ -301,6 +301,10 @@ export function defineCard(data) {
       ...(data.aura.conditionalKeywords?.length
         ? { conditionalKeywords: Object.freeze(data.aura.conditionalKeywords.map((ck) => Object.freeze({ condition: Object.freeze({ ...ck.condition }), keywords: Object.freeze([...ck.keywords]) }))) }
         : {}),
+      ...(data.aura.ward != null ? { ward: data.aura.ward } : {}),
+      ...(data.aura.grantAbilities?.length
+        ? { grantAbilities: Object.freeze(data.aura.grantAbilities.map((ab) => deepFreeze(ab))) }
+        : {}),
     }) : null,
     // Equipment (CR 702.6): { equip: koszt, pump, keywords } — załączony daje
     // nosicielowi pump/keywordy (Cloak of the Bat: flying, haste; equip {2}).

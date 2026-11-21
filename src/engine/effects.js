@@ -2915,9 +2915,26 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
       if (captured == null) return;
       tokenController = captured;
     }
+    let attachHostId = null;
+    if (effect.attachToContext) {
+      attachHostId = context?.[effect.attachToContext] ?? null;
+      const host = attachHostId ? state.objects.get(attachHostId) : null;
+      if (!host || host.zone !== 'battlefield') return;
+      const pseudoAura = {
+        kind: effect.kind ?? 'aura',
+        types: effect.types ?? [],
+        subtypes: effect.subtypes ?? [],
+        colors: effect.colors ?? [],
+        aura: effect.aura ?? null,
+      };
+      if (!isLegalAuraHost(pseudoAura, host)) return;
+      if (isProtectedFromSource(state, host, pseudoAura)) return;
+      const hostProtColors = effectiveProtectionFromColors(state, host);
+      if (hostProtColors.length > 0 && effectiveColors(pseudoAura).some((c) => hostProtColors.includes(c))) return;
+    }
     const createdTokenIds = [];
     for (let i = 0; i < amount; i += 1) {
-      createdTokenIds.push(createBattlefieldToken(state, tokenController, {
+      const created = createBattlefieldToken(state, tokenController, {
         cardId: effect.cardId,
         name: effect.name,
         kind: effect.kind ?? 'creature',
@@ -2930,13 +2947,19 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
         // Tokeny z własnymi zdolnościami (Treasure: „{T}, Sacrifice this
         // token: Add one mana of any color") — deskryptory generyczne.
         abilities: effect.abilities ?? [],
+        aura: effect.aura ?? null,
+        ward: effect.ward ?? effect.aura?.ward ?? null,
         // M69 (Relic Robber — Goblin Construct „This token can't block").
         cantBlock: Boolean(effect.cantBlock),
         // Batch 45 (Crawling Chorus — token Mite z toxic 1, CR 702.164).
         ...(effect.toxic != null ? { toxic: effect.toxic } : {}),
         // M147 (Static Net — Powerstone): token wchodzi TAPNIĘTY.
         tapped: Boolean(effect.tapped),
-      })?.id);
+      });
+      if (created?.id && attachHostId != null) {
+        attachAuraToCreature(state, created.id, attachHostId);
+      }
+      createdTokenIds.push(created?.id);
     }
     // „It gains haste until end of turn" (Baral and Kari Zev, ruling TDC
     // 2023-04-14; CR 611.2c) — nadanie CZASOWE (`keywordGrants`), nie
