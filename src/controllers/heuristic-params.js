@@ -216,6 +216,23 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   // martwych parametrów zatruwa tablicę tune-card.mjs — wycinane u korzenia.
   'drawCardValue',           // wartość jednej dobranej karty (dawniej *6)
   'instantDrawFoeEndBonus', // PMSSB-3/F2: premia za instant-draw na EOT wroga (lustro M211/A1, 10)
+  // PMSSB-91/F-91/6 (Batch 74, Memorial to Genius / Temur Banner): koszt
+  // `sacrificeSelf` na ŹRÓDLE MANY (land/artefakt-rampa) nie miał ŻADNEJ ceny
+  // w main1 — pomiar: aktywacja sac-draw 2 = 8,00 w main1/BoC/main2 identycznie,
+  // a źródło (nietapnięte) wyparowywało z tury. Pro-player: poświęcaj DOPIERO,
+  // gdy źródło jest tapnięte (mana już użyta) — wtedy nie tracisz produkcji.
+  // Kara za poświęcenie NIETAPNIĘTEGO źródła many w swojej turze (0 = dawna cena).
+  'manaSourceSacrificePenalty',
+  'manaSourceSacrificeMinSources', // ile INNYCH źródeł many czyni poświęcenie darmowym
+  'manaSourceSacrificeWarnAboveScore', // poniżej tego score kara jest zbędna (gra i tak odpada)
+  // PMSSB-91/F-91/7 (Batch 74, Gylwain, Casting Director): ETB nadaje Rolę
+  // NIETOKENOWEMU stworowi, więc kolejność w ręce ma cenę — pomiar PRZED:
+  // Gylwain = 64,80 niezależnie od tego, czy na stole/ręce jest drugi stwór
+  // (64,80 sam, 64,80 przy stworze na stole, 64,80 przy drugim w ręce), przez
+  // co bot rzucał NAJPIERW drugi stwór (66,60) i tracił Rolę na zawsze.
+  // Premia, gdy rzut Gylwaina jest POPRZEDZONY innym stworzonym czarem w tej
+  // turze, i kara za rzut, gdy w ręce czeka tańszy stwór (0 = bez wymiaru).
+  'setupBeforePayoffBonus',
   // Zgłoszenie właściciela 2026-11-08e (Inspiration): czysty instant-draw
   // dla siebie, rzucany z ręki, czeka na end step przeciwnika i nie wydaje
   // many kontestowanej przez inny rzucalny czar. Kara przebija bazę/dobór
@@ -1043,6 +1060,11 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   // PMSSB-3/F2: instant-draw na EOT przeciwnika (lustro M211/A1-scry: ta sama
   // racja fizzle-many; wartosc jak okno-scry, wlasne pokretlo).
   instantDrawFoeEndBonus: 10,
+  // PMSSB-91 — patrz uzasadnienie przy HEURISTIC_PARAM_KEYS.
+  manaSourceSacrificePenalty: 14,
+  manaSourceSacrificeMinSources: 5,
+  manaSourceSacrificeWarnAboveScore: -40,
+  setupBeforePayoffBonus: 8,
   // Zgłoszenie właściciela 2026-11-08e (Inspiration): patrz klucze wyżej.
   instantDrawHoldPenalty: 120,
   cantBlockCantripHoldPenalty: 120, // zgłoszenie U/RT: patrz klucze wyżej

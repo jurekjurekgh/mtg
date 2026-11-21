@@ -5264,10 +5264,65 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
    *    jednorazowy zasób; jego cenę nadal liczą dotychczasowe gałęzie
    *    (M243/C, PMSSB-32, PMSSB-3/F-scroll-sac).
    */
+  /**
+   * PMSSB-91/F-91/6 (Batch 74, Memorial to Genius / Temur Banner): ile kosztuje
+   * poświęcenie ŹRÓDŁA MANY (`sacrificeSelf` na landzie/artefakcie-rampie).
+   *
+   * Pomiar PRZED (sonda, 11 kroków x 2 talie): aktywacja sac-draw 2 była warta
+   * **8,00 w main1, beginning_of_combat, main2, a nawet w cudzej main1** —
+   * identycznie w każdym kroku, przy źródle NIETAPNIĘTYM. Pro-player widzi to
+   * inaczej: dopóki źródło nie jest tapnięte, jego poświęcenie zabiera
+   * produkcję many do końca tury (CR 500.5); dopiero po tapnięciu (mana już
+   * wydana) koszt oportunistyczny jest zerowy. Jedyna premia czasowa, jaką bot
+   * miał, to `instantDrawFoeEndBonus` (+10) w end stepie WROGA — czyli
+   * przypadkiem jedyny poprawny moment, bez rozumienia DLACZEGO.
+   *
+   * Reguła: NIETAPNIĘTE źródło many w mojej turze = kara
+   * `manaSourceSacrificePenalty` (14). Po tapnięciu kara znika (0), więc
+   * „ofiara jako ostatnia akcja tury" wychodzi naturalnie ponad main1.
+   * W turze przeciwnika kara nie obowiązuje (i tak nic nie produkowaliśmy).
+   */
+  const manaSourceSacrificeCostLoss = (view, source) => {
+    if (!source || !(P.manaSourceSacrificePenalty > 0)) return 0;
+    // Zasób już zużyty tej tury — poświęcenie nic nie zabiera.
+    if (source.tapped === true) return 0;
+    // W cudzej turze nie tracimy produkcji własnej tury (landy odtapują się
+    // w moim untap, nim z nich skorzystam).
+    if (!myTurn(view)) return 0;
+    // Token jednorazowy (Skarb/Clue/Powerstone) ma WŁASNĄ, skalibrowaną cenę
+    // w gałęzi `add_mana` (M128/PMSSB-32) — druga kara załamałaby rampy.
+    if (source.kind === 'token' || (source.types ?? []).includes('Token')) return 0;
+    // DEDYKOWANE źródło many = zdolność `add_mana`, której koszt to WYŁĄCZNIE
+    // tapnięcie samego źródła. Permanent, który produkuje manę dodatkowym
+    // kosztem (DBR: `{T}, tap creature`), nie jest „źródłem trzymanym na manę"
+    // — jego rolą jest coś innego, więc odcięcie go nie zabiera produkcji
+    // (zmierzone: kara łamała kotwicę 55 dla Relic Dragona).
+    const produkujeMane = [
+      ...((source.cardId ? cardDef(source.cardId)?.abilities : undefined) ?? []),
+    ].some((a) => [].concat(a?.effect ?? []).some((e) => e?.type === 'add_mana')
+      && a?.cost?.tap === true && !a?.cost?.tapCreature);
+    if (!produkujeMane) return 0;
+    // REGUŁA WŁAŚCIWA (pro-player): poświęcenie źródła many boli tylko wtedy,
+    // gdy gracz ma ich MAŁO. Przy dziesięciu lądach oddanie jednego
+    // (Sequestered Stash, pin C/0) jest darmowe — i tak zostaje 9 źródeł.
+    // Przy jednym (Memorial to Genius w scenie z samym sobą) oddanie go
+    // odcina gracza od many do końca tury. Dlatego liczymy POZOSTAŁE
+    // ODKRĘCONE lądy i karzemy tylko poniżej progu.
+    // Liczymy WYŁĄCZNIE lądy: artefakt-źródło many z `sacrificeSelf` (Memorial
+    // to land-object, ale bywa też artefakt) rozstrzyga własna, wcześniej
+    // ustalona bramka właściciela (pin C/0), a wliczanie artefaktów
+    // produkujących manę za pomocą TAPU (DBR: `{T}, tap creature`) mieszało
+    // dwie różne role permanentu (pompa vs źródło) i załamywało kotwicę 55.
+    const pozostale = (view.zones.battlefield ?? []).filter((o) => o
+      && o.controllerId === view.playerId && o.id !== source.id
+      && !o.tapped && (o.kind === 'land' || (o.types ?? []).includes('Land'))).length;
+    if (pozostale >= P.manaSourceSacrificeMinSources) return 0;
+    return P.manaSourceSacrificePenalty;
+  };
   const sacrificeSelfCostLoss = (view, source, effects) => {
     if (!source) return 0;
     const isCreature = source.kind === 'creature' || (source.types ?? []).includes('Creature');
-    if (!isCreature) return 0;
+    if (!isCreature) return manaSourceSacrificeCostLoss(view, source);
     if (permanentDoomedThisTurn(view, source)) return 0;
     // Zdolność MANY: zamiana ciała na zasób to zamierzona funkcja takiego
     // stworzenia (Spawn/Blood Pet/ramp) — ma własne, skalibrowane wymiary
@@ -13764,6 +13819,49 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // przepadały. Rzut czeka więc do Głównej 2, CHYBA że cel już istnieje
         // (wtedy ETB działa natychmiast) — wiedza o stanie, nie o nazwie karty
         // (ADR 0002).
+        // PMSSB-91/F-91/7 (Batch 74, Gylwain, Casting Director): ta sama klasa
+        // „poczekaj na właściwy moment" co Morbid niżej, ale wymiar jest
+        // ODWROTNY — nie „później", a „PRZED". ETB nadaje Rolę nietokenowemu
+        // stworowi, który wchodzi; jeśli bot ma w ręce tańszego stwora, rzut
+        // Gylwaina PO nim traci Rolę na zawsze. Pomiar PRZED: Gylwain = 64,80
+        // w każdym z trzech stanów (sam / stwór na stole / stwór w ręce), więc
+        // bot brał pierwszy z enumeracji — 66,60 drugiego stworu — i Rolę
+        // przepalał. Reguła generyczna: ETB, którego efekt nadaje coś
+        // PERMANENTOWI (aura/Role/licznik na stworze), a w ręce czeka tańszy
+        // stwór do zagrania w tej turze ⇒ kara `setupBeforePayoffBonus` za
+        // złą kolejność. Zero nazw kart — po deskryptorze `attachToContext`
+        // i typie efektu (ADR 0002).
+        // Uwaga: tryb modalny (Gylwain) trzyma efekty w `trigger.modes[].effects`,
+        // NIE w `ability.effect` — czytamy OBIE ścieżki (L41: tryb modalny i
+        // bezpośredni to ta sama instrukcja).
+        const etbEfekty = (a) => {
+          // Zdarzenie ETB ma w danych DWIE pisownie: `enter_battlefield` oraz
+          // `self_or_another_creature_you_control_enters` (Gylwain — trigger
+          // „kiedy to lub inny stwór wchodzi"). Jedna bramka dla obu (L41).
+          const EV = a?.trigger?.event;
+          if (a?.type !== 'triggered'
+            || (EV !== 'enter_battlefield' && EV !== 'self_or_another_creature_you_control_enters')) return [];
+          const tryby = a.trigger.modes ?? [];
+          return [...[].concat(a.effect ?? []), ...tryby.flatMap((m) => [].concat(m?.effects ?? []))];
+        };
+        const nadajeStworowi = (def?.abilities ?? []).some((a) => etbEfekty(a)
+          .some((e) => e?.type === 'create_token' && e?.kind === 'aura'
+            && e?.attachToContext === 'enteredCreatureId'));
+        // Kierunek reguły jest ODWROTNY niż przy Morbidzie: nie czekanie, a
+        // ZAGRANIE PIERWSZE. Powód jest mechaniczny (CR 603.3d/611.2c):
+        // Gylwain zagrany PIERWSZY nadaje Rolę sobie, a potem — przy wejściu
+        // drugiego stworu — nadaje Rolę JEMU; zagrany DRUGI nada Rolę tylko
+        // sobie, a pierwszy stwór zostaje bez Roli na zawsze. Więc gdy w ręce
+        // czeka INNY stwór, który zmieści się w manie po tym rzucie, grając
+        // Gylwaina/twórcę Ról kupujemy JEDNĄ DODATKOWĄ Rolę — premia.
+        if (nadajeStworowi && myTurn(view)) {
+          const kosztTej = card?.manaCost ?? 0;
+          const dostepnaMana = manaUnitsOfView(view, { castingSpell: true }).length;
+          const czekaStwor = view.zones.hand.some((o) => o.id !== cmd.objectId
+            && o.kind === 'creature' && castOfferedNow(view, o)
+            && (o.manaCost ?? 99) <= Math.max(0, dostepnaMana - kosztTej));
+          if (czekaStwor) score += P.setupBeforePayoffBonus;
+        }
         if (def?.entersWithCountersIf?.morbid === true || etbDefersForThisTurnsDamage(view, def)) {
           const poWalce = view.turn.phase === 'postcombat_main' && view.turn.step === 'main2';
           if (!myTurn(view)) {
@@ -15874,7 +15972,22 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // I: koszt „poświęć TO stworzenie" — jedno miejsce dla KAŻDEGO typu
         // efektu (wcześniej tylko wybrane gałęzie doliczały płaskie −4/−6,
         // więc np. zwrot karty z grobu nie płacił niczego).
-        if (ability?.cost?.sacrificeSelf) score -= sacrificeSelfCostLoss(view, source, effects);
+        // Kara za poświęcenie źródła many jest OSTRZEŻENIEM: ma odstraszyć od
+        // zagrania, które WYGLĄDA dobrze. Gdy zdolność i tak wychodzi głęboko
+        // na minus (Immersturm Skullcairn: baza −2, po kosztach −58), dodatkowe
+        // −14 niczego nie zmienia decyzyjnie, a psuje kotwicę. Dlatego karę
+        // dokładamy dopiero na WYNIK KOŃCOWY (patrz `finish` niżej) — tam
+        // widać, czy gra jest realnie rozważana.
+        // Kara dzieli się na dwie role (L41): ciało (stwór — zawsze opłaca się
+        // je wycenić, bo nawet głęboko ujemna zdolność zmienia bilans wymiany)
+        // oraz OSTRZEŻENIE o utracie źródła many (tylko gdy gra jest realnie
+        // rozważana — patrz `finish` niżej).
+        const sacSelfIsManaSource = !!ability?.cost?.sacrificeSelf
+          && !(source?.kind === 'creature' || (source?.types ?? []).includes('Creature'));
+        const sacSelfLoss = ability?.cost?.sacrificeSelf
+          ? sacrificeSelfCostLoss(view, source, effects) : 0;
+        const sacSelfBodyLoss = sacSelfIsManaSource ? 0 : sacSelfLoss;
+        score -= sacSelfBodyLoss;
         const ownDrawOnly = effects.length > 0 && effects.every(e =>
           e?.type === 'draw_cards' || e?.type === 'draw_then_discard');
         if (ownDrawOnly && ((ability?.cost?.discardCard && P.abilityDiscardCostWeight > 0) || reserveLoss > 0)) {
@@ -17495,6 +17608,13 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // więc pass wygrywa. Walka wyłączona: licznik +1/+1 może zmienić blok/atak w tym samym kroku.
         if (lastingMana && !freeWindow && !COMBAT_STEPS.has(view.turn.step) && !lethalNow) {
           score = Math.min(score, -P.abilityManaCostPenalty * abilityManaCost);
+        }
+        // Kara za poświęcenie DEDYKOWANEGO źródła many dokładana jest dopiero
+        // tutaj: ma odstraszyć od zagrania, które WYGLĄDA dobrze. Gdy zdolność
+        // i tak kończy głęboko na minusie (Immersturm Skullcairn: −58),
+        // dodatkowe −14 nie zmienia decyzji, a psuje istniejącą kotwicę.
+        if (sacSelfIsManaSource && sacSelfLoss > 0 && score > P.manaSourceSacrificeWarnAboveScore) {
+          score -= sacSelfLoss;
         }
         return finish(score);
       }

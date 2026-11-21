@@ -264,18 +264,59 @@ const sacDrawScore = (krok, aktywny, karta) => {
   return scoreOferty(s, 'activate_ability(src#1)');
 };
 
-test('PMSSB-91/F-91-6: sac-draw wyceniany wyżej w end step przeciwnika niż w mojej main1', () => {
-  for (const [karta, main1, endWroga] of [['memorial-to-genius', 8, 18], ['temur-banner', 4, 14]]) {
+test('PMSSB-91/F-91-6: sac-draw W TURZE WŁASNEJ schodzi pod pass; w end step przeciwnika zostaje grywalny', () => {
+  // PMSSB-91/MOMENT (naprawa D1): poświęcenie DEDYKOWANEGO źródła many
+  // (`{T}` → `add_mana`, dodatkowy koszt `sacrificeSelf` innej zdolności)
+  // w MOJEJ turze odcina gracza od produkcji, więc musi przegrać z passem.
+  // W end step przeciwnika land i tak odtapuje się w moim untap — nic nie
+  // tracę, więc zdolność zostaje nad passem. Wcześniejsza kotwica (8/4
+  // w main1) opisywała dokładnie ten defekt: bot dobierał kartę za źródło
+  // many, którego jeszcze potrzebował.
+  for (const [karta, main1, endWroga] of [
+    ['memorial-to-genius', -6, 18],
+    ['temur-banner', -10, 14],
+  ]) {
     const a = sacDrawScore('main1', 'p1', karta);
     const b = sacDrawScore('end', 'p2', karta);
     assert.ok(Math.abs(a - main1) < 0.01, `${karta} main1 = ${a}`);
     assert.ok(Math.abs(b - endWroga) < 0.01, `${karta} end step przeciwnika = ${b}`);
     assert.ok(b > a, `${karta}: ${b} > ${a}`);
+    assert.ok(a < 0, `${karta}: w mojej turze zdolność pod passem (${a})`);
+  }
+});
+
+test('PMSSB-91/F-91-6a: kara obowiązuje w każdym moim kroku (main1, początek walki, main2), nie tylko w main1', () => {
+  for (const krok of ['main1', 'beginning_of_combat', 'main2']) {
+    const s = sacDrawScore(krok, 'p1', 'memorial-to-genius');
+    assert.ok(s < 0, `${krok}: poświęcenie źródła many pod passem (${s})`);
   }
 });
 
 test('PMSSB-91/F-91-6b: w MOIM end step (source tapnięte i tak) aktywacja schodzi pod pass', () => {
   assert.ok(sacDrawScore('end', 'p1', 'memorial-to-genius') < 0);
+});
+
+test('PMSSB-91/F-91-6c: kara dotyczy TYLKO sytuacji niedoboru źródeł — przy 5+ innych odkręconych landach poświęcenie jest darmowe', () => {
+  const zLandami = stan({
+    krok: 'main1', aktywny: 'p1', priorytet: 'p1',
+    pole: [
+      { id: 'src', karta: 'memorial-to-genius' },
+      ...Array.from({ length: 6 }, (_, i) => ({ id: `l${i}`, karta: 'basic-island' })),
+    ],
+    rozmiarBiblioteki: 20,
+  });
+  addMana(zLandami, 'p1', 8);
+  const v = scoreOferty(zLandami, 'activate_ability(src#1)');
+  assert.ok(v >= 0, `przy 6 innych landach poświęcenie nie jest karane: ${v}`);
+});
+
+test('PMSSB-91/F-91-6d: artefakt produkujący manę kosztem tapnięcia STWORA nie jest źródłem trzymanym na manę (kotwica 55)', () => {
+  // Dragonbrood's Relic: `{T}, tap creature` → add_mana. Jego rolą nie jest
+  // produkcja many, więc poświęcenie go nie zabiera produkcji — kara D1 nie
+  // może tu zadziałać (kotwica PMSSB-34/B: 55).
+  const s = stan({ krok: 'main1', aktywny: 'p1', priorytet: 'p1', pole: [{ id: 'rx', karta: 'dragonbroods-relic' }] });
+  addMana(s, 'p1', 12);
+  assert.equal(scoreOferty(s, 'activate_ability(rx#1)'), 55);
 });
 
 // ---------------------------------------------------------------------------
