@@ -97,10 +97,18 @@ const BEZ_SNAPSHOTU = Object.freeze([
 // plan: docs/plans/PLAN_2026-10-14-batch67-kolekcja-369-398.md). Wpisy schodzą
 // z tej listy wraz z implementacją kolejnych fal; do tego czasu są OSIEROCONE.
 const OSIEROCONE_SNAPSHOTY = Object.freeze([
-  // Batch 70 (E3): 10 snapshotów batcha dostało definicje — z listy zostaje
-  // wyłącznie „undercity” (snapshot bez karty katalogowej, wpis historyczny).
-  // Batch 71/B3 (2026-11-01): 10 snapshotów dostało definicje w B3, więc lista
-  // w toku wróciła do zera (zostaje „undercity").
+  // Batch 74 (2026-11-16, Etap 1 — przed definicjami w Etapie 3): 10 snapshotów
+  // pobranych ze Scryfall w toku; schodzą do zera po dodaniu definicji do card-data.js.
+  'arrow-storm',
+  'frilled-sea-serpent',
+  'grollub',
+  'gylwain-casting-director',
+  'lambholt-harrier',
+  'loxodon-partisan',
+  'memorial-to-genius',
+  'mirelurk-queen',
+  'saltfield-recluse',
+  'temur-banner',
   'undercity',
 ]);
 
@@ -243,8 +251,9 @@ test('pokrycie snapshotów katalogu jest jawne i dokładne', () => {
   // Batch 69: +10 snapshotów (412–425) → 612.
   // Batch 70: +10 snapshotów (426–624) → 622; definicje wchodzą w E3.
   // Batch 71 (B1): +10 snapshotów (625–634) → 632.
-  // Batch 72 (B1): +10 snapshotów (635–644) → 642.
-  assert.equal(idsSnapshotow.length, 652, 'liczba snapshotów wymaga przeglądu po zmianie dokumentów');
+  // Batch 73: +10 nowych snapshotów (TDFC jako 1 plik) → 651.
+  // Batch 74 (Etap 1): +10 snapshotów w toku (656–665) → 662 plików; par sparowanych nadal 651 do Etapu 3.
+  assert.equal(idsSnapshotow.length, 662, 'liczba snapshotów wymaga przeglądu po zmianie dokumentów');
   assert.deepEqual(brakujace, [...BEZ_SNAPSHOTU], 'zmieniła się jawna lista kart bez snapshotu');
   assert.deepEqual(osierocone, [...OSIEROCONE_SNAPSHOTY], 'zmieniły się snapshoty bez definicji katalogowej');
   // Batch 67: 581 + 5 snapshotów fali A (pary snapshot↔definicja już istnieją).

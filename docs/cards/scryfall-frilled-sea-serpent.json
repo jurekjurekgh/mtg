@@ -1,0 +1,31 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Frilled+Sea+Serpent&set=m20&format=json",
+  "print": "m20",
+  "name": "Frilled Sea Serpent",
+  "mana_cost": "{4}{U}{U}",
+  "cmc": 6,
+  "type_line": "Creature — Serpent",
+  "oracle_text": "{5}{U}{U}: This creature can't be blocked this turn.",
+  "power": "4",
+  "toughness": "6",
+  "colors": ["U"],
+  "color_identity": ["U"],
+  "keywords": [],
+  "set": "m20",
+  "set_name": "Core Set 2020",
+  "collector_number": "61",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/b/5/b59698a5-be76-4ce2-a337-9052821f239f.jpg?1783933010",
+    "normal": "https://cards.scryfall.io/normal/front/b/5/b59698a5-be76-4ce2-a337-9052821f239f.jpg?1783933010"
+  },
+  "rulings": [
+    {
+      "published_at": "2019-07-12",
+      "comment": "Once Frilled Sea Serpent has been blocked, activating its ability won't change or undo that block."
+    }
+  ],
+  "rulingsSource": "https://api.scryfall.com/cards/m20/61/rulings",
+  "rulingsPobrano": "2026-11-16",
+  "pobrano": "2026-11-16"
+}

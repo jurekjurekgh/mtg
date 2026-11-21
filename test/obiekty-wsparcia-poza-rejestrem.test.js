@@ -143,7 +143,20 @@ test('OW/5 brak snapshotu dla Day // Night jest ODNOTOWANY, nie cichy', () => {
 // i zostaje jako jawny punkt zaczepienia dla następnego batcha.
 // Batch 71 (2026-11-01): snapshoty 10 kart weszły PRZED definicjami
 // (HOW_TO_ADD_CARD.md krok 1) — B3 domyka katalog i lista wraca do zera.
-const SNAPSHOTY_BATCH70_W_TOKU = Object.freeze([]);
+// Batch 74 (2026-11-16, Etap 1): snapshoty 10 kart weszły PRZED definicjami
+// (HOW_TO_ADD_CARD.md krok 1) — Etap 3 domyka katalog i lista wraca do zera.
+const SNAPSHOTY_BATCH70_W_TOKU = Object.freeze([
+  'arrow-storm',
+  'frilled-sea-serpent',
+  'grollub',
+  'gylwain-casting-director',
+  'lambholt-harrier',
+  'loxodon-partisan',
+  'memorial-to-genius',
+  'mirelurk-queen',
+  'saltfield-recluse',
+  'temur-banner',
+]);
 
 test('OW/6 w docs/cards NIE ma sierot: każdy snapshot to karta rejestru albo obiekt wsparcia', () => {
   const pliki = fs.readdirSync('docs/cards')

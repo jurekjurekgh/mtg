@@ -1,0 +1,59 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Mirelurk+Queen&set=pip&format=json",
+  "print": "pip",
+  "name": "Mirelurk Queen",
+  "mana_cost": "{4}{U}",
+  "cmc": 5,
+  "type_line": "Creature — Crab Mutant",
+  "oracle_text": "Vigilance\nWhen this creature enters, target player gets two rad counters.\nWhenever one or more nonland cards are milled, draw a card, then put a +1/+1 counter on this creature. This ability triggers only once each turn.",
+  "power": "4",
+  "toughness": "4",
+  "colors": ["U"],
+  "color_identity": ["U"],
+  "keywords": ["Vigilance"],
+  "set": "pip",
+  "set_name": "Fallout",
+  "collector_number": "33",
+  "rarity": "rare",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/6/e/6e6d1843-9e05-4cdd-ad4e-15d7913d87f7.jpg?1783912412",
+    "normal": "https://cards.scryfall.io/normal/front/6/e/6e6d1843-9e05-4cdd-ad4e-15d7913d87f7.jpg?1783912412"
+  },
+  "rulings": [
+    {
+      "published_at": "2024-03-08",
+      "comment": "Rad counters are a kind of counter that a player may have. They’re not associated with any specific permanents."
+    },
+    {
+      "published_at": "2024-03-08",
+      "comment": "Keep track of how many rad counters each player has. Potential ways to track this include writing them down on paper or using dice, but any method that is clear and mutually agreeable is fine."
+    },
+    {
+      "published_at": "2024-03-08",
+      "comment": "Rad counters don’t go away as steps, phases, or turns end. They only go away when an effect instructs a player to remove rad counters from themselves."
+    },
+    {
+      "published_at": "2024-03-08",
+      "comment": "There is an inherent triggered ability associated with having rad counters. This triggered ability has no source and is controlled by the active player. The full text of this ability is “At the beginning of the precombat main phase of a player with rad counters, that player mills cards equal to the number of rad counters they have. For each nonland card milled this way, that player loses 1 life and removes one rad counter from themselves.”"
+    },
+    {
+      "published_at": "2024-03-08",
+      "comment": "In a game using the shared team turns option, such as an Archenemy or Two-Headed Giant game, the inherent triggered ability associated with rad counters triggers once for each player on the active team that has rad counters. Each instance of that ability is controlled by one of those players."
+    },
+    {
+      "published_at": "2024-03-08",
+      "comment": "Any effects (such as proliferate) that interact with counters a player gets, has, or loses can interact with rad counters."
+    },
+    {
+      "published_at": "2024-03-08",
+      "comment": "The cards are milled all at once, which means abilities that trigger “whenever one or more nonland cards are milled” will trigger exactly once as long as at least one nonland card was milled."
+    },
+    {
+      "published_at": "2024-03-08",
+      "comment": "If a player has fewer cards remaining in their library than the number of rad counters they have when the triggered ability resolves, they’ll mill as many cards as they can."
+    }
+  ],
+  "rulingsSource": "https://api.scryfall.com/cards/pip/33/rulings",
+  "rulingsPobrano": "2026-11-16",
+  "pobrano": "2026-11-16"
+}

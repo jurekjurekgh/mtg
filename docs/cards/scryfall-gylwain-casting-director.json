@@ -1,0 +1,59 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Gylwain,+Casting+Director&set=woc&format=json",
+  "print": "woc",
+  "name": "Gylwain, Casting Director",
+  "mana_cost": "{1}{G}{W}",
+  "cmc": 3,
+  "type_line": "Legendary Creature — Human Bard",
+  "oracle_text": "Whenever Gylwain or another nontoken creature you control enters, choose one —\n• Create a Royal Role token attached to that creature.\n• Create a Sorcerer Role token attached to that creature.\n• Create a Monster Role token attached to that creature.",
+  "power": "2",
+  "toughness": "3",
+  "colors": ["G", "W"],
+  "color_identity": ["G", "W"],
+  "keywords": ["Role token"],
+  "set": "woc",
+  "set_name": "Wilds of Eldraine Commander",
+  "collector_number": "4",
+  "rarity": "mythic",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/7/9/79e4242c-a53a-4287-976b-8e545888a1fa.jpg?1783914989",
+    "normal": "https://cards.scryfall.io/normal/front/7/9/79e4242c-a53a-4287-976b-8e545888a1fa.jpg?1783914989"
+  },
+  "rulings": [
+    {
+      "published_at": "2023-09-01",
+      "comment": "Roles are colorless enchantment tokens. Each one has the Aura and Role subtypes and the enchant creature ability."
+    },
+    {
+      "published_at": "2023-09-01",
+      "comment": "If a permanent has more than one Role attached to it controlled by the same player, each of those Roles except the one with the most recent timestamp is put into its owner's graveyard. This is a state-based action."
+    },
+    {
+      "published_at": "2023-09-01",
+      "comment": "If two or more Roles controlled by the same player become attached to a permanent at the same time (perhaps due to an effect such as that of Doubling Season), that player chooses which one to keep and which are put into their owners' graveyards."
+    },
+    {
+      "published_at": "2023-09-01",
+      "comment": "A permanent can have multiple Roles attached to it if each one is controlled by a different player."
+    },
+    {
+      "published_at": "2023-09-01",
+      "comment": "Some spells and abilities that create Role tokens require targets. If each target chosen is an illegal target as that spell or ability tries to resolve, it won't resolve. The Role token won't be created."
+    },
+    {
+      "published_at": "2023-09-01",
+      "comment": "In rare cases, a spell or ability might attempt to create a Role token enchanting a permanent that it can't legally enchant (because of an ability like protection from enchantments). In such cases, the Role token isn't created."
+    },
+    {
+      "published_at": "2023-09-01",
+      "comment": "Hexproof and shroud won't prevent a Role from becoming attached to a permanent if the ability creating that Role attached to that permanent doesn't target it."
+    },
+    {
+      "published_at": "2023-09-01",
+      "comment": "Cards in the Wilds of Eldraine main set create six different Role tokens: Cursed, Monster, Royal, Sorcerer, Wicked, and Young Hero. A seventh Role token, Virtuous, is created by Ellivere of the Wild Court, the commander of the \"Virtue and Valor\" Commander Deck."
+    }
+  ],
+  "rulingsSource": "https://api.scryfall.com/cards/woc/4/rulings",
+  "rulingsPobrano": "2026-11-16",
+  "pobrano": "2026-11-16"
+}

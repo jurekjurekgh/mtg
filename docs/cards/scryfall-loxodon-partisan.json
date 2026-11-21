@@ -1,0 +1,26 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Loxodon+Partisan&set=mbs&format=json",
+  "print": "mbs",
+  "name": "Loxodon Partisan",
+  "mana_cost": "{4}{W}",
+  "cmc": 5,
+  "type_line": "Creature — Elephant Soldier",
+  "oracle_text": "Battle cry (Whenever this creature attacks, each other attacking creature gets +1/+0 until end of turn.)",
+  "power": "3",
+  "toughness": "4",
+  "colors": ["W"],
+  "color_identity": ["W"],
+  "keywords": ["Battle Cry"],
+  "set": "mbs",
+  "set_name": "Mirrodin Besieged",
+  "collector_number": "12",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/a/4/a4a76016-96a1-40f5-9002-4b3bed65cd5c.jpg?1783941392",
+    "normal": "https://cards.scryfall.io/normal/front/a/4/a4a76016-96a1-40f5-9002-4b3bed65cd5c.jpg?1783941392"
+  },
+  "rulings": [],
+  "rulingsSource": "https://api.scryfall.com/cards/mbs/12/rulings",
+  "rulingsPobrano": "2026-11-16",
+  "pobrano": "2026-11-16"
+}
