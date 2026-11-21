@@ -20,7 +20,7 @@ const REGISTRY = createCardRegistry();
 
 function match() {
   const green = parseDeckText(fs.readFileSync('decks/tarkir-bg.txt', 'utf8'), REGISTRY).cardIds;
-  const black = parseDeckText(fs.readFileSync('decks/dominaria-wrg.txt', 'utf8'), REGISTRY).cardIds;
+  const black = parseDeckText(fs.readFileSync('decks/dominaria-brg.txt', 'utf8'), REGISTRY).cardIds;
   return setupCardMatch({
     seed: 2026,
     players: [{ id: 'p1' }, { id: 'p2' }],

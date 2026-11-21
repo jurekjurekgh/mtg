@@ -54,8 +54,10 @@ test('każda regularna karta ma plan; bez planu tylko wyjątki z AGENTS.md', () 
   // Batch 69: +token_heron_spirit (Heron-Blessed Geist) → 52.
   // Batch 71: +token_elf_warrior (Ambassador Oak) → 53.
   // Batch 72: +token_spirit_red_white (Living History) → 54.
-  assert.equal(kategorie.token.length, 54,
-    `oczekiwano 54 tokenów bez planu, jest ${kategorie.token.length}`);
+  // Batch 74 (Gylwain): +token_royal_role, +token_sorcerer_role,
+  // +token_monster_role (tokeny Ról — druk TWOE) → 57.
+  assert.equal(kategorie.token.length, 57,
+    `oczekiwano 57 tokenów bez planu, jest ${kategorie.token.length}`);
   assert.deepEqual(kategorie.special.sort(), ['day-night', 'undercity'],
     'specjalne wpisy Day/Night i Undercity mogą nie mieć planu');
 

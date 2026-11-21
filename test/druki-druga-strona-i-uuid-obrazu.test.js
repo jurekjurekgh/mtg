@@ -201,16 +201,8 @@ test('D/12 karty dwustronne: UUID obrazu z card_faces, a gdy twarzy bez obrazów
 // Batch 74 (2026-11-16, Etap 1): snapshoty 10 kart weszły PRZED definicjami
 // (HOW_TO_ADD_CARD.md krok 1) — Etap 3 domyka katalog i lista wraca do zera.
 const SNAPSHOTY_BATCH70_W_TOKU = Object.freeze([
-  'arrow-storm',
-  'frilled-sea-serpent',
-  'grollub',
-  'gylwain-casting-director',
-  'lambholt-harrier',
-  'loxodon-partisan',
-  'memorial-to-genius',
-  'mirelurk-queen',
-  'saltfield-recluse',
-  'temur-banner',
+  // Batch 74 / Etap 3: katalog domknięty — wszystkie 10 snapshotów ma parę
+  // definicyjną, lista wraca do zera.
 ]);
 
 test('D/14 nazwy snapshotów: konwencja scryfall-<id>.json — sierot BRAK', () => {

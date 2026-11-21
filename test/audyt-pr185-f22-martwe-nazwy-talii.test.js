@@ -5,10 +5,10 @@
 //   Error: ENOENT: no such file or directory, open '…/decks/dominaria-wu.txt'
 //       at deckOf (tools/bot-tie-audit.mjs:61)  ← AUDIT_PAIRS, pozycja 9
 // PR #185 (`5df0e96`) usunął `decks/dominaria-brg.txt` i `decks/dominaria-wu.txt`
-// (pomiar `git ls-tree 0d0a12b decks/` vs HEAD) i dodał `dominaria-ub.txt` oraz
-// `dominaria-wrg.txt`. Migracja objęła JEDNO z dwóch odwołań w `AUDIT_PAIRS`
-// (`dominaria-brg` → `dominaria-wrg`) i listę par w teście bramkowym
-// (`test/audyt-bot-walka-remisy.test.js` ma już `dominaria-ub`), a pominęła
+// (pomiar `git ls-tree 0d0a12b decks/` vs HEAD) i dodał `dominaria-wu.txt` oraz
+// `dominaria-brg.txt`. Migracja objęła JEDNO z dwóch odwołań w `AUDIT_PAIRS`
+// (`dominaria-brg` → `dominaria-brg`) i listę par w teście bramkowym
+// (`test/audyt-bot-walka-remisy.test.js` ma już `dominaria-wu`), a pominęła
 // drugie — więc domyślny audyt (CLI i każdy, kto woła `audytRemisow()` bez
 // argumentów) pada zamiast mierzyć. Testy bramkowe pozostały zielone, bo
 // podają własną listę par: awaria dotyczyła wyłącznie pomiaru z narzędzia.
@@ -47,14 +47,14 @@ test('F-22/1: każda talia z AUDIT_PAIRS istnieje i parsuje się — narzędzie 
 
 test('F-22/2: domyślne pary audytu znają talie, którymi gra test bramkowy (jedna migracja, nie dwie prawdy)', () => {
   // `test/audyt-bot-walka-remisy.test.js` (slow) woła `audytRemisow({ pary: […] })`
-  // jawną listą — po migracji Dominarii miał `dominaria-ub`, podczas gdy
+  // jawną listą — po migracji Dominarii miał `dominaria-wu`, podczas gdy
   // `AUDIT_PAIRS` zostało przy usuniętym `dominaria-wu`. Strażnik: przeglądane
   // pary testu bramkowego są PODZBIOREM domyślnych, więc przeglądając wynik
   // narzędzia przeglądamy też to, co bramkuje test (a nie odwrotnie).
   const jawneWBramce = [
-    'ravnica-wur', 'innistrad-wu', 'dominaria-wrg', 'mirrodin-wu', 'tarkir-bg',
-    'warhammer-ubr', 'wiedzmin-bg', 'srodziemie', 'theros', 'kaladesh',
-    'zendikar-wu', 'dominaria-ub', 'worek-mroczny',
+    'ravnica-wur', 'innistrad-wu', 'dominaria-brg', 'mirrodin-wu', 'tarkir-bg',
+    'warhammer-ub', 'wiedzmin-bg', 'srodziemie', 'theros', 'kaladesh',
+    'zendikar-wu', 'dominaria-wu', 'worek-mroczny',
   ];
   const domyslne = new Set(AUDIT_PAIRS.flat());
   const poza = jawneWBramce.filter((n) => !domyslne.has(n));
@@ -71,7 +71,11 @@ test('F-22/3: nakładanie audytu na próbkę benchmarkową jest ZMIERZONE i nie 
   // nazwy Dominarii). Pin pilnuje, by nie urosło bez świadomej decyzji.
   const bench = new Set(BENCH_DECKS);
   const nakladanie = [...new Set(AUDIT_PAIRS.flat())].filter((n) => bench.has(n)).sort();
-  assert.deepEqual(nakladanie, ['dominaria-ub', 'dominaria-wrg', 'forgotten-realms-br'],
+  // Batch 74/Etap 3: generator przeliczył podział Dominarii (Memorial to Genius
+  // wszedł do `dominaria-wu`) — talie połówkowe zmieniły nazwy na
+  // `dominaria-wu` / `dominaria-brg`, więc lista jest sortowana alfabetycznie,
+  // a liczność (3) zostaje bez zmian: nakładanie nie urosło.
+  assert.deepEqual(nakladanie, ['dominaria-brg', 'dominaria-wu', 'forgotten-realms-br'],
     `nakładanie AUDIT_PAIRS na BENCH_DECKS (${BENCH_DECKS.join(', ')}) — pre-existing 3, jest ${nakladanie.length}`);
 });
 

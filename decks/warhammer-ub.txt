@@ -1,32 +1,28 @@
-# Warhammer Fantasy (UBR)
+# Warhammer Fantasy (UB)
 
 1x Dismal Backwater
-1x Brute Force
-1x Fireball
+1x Rupture Spire
 1x Index
 1x Lab Rats
-1x Shock
 1x Tome Scour
 1x Unearth
+1x Cellar Door
 1x Child of Night
-1x Goblin Piker
+1x Contested Game Ball
 1x Negate (M15)
 1x Omenspeaker
 1x Reassembling Skeleton
-1x Bloodfire Infusion
+1x Brawler's Plate
 1x Feedback
 1x Fledgling Imp
 1x Frost Lynx
+1x Grollub
+1x Ramroller
 1x Resurrected Cultist
 1x Vampire Hounds
-1x Goblin Battle Jester
-1x Gorehorn Minotaurs
-1x Hill Giant
 1x Terminal Agony
-1x Wrap in Flames
 1x Rotting Legion
 1x Minotaur Abomination
-1x Revolutionist
-3x Island
-5x Swamp
-6x Mountain
+4x Island
+7x Swamp
+1x Mountain

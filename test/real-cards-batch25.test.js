@@ -186,7 +186,7 @@ test('Springbloom Druid: ETB springbloom_sacrifice_search', () => {
 // --- Deck validation ---------------------------------------------------------
 
 test('Batch 25: karty w taliach singleton', () => {
-  const deckFiles = ['tarkir-bg', 'dominaria-wrg', 'warhammer-ubr', 'innistrad-brg', 'wiedzmin-bg', 'wiedzmin-wur', 'alara', 'ravnica-bg', 'ravnica-wur', 'zendikar-rg', 'zendikar-wu', 'mirrodin-brg'];
+  const deckFiles = ['tarkir-bg', 'dominaria-brg', 'warhammer-ub', 'innistrad-brg', 'wiedzmin-bg', 'wiedzmin-wur', 'alara', 'ravnica-bg', 'ravnica-wur', 'zendikar-rg', 'zendikar-wu', 'mirrodin-brg'];
   for (const name of deckFiles) {
     const path = `decks/${name}.txt`;
     // Audyt PR #185 (F-22, klasa L21): `if (!fs.existsSync(path)) continue;`
@@ -202,11 +202,11 @@ test('Batch 25: karty w taliach singleton', () => {
 // --- Deterministic replay (smoke) -------------------------------------------
 
 test('Batch 25: partia na tarkir vs warhammer kończy się deterministycznie (M178)', () => {
-  const { decks } = buildDecks('tarkir-bg.txt', 'warhammer-ubr.txt');
+  const { decks } = buildDecks('tarkir-bg.txt', 'warhammer-ub.txt');
   const s1 = createSession({ seed: 42, registry, decks });
   playOut(s1);
   assert.ok(s1.state.status !== 'active', 'partia 1 nie zakończyła się');
-  const { decks: decks2 } = buildDecks('tarkir-bg.txt', 'warhammer-ubr.txt');
+  const { decks: decks2 } = buildDecks('tarkir-bg.txt', 'warhammer-ub.txt');
   const s2 = createSession({ seed: 42, registry, decks: decks2 });
   playOut(s2);
   assert.ok(s2.state.status !== 'active', 'partia 2 nie zakończyła się');

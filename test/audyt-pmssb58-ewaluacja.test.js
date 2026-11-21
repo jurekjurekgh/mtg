@@ -12,5 +12,5 @@ test('58/E2: brak talii/par nie udaje remisu ani zera błędów',()=>{
  assert.throws(()=>audytRemisow({pary:[]}),/niepustej próby/);
 });
 test('58/E3: przerwany audyt remisów nie zwraca zielonej statystyki',()=>{
- assert.throws(()=>audytRemisow({pary:[['dominaria-wrg','mirrodin-wu']],gry:1,maxCommands:1}),/Niepełny pomiar/);
+ assert.throws(()=>audytRemisow({pary:[['dominaria-brg','mirrodin-wu']],gry:1,maxCommands:1}),/Niepełny pomiar/);
 });

@@ -858,6 +858,9 @@ export const TRIGGER_EVENT_LABELS = Object.freeze({
   // M177/B (Rakshasa Vizier): karty wygnane z twojego grobu.
   cards_exiled_from_your_graveyard: 'karty wygnane z twojego grobu',
   creature_you_control_enters: 'wejście stwora pod twoją kontrolą',
+  // Batch 74/659 (Gylwain, Casting Director): „Whenever Gylwain or another
+  // nontoken creature you control enters" — ETB obejmuje też samo źródło.
+  self_or_another_creature_you_control_enters: 'wejście tego stwora lub innego stwora pod twoją kontrolą',
   // audyt M100/E6 (Żywy Tester, azorius vs green seed 34): surowy slug
   // w LOGU zamiast etykiety (Setessan Skirmisher).
   enchantment_you_control_enters: 'wejście enchantmentu pod twoją kontrolę',

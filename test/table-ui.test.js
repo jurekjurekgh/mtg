@@ -235,7 +235,7 @@ function pickActionButton(actions) {
 const dom = installMiniDom();
 globalThis.REPO_DECKS = {
   green: fs.readFileSync('decks/tarkir-bg.txt', 'utf8'),
-  red: fs.readFileSync('decks/warhammer-ubr.txt', 'utf8'),
+  red: fs.readFileSync('decks/warhammer-ub.txt', 'utf8'),
   // Dwukolorowa talia pod kreator many (E.3a): 2 kolory lądów + tanie czary
   // z kolorowym wymaganiem (Curate {1}{U}) — gwarantuje niejednoznaczne
   // pokrycie kosztu (Wyspa+Wyspa+Równina, seed 1).

@@ -67,7 +67,9 @@ test('AUD-E2: kotwice liczności (L13) — zbiory rosną z batchami kart i mecha
   // Jeden typ opuścił katalog, ale musi pozostać w trybach i w silniku.
   // Batch 70 (Paranormal Analyst): +return_context_graveyard_card_to_hand → 191.
   // Batch 71 (Changeling Berserker): +champion → 192.
-  assert.equal(UZYTE.size, 193, 'katalog bez fałszywego ETB riot: grant_keyword_permanent jest w RIOT_MODES');
+  // Batch 74 (Mirelurk Queen): +add_rad_counters (liczniki radiacji, CR 729.1)
+  // — dotąd typ żył tylko w kartach syntetycznych Etapu 2D → 194.
+  assert.equal(UZYTE.size, 194, 'katalog bez fałszywego ETB riot: grant_keyword_permanent jest w RIOT_MODES');
   assert.ok(RIOT_MODES.some((mode) => mode.effects.some((e) => e.type === 'grant_keyword_permanent')));
   assert.ok(ZNANE.has('grant_keyword_permanent'), 'silnik obsługuje nadal grant z mechanicznym riot');
   assert.ok(ZNANE.size >= 200, `silnik zna co najmniej 200 typów efektów (jest ${ZNANE.size})`);

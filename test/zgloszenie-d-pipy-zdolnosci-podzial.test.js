@@ -64,8 +64,8 @@ test('D/2: karta bezkolorowa z pipami idzie na stronę, która może je zapłaci
 
 test('D/3: realny generator — Simian Simulacrum w Dominaria (WRG), nie w (UB)', () => {
   const files = buildDecks(registry);
-  const dominariaUb = files.get('dominaria-ub');
-  const dominariaWrg = files.get('dominaria-wrg');
+  const dominariaUb = files.get('dominaria-wu');
+  const dominariaWrg = files.get('dominaria-brg');
   assert.ok(dominariaUb && dominariaWrg,
     'podział Dominarii: strony to UB i WRG');
   assert.match(dominariaWrg, /1x Simian Simulacrum/,
@@ -80,8 +80,8 @@ test('D/3: realny generator — Simian Simulacrum w Dominaria (WRG), nie w (UB)'
   // dopisuje basic landy pod pipy, a te nie liczą się do progu).
   const nonland = (text) => parseDeckText(text, registry).cardIds
     .filter((cardId) => !cardId.startsWith('basic-')).length;
-  assert.ok(nonland(dominariaUb) >= MIN_NONLAND, `dominaria-ub ma ${nonland(dominariaUb)} kart nielandowych`);
-  assert.ok(nonland(dominariaWrg) >= MIN_NONLAND, `dominaria-wrg ma ${nonland(dominariaWrg)} kart nielandowych`);
+  assert.ok(nonland(dominariaUb) >= MIN_NONLAND, `dominaria-wu ma ${nonland(dominariaUb)} kart nielandowych`);
+  assert.ok(nonland(dominariaWrg) >= MIN_NONLAND, `dominaria-brg ma ${nonland(dominariaWrg)} kart nielandowych`);
 });
 
 test('Scion Summoner: koszt rzucenia {G} kieruje bezkolorowy wypełniacz do Zendikar RG', () => {
@@ -114,6 +114,24 @@ test('Scion Summoner: koszt rzucenia {G} kieruje bezkolorowy wypełniacz do Zend
   assert.equal(new Set([...wuIds, ...rgIds]).size, 30, 'każda karta planu pozostaje singletonem');
 });
 
+/**
+ * Wyjątki D/4 (karty BEZKOLOROWE) — nazwane, zliczone i sprawdzone
+ * MECHANICZNIE, jak wyjątki D/5. Wpis dopuszczalny tylko wtedy, gdy talia
+ * NAPRAWDĘ płaci pip: strażnik wymaga w niej źródła many (basic land) na
+ * każdy kolor spoza sufiksu — inaczej wyjątek byłby cichym przyzwoleniem.
+ *
+ * Batch 74/663 (Temur Banner): `{G}{U}{R}, {T}, Sacrifice: draw a card`.
+ * Generator (ADR 0024, `splitPlanByColors`) trzyma kartę po stronie z
+ * WIĘKSZOŚCIĄ kolorów produkcji — U i R (sufiks `wur`), a G przypada stronie
+ * `bg`. Koszt zdolności nadal jest płacalny: `landSplit` (reguła Batch 69)
+ * dokłada do talii basic land KAŻDEGO koloru pipa, więc `tarkir-wur` ma
+ * Las. Wyjątek jest więc o SUFIKSIE (nazwie), nie o rzucalności — dlatego
+ * test niżej dodatkowo weryfikuje obecność źródła.
+ */
+const WYJATKI_PIPY_BEZBARWNYCH = new Map([
+  ['temur-banner', { talia: 'tarkir-wur.txt', pipyPozaSufiksem: 'g' }],
+]);
+
 test('D/4: niezmiennik talii dzielonych — bezkolorowa karta z pipami ma je pokryte sufiksem', () => {
   // Strażnik ogólny (nie na jedną kartę): każda talia o sufiksie kolorów
   // (efekt podziału ADR 0024) musi mieć źródła na pipy WSZYSTKICH swoich
@@ -126,6 +144,7 @@ test('D/4: niezmiennik talii dzielonych — bezkolorowa karta z pipami ma je pok
       return /^[wubrg]+$/.test(suffix) && new Set(suffix).size === suffix.length;
     });
   assert.ok(splitDecks.length >= 8, `znaleziono talie dzielone: ${splitDecks.length}`);
+  const naruszenia = [];
   for (const file of splitDecks) {
     const suffix = file.replace(/\.txt$/, '').split('-').pop();
     const cardIds = parseDeckText(fs.readFileSync(`decks/${file}`, 'utf8'), registry).cardIds;
@@ -134,9 +153,30 @@ test('D/4: niezmiennik talii dzielonych — bezkolorowa karta z pipami ma je pok
       if (!card || (card.colors ?? []).some((color) => 'WUBRG'.includes(color))) continue;
       const missing = abilityCostColorsOf(card)
         .filter((color) => !suffix.includes(color.toLowerCase()));
-      assert.deepEqual(missing, [],
-        `${file}: karta ${cardId} ma pipy ${abilityCostColorsOf(card).join('')} poza sufiksem ${suffix}`);
+      if (missing.length === 0) continue;
+      // Nazwany wyjątek (jak D/5) — inaczej czerwony, żeby luka nie była cicha.
+      const w = WYJATKI_PIPY_BEZBARWNYCH.get(cardId);
+      assert.ok(w, `${file}: karta ${cardId} ma pipy ${abilityCostColorsOf(card).join('')} `
+        + `poza sufiksem ${suffix} — przenieś ją do talii, która je płaci, albo dopisz `
+        + 'nazwany wyjątek z usprawiedliwieniem (D/4)');
+      assert.equal(w.talia, file, `wyjątek dla ${cardId} wskazuje ${w.talia}, a karta jest w ${file}`);
+      assert.equal(w.pipyPozaSufiksem, missing.map((c) => c.toLowerCase()).join(''),
+        `wyjątek dla ${cardId} opisuje pipy ${w.pipyPozaSufiksem}, a brakujące to `
+        + missing.map((c) => c.toLowerCase()).join(''));
+      // …i wyjątek jest PŁACALNY: talia ma basic land każdego brakującego koloru.
+      for (const color of missing) {
+        assert.ok(talieMaZrodlo(cardIds, color),
+          `${cardId}: pipy ${missing.join('')} poza sufiksem ${suffix} i BEZ źródła many `
+          + `w talii — to nie jest wyjątek nazewniczy, tylko karta nie do użycia`);
+      }
+      naruszenia.push(cardId);
     }
+  }
+  // (b) ratchet: martwy wyjątek (naruszenie zniknęło) też czerwieni.
+  const trafione = new Set(naruszenia);
+  for (const cardId of WYJATKI_PIPY_BEZBARWNYCH.keys()) {
+    assert.ok(trafione.has(cardId),
+      `wyjątek D/4 dla ${cardId} jest MARTWY (karta nie łamie już sufiksu) — usuń wpis`);
   }
   // Karta bezkolorowa bez pipów zdolności nadal jest wypełniaczem (balans).
   assert.deepEqual(abilityCostColorsOf(registry.get('simian-simulacrum')).length > 0, true);

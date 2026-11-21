@@ -15,6 +15,7 @@
 1x Fuel for the Cause
 1x Tiller of Flesh
 1x Banishment Decree
+1x Loxodon Partisan
 1x Quicksilver Fisher
 1x Strandwalker
 1x Trigon of Thought
@@ -22,5 +23,5 @@
 1x Loxodon Mender
 1x Steelfin Whale
 1x True Conviction
-5x Plains
+6x Plains
 6x Island

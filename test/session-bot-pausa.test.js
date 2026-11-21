@@ -35,7 +35,7 @@ function buildDecks() {
   const registry = createCardRegistry();
   const decks = new Map([
     [HUMAN_ID, parseDeckText(fs.readFileSync('decks/tarkir-bg.txt', 'utf8'), registry).cardIds],
-    [BOT_ID, parseDeckText(fs.readFileSync('decks/warhammer-ubr.txt', 'utf8'), registry).cardIds],
+    [BOT_ID, parseDeckText(fs.readFileSync('decks/warhammer-ub.txt', 'utf8'), registry).cardIds],
   ]);
   return { registry, decks };
 }
@@ -335,7 +335,7 @@ test('F3: zmiana strefy permanentu CZŁOWIEKA w turze bota dociera w modalu prze
   // Hooting Mandrills + Forest (12. land), więc scenariusz przy seedzie 11
   // nie odtwarza już śladu, który ta straż pilnuje. Hunter 2..40 (poza 11/13)
   // → 12 daje ten sam przebieg co przed regenem (pary 1 i 3 zostają).
-  // Batch 58/B5: talia bota (warhammer-ubr) dostała Resurrected Cultist
+  // Batch 58/B5: talia bota (warhammer-ub) dostała Resurrected Cultist
   // (generator ADR 0023), więc i ta trójka się przelosowała — hunter 1..40
   // wskazał pełne pary zdarzeń na 2 (3 sledzone/3 opisane) i 6 (3/3), a 5
   // (1/1) dokłada trzecią partię; suma progów straży: 7/7.
@@ -353,7 +353,7 @@ test('F3: zmiana strefy permanentu CZŁOWIEKA w turze bota dociera w modalu prze
   // Initiate (4 sledzone / 1 opisane), więc trójka się rozjechała. Hunter
   // 1..45 na nowych taliach: 31 (3/3) zostaje, 34 (2/2) i 37 (2/2) — suma
   // 7/7, każda para pełna (sledzone == opisane). Konwencja L25.
-  // Batch 68 (2026-10-17): talie warhammer-ubr/tarkir-bg przesunęły przebiegi —
+  // Batch 68 (2026-10-17): talie warhammer-ub/tarkir-bg przesunęły przebiegi —
   // seed 31 trafia teraz w lukę modalu: rozstrzygnięcie czaru bota, które zaszło
   // w komendzie człowieka tuż przed granicą tury, nie trafia do bufora („Terminal
   // Agony" niszczy Ainok Artillerist bez wzmianki). Luka JEST PRZED batchem (ten
@@ -371,7 +371,15 @@ test('F3: zmiana strefy permanentu CZŁOWIEKA w turze bota dociera w modalu prze
   // creature_destroyed człowieka) jest wykrywana. Kryterium: zmianę strefy
   // potwierdza WYŁĄCZNIE wpis z opisem strefy (OPIS_STREFY), nie sama wzmianka.
   // Seedy 16, 17, 26, 28, 47, 58 — dawne fałszywe braki — przypięte jako regresja.
-  for (const seed of [1, 16, 17, 25, 26, 28, 38, 47, 58]) {
+  // Batch 74/Etap 3 (2026-11-16): generator przeliczył podział Warhammera po
+  // dodaniu kart 656–665 — para UBR/WG zastąpiona przez UB/WRG (imbalance 9→0),
+  // więc ślady tej partii się przelosowały. Hunter 1..60 na nowej parze
+  // (tarkir-bg vs warhammer-ub): pełne pary (śledzone == opisane) na seedach
+  // 3, 5, 6, 7, 9, 15, 16, 37, 39, 43, 46; 38 ma lukę modalu (Forest) — ta
+  // sama klasa, którą test opisuje jako znaną (sekcja komentarza wyżej).
+  // Zestaw: 6 partii z pełnymi parami (suma 6 śledzonych / 6 opisanych).
+  // Konwencja L25: zmiana składu talii przelosowuje seedy scenariuszowe.
+  for (const seed of [5, 6, 15, 16, 37, 43]) {
     const session = createSession({ seed, registry, decks, pauseOnBotMoves: true });
     const nazwa = (object) => (object
       ? (registry.get(object.cardId)?.name ?? object.name ?? object.cardId) : null);

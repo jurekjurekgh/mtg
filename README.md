@@ -1,8 +1,8 @@
 # MTG Engine
 
 Silnik i stół do gry w **Magic: The Gathering** — partia człowiek contra bot
-w przeglądarce albo bez interfejsu, z jawnym, testowanym zbiorem kart: 649 kart
-obsługiwanych, 54 tokeny i 10 tylnych stron kart dwustronnych
+w przeglądarce albo bez interfejsu, z jawnym, testowanym zbiorem kart: 659 kart
+obsługiwanych, 57 tokenów i 10 tylnych stron kart dwustronnych
 (rośnie tylko o karty z kolekcji właściciela, [ADR 0029](docs/decisions/0029-catalog-grows-only-from-owner-collection.md)).
 
 Silnik jest autorytatywnym źródłem stanu: kontroler i stół wysyłają wyłącznie
@@ -70,31 +70,30 @@ zgodnie z konwencją generatora i strażnika liczności.
 ### Talie jednoplanowe
 
 | Plik | Nazwa | Kolory | Kart łącznie | w tym basic-lądy | pozostałych (nie-basic) |
-|---|---|---|---:|---:|---:|
 | `alara` | Alara | WUBRG | 41 | 14 | 27 |
-| `dominaria-wrg` | Dominaria (WRG) | WRG | 35 | 12 | 23 |
-| `dominaria-ub` | Dominaria (UB) | UB | 35 | 12 | 23 |
-| `eldraine` | Eldraine | WUBRG | 27 | 9 | 18 |
+| `dominaria-brg` | Dominaria (BRG) | BRG | 38 | 13 | 25 |
+| `dominaria-wu` | Dominaria (WU) | WUB | 33 | 11 | 22 |
+| `eldraine` | Eldraine | WUBRG | 29 | 10 | 19 |
 | `final-fantasy` | Final Fantasy | WUBRG | 29 | 10 | 19 |
 | `forgotten-realms-br` | Forgotten Realms (BR) | BR | 24 | 8 | 16 |
-| `forgotten-realms-wug` | Forgotten Realms (WUG) | WUG | 23 | 8 | 15 |
+| `forgotten-realms-wug` | Forgotten Realms (WUG) | WUG | 24 | 8 | 16 |
 | `innistrad-brg` | Innistrad (BRG) | BRG | 33 | 11 | 22 |
-| `innistrad-wu` | Innistrad (WU) | WU | 33 | 11 | 22 |
-| `ixalan` | Ixalan | UBRG | 32 | 11 | 21 |
-| `kaldheim` | Kaldheim | WUBRG | 23 | 8 | 15 |
+| `innistrad-wu` | Innistrad (WU) | WU | 35 | 12 | 23 |
+| `ixalan` | Ixalan | WUBRG | 32 | 11 | 21 |
 | `kaladesh` | Kaladesh | WUBRG | 32 | 11 | 21 |
+| `kaldheim` | Kaldheim | WUBRG | 23 | 8 | 15 |
 | `lorwyn` | Lorwyn | WUBRG | 23 | 8 | 15 |
 | `mirrodin-brg` | Mirrodin (BRG) | BRG | 39 | 13 | 26 |
-| `mirrodin-wu` | Mirrodin (WU) | WU | 33 | 11 | 22 |
-| `ravnica-bg` | Ravnica (BG) | BG | 24 | 8 | 16 |
+| `mirrodin-wu` | Mirrodin (WU) | WU | 35 | 12 | 23 |
+| `ravnica-bg` | Ravnica (BG) | WUBRG | 24 | 8 | 16 |
 | `ravnica-wur` | Ravnica (WUR) | WUR | 27 | 9 | 18 |
 | `srodziemie` | Śródziemie | WUBRG | 33 | 11 | 22 |
 | `tarkir-bg` | Tarkir (BG) | UBG | 41 | 14 | 27 |
-| `tarkir-wur` | Tarkir (WUR) | WUR | 39 | 13 | 26 |
+| `tarkir-wur` | Tarkir (WUR) | WUR | 42 | 14 | 28 |
 | `the-edge` | The Edge | WUBRG | 24 | 8 | 16 |
 | `theros` | Theros | WUBRG | 32 | 11 | 21 |
-| `warhammer-ubr` | Warhammer Fantasy (UBR) | UBR | 41 | 14 | 27 |
-| `warhammer-wg` | Warhammer Fantasy (WG) | WUBRG | 27 | 9 | 18 |
+| `warhammer-ub` | Warhammer Fantasy (UB) | UBR | 35 | 12 | 23 |
+| `warhammer-wrg` | Warhammer Fantasy (WRG) | WRG | 35 | 12 | 23 |
 | `wiedzmin-bg` | Wiedźmin (BG) | BG | 32 | 11 | 21 |
 | `wiedzmin-wur` | Wiedźmin (WUR) | WUR | 29 | 10 | 19 |
 | `zendikar-rg` | Zendikar (RG) | RG | 23 | 8 | 15 |
@@ -103,10 +102,9 @@ zgodnie z konwencją generatora i strażnika liczności.
 ### Worki (małe plany — przejściowe, ADR 0023)
 
 | Plik | Nazwa | Kolory | Kart łącznie | w tym basic-lądy | pozostałych (nie-basic) |
-|---|---|---|---:|---:|---:|
-| `worek-basni` | Worek: Baśni | WUBRG | 33 | 11 | 22 |
-| `worek-dziki` | Worek: Dzikie Światy | WUBRG | 24 | 8 | 16 |
-| `worek-legend` | Worek: Legendy | WUBRG | 35 | 12 | 23 |
+| `worek-basni` | Worek: Baśnie | WUBRG | 33 | 11 | 22 |
+| `worek-dziki` | Worek: Dzikie Światy | WUBRG | 26 | 9 | 17 |
+| `worek-legend` | Worek: Legendy | WUBRG | 36 | 12 | 24 |
 | `worek-mroczny` | Worek: Mroczne Światy | WUBRG | 26 | 9 | 17 |
 
 Szczegóły formatu i manabazy: [`decks/README.md`](decks/README.md).

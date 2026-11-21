@@ -74,9 +74,16 @@ Każda nowa mechanika ma dedykowane testy jednostkowe/integracyjne RED → GREEN
   - batchowy trigger „whenever one or more nonland cards are milled” odpalany dokładnie raz na pojedynczą operację milla (także przy jednoczesnym millu z rad counterów, `mill_cards`, `surveil` itd.) z poszanowaniem `oncePerTurn: true`.
 
 ### Etap 3 — Definicje 10 kart, przydział talii i testy Batcha 74
-- Dodać definicje `656..665` w `src/cards/card-data.js` (`support: { status: 'supported', limitations: [] }`) oraz wpisy w `src/cards/mana-costs-data.js` — najlepiej pogrupowane tematycznie w czytelne commity (proste karty → Grollub/Arrow Storm → Gylwain → Mirelurk Queen).
-- Uruchomić `node tools/generate-plan-decks.mjs` i sprawdzić `git diff decks/` (zweryfikować ewentualny auto-awans `Eldraine` / bilans `worek-basni`, `worek-legend`, `worek-dziki`, test `repo-decks.test.js`).
-- Napisać `test/real-cards-batch74.test.js` (dla każdej karty: scenariusz legalny, nielegalny/walidacyjny, sanity danych z snapshotów + sprawdzenie rulingów krawędziowych).
+> **Stan (2026-11-16): Etap 3 UKOŃCZONY.** Bramy: fast `10 509/0`, slow `282/0`
+> (`node tools/run-tests.mjs fast|slow`), `npm run build` → 5970.7 kB.
+- [x] Dodać definicje `656..665` w `src/cards/card-data.js` (`support: { status: 'supported', limitations: [] }`) oraz wpisy w `src/cards/mana-costs-data.js` — najlepiej pogrupowane tematycznie w czytelne commity (proste karty → Grollub/Arrow Storm → Gylwain → Mirelurk Queen).
+  - Rejestr definicji: **726**; wszystkie 10 kart `supported`, bez `limitations`; 3 tokeny Ról (`Royal`/`Sorcerer`/`Monster`) w `REAL_CARDS`.
+  - Poprawka danych: `Mirelurk Queen` `add_counter` wymagał `applyTo: 'self'` (bez tego cichy no-op) — złapane testem karty, nie wizualnie.
+- [x] Uruchomić `node tools/generate-plan-decks.mjs` i sprawdzić `git diff decks/` (zweryfikować ewentualny auto-awans `Eldraine` / bilans `worek-basni`, `worek-legend`, `worek-dziki`, test `repo-decks.test.js`).
+  - Generator przeliczył split po kolorach: `dominaria-wrg`→`dominaria-brg` (26 kart) + `dominaria-wu` (23), `warhammer-ubr`→`warhammer-ub` (23) + `warhammer-wrg` (23); imbalance kolorów 9→0. `Eldraine` awansowało do 19 kart w `worek-basni` (Gylwain).
+  - Konsekwencja: dryf 3 testów scenariuszowych (golden-master 70/71, M101/D 162, F3 172) — wszystkie przelosowane wg konwencji **L25** z dowodem w komentarzach (seedy, liczby `sledzone/opisane`, hash-e).
+- [x] Napisać `test/real-cards-batch74.test.js` (dla każdej karty: scenariusz legalny, nielegalny/walidacyjny, sanity danych z snapshotów + sprawdzenie rulingów krawędziowych).
+  - **17/17 GREEN** — po jednym teście danych + po 1–2 scenariuszach na kartę; krawędzie z rulingów: Raid po śmierci atakującego (5 zamiast 4 + `damage_prevented`), Rad przy bibliotece `< N`, „one or more nonland milled” dokładnie raz na operację milla, `cant_be_blocked` na samym sobie (Frilled), `sacrificeSelf` landa (Memorial), `battle_cry` jako trigger na stosie (Loxodon).
 
 ### Etap 4 — Celowane pętle PMSSB-91 (manualne strojenie scoringu bota w roli pro-playera)
 
