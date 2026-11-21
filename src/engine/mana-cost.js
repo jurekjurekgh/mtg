@@ -324,9 +324,19 @@ export function unitCoversAnyRequirement(unit, requirements) {
 /**
  * Czy lista jednostek many (każda = tablica kolorów, jakie może opłacić jako
  * pip; [] = tylko generic) pokryje WSZYSTKIE pip(y) kolorowe — każde wymaganie
- * dopasowane do innej jednostki o przecinającym się zbiorze kolorów
- * (backtracking, deterministyczne: wymagania od najbardziej restrykcyjnych).
+ * dopasowane do innej jednostki o przecinającym się zbiorze kolorów.
  * Pełna MtG-poprawność: dwubarwna jednostka ['U','R'] opłaca U lub R, nie G.
+ *
+ * Zgłoszenie właściciela F3 (2026-11-21, „gra wisi po auto-pass"): stary
+ * backtracking przy NIEDOPASOWANIU (wymagań więcej niż jednostek kryjących)
+ * enumerował PERMUTACJE jednostek — silnia: 13! ≈ 6×10^9 kroków. Tak wisiała
+ * pętla `feasibleX` czarów X (Consume Spirit {X}{1}{B}): co pyta
+ * canPayColoredCost o rosnący X, aż pipy przekroczą jednostki i backtrack
+ * ruszał w silnię (playerView nie wracał >100 s; jedyny problematyczny z 175
+ * czarów). Zasada właściciela: sprawdzamy TYLKO, czy dopasowanie ISTNIEJE —
+ * algorytm Kuhna (dopasowanie rozszerzające, O(wymagania × jednostki ×
+ * krawędzie)), nigdy zbiór permutacji. Kolejność wymagań od najbardziej
+ * restrykcyjnych zostaje (determinizm ADR 0005).
  */
 export function matchColorRequirements(units, requirements) {
   if (requirements.length === 0) return true;
@@ -335,16 +345,24 @@ export function matchColorRequirements(units, requirements) {
     .sort((a, b) => a.colors.length - b.colors.length);
   const covers = order.map(({ colors }) =>
     units.map((u, i) => (unitCoversRequirement(u, colors) ? i : -1)).filter((i) => i >= 0));
-  const used = new Array(units.length).fill(false);
-  const walk = (pos) => {
-    if (pos >= order.length) return true;
+  // reqForUnit[i] = indeks wymagania przypisanego do jednostki i (-1 = wolna).
+  // Przy kolizji jednostka MOŻE zostać przepisana innemu wymaganiu przez
+  // ścieżkę rozszerzającą — to jest dokładne sprawdzenie dopasowania pełnego
+  // (graf bipartytny), bez enumerowania permutacji jednostek.
+  const reqForUnit = new Array(units.length).fill(-1);
+  const tryAssign = (pos, seen) => {
     for (const i of covers[pos]) {
-      if (used[i]) continue;
-      used[i] = true;
-      if (walk(pos + 1)) return true;
-      used[i] = false;
+      if (seen[i]) continue;
+      seen[i] = true;
+      if (reqForUnit[i] === -1 || tryAssign(reqForUnit[i], seen)) {
+        reqForUnit[i] = pos;
+        return true;
+      }
     }
     return false;
   };
-  return walk(0);
+  for (let pos = 0; pos < order.length; pos += 1) {
+    if (!tryAssign(pos, new Array(units.length).fill(false))) return false;
+  }
+  return true;
 }
