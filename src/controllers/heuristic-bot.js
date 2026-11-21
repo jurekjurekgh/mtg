@@ -2977,6 +2977,14 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     // — Sentry Bot); `energyAmountFromView` czyta ją z widoku, a nieznane
     // źródło zwraca 0 (bez zawyżki).
     get_energy: (e, view) => energyGainValue(view, e),
+    add_rad_counters: (e, view, req) => {
+      if (e.applyTo === 'self' || e.scope === 'self' || e.scope === 'controller') return 0;
+      const amt = e.amount ?? 1;
+      if (e.scope === 'each_opponent' || (req && (req.type === 'player' || req.type === 'opponent'))) {
+        return 4 * amt;
+      }
+      return 0;
+    },
     // PMSSB-62/F4b (L41): payoff opłaty `{E}{E}{E}` Sentry Bota to licznik na
     // KAŻDYM własnym stworze — ta sama funkcja co w ścieżkach czaru i
     // aktywacji (`counterSpreadValue`, PMSSB-23/F3). Bez wpisu w tabeli
@@ -8868,6 +8876,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     ['damage', 40],
     ['poison_counters_added', 45],
     ['add_poison_counters', 45],
+    ['add_rad_counters', 38],
   ]);
 
   // Zgłoszenie właściciela G (2026-09-11, klątwy): efekty, które z SAMEGO typu
@@ -10027,15 +10036,22 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     const player = (view.players ?? []).find((p) => p.id === id);
     if (player) {
       const poison = player.poison ?? 0;
-      if (poison <= 0) return { v: 0, win: false, ownLethal: false };
+      const rad = player.rad ?? 0;
       const own = id === view.playerId;
-      if (own) {
-        return { v: -1, win: false, ownLethal: poison + 1 >= POISON_LOSS_LIMIT };
+      let totalV = 0;
+      if (poison > 0) {
+        if (own) {
+          if (poison + 1 >= POISON_LOSS_LIMIT) return { v: -1, win: false, ownLethal: true };
+          totalV -= 1;
+        } else {
+          if (poison + 1 >= POISON_LOSS_LIMIT) return { v: 0, win: true, ownLethal: false };
+          totalV += 1 + poison;
+        }
       }
-      if (poison + 1 >= POISON_LOSS_LIMIT) return { v: 0, win: true, ownLethal: false };
-      // R3: wyścig trucizn nieliniowy — tick wart więcej im bliżej 10
-      // (flat 1 z M341 niedowartościowywało presję 8→9).
-      return { v: 1 + poison, win: false, ownLethal: false };
+      if (rad > 0) {
+        totalV += own ? -2 : 2;
+      }
+      return { v: totalV, win: false, ownLethal: false };
     }
     const permanent = objectOnBoard(view, id);
     if (!permanent) return { v: 0, win: false, ownLethal: false };
@@ -10070,7 +10086,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   function proliferateBestValue(view, { extraCounters = null, exclude = null } = {}) {
     const ids = new Set();
     for (const p of view.players ?? []) {
-      if ((p.poison ?? 0) > 0) ids.add(p.id);
+      if ((p.poison ?? 0) > 0 || (p.rad ?? 0) > 0) ids.add(p.id);
     }
     for (const o of view.zones.battlefield ?? []) {
       if (Object.values(o.counters ?? {}).some((n) => n > 0)) ids.add(o.id);

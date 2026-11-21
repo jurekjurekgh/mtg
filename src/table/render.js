@@ -1317,6 +1317,11 @@ function describeEffect(e, ctx = {}) {
     get_energy: () => (e.amountFrom === 'creatures_attacking_you'
       ? 'otrzymaj {E} za każde stworzenie atakujące ciebie'
       : `otrzymaj {E}×${e.amount ?? 1} energii`),
+    add_rad_counters: () => {
+      const n = e.amount ?? 1;
+      const kto = e.scope === 'each_opponent' ? 'każdy przeciwnik' : 'wybrany gracz';
+      return `${kto} otrzymuje ${n} ${polishPluralCount(n, 'licznik', 'liczniki', 'liczników')} radiacji`;
+    },
     remove_counter: () => {
       const n = e.amount ?? 1;
       const qty = typeof n === 'number' && n > 1
@@ -2316,6 +2321,10 @@ function describeTriggered(ability, controllerId = HUMAN_ID) {
   if (trigger.event === 'you_draw_card') return `Ilekroć ${mine ? 'dobierzesz kartę' : 'kontroler dobierze kartę'}: ${parts}.`;
   if (trigger.event === 'card_put_into_graveyard_from_nonbattlefield') return `Gdy karta trafia do grobu spoza pola bitwy: ${parts}.`;
   if (trigger.event === 'cards_exiled_from_your_graveyard') return `Ilekroć karty trafiają na wygnanie z twojego grobu: ${parts}.`;
+  if (trigger.event === 'nonland_cards_milled') {
+    const once = trigger.oncePerTurn ? ' (raz na turę)' : '';
+    return `Ilekroć jedna lub więcej kart niebędących lądami zostanie zmielonych: ${parts}${once}.`;
+  }
   if (trigger.event === 'spell_targets_this_creature') return `Gdy czar celuje w tę kartę: ${parts}.`;
   if (trigger.event === 'self_or_another_creature_you_control_enters') {
     const nontokenPart = trigger.nontokenOnly ? 'nietokenowy ' : '';
@@ -6102,7 +6111,7 @@ function clampHoverMode(info, mode) {
   return available.includes(mode) ? mode : available[0];
 }
 
-export function renderTableView({ els, session, play, onCardClick, onChoiceRequest = null, onCardDoubleClick = null, onStackClick = null, hoverMode = 'scryfall', onHoverModeChange = null, onUndercityClick = null, onDayNightClick = null, onPoisonCardClick = null, onSpeedCardClick = null, onEnergyCardClick = null, ignoredOptionKeys = null, onToggleIgnoredOption = null }) {
+export function renderTableView({ els, session, play, onCardClick, onChoiceRequest = null, onCardDoubleClick = null, onStackClick = null, hoverMode = 'scryfall', onHoverModeChange = null, onUndercityClick = null, onDayNightClick = null, onPoisonCardClick = null, onSpeedCardClick = null, onEnergyCardClick = null, onRadCardClick = null, ignoredOptionKeys = null, onToggleIgnoredOption = null }) {
   const view = session.view();
   // Zgłoszenie C3 (2026-09-20): log rośnie W DÓŁ (najnowsze na dole), a render
   // przebudowuje listę od zera — bez zapamiętania suwaka gracz czytający
@@ -6202,11 +6211,9 @@ export function renderTableView({ els, session, play, onCardClick, onChoiceReque
       // przeciwnikiem — zamiast „?" (sugerującego błąd) pokazujemy „morph".
       const spellName = spell.faceDown ? FACE_DOWN_LABEL : session.nameOf(spell.cardId);
       const label = spell.trigger
-        // Pętla jakości 2026-10-14 (Żywy Tester, a3/b6): stos mówił
-        // „Trigger: …" po angielsku, choć reszta panelu jest po polsku i sam
-        // skaner testera oznacza ten napis jako podejrzaną etykietę
-        // (`tools/table-tester/scan.mjs`). M202/C: bez zapożyczenia „Trigger".
-        ? `Zdolność: ${spell.faceDown ? FACE_DOWN_LABEL : session.nameOf(spell.cardId)} (${TRIGGER_EVENT_LABELS[spell.triggerEvent] ?? spell.triggerEvent ?? 'zdolność'})`
+        ? (spell.triggerEvent === 'rad_counters' && !spell.cardId
+          ? 'Liczniki radiacji (początek fazy głównej)'
+          : `Zdolność: ${spell.faceDown ? FACE_DOWN_LABEL : session.nameOf(spell.cardId)} (${TRIGGER_EVENT_LABELS[spell.triggerEvent] ?? spell.triggerEvent ?? 'zdolność'})`)
         : `${spellName} (rzuca: ${caster?.name})${targets ? ` → cel: ${targets}` : ''}`;
       const item = div(els.stackZone, 'stack-item', label);
       // Zgłoszenie 2026-08-06 (bug C): karty na stosie są klikalne — tapnięcie
@@ -6414,6 +6421,9 @@ export function renderTableView({ els, session, play, onCardClick, onChoiceReque
   // --- Energia (Batch 56, CR 122.1) — panel jak Poison/Speed ------------------
   renderEnergyPanel(els, view, { onOpenCard: onEnergyCardClick, hover });
 
+  // --- Radiacja (Etap 2D, Batch 74, CR 729) — panel jak Poison/Energy ---------
+  renderRadPanel(els, view, { onOpenCard: onRadCardClick, hover });
+
   // --- Loch Undercity (M24) -------------------------------------------
   renderUndercity(els, session, view, { onClick: onUndercityClick, hover });
 }
@@ -6620,6 +6630,56 @@ export function renderSpeedPanel(els, view, { onOpenCard = null, hover = null } 
   }
   div(info, 'speed-note',
     'Prędkość startuje na 1 przy permanentie „Start your engines!" i rośnie raz w turze, gdy przeciwnik traci życie. Maksymalna prędkość (4) odblokowuje zdolności „Max speed".');
+}
+
+/** Marker radiacji (Etap 2D, Batch 74) — oficjalny druk „Radiation\" (tpip/22,
+ * Fallout Tokens; Oracle: „At the beginning of your precombat main phase, if you
+ * have any rad counters, mill that many cards. For each nonland card milled this
+ * way, you lose 1 life and a rad counter.\"). Ten sam wzorzec co Poison Counter
+ * i Energy Reserve: panel dostaje DRUK ze Scryfalla, nie pustą kolumnę.
+ * Źródło: https://scryfall.com/card/tpip/22/radiation (odczyt 2026-11-16).
+ */
+const RADIATION_MARKER = Object.freeze({
+  name: 'Radiation',
+  imageUri: 'https://cards.scryfall.io/large/front/0/8/0886657d-afb0-4f1f-9af7-960724793077.jpg?1783912038',
+});
+
+/**
+ * Panel liczników radiacji (Etap 2D, Batch 74 — Mirelurk Queen): rad counters to
+ * liczniki GRACZA (CR 729.1: „Rad counters are a kind of counter a player can
+ * have"), więc — jak trucizna, energia i prędkość — mają panel specjalny,
+ * a nie badge na kaflu karty. Panel widoczny tylko, gdy KTOKOLWIEK ma rad > 0.
+ */
+export function renderRadPanel(els, view, { onOpenCard = null, hover = null } = {}) {
+  if (!els.rad) return;
+  const napromieniowani = (view.players ?? []).filter((p) => (p.rad ?? 0) > 0);
+  els.rad.hidden = napromieniowani.length === 0;
+  if (napromieniowani.length === 0) return;
+  clear(els.rad);
+  const card = div(els.rad, 'poison-card');
+  if (onOpenCard) {
+    card.className = `${card.className} clickable`.trim();
+    card.addEventListener('click', () => onOpenCard({ name: RADIATION_MARKER.name, imageUri: RADIATION_MARKER.imageUri }));
+  }
+  attachSpecialCardHover(card, hover, {
+    name: RADIATION_MARKER.name,
+    imageUri: RADIATION_MARKER.imageUri,
+    artId: null, set: null, colors: [], kind: 'card', types: ['Counter'], faceDown: false,
+  });
+  const img = document.createElement('img');
+  img.src = RADIATION_MARKER.imageUri;
+  img.alt = RADIATION_MARKER.name;
+  img.loading = 'lazy';
+  card.appendChild(img);
+  const info = div(els.rad, 'poison-info');
+  div(info, 'poison-status', 'Liczniki radiacji');
+  for (const p of napromieniowani) {
+    const v = p.rad ?? 0;
+    div(info, 'poison-count',
+      `${p.id === view.playerId ? PLAYER_LABEL : BOT_LABEL}: ${v} ${polishPluralCount(v, 'licznik', 'liczniki', 'liczników')} radiacji`);
+  }
+  div(info, 'poison-note',
+    'Na początku głównej fazy gracza z licznikami radiacji mieli on tyle kart, ile ma rad. Za każdą zmieloną w ten sposób kartę NIE będącą lądem tracisz 1 życie i zdejmujesz 1 licznik radiacji (CR 729.1). Liczniki nie znikają z końcem tury — zdejmuje je tylko efekt.');
 }
 
 export function renderDayNight(els, session, view, { onClick = null, hover = null } = {}) {

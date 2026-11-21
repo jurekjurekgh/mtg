@@ -7,7 +7,7 @@ import { blockingRequirementCount, hasCreatureType, hasTemporaryCantBlock, match
 import { CARD_TYPES } from './permanents.js';
 import { addCounter, hasCounter, removeCounter } from './counters.js';
 import { riotCountOf, queueRiotEntry, validRiotChoices, applyRiotOnEntry, riotForEffectEntry } from './riot.js';
-import { addPoisonCounters, changeLife, recordCardDrawn, startEnginesFor, addEnergyCounters } from './players.js';
+import { addPoisonCounters, changeLife, recordCardDrawn, startEnginesFor, addEnergyCounters, addRadCounters, removeRadCounters } from './players.js';
 import { spendMana, addMana, producibleMana, faceDownAbilities, countColorsOfManaSpent } from './resources.js';
 import { countGraveyardCardsOfType, countGraveyardCardTypes } from './graveyard-types.js';
 import { impulseWindowFields, stampImpulseWindow } from './impulse-window.js';
@@ -25,7 +25,7 @@ import { attachAuraToCreature, attachAuraToPlayer, attachEquipmentToCreature, de
 import { attackersAgainstPlayer } from './combat.js';
 
 /**
- * Loch „Undercity" (komponent inicjatywy, CR 725; karta „Undercity //
+ * Loch „Undercity" (komponent inicjatywy, CR 727; karta „Undercity //
  * The Initiative" z CLB — w legacy aplikacji karta specjalna 990006).
  *
  * Venture wchodzi do pokoju i WYKONUJE jego efekt (M24 — pełna mechanika,
@@ -1155,6 +1155,50 @@ export function millTargetPlayerId(state, effect, sourceObject, targets = [], co
   return (targets[0] && state.players.some((player) => player.id === targets[0]))
     ? targets[0]
     : sourceObject?.controllerId ?? null;
+}
+
+/**
+ * Wspólny choke point młynowania N kart z wierzchu biblioteki gracza (CR 701.17).
+ * Zwraca listę przeniesionych obiektów w grobie, emituje `card_milled` per karta
+ * oraz jedno zbiorcze `cards_milled` dla całej partii (jeśli >= 1 karta zmielona).
+ * Używane przez `mill_cards` i inherentny trigger liczników radiacji (`fromRad`).
+ */
+export function millTopCardsForPlayer(state, targetPlayerId, amount, { fromRad = false } = {}) {
+  if (!targetPlayerId || !Number.isInteger(amount) || amount <= 0) return [];
+  const protectedIds = new Set();
+  if (state.pendingScry?.playerId === targetPlayerId) for (const id of state.pendingScry.objectIds) protectedIds.add(id);
+  if (state.pendingSurveil?.playerId === targetPlayerId) for (const id of state.pendingSurveil.objectIds) protectedIds.add(id);
+  if (state.pendingExplore?.playerId === targetPlayerId && state.pendingExplore.objectId) protectedIds.add(state.pendingExplore.objectId);
+  if (state.pendingClash?.cards?.[targetPlayerId]) protectedIds.add(state.pendingClash.cards[targetPlayerId]);
+  const toMill = [];
+  for (const topId of state.zones.library) {
+    if (toMill.length >= amount) break;
+    const object = state.objects.get(topId);
+    if (!object || object.controllerId !== targetPlayerId) continue;
+    if (protectedIds.has(topId)) continue;
+    toMill.push(topId);
+  }
+  const milledIds = [];
+  const milledObjects = [];
+  for (const topId of toMill) {
+    const object = state.objects.get(topId);
+    const graveId = `grave-${state.objectSequence++}`;
+    const moved = moveObjectDirectly(state, topId, 'graveyard', graveId);
+    milledIds.push(graveId);
+    milledObjects.push(moved);
+    state.events.push(event('card_milled', {
+      playerId: targetPlayerId, fromId: topId, objectId: graveId, cardId: object.cardId, object: moved,
+    }));
+  }
+  if (milledIds.length > 0) {
+    state.events.push(event('cards_milled', {
+      playerId: targetPlayerId,
+      amount: milledIds.length,
+      ids: milledIds,
+      ...(fromRad ? { fromRad: true } : {}),
+    }));
+  }
+  return milledObjects;
 }
 
 /**
@@ -2831,23 +2875,35 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
   // GRACZA, nie do permanentu. Wartość bierzemy z `amount` (deskryptor), a nie
   // z liczby symboli w Oracle — jedno źródło prawdy (L41).
   if (effect.type === 'get_energy') {
-    // F1 audytu PR #125 (M375, ADR 0016): slot celu bierzemy z `targets` —
-    // tak jak pozostałe gałęzie efektów. Dotąd stało tu `effectTargets`,
-    // którego w tym pliku NIE MA, więc ścieżka `targetIndex` rzucała
-    // `ReferenceError` (martwa dziś, latentna dla każdej karty „target
-    // player gets {E}"); nieaktualny cel schodzi na kontrolera źródła.
     const targetPlayerId = effect.targetIndex != null
       ? (state.objects.get(targets[effect.targetIndex])?.controllerId ?? sourceObject.controllerId)
       : sourceObject.controllerId;
     if (!state.players.some((entry) => entry.id === targetPlayerId)) return;
-    // Batch 67 (Sentry Bot): „you get {E} for each creature attacking you" —
-    // liczba z chwili ROZSTRZYGNIĘCIA zdolności (ruling PIP 2024-11-08:
-    // „Use the number of creatures attacking you as … ability resolves").
     const amount = effect.amountFrom === 'creatures_attacking_you'
       ? attackersAgainstPlayer(state, sourceObject.controllerId)
       : (effect.amount ?? 1);
     if (amount <= 0) return; // 0 energii = brak zdarzenia (spójnie z addEnergyCounters)
     addEnergyCounters(state, targetPlayerId, amount);
+    return;
+  }
+
+  // Liczniki radiacji (rad counters — PIP, CR 729.1 / ruling 2024-03-08):
+  // „target player gets N rad counters" — zapis wyłącznie przez choke point
+  // `addRadCounters` (players.js).
+  if (effect.type === 'add_rad_counters') {
+    const amount = effect.amount ?? 1;
+    if (amount <= 0) return;
+    if (effect.scope === 'each_opponent') {
+      for (const p of state.players) {
+        if (p.id !== sourceObject?.controllerId) addRadCounters(state, p.id, amount);
+      }
+      return;
+    }
+    const targetPlayerId = effect.applyTo === 'self'
+      ? sourceObject?.controllerId
+      : (targets[0] ?? sourceObject?.controllerId);
+    if (!state.players.some((entry) => entry.id === targetPlayerId)) return;
+    addRadCounters(state, targetPlayerId, amount);
     return;
   }
 
@@ -3174,56 +3230,17 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     return true;
   }
   if (effect.type === 'mill_cards') {
-    // Mill N: karty z wierzchu biblioteki przechodzą do grobu jako nowe obiekty
-    // strefy; pusta biblioteka nie przegrywa poza draw stepem. Domyślnie młynuje
-    // się kontroler źródła; „Target player mills N" (Sweet Oblivion) młynuje
-    // GRACZA-CEL (targets[0]), gdy wskaźnik celu jest graczem.
-    //
-    // Ochrona scry/surveil: karty przeglądane przez oczekujący scry/surveil
-    // gracza-celu NIE są młynowane. Obrona w głąb: triggery idą na stos
-    // (CR 603.3), ale gdyby mill zaszedł w trakcie otwartego scry (np. efekt
-    // tego samego rozstrzygnięcia), usunąłby kartę, którą gracz właśnie
-    // scryuje — invariant pendingScry (karty muszą być w bibliotece) złamałby
-    // się. Pomijamy te karty, a mill bierze kolejną.
     const amount = effect.amount ?? 0;
     if (!Number.isInteger(amount) || amount < 0) throw new RangeError('Mill wymaga nieujemnej liczby kart');
-    // Chronic Flooding: „ITS CONTROLLER mills three cards" — mieli kontroler
-    // ZACZAROWANEGO permanentu, a nie kontroler aury (CR 109.5). Deskryptor
-    // `applyTo: 'enchanted_controller'` jest generyczny (ADR 0002).
     const enchantedHost = effect.applyTo === 'enchanted_controller' && sourceObject.attachedTo
       ? state.objects.get(sourceObject.attachedTo)
       : null;
     if (effect.applyTo === 'enchanted_controller' && (!enchantedHost || enchantedHost.zone !== 'battlefield')) {
       return; // aura odpięta w oknie odpowiedzi — brak skutku (CR 608.2b)
     }
-    // „That player” może być zapisany przez zdarzenie upkeepu — zdjęcie
-    // aury po wyzwoleniu nie zmienia odbiorcy (CR 113.7a).
     const targetPlayerId = millTargetPlayerId(state, effect, sourceObject, targets, context);
     if (effect.applyTo === 'enchanted_player' && !targetPlayerId) return;
-    const protectedIds = new Set();
-    if (state.pendingScry?.playerId === targetPlayerId) for (const id of state.pendingScry.objectIds) protectedIds.add(id);
-    if (state.pendingSurveil?.playerId === targetPlayerId) for (const id of state.pendingSurveil.objectIds) protectedIds.add(id);
-    if (state.pendingExplore?.playerId === targetPlayerId && state.pendingExplore.objectId) protectedIds.add(state.pendingExplore.objectId);
-    if (state.pendingClash?.cards?.[targetPlayerId]) protectedIds.add(state.pendingClash.cards[targetPlayerId]);
-    // Najpierw snapshot kart do mila (kolejność wierzchu, pomijając chronione),
-    // potem mill — modyfikujemy state.zones.library, więc nie iterujemy jej
-    // jednocześnie z mutacją.
-    const toMill = [];
-    for (const topId of state.zones.library) {
-      if (toMill.length >= amount) break;
-      const object = state.objects.get(topId);
-      if (!object || object.controllerId !== targetPlayerId) continue;
-      if (protectedIds.has(topId)) continue; // karta wstrzymana przez scry/surveil
-      toMill.push(topId);
-    }
-    for (const topId of toMill) {
-      const object = state.objects.get(topId);
-      const graveId = `grave-${state.objectSequence++}`;
-      const moved = moveObjectDirectly(state, topId, 'graveyard', graveId);
-      state.events.push(event('card_milled', {
-        playerId: targetPlayerId, fromId: topId, objectId: graveId, cardId: object.cardId, object: moved,
-      }));
-    }
+    millTopCardsForPlayer(state, targetPlayerId, amount);
     return;
   }
 
@@ -6329,7 +6346,7 @@ function markTemporaryExile(state, exileId, sourceObject) {
         // objects"). Gracz z energią, ale bez trucizny MUSI być kandydatem —
         // wcześniej wypadał z listy, więc nie dało się go wybrać i nie
         // dostawał kolejnego licznika energii.
-        if ((player.poison ?? 0) > 0 || (player.energy ?? 0) > 0) candidates.push(player.id);
+        if ((player.poison ?? 0) > 0 || (player.energy ?? 0) > 0 || (player.rad ?? 0) > 0) candidates.push(player.id);
       }
       if (candidates.length === 0) return false;
       state.pendingProliferate = {
@@ -6384,6 +6401,18 @@ function markTemporaryExile(state, exileId, sourceObject) {
           state.events.push(event('counter_added', {
             objectId: player.id, cardId: null, counter: 'energy', amount: 1,
             total: state.players.find((p) => p.id === player.id)?.energy ?? 0,
+            fromProliferate: true,
+          }));
+          proliferated += 1;
+        }
+        // Liczniki radiacji (rad counters — ruling PIP 2024-03-08: „Any effects
+        // (such as proliferate) that interact with counters a player gets,
+        // has, or loses can interact with rad counters.”).
+        if ((player.rad ?? 0) > 0) {
+          addRadCounters(state, player.id, 1);
+          state.events.push(event('counter_added', {
+            objectId: player.id, cardId: null, counter: 'rad', amount: 1,
+            total: state.players.find((p) => p.id === player.id)?.rad ?? 0,
             fromProliferate: true,
           }));
           proliferated += 1;

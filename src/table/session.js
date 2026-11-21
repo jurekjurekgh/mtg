@@ -963,6 +963,9 @@ export const TRIGGER_EVENT_LABELS = Object.freeze({
   // Batch 57/B6a (Baral and Kari Zev): „your first instant or sorcery spell
   // each turn" — zdarzenie silnika (licznik per gracz w triggers.js).
   first_instant_sorcery_cast: 'rzucenie pierwszego instantu/sorcery w turze',
+  // Batch 74 (Mirelurk Queen): liczniki radiacji i mill kart niebędących lądami.
+  rad_counters: 'liczniki radiacji',
+  nonland_cards_milled: 'zmielenie kart niebędących lądami',
 });
 
 /**
@@ -1101,6 +1104,8 @@ const DRUGA_OSOBA = Object.freeze({
   mulliganuje: 'mulliganujesz', może: 'możesz', musi: 'musisz', niszczy: 'niszczysz',
   obejmuje: 'obejmujesz', odkłada: 'odkładasz', odpala: 'odpalasz', odrzuca: 'odrzucasz',
   odsłania: 'odsłaniasz', ogląda: 'oglądasz', otrzymuje: 'otrzymujesz',
+  // Etap 2D (Mirelurk Queen): „Ty traci N liczników radiacji” — brakowało odmiany.
+  traci: 'tracisz',
   patrzy: 'patrzysz', plotuje: 'plotujesz', poddaje: 'poddajesz',
   poświęca: 'poświęcasz', przegrywa: 'przegrywasz', przeszukuje: 'przeszukujesz',
   przygotowuje: 'przygotowujesz', płaci: 'płacisz', rezygnuje: 'rezygnujesz',
@@ -1652,6 +1657,8 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { drugaOsoba = t
       // licznik gracza bez opisu byłby dla gracza niewidzialny.
       case 'energy_counters_added': return `${whoN(e.playerId)} otrzymuje {E}×${e.amount} energii (łącznie: ${e.after})`;
       case 'energy_counters_paid': return `${whoN(e.playerId)} płaci {E}×${e.amount} energii (zostaje: ${e.after})`;
+      case 'rad_counters_added': return `${whoN(e.playerId)} otrzymuje ${e.amount} ${polishPlural(e.amount, 'licznik', 'liczniki', 'liczników')} radiacji (łącznie: ${e.after})`;
+      case 'rad_counters_removed': return `${whoN(e.playerId)} traci ${e.amount} ${polishPlural(e.amount, 'licznik', 'liczniki', 'liczników')} radiacji (zostaje: ${e.after})`;
       case 'permanent_animated': {
         const duration = e.linkedTo ? ' (dopóki źródło jest na polu bitwy)' : ' do końca tury';
         return `${nameOfObject(e.objectId)} staje się stworzeniem ${e.power}/${e.toughness}${duration}`;
@@ -1796,6 +1803,9 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { drugaOsoba = t
         // daje ŻYWY obiekt (objectOrLki, reguła M100); cardId z LKI dopiero
         // po odejściu ze stanu (CR 708.8/708.9). Bez tego log zdradzał
         // „Plains — trigger (ward)" przy bezimiennym Morphu.
+        if (e.trigger === 'rad_counters' && !e.objectId && !e.cardId) {
+          return `${whoN(e.playerId)} — ${triggerLabel} (początek fazy głównej)`;
+        }
         const src = objectOrLki(e.objectId, e.cardId);
         return `${src} — trigger (${triggerLabel})`;
       }

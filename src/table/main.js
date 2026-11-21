@@ -166,6 +166,8 @@ function bootstrapTable() {
     undercity: el('undercity'),
     speed: el('speed'),
     energy: el('energy'),
+    // Etap 2D (Batch 74): panel liczników radiacji (rad counters, CR 729).
+    rad: el('rad'),
     hoverPreview: el('hover-preview'),
     contextMenu: el('context-menu'),
     contextMenuBody: el('context-menu-body'),
@@ -2552,6 +2554,8 @@ function bootstrapTable() {
         // M386: marker energii („Energy Reserve”, tdrc/17) — pełny ekran jak
         // Poison/Speed (panel energii rysuje się, gdy ktokolwiek ma {E} > 0).
         onEnergyCardClick: (card) => openSpecialCardFullscreen(card),
+        // Etap 2D: marker „Radiation” (tpip/22) — pełny ekran jak Energy/Poison.
+        onRadCardClick: (card) => openSpecialCardFullscreen(card),
         hoverMode: currentHoverMode,
         onHoverModeChange: (mode) => { currentHoverMode = mode; },
       });

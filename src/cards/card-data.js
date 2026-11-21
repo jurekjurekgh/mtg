@@ -5337,7 +5337,7 @@ export const REAL_CARDS = Object.freeze([
 
 
 /**
- * Karta lochu „The Undercity" (dungeon z inicjatywy, CR 725; karta
+ * Karta lochu „The Undercity" (dungeon z inicjatywy, CR 727; karta
  * „Undercity // The Initiative" z CLB). W legacy aplikacji to karta specjalna
  * 990006 („Dungeon: The Undercity"), a jej druk pobiera Scryfall przez
  * `api.scryfall.com/cards/tclb/20?format=image` — używamy tego samego adresu.

@@ -339,7 +339,7 @@ export function createGameState({ seed, players }) {
     // { playerId, candidateIds, restorePriorityTo }. Blokuje grę do
     // resolve_sacrifice_choice (jak scry/surveil).
     pendingSacrifice: null,
-    // Inicjatywa (CR 725): id gracza, który ją posiada (null = nikt). Kto ją
+    // Inicjatywa (CR 727): id gracza, który ją posiada (null = nikt). Kto ją
     // obejmuje po raz pierwszy, zagłębia się w Podziemia; posiadacz venture'uje
     // też na początku swojego upkeepu. Postęp lochu: undercityProgress[player].
     initiativePlayerId: null,
@@ -2970,13 +2970,20 @@ export function execute(state, input) {
     // sprawdzany jest stan przejściowy).
     state.pendingSurveil = null;
     const before = state.events.length;
+    const milledGraveIds = [];
     for (const id of surveil.objectIds) {
       if (!millIds.includes(id)) continue;
       const object = state.objects.get(id);
       const graveId = `grave-${state.objectSequence++}`;
       const moved = moveObjectDirectly(state, id, 'graveyard', graveId);
+      milledGraveIds.push(graveId);
       state.events.push(event('card_milled', {
         playerId: surveil.playerId, fromId: id, objectId: graveId, cardId: moved.cardId, object: moved,
+      }));
+    }
+    if (milledGraveIds.length > 0) {
+      state.events.push(event('cards_milled', {
+        playerId: surveil.playerId, amount: milledGraveIds.length, ids: milledGraveIds, fromSurveil: true,
       }));
     }
     // Karty pozostawione na wierzchu w wybranej kolejności; reszta biblioteki
@@ -9958,8 +9965,8 @@ export function playerView(state, playerId) {
   // Batch 56 (energia, CR 122.1): licznik gracza jest JAWNY dla obu graczy
   // (jak poison i speed) — bez niego gracz nie widziałby, ile energii ma,
   // a bot nie miałby z czego wyceniać kosztu {E}.
-  const players = state.players.map(({ id, name, life, mana, landPlays, poison, manaPool, restrictedPool, purposeRestrictedPool, speed, energy }) => ({
-    id, name, life, mana: mana ?? 0, landPlays: landPlays ?? 0, poison: poison ?? 0, energy: energy ?? 0,
+  const players = state.players.map(({ id, name, life, mana, landPlays, poison, manaPool, restrictedPool, purposeRestrictedPool, speed, energy, rad }) => ({
+    id, name, life, mana: mana ?? 0, landPlays: landPlays ?? 0, poison: poison ?? 0, energy: energy ?? 0, rad: rad ?? 0,
     // M313 (zgłoszenie właściciela, Leonin Surveyor): prędkość (DFT „Start
     // your engines!", Batch 24) jest jawna dla OBU graczy — licznik publiczny,
     // jak poison; bez niej UI nie miało z czego rysować panelu speed.

@@ -38,7 +38,7 @@ Uwaga do planów i generatora talii: `Eldraine` ma obecnie 18 kart w `worek-basn
 | 662 **Loxodon Partisan** | `Battle cry` (`keywords: ['battle_cry']`, `trigger: { event: 'attacks' }`, `buff_attacking_creatures` z `excludeSource: true`) | Istnieje (`kuldotha-ringleader`) | Zweryfikować zgodność z `Kuldotha Ringleader`; w PMSSB-91 sprawdzić, czy bot docenia atak z innymi stworami (`declare_attackers` uwzględnia buff `+1/+0` dla współatakujących!). |
 | 663 **Temur Banner** | `{T}: Add {G}/{U}/{R}` + `{G}{U}{R}, {T}, sacrificeSelf: Draw 1` | Istnieje | Zweryfikować `mana-sources.js` (trójkolorowy mana rock + `abilityCostColorsOf`); w PMSSB-91 sprawdzić poświęcanie na draw w kontekście zapasu many, ręki, tury (end step przeciwnika) i biblioteki. |
 | 664 **Frilled Sea Serpent** | `{5}{U}{U}: This creature can't be blocked this turn` (self-target / `applyTo: 'self'`) | Częściowo jest | Zweryfikować ścieżkę `cant_be_blocked` bez `requiresTarget` w silniku (`abilities.js` + `effects.js`) i w `heuristic-bot.js` (dotąd `cant_be_blocked` zakładał `target` z `cmd.targetId`!). |
-| 665 **Mirelurk Queen** | `Vigilance`; ETB `target player gets 2 rad counters`; **Rad counters** (CR 725: inherent trigger na początku `precombat main` aktywnego gracza — mill N, za każdą nonland utrata 1 życia i zdjęcie 1 rad countera); trigger `one or more nonland cards are milled` + `draw 1` + `+1/+1` (`oncePerTurn: true`) | **NOWA** | Generyczne: (1) `radCounters` na graczu (widok `PlayerView`, eventy, etykiety PL) + efekt `add_rad_counters` / `remove_rad_counters`; (2) inherent trigger na początku `main1` gracza z `radCounters > 0` (jednorazowy mill N, liczenie nonlandów → utrata życia i zdjęcie tylu rad counterów); (3) zdarzenie/grupowanie milla pozwalające odpalić trigger „whenever one or more nonland cards are milled” dokładnie RAZ na batch milla + `oncePerTurn: true` (CR 603.2 + ruling Mirelurk Queen); (4) L84 (4 miejsca). |
+| 665 **Mirelurk Queen** | `Vigilance`; ETB `target player gets 2 rad counters`; **Rad counters** (CR 729: inherent trigger na początku `precombat main` aktywnego gracza — mill N, za każdą nonland utrata 1 życia i zdjęcie 1 rad countera); trigger `one or more nonland cards are milled` + `draw 1` + `+1/+1` (`oncePerTurn: true`) | **NOWA** | Generyczne: (1) `radCounters` na graczu (widok `PlayerView`, eventy, etykiety PL) + efekt `add_rad_counters` / `remove_rad_counters`; (2) inherent trigger na początku `main1` gracza z `radCounters > 0` (jednorazowy mill N, liczenie nonlandów → utrata życia i zdjęcie tylu rad counterów); (3) zdarzenie/grupowanie milla pozwalające odpalić trigger „whenever one or more nonland cards are milled” dokładnie RAZ na batch milla + `oncePerTurn: true` (CR 603.2 + ruling Mirelurk Queen); (4) L84 (4 miejsca). |
 
 ---
 
@@ -48,26 +48,29 @@ Każdy etap kończy się samodzielnie zielonym commitem (`npm test` + `npm run b
 
 ### Etap 0 + Etap 1 — Roadmapa, arkusz kolekcji i snapshoty Scryfall + rulingi *(aktualny etap startowy)*
 - [x] Pobrać ze Scryfalla (`set=`) pełne dane wszystkich 10 kart (`656..665`) oraz ich rulingi WotC (ADR 0010 §2a, ADR 0030).
-- [ ] Zapisać 10 plików `docs/cards/scryfall-<slug>.json` (spójny `source`, `print`, `set`, `collector_number`, `image_uris`, `rulings`, `pobrano`).
-- [ ] Dopisać pozycje `656EXO..665PIP` do `tools/collection-art-ids.csv`.
-- [ ] Zapisać tę roadmapę w `docs/plans/PLAN_2026-11-16-batch74-kolekcja-656-665.md`.
-- [ ] Commit dokumentacyjno-danych + test `zgloszenie-a-druk-karty-z-arkusza.test.js` i `proweniencja-katalogu.test.js`.
+- [x] Zapisać 10 plików `docs/cards/scryfall-<slug>.json` (spójny `source`, `print`, `set`, `collector_number`, `image_uris`, `rulings`, `pobrano`).
+- [x] Dopisać pozycje `656EXO..665PIP` do `tools/collection-art-ids.csv`.
+- [x] Zapisać tę roadmapę w `docs/plans/PLAN_2026-11-16-batch74-kolekcja-656-665.md`.
+- [x] Commit dokumentacyjno-danych + test `zgloszenie-a-druk-karty-z-arkusza.test.js` i `proweniencja-katalogu.test.js`.
 
 ### Etap 2 — Mechaniki generyczne w silniku (ADR 0002 + L84)
+> **Stan (2026-11-16):** Etap 2 UKOŃCZONY — 2A (`5c8da5d`), 2B (`e112dca`), 2C (`afd1f1d`), 2D (ten commit).
+> Każdy podetap ma własny plik testów (`test/etap2{a,b,c,d}-*.test.js`) i zieloną bramę `npm test` + `npm run build`.
+> 2D dopiął także panel stołu `renderRadPanel` (`div#rad`, marker „Radiation” tpip/22 — ten sam wzorzec co Poison/Energy/Speed).
 Każda nowa mechanika ma dedykowane testy jednostkowe/integracyjne RED → GREEN (na kartach syntetycznych przed dodaniem kart batcha, ADR 0029) oraz 4 dowiązania L84 (`EVENT_TYPES` + log, etykiety PL w `render.js`, ścieżka wyceny bota / `REVIEWED_UNVALUED`, `gameObjectDataOf` + `installDeck`).
-- **2A. Grollub + Frilled Sea Serpent (drobne uogólnienia):**
+- [x] **2A. Grollub + Frilled Sea Serpent (drobne uogólnienia):**
   - `gain_life` z `scope: 'each_opponent'` i `amountFrom: 'damageAmount'` (sprawdzić kolejność APNAP / kontekst `damageAmount`),
   - aktywowana zdolność `cant_be_blocked` na samym źródle (bez `requiresTarget`, `applyTo: 'self'`).
-- **2B. Arrow Storm (Raid + obrażenia nie do zapobiegnięcia):**
+- [x] **2B. Arrow Storm (Raid + obrażenia nie do zapobiegnięcia):**
   - stan gracza `attackedThisTurn` (ustawiany przy deklaracji atakujących, zachowany nawet po śmierci atakującego w walce/usunięciu, czyszczony w cleanup),
   - warunek/modyfikator `raid` na efektach i `cantBePrevented: true` w ścieżce zadawania obrażeń i prewencji (tarcze, prevent-turn, protection).
-- **2C. Gylwain (Role tokens + SBA CR 303.7 + modalny trigger wejścia):**
+- [x] **2C. Gylwain (Role tokens + SBA CR 303.7 + modalny trigger wejścia):**
   - podtyp `Role` i reguła SBA zastępująca starszą Rolę tego samego kontrolera na tym samym stworze (różni kontrolerzy mogą mieć po jednej),
   - generyczne tworzenie tokena-aury przyczepianego do obiektu z kontekstu triggera (`attachToTriggeringObject`) oraz wybór trybu na triggerze (`choose one`),
   - szablony 3 Ról (`Royal`, `Sorcerer`, `Monster`).
-- **2D. Mirelurk Queen (Rad counters + nonland milled once-per-turn):**
+- [x] **2D. Mirelurk Queen (Rad counters + nonland milled once-per-turn):**
   - licznik gracza `radCounters`, `PlayerView`, zdarzenia + log PL,
-  - inherent trigger na starcie `precombat main` (CR 725 / ruling 2024-03-08: jednorazowy mill N, zliczenie nonlandów, utrata życia + zdjęcie rad counterów; poprawna obsługa biblioteki `< N`),
+  - inherent trigger na starcie `precombat main` (CR 729.1 / ruling 2024-03-08: jednorazowy mill N, zliczenie nonlandów, utrata życia + zdjęcie rad counterów; poprawna obsługa biblioteki `< N`),
   - batchowy trigger „whenever one or more nonland cards are milled” odpalany dokładnie raz na pojedynczą operację milla (także przy jednoczesnym millu z rad counterów, `mill_cards`, `surveil` itd.) z poszanowaniem `oncePerTurn: true`.
 
 ### Etap 3 — Definicje 10 kart, przydział talii i testy Batcha 74

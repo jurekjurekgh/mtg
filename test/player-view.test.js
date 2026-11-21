@@ -20,8 +20,8 @@ test('PlayerView zawiera publiczne życie i nazwy graczy', () => {
   // Batch 56: energia ({E}, CR 122.1) — licznik gracza jawny dla OBU graczy
   // (panel energii na stole i wycena kosztu „Pay {E}" u bota czytają widok).
   assert.deepEqual(view.players, [
-    { id: 'p1', name: 'Alice', life: 20, mana: 0, landPlays: 1, poison: 0, energy: 0, speed: 0, manaPool: {}, restrictedPool: {}, purposeRestrictedPool: {} },
-    { id: 'p2', name: 'Bob', life: 16, mana: 0, landPlays: 1, poison: 0, energy: 0, speed: 0, manaPool: {}, restrictedPool: {}, purposeRestrictedPool: {} },
+    { id: 'p1', name: 'Alice', life: 20, mana: 0, landPlays: 1, poison: 0, energy: 0, speed: 0, rad: 0, manaPool: {}, restrictedPool: {}, purposeRestrictedPool: {} },
+    { id: 'p2', name: 'Bob', life: 16, mana: 0, landPlays: 1, poison: 0, energy: 0, speed: 0, rad: 0, manaPool: {}, restrictedPool: {}, purposeRestrictedPool: {} },
   ]);
   assert.equal(JSON.stringify(view).includes('objects'), false);
   assert.equal(JSON.stringify(view).includes('commands'), false);
