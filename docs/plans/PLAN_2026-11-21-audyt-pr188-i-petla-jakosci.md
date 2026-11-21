@@ -38,20 +38,21 @@
 ### E1. Audyt techniczny PR #188 (ADR 0020 B / ADR 0016)
 - [x] Inwentarz 7/7 plików (`gh api pulls/188/files --paginate` vs
   `^diff --git ` w `gh pr diff 188`; L190) → `docs/audits/PR188_MAPA_PLIKOW_2026-11-21.md`.
-- [ ] Przegląd zmiany kodu `src/table/render.js` (`DYNAMIC_AMOUNT_NOUNS`):
+- [x] Przegląd zmiany kodu `src/table/render.js` (`DYNAMIC_AMOUNT_NOUNS`):
   logika wpisu, brzmienie frazy, brak wyjątków po nazwie karty (ADR 0002),
   kompletność — czy SŁUGA inne surowe slugi kwot czają się w katalogu
   (skan `amount:`/`slug` w `card-data.js` wobec mapy NOUNS i detektora).
-- [ ] Test `test/audyt-pr187-raw-slug-blitz.test.js`: RED→GREEN — mutacja
+- [x] Test `test/audyt-pr187-raw-slug-blitz.test.js`: RED→GREEN — mutacja
   (usunięcie wpisu z NOUNS) musi czerwienić; sprawdzenie, czy test mierzy
   naprawę, nie tekst (L5, L13); czy nie maskuje innych slugów (L13: pin
   pozytywny `tyle obrażeń, ile …` obok negatywnego).
-- [ ] Weryfikacja dokumentów PR #188 (audyt/plan/handoff/history) — liczby
+- [x] Weryfikacja dokumentów PR #188 (audyt/plan/handoff/history) — liczby (5988,7 vs 5988,3 — rozliczone w audycie jako zaokrąglenie).
   z pomiaru, nie przepisane (L56/L92); baseline `npm test` 10 543/10 543
   potwierdzony powyżej.
-- [ ] Potwierdzenie bramek `test:all` (brama PR, ADR 0019) — poprzednia sesja
-  zostawiła je „w toku”; uruchomić w tle i zweryfikować.
-- [ ] Raport `docs/audits/AUDYT_PR188_2026-11-21.md` + wpis do `PROJECT_HISTORY.md`;
+- [x] Potwierdzenie bramek `test:all` (brama PR, ADR 0019) — poprzednia sesja
+  zostawiła je „w toku”; **WYKONANE: 10 828/10 828, fail 0, skipped 0,
+  ~631 s** (`.arena/testall.log`).
+- [x] Raport `docs/audits/AUDYT_PR188_2026-11-21.md` + wpis do `PROJECT_HISTORY.md`;
   znalezione błędy naprawiane od razu (osobny commit, RED→GREEN).
 
 ### E2. Pętla jakości (ADR 0021 pkt 4a/4b)
@@ -59,7 +60,7 @@
   (`npm i` w `tools/table-tester`, `npm run build` przed biegiem — L76):
   świeżne pary talii, osie audytu wg `TESTER_STOLU.md`; naprawy u root cause
   + nowe detektory, gdy klasa błędu się powtórzy (L27).
-- [ ] (b) Polowanie na niezgodności z CR **inną ścieżką niż poprzednie sesje**
+- [x] (b) Polowanie na niezgodności z CR **inną ścieżką niż poprzednie sesje**
   (poprzednie: kontrakty zdarzeń, numery CR, remisy bota, slugi w kafle) —
   kandydat kontynuujący E1: kompletność mapy surowych slugów kwot
   (rodzina M122 / `DYNAMIC_AMOUNT_NOUNS`) + skan podobnych „dynamicznych"
@@ -72,10 +73,10 @@
   — zielone przed każdym commitem (10 543 → 10 546 testów).
 
 ### E3. Domknięcie sesji
-- [ ] `npm run test:all` (pełna brama PR, cicho, `.arena/test-all.log`).
-- [ ] Odświeżenie „bieżącego stanu” NA KONIEC sesji (L92): README/handoff
+- [x] `npm run test:all` (pełna brama PR, cicho, `.arena/test-all.log`). **WYKONANE: 10 828/10 828, fail 0, skipped 0, ~631 s** (`.arena/testall.log`).
+- [x] Odświeżenie „bieżącego stanu” NA KONIEC sesji (L92): README/handoff
   liczbami z pomiaru.
-- [ ] `docs/setup/HANDOFF_<data>.md` + wpis `PROJECT_HISTORY.md` + opis PR
+- [x] `docs/setup/HANDOFF_<data>.md` + wpis `PROJECT_HISTORY.md` + opis PR
   kumulacyjnie; blok przekazania w czacie (ADR 0013 pkt 2).
 
 ## Ryzyka / pułapki
