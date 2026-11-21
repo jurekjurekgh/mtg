@@ -36,7 +36,7 @@
   kodowaniem (PR może na starcie zawierać tylko ten plan).
 
 ### E1. Audyt techniczny PR #188 (ADR 0020 B / ADR 0016)
-- [ ] Inwentarz 7/7 plików (`gh api pulls/188/files --paginate` vs
+- [x] Inwentarz 7/7 plików (`gh api pulls/188/files --paginate` vs
   `^diff --git ` w `gh pr diff 188`; L190) → `docs/audits/PR188_MAPA_PLIKOW_2026-11-21.md`.
 - [ ] Przegląd zmiany kodu `src/table/render.js` (`DYNAMIC_AMOUNT_NOUNS`):
   logika wpisu, brzmienie frazy, brak wyjątków po nazwie karty (ADR 0002),
@@ -55,7 +55,7 @@
   znalezione błędy naprawiane od razu (osobny commit, RED→GREEN).
 
 ### E2. Pętla jakości (ADR 0021 pkt 4a/4b)
-- [ ] (a) Żywy Tester `tools/table-tester/run-game.mjs` z perspektywy gracza
+- [x] (a) Żywy Tester `tools/table-tester/run-game.mjs` z perspektywy gracza
   (`npm i` w `tools/table-tester`, `npm run build` przed biegiem — L76):
   świeżne pary talii, osie audytu wg `TESTER_STOLU.md`; naprawy u root cause
   + nowe detektory, gdy klasa błędu się powtórzy (L27).
@@ -63,8 +63,13 @@
   (poprzednie: kontrakty zdarzeń, numery CR, remisy bota, slugi w kafle) —
   kandydat kontynuujący E1: kompletność mapy surowych slugów kwot
   (rodzina M122 / `DYNAMIC_AMOUNT_NOUNS`) + skan podobnych „dynamicznych"
-  pól w kaflu po całym rejestrze.
-- [ ] Bramy po każdym kroku: `npm test` (cicho, `.arena/`) + `npm run build`.
+  pól w kaflu po całym rejestrze. **WYKONANE:** enumeracja 11 kwot
+  `amount:` (kompletność map — §1.2 audytu) + klasowy test
+  `test/surowy-slug-kafel-katalog.test.js` (726 kart, dwie warstwy,
+  mutacje RED/GREEN na obu). Żywy Tester: 23 partie, 0 zgłoszeń,
+  0 defektów (§4a audytu).
+- [x] Bramy po każdym kroku: `npm test` (cicho, `.arena/`) + `npm run build`
+  — zielone przed każdym commitem (10 543 → 10 546 testów).
 
 ### E3. Domknięcie sesji
 - [ ] `npm run test:all` (pełna brama PR, cicho, `.arena/test-all.log`).
