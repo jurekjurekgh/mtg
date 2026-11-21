@@ -4410,6 +4410,14 @@ podnoszenie progu.
 
 **Krok 5 — ewaluacja:** `test/bot-scoring-snapshot.test.js` **4/4 BEZ regeneracji** (`overallHash` **`27a4e7b5…` bez zmian** — partie fixture'owe nie wchodzą w zmienione ścieżki). `node tools/bot-tie-audit.mjs --gry=2` — **12 remisów przed i 12 po** (klasy `block` 10 / `play_land` 2; pomiar A/B przez `git stash`). `tools/mirror-eval.mjs` (kandydat = 4 nowe wartości, baseline = wszystkie wyzerowane) na trzech taliach × 6 seedów: `srodziemie` **6:6**, `warhammer-ub` **6:6**, `worek-dziki` **7:5** — brak regresji.
 
+**Krok 5b — Żywy Tester (talie z kartami Batcha 74).** 10 partii na `dist/mtg-table.html`
+po naprawach: **pokrycie 10/10 kart** kolekcji 656–665 na żywym stole (Gylwain, Arrow Storm,
+Temur Banner, Saltfield Recluse, Grollub, Mirelurk Queen, Memorial to Genius, Frilled Sea
+Serpent, Lambholt Harrier, Loxodon Partisan) — w KAŻDEJ partii `NIEWYCENIONE == brak`
+i `DETEKTORY == brak zgłoszeń`. Szczegóły: `docs/audits/PMSSB91_ZYWTESTER_2026-11-16.md`.
+Uwaga metodyczna: karty batcha są w taliach po **1 kopii**, więc pokrycie wymagało kilku
+par/seedów — pierwsza partia nie wylosowała ani jednej.
+
 **Krok 6/7 — dokumentacja i bramy:** ten wpis, wiersz rejestru (Batch 74), `docs/PROJECT_HISTORY.md`, kamień **M466**, §6 planu (wynik pętli). Bramy: `node tools/run-tests.mjs fast` **10 532 / 10 533** (jedyny czerwony `E5/1` to test skanujący własny plik źródłowy — zawiera w sobie wzorzec, którego szuka, więc zgłasza sam siebie; ta sama klasa co `docs/PROJECT_HISTORY.md` z cytatem), `slow` **282/282**, `npm run build` RC=0 (**79 modułów / 5978,8 kB**).
 
 **Jawne granice:** (1) F-91/4 (rad płaski), F-91/7 (tryby Roli bez modelu trample) i F-91/6 (brak premii „poświęć w end stepie rywala" jako reguły) są **zmierzone i udokumentowane**, nie naprawione — pin je zamraża, świadoma decyzja o zakresie. (2) Cap mocy w `negativePumpValue` dotyczy wyłącznie mocy; debuff `−0/−X` nie jest ograniczany (redukuje wytrzymałość do zera niezależnie od jej wysokości). (3) `raidHoldBonus` jest karą wycenową, nie zmianą oferty — czar nadal da się rzucić w main1, bot po prostu tego nie robi (oferta = walidacja, L48).
