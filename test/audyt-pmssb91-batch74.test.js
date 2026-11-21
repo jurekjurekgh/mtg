@@ -458,3 +458,60 @@ test('PMSSB-91/D3c: tapnięty bloker nie jest usuwany z planu ataku — cant_blo
     assert.ok(v < 0, `${krok}: tapnięty bloker już nie blokuje (${v})`);
   }
 });
+
+// ---------------------------------------------------------------------------
+// D4 — Gylwain, Casting Director: KOLEJNOŚĆ rzutu (setup → payoff).
+// Gylwain tworzy token Roli (ETB-aura) doczepiony do wchodzącego stworu.
+// Rzucony PO innym stworze nie ma do czego doczepić Roli przy swoim wejściu,
+// a Rola na samym Gylwainie jest słabsza niż Rola + drugie ciało. Pro-player
+// gra twórcę Ról PIERWSZY. PRZED: Gylwain 64,80 < drugi stwór 66,60 (bot
+// rzucał źle); PO: 72,00 > 66,60.
+// ---------------------------------------------------------------------------
+
+test('PMSSB-91/D4: Gylwain przed innym stworrem z ręki (setup → payoff)', () => {
+  const s = stan({
+    krok: 'main1',
+    pole: [],
+    reka: [
+      { id: 'gyl', karta: 'gylwain-casting-director' },
+      { id: 'drugi', karta: 'leafcrown-dryad' },
+    ],
+    mana: { p1: 5 },
+  });
+  const gyl = scoreOferty(s, 'cast_permanent(gyl');
+  const drugi = scoreOferty(s, 'cast_permanent(drugi');
+  assert.ok(Math.abs(gyl - 72) < 0.01, `Gylwain z drugim stworrem w ręce: ${gyl}`);
+  assert.ok(Math.abs(drugi - 66.6) < 0.01, `drugi stwór: ${drugi}`);
+  assert.ok(gyl > drugi, `${gyl} > ${drugi}: twórca Ról idzie PIERWSZY`);
+  assert.equal(decyzja(s, 'p1').wybrano, 'cast_permanent(gyl)', 'bot faktycznie rzuca Gylwaina');
+});
+
+test('PMSSB-91/D4b: bez drugiego stworu w ręce premia nie występuje (anty-over-fix)', () => {
+  const s = stan({
+    krok: 'main1',
+    pole: [],
+    reka: [{ id: 'gyl', karta: 'gylwain-casting-director' }],
+    mana: { p1: 5 },
+  });
+  const gyl = scoreOferty(s, 'cast_permanent(gyl');
+  assert.ok(Math.abs(gyl - 64.8) < 0.01, `sam Gylwain bez payoffu: ${gyl}`);
+  assert.ok(gyl < 72, `premia nie może działać bez stworu do doczepienia Roli (${gyl})`);
+});
+
+test('PMSSB-91/D4c (M429): pokrętło `setupBeforePayoffBonus: 0` odtwarza pomiar PRZED', () => {
+  const off = { setupBeforePayoffBonus: 0 };
+  const s = stan({
+    krok: 'main1',
+    pole: [],
+    reka: [
+      { id: 'gyl', karta: 'gylwain-casting-director' },
+      { id: 'drugi', karta: 'leafcrown-dryad' },
+    ],
+    mana: { p1: 5 },
+  });
+  const gyl = scoreOferty(s, 'cast_permanent(gyl', off);
+  const drugi = scoreOferty(s, 'cast_permanent(drugi', off);
+  assert.ok(Math.abs(gyl - 64.8) < 0.01, `PRZED: Gylwain ${gyl}`);
+  assert.ok(drugi > gyl, `PRZED: bot wybierał źle (${drugi} > ${gyl})`);
+  assert.equal(decyzja(s, 'p1', off).wybrano, 'cast_permanent(drugi)', 'PRZED: bot rzucał drugi stwór pierwszy');
+});
