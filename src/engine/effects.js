@@ -3615,10 +3615,22 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     // Batch 43 (Severed Strands): „You gain life equal to the sacrificed
     // creature's toughness" — kwota z LKI poświęconego stwora (koszt rzutu),
     // niesiona na obiekcie stosu przez castSpell (sacrificedToughness).
+    // Batch 74 (Grollub): dynamiczna kwota z kontekstu (`amountFrom: 'damageAmount'`)
+    // oraz `scope: 'each_opponent'` — każdy przeciwnik zyskuje tyle życia (APNAP).
     const amount = effect.amountFromSacrificedToughness
       ? Math.max(0, sourceObject.sacrificedToughness ?? 0)
-      : effect.amount;
+      : (effect.amountFrom ? Math.max(0, context?.[effect.amountFrom] ?? 0) : effect.amount);
     if (!Number.isInteger(amount) || amount < 0) throw new RangeError('Zysk życia musi być nieujemny');
+    if (effect.scope === 'each_opponent') {
+      const players = state.players;
+      const activeIdx = Math.max(0, players.findIndex((p) => p.id === state.turn?.activePlayerId));
+      for (let i = 0; i < players.length; i += 1) {
+        const player = players[(activeIdx + i) % players.length];
+        if (player.id === sourceObject.controllerId) continue;
+        if (amount > 0 || effect.amount != null) changeLife(state, player.id, amount);
+      }
+      return;
+    }
     changeLife(state, sourceObject.controllerId, amount);
     return;
   }
@@ -5144,7 +5156,8 @@ function markTemporaryExile(state, exileId, sourceObject) {
   }
   if (effect.type === 'cant_be_blocked') {
     // Coralhelm Guide: "Target creature can't be blocked this turn."
-    const targetId = targets[0];
+    // Frilled Sea Serpent (applyTo: 'self'): "This creature can't be blocked this turn."
+    const targetId = effect.applyTo === 'self' ? sourceObject?.id : targets[0];
     if (!targetId) return;
     // CR 608.2b: cel zniknął z pola bitwy przed rozstrzygnięciem — brak efektu.
     const object = state.objects.get(targetId);

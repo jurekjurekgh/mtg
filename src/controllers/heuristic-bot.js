@@ -2596,7 +2596,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     for (const ability of abilities) {
       if (ability?.type !== 'activated') continue;
       const effects = Array.isArray(ability.effect) ? ability.effect : [ability.effect];
-      const life = effects.filter((e) => e?.type === 'gain_life')
+      const life = effects.filter((e) => e?.type === 'gain_life' && e.scope !== 'each_opponent' && !e.amountFrom)
         .reduce((sum, e) => sum + (Number.isInteger(e.amount) ? e.amount : 0), 0);
       if (!(life > 0)) continue;
       const value = gainLifeValue(view, life)
@@ -2941,7 +2941,12 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     incubate: (e) => incubateValue(e),
     // PMSSB-4/F-A2: ETB-gain przez wspolna drabine (wczesniej min(2x,8)
     // slepe na zycie — bufor x3 vs M236, H5).
-    gain_life: (e, view) => gainLifeValue(view, e.amount ?? 1),
+    gain_life: (e, view) => {
+      if (e.amountFrom) return 0;
+      const amt = e.amount ?? 1;
+      if (e.scope === 'each_opponent') return -4 * amt;
+      return gainLifeValue(view, amt);
+    },
     // PMSSB-62/F5 (promocja świadomego wyjątku z E8): licznik {E} jest
     // zasobem trwałym (CR 122.1) i ma zamodelowaną wartość w koszcie zdolności
     // (PMSSB-56 → `P.energyCounterValue`), więc zysk musi liczyć się tą samą
@@ -3963,7 +3968,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       if (ev !== 'land_entered_under_your_control'
         && ev !== 'player_casts_spell' && ev !== 'bat_attacks') continue;
       const effs = Array.isArray(ability.effect) ? ability.effect : [ability.effect];
-      const amt = effs.reduce((s, e) => s + (e?.type === 'gain_life' ? (e.amount ?? 0) : 0), 0);
+      const amt = effs.reduce((s, e) => s + (e?.type === 'gain_life' && e.scope !== 'each_opponent' && !e.amountFrom ? (e.amount ?? 0) : 0), 0);
       if (!(amt > 0)) continue;
       if (ev === 'land_entered_under_your_control') {
         const myMain = myTurn(view) && (view.turn.phase === 'precombat_main' || view.turn.phase === 'postcombat_main');
@@ -4018,7 +4023,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       for (const ability of def.abilities ?? []) {
         if (ability?.type !== 'triggered' || ability.trigger?.event !== 'land_entered_under_your_control') continue;
         const effs = Array.isArray(ability.effect) ? ability.effect : [ability.effect];
-        const amt = effs.reduce((s, e) => s + (e?.type === 'gain_life' ? (e.amount ?? 0) : 0), 0);
+        const amt = effs.reduce((s, e) => s + (e?.type === 'gain_life' && e.scope !== 'each_opponent' && !e.amountFrom ? (e.amount ?? 0) : 0), 0);
         if (amt > 0) {
           const g = gainLifeValue(view, amt);
           if (g > maxGain) {
@@ -4093,7 +4098,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       for (const ab of def.abilities ?? []) {
         if (ab?.type === 'triggered' && ab.trigger?.event === 'land_entered_under_your_control') {
           const effs = Array.isArray(ab.effect) ? ab.effect : [ab.effect];
-          if (effs.some((e) => e?.type === 'gain_life')) { isLandfall = true; break; }
+          if (effs.some((e) => e?.type === 'gain_life' && e.scope !== 'each_opponent')) { isLandfall = true; break; }
         }
       }
       if (isLandfall) bestLandfallCost = Math.max(bestLandfallCost, card.manaCost ?? 0);
@@ -11313,7 +11318,11 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     for (const effect of effects) {
       const amount = effect.amount ?? 1;
       if (effect.type === 'lose_life' || effect.type === 'damage_each_opponent') value += opponentLifeEffectValue(view, effect);
-      else if (effect.type === 'gain_life') value += myLife(view) <= 5 ? 4 * amount : amount;
+      else if (effect.type === 'gain_life') {
+        if (effect.amountFrom) continue;
+        if (effect.scope === 'each_opponent') value -= 4 * amount;
+        else value += myLife(view) <= 5 ? 4 * amount : amount;
+      }
       else if (effect.type === 'draw_cards') value += P.drawCardValue * amount;
       else if (effect.type === 'damage') value += 5 + 2 * amount;
       else if (effect.type === 'scry' || effect.type === 'surveil') value += 3;
@@ -11374,7 +11383,11 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         const victim = effect.scope === 'target' ? view.players.find(p => p.id === targetId) : enemy(view);
         value += victim?.id === view.playerId ? -selfLifeLossPenalty(view, amount)
           : (victim && amount >= victim.life ? 80 : 4 * amount);
-      } else if (effect.type === 'gain_life') value += gainLifeValue(view, amount);
+      } else if (effect.type === 'gain_life') {
+        if (effect.amountFrom) continue;
+        if (effect.scope === 'each_opponent') value -= 4 * amount;
+        else value += gainLifeValue(view, amount);
+      }
       else if (effect.type === 'draw_cards' || effect.type === 'draw_then_discard') {
         value += drawResourceValue(effect) + drawDeckingPenalty(view, amount);
       } else if (effect.type === 'adjust_battle_defense') value += battleDefenseValue(view, effect, target);
@@ -16210,8 +16223,13 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           // M407 (uwaga z gry — Shiva/Mesmerize): dar „can't be blocked this
           // turn" — jedna wycena z gałązką triggerów (L41): najlepszy
           // atakujący, martwy atak = nigdy (cantBeBlockedTargetValue).
+          // Batch 74 (Frilled Sea Serpent): `applyTo: 'self'` nie niesie
+          // `cmd.targets`, odbiorcą jest samo źródło zdolności.
           if (effect.type === 'cant_be_blocked') {
-            score += cantBeBlockedTargetValue(view, target);
+            const recipient = effect.applyTo === 'self'
+              ? (objectOnBoard(view, cmd.objectId) ?? source)
+              : target;
+            score += cantBeBlockedTargetValue(view, recipient);
           }
           // PMSSB-60/F2 (Zombie Boa, batch 65): „wybierz kolor — stwory tego
           // koloru blokujące w tej turze zostaną zniszczone". POMIAR PRZED:

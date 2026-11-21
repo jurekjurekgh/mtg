@@ -1295,6 +1295,11 @@ function describeEffect(e, ctx = {}) {
       // DYNAMICZNA (= wytrzymałość poświęconego stwora) — bez `amount`. Bez tej
       // gałęzi kafel pokazywał „zyskaj undefined życia".
       if (e.amountFromSacrificedToughness) return 'zyskaj życie = wytrzymałość poświęconego stwora';
+      if (e.scope === 'each_opponent' && e.amountFrom === 'damageAmount') {
+        return 'każdy przeciwnik zyskuje tyle życia, ile zadano obrażeń';
+      }
+      if (e.scope === 'each_opponent') return `każdy przeciwnik zyskuje ${lifeCount(e.amount ?? 0)}`;
+      if (e.amountFrom === 'damageAmount') return 'zyskaj tyle życia, ile zadano obrażeń';
       return `zyskaj ${lifeCount(e.amount ?? 0)}`;
     },
     gain_life_target: () => `cel zyskuje ${lifeCount(e.amount)}`,
@@ -1430,7 +1435,7 @@ function describeEffect(e, ctx = {}) {
     // Batch60 (Revealing Wind): zwykła mgła + prywatny podgląd zakrytych.
     prevent_all_combat_damage_this_turn: () => 'obrażenia bojowe zapobiegnięte do końca tury',
     look_at_facedown_combatants: () => 'podejrzyj zakryte stwory atakujące i blokujące',
-    cant_be_blocked: () => 'nie może być blokowany',
+    cant_be_blocked: () => (e.applyTo === 'self' ? 'to stworzenie nie może być blokowane w tej turze' : 'nie może być blokowany'),
     cant_be_regenerated_this_turn: () => 'nie może być regenerowany',
     cant_block: () => 'nie może blokować',
     cloak: () => 'cloak (wierzch biblioteki twarzą w dół jako 2/2)',
