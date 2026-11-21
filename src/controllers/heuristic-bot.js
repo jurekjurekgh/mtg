@@ -7704,12 +7704,12 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   // happens"), indestructible też (CR 702.12b — „aren't destroyed by lethal
   // damage"). Kontroler celu nie gra roli: ten sam test służy wrogowi (premia)
   // i własnemu stworowi (kara).
-  const damageIsLethal = (view, targetId, amount) => {
+  const damageIsLethal = (view, targetId, amount, unpreventable = false) => {
     const amt = Number.isInteger(amount) ? amount : 0;
     if (amt <= 0) return false;
     const t = objectOnBoard(view, targetId);
     if (!t) return false;
-    if (damageFullyPrevented(view, t) || shieldedAmount(view, t.id) >= amt) return false;
+    if (!unpreventable && (damageFullyPrevented(view, t) || shieldedAmount(view, t.id) >= amt)) return false;
     if (hasKeyword(t, 'indestructible')) return false;
     const remaining = isPlaneswalker(t) ? (t.counters?.loyalty ?? 0)
       : (t.toughness ?? 0) - (t.damage ?? 0); // POZOSTAŁE życie / lojalność
@@ -7773,7 +7773,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     + P.removalWorthWeight * ((t.power ?? 0) + (t.toughness ?? 0))
     + enemyRemovalTargetBonus(view, t);
 
-  const damageTargetValue = (view, targetId, amount, scaling = false, lifeRecovered = 0, chipPenalty = 0) => {
+  const damageTargetValue = (view, targetId, amount, scaling = false, lifeRecovered = 0, chipPenalty = 0, unpreventable = false) => {
     const amt = Number.isInteger(amount) ? amount : 0;
     const recovered = Number.isInteger(lifeRecovered) && lifeRecovered > 0 ? lifeRecovered : 0;
     const foe = enemy(view);
@@ -7798,13 +7798,13 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     const t = objectOnBoard(view, targetId);
     if (!t) return 0;
     if (t.controllerId === view.playerId) return -90;       // WŁASNY stwór — zakaz
-    if (damageFullyPrevented(view, t) || (amt > 0 && shieldedAmount(view, t.id) >= amt)) return -70;
+    if (!unpreventable && (damageFullyPrevented(view, t) || (amt > 0 && shieldedAmount(view, t.id) >= amt))) return -70;
     // D (2026-10-27c): dobicie celu, który WŁAŚNIE ma rozstrzygnąć mój czar/
     // zdolność ze stosu (Time to Feed: „target creature ... fights that
     // creature") — efekt mojego własnego obiektu przepada (CR 608.2b), więc
     // obrażenia są wyrzuceniem karty. Zakaz jak dla własnego stwora.
-    if (damageIsLethal(view, targetId, amt) && isMyPendingStackTarget(view, targetId)) return -90;
-    if (damageIsLethal(view, targetId, amt)) {
+    if (damageIsLethal(view, targetId, amt, unpreventable) && isMyPendingStackTarget(view, targetId)) return -90;
+    if (damageIsLethal(view, targetId, amt, unpreventable)) {
       if (scaling) {
         // Skalujący zasób (Fireball, Consume Spirit) marnujemy tylko na TANIEGO
         // chumpa BEZ znaczenia. Wart zabicia (model właściciela), gdy:
@@ -8090,6 +8090,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     const counterBonus = effect?.amountIfTargetHasCounter;
     if (counterBonus && (target?.counters?.[counterBonus.counter] ?? 0) > 0) amount = counterBonus.amount;
     if (effect?.amountIfAddendum != null && entry?.castDuringMainPhase === true) amount = effect.amountIfAddendum;
+    if (effect?.amountIfRaid != null && view.playersAttackedThisTurn?.[entry?.controllerId]) amount = effect.amountIfRaid;
     return Number.isInteger(amount) && amount > 0 ? amount : 0;
   };
   function directDamageThreatsForTarget(view, target, entry) {
@@ -14569,9 +14570,15 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             if (addendumNow) {
               amount = effect.amountIfAddendum;
             }
+            const raidNow = Boolean(view.playersAttackedThisTurn?.[view.playerId]);
+            if (Number.isInteger(effect.amountIfRaid) && raidNow) {
+              amount = effect.amountIfRaid;
+            }
+            const unpreventable = Boolean(effect.cantBePrevented)
+              || (Boolean(effect.cantBePreventedIfRaid) && raidNow);
             const scaling = Boolean(spell?.xCost); // Consume Spirit itp. — X z maną
             if (slot != null) score += damageTargetValue(view, slot, amount, scaling,
-              sameResolutionLifeGain(view, scoredEffects, cmd, slot));
+              sameResolutionLifeGain(view, scoredEffects, cmd, slot), 0, unpreventable);
             else score -= 60; // efekt obrażeń bez celu — nic nie robi
             // Batch60-followup/1 (ograniczenie 1: model TRZYMANIA removalu pod
             // Addendum): poza własną main czar bije słabiej (3 zamiast 5).

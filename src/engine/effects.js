@@ -593,6 +593,12 @@ export function resolveDamageAmount(state, effect, sourceObject, targetId = null
   if (effect.amountIfAddendum != null && sourceObject?.castDuringMainPhase) {
     amount = effect.amountIfAddendum;
   }
+  // Batch 74 (Arrow Storm, Raid): wariant sprawdzany przy rozstrzyganiu
+  // (CR 608.2h / ruling 2024-11-08: liczy się sam fakt zadeklarowania
+  // atakującego w tej turze, nawet jeśli stwór opuścił pole bitwy).
+  if (effect.amountIfRaid != null && state.playersAttackedThisTurn?.[sourceObject?.controllerId]) {
+    amount = effect.amountIfRaid;
+  }
   return amount;
 }
 
@@ -713,7 +719,7 @@ export function drawPlayerCards(state, playerId, amount, source = 'effect') {
  *    WSZYSTKICH obrażeń, także niecombat).
  *  Zwraca kwotę zadaną (0, gdy w pełni zapobiegnięta).
  */
-export function dealNonCombatDamage(state, sourceObject, targetId, rawAmount) {
+export function dealNonCombatDamage(state, sourceObject, targetId, rawAmount, { cantBePrevented = false } = {}) {
   if (!Number.isInteger(rawAmount) || rawAmount < 0) throw new RangeError('Obrażenia muszą być nieujemne');
   const targetIsPlayer = state.players.some((player) => player.id === targetId);
   const targetObject = targetIsPlayer ? null : state.objects.get(targetId);
@@ -744,9 +750,10 @@ export function dealNonCombatDamage(state, sourceObject, targetId, rawAmount) {
     }));
     return 0;
   }
-  // Protection (CR 702.16e): obrażenia od źródła chronionego koloru
-  // są zapobiegane — sprawdzamy PRZED filtrem prewencji.
-  if (!targetIsPlayer && rawAmount > 0 && targetObject) {
+  // Protection (CR 702.16e) + prewencje (CR 615.1): jeśli obrażenia nie
+  // mogą być zapobiegnięte (`cantBePrevented`), żadna prewencja ani tarcza
+  // (w tym protection i shield counter) nie działa i NIE jest zużywana.
+  if (!cantBePrevented && !targetIsPlayer && rawAmount > 0 && targetObject) {
     // M109 (CR 702.16a): ochrona przed JAKOŚCIĄ źródła (Spare from Evil —
     // „protection from non-Human creatures").
     if (isProtectedFromSource(state, targetObject, sourceObject)) {
@@ -768,24 +775,26 @@ export function dealNonCombatDamage(state, sourceObject, targetId, rawAmount) {
   }
   // Filtr „prevent all damage to ... this turn" dotyczy permanentów (stworów
   // o zadanych typach); gracz nie jest objęty filtrem typów.
-  const filterPrevented = !targetIsPlayer && rawAmount > 0 && isDamagePrevented(state, targetObject) ? rawAmount : 0;
+  const filterPrevented = !cantBePrevented && !targetIsPlayer && rawAmount > 0 && isDamagePrevented(state, targetObject)
+    ? rawAmount : 0;
   if (filterPrevented > 0) {
     // Zdarzenie jak przy tarczach — strumień informuje o skasowanych obrażeniach.
     state.events.push(event('damage_prevented', {
       objectId: targetId, amount: filterPrevented, cardId: targetObject?.cardId ?? null,
     }));
   }
-  const shieldPrevented = preventDamageTo(state, targetId, rawAmount - filterPrevented);
+  const shieldPrevented = cantBePrevented ? 0 : preventDamageTo(state, targetId, rawAmount - filterPrevented);
   // Licznik shield zastępuje OBRAŻENIA, a nie tylko ich zaznaczenie.
   // Musi zadziałać przed damage_dealt, infect, deathtouch i lifelink.
   const remainder = rawAmount - filterPrevented - shieldPrevented;
-  const counterPrevented = targetIsPlayer ? 0 : preventDamageWithShieldCounter(state, targetId, remainder);
+  const counterPrevented = (cantBePrevented || targetIsPlayer) ? 0
+    : preventDamageWithShieldCounter(state, targetId, remainder);
   // Batch 70 (Magma Pummeler): licznik zamiast obrażeń — kolejny efekt
   // zastępujący w łańcuchu prewencji (CR 615.1a: efekt prewencji; kolejność
   // nakładania efektów zastępujących wybiera gracz — CR 616.1;
   // tarcza licznikowa jest efektem tego samego obiektu, więc stosujemy ją
   // pierwszą, jak dotąd).
-  const removalPrevented = targetIsPlayer ? 0
+  const removalPrevented = (cantBePrevented || targetIsPlayer) ? 0
     : preventDamageByRemovingCounters(state, targetId, remainder - counterPrevented);
   const dealt = remainder - counterPrevented - removalPrevented;
   state.events.push(event('damage_dealt', {
@@ -811,7 +820,7 @@ export function dealNonCombatDamage(state, sourceObject, targetId, rawAmount) {
     // Batch 59: źródło obrażeń jedzie do markDamage — bez niego para
     // {ofiara, źródło} nie powstawała dla obrażeń nie-bojowych (Kumano's
     // Blessing nie widziałaby obrażeń z fightu/efektów).
-    markDamage(state, targetId, dealt, sourceObject.id);
+    markDamage(state, targetId, dealt, sourceObject.id, { cantBePrevented });
   }
   // Deathtouch (CR 702.2b): „Any amount of damage this deals to a creature is
   // enough to destroy it" — dotyczy WSZYSTKICH obrażeń, także niecombatowych
@@ -1594,7 +1603,10 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     // ofercie celu triggera (`resolve_trigger_target` w game-state.js), więc
     // bot wybiera cel widząc liczbę, która faktycznie zostanie rozstrzygnięta.
     const amount = resolveDamageAmount(state, effect, sourceObject, targetId, context);
-    dealNonCombatDamage(state, sourceObject, targetId, amount);
+    const raidActive = Boolean(state.playersAttackedThisTurn?.[sourceObject?.controllerId]);
+    const cantBePrevented = Boolean(effect.cantBePrevented)
+      || (Boolean(effect.cantBePreventedIfRaid) && raidActive);
+    dealNonCombatDamage(state, sourceObject, targetId, amount, { cantBePrevented });
     return;
   }
   // M109 (Diplomatic Relations): „It deals damage equal to its power to target

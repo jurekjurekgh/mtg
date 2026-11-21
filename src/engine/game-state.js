@@ -366,6 +366,9 @@ export function createGameState({ seed, players }) {
     // Infusion: „as long as you gained life this turn"). Zerowane przy
     // zmianie tury, jak cardsDrawnThisTurn.
     lifeGainedThisTurn: {},
+    // Którzy gracze zaatakowali stworem w bieżącej turze (Raid, CR 207.2c /
+    // CR 508.1 / ruling Arrow Storm 2024-11-08: pamięta nawet po śmierci atakującego).
+    playersAttackedThisTurn: {},
     // Aktywowane w bieżącej turze zdolności z limitem „activate only once
     // each turn" (Snarling Wolf): klucz `${objectId}:${abilityIndex}` → true.
     // Zerowane przy zmianie tury, jak cardsDrawnThisTurn.
@@ -837,6 +840,7 @@ function beginTurnContinuation(state, events, { keepTappedIds = [] } = {}) {
   state.instantSorceryCastThisTurnByPlayer = {};
   state.cardsDrawnThisTurn = {};
   state.lifeGainedThisTurn = {};
+  state.playersAttackedThisTurn = {};
   // »Activate only once each turn« (Snarling Wolf) — limit aktywacji
   // zeruje się z nową turą, jak licznik dobrań.
   state.abilityActivatedThisTurn = {};
@@ -10705,6 +10709,7 @@ export function playerView(state, playerId) {
     undercityProgress: { ...state.undercityProgress },
     descendedThisTurn: { ...state.descendedThisTurn },
     cardsLeftGraveyardThisTurn: { ...(state.cardsLeftGraveyardThisTurn ?? {}) },
+    playersAttackedThisTurn: { ...(state.playersAttackedThisTurn ?? {}) },
     // M107 (ADR 0017 — kompletność widoku; zlecenie właściciela 2026-08-16):
     // PEŁNA sekcja WALKI. Do tej pory widok nie niósł jej wcale: kontroler
     // (bot, UI, tester) musiał rekonstruować walkę ze znaczników na kaflach

@@ -336,7 +336,8 @@ export function describeSpellEffects(spell) {
     // warunek (kicker) i dynamiczne źródło liczby mają pełny opis z
     // `describeEffect` (batch 70: Jilt gubił „jeśli opłacono kicker", Converge
     // drukował surowy slug `colors_of_mana_spent`).
-    if (effect.type === 'damage' && !effect.condition && effect.amountFromContext == null) {
+    if (effect.type === 'damage' && !effect.condition && effect.amountFromContext == null
+      && effect.amountIfRaid == null && !effect.cantBePrevented && !effect.cantBePreventedIfRaid) {
       return typeof effect.amount === 'number' || effect.amount === 'X'
         ? `Obrażenia ${effect.amount}` : describeEffect(effect);
     }
@@ -1273,7 +1274,10 @@ function describeEffect(e, ctx = {}) {
     },
     damage: () => {
       const amt = e.amount;
-      if (typeof amt === 'number') return damageCount(amt);
+      const raidNote = e.amountIfRaid != null
+        ? ` (Raid — jeśli zaatakowałeś w tej turze, ${damageCount(e.amountIfRaid)}${e.cantBePreventedIfRaid ? ' i obrażenia nie mogą być zapobiegnięte' : ''})`
+        : (e.cantBePrevented ? ' (obrażenia nie mogą być zapobiegnięte)' : '');
+      if (typeof amt === 'number') return `${damageCount(amt)}${raidNote}`;
       if (amt === 'X') return 'X obrażeń';
       // Batch 70 (Kaleidoscorch, Converge): X = liczba KOLORÓW many wydanej na
       // rzut — bez tej gałęzi kafel drukował surowy slug `colors_of_mana_spent`.
@@ -1449,7 +1453,10 @@ function describeEffect(e, ctx = {}) {
     damage_defending_player: () => `${damageCount(dynamicAmount(e.amount))} obrońcy`,
     damage: () => {
       const amt = e.amount;
-      if (typeof amt === 'number') return damageCount(amt);
+      const raidNote = e.amountIfRaid != null
+        ? ` (Raid — jeśli zaatakowałeś w tej turze, ${damageCount(e.amountIfRaid)}${e.cantBePreventedIfRaid ? ' i obrażenia nie mogą być zapobiegnięte' : ''})`
+        : (e.cantBePrevented ? ' (obrażenia nie mogą być zapobiegnięte)' : '');
+      if (typeof amt === 'number') return `${damageCount(amt)}${raidNote}`;
       if (amt === 'X') return 'X obrażeń';
       // Batch 70 (Kaleidoscorch, Converge): X = liczba KOLORÓW many wydanej na
       // rzut — bez tej gałęzi kafel drukował surowy slug `colors_of_mana_spent`.

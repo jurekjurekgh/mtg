@@ -496,6 +496,11 @@ export function declareAttackers(state, playerId, attackerIds, { pushToState = t
     }
   }
   state.combat = { attackingPlayerId: playerId, attackers: attackerIds.slice(), blockers: new Map(), blockedAttackers: new Set() };
+  // Batch 74 (Raid / Arrow Storm, ruling 2024-11-08): fakt ataku w tej turze
+  // utrzymuje się nawet wtedy, gdy wszystkie atakujące stwory zginą w walce.
+  if (attackerIds.length > 0) {
+    state.playersAttackedThisTurn = { ...(state.playersAttackedThisTurn ?? {}), [playerId]: true };
+  }
   // M66 (C): zdarzenie niesie cardId każdego atakującego — log może nazwać
   // stwory także po tym, jak zginęły w SBA (stare ID znika z state.objects).
   const e = event('attackers_declared', {

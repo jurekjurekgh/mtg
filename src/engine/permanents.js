@@ -1650,20 +1650,20 @@ export function recordDamageSource(state, objectId, sourceId) {
   state.damageSourcesThisTurn = [...list, { objectId, sourceId }];
 }
 
-export function markDamage(state, objectId, amount, sourceId = null) {
+export function markDamage(state, objectId, amount, sourceId = null, { cantBePrevented = false } = {}) {
   let object = state.objects.get(objectId);
   if (!object || object.zone !== 'battlefield') throw new Error('Nieprawidłowy cel obrażeń');
   if (!Number.isInteger(amount) || amount < 0) throw new RangeError('Obrażenia muszą być nieujemne');
-  // Prewencja (CR 614): filtr „prevent all damage" — zamiast zaznaczyć
-  // obrażenia emitujemy fakt ich skasowania.
-  if (amount > 0 && isDamagePrevented(state, object)) {
+  // Prewencja (CR 614 / CR 615.1): gdy obrażenia nie mogą być zapobiegnięte,
+  // pomijamy filtr, protection oraz tarczę z licznika shield (bez ich zużycia).
+  if (!cantBePrevented && amount > 0 && isDamagePrevented(state, object)) {
     const prevented = event('damage_prevented', { objectId, amount, cardId: object.cardId });
     state.events.push(prevented);
     return object;
   }
   // Protection (CR 702.16e): obrażenia od źródła chronionego koloru
   // są zapobiegane.
-  if (amount > 0 && sourceId) {
+  if (!cantBePrevented && amount > 0 && sourceId) {
     const source = state.objects.get(sourceId);
     if (source && isDamagePreventedByProtection(state, object, source)) {
       const prevented = event('damage_prevented', { objectId, amount, cardId: object.cardId, protection: true });
@@ -1672,7 +1672,9 @@ export function markDamage(state, objectId, amount, sourceId = null) {
     }
   }
   // Ta sama prewencja także dla bezpośredniego API markDamage.
-  if (preventDamageWithShieldCounter(state, objectId, amount) > 0) return state.objects.get(objectId);
+  if (!cantBePrevented && preventDamageWithShieldCounter(state, objectId, amount) > 0) {
+    return state.objects.get(objectId);
+  }
   object = removeLoyaltyForDamage(state, object, amount);
   if (isPlaneswalker(object) && object.kind !== 'creature') {
     return replaceObject(state, object, { damagedThisTurn: amount > 0 || object.damagedThisTurn });
