@@ -37,7 +37,7 @@ import {
  *     (`permanent-28#0→graveyard-59`, aktywacja 1 → 0; partia 268 → 262
  *     decyzji, scoreSum 2900.65 → 2970.65) oraz …@1001, tura 19 main1
  *     (`permanent-68#0→graveyard-35`, 1 → 0; 321 → 298 decyzji, scoreSum
- *     3185.9745 → 3186.9495). Partia tarkir-bg|warhammer-ubr jest bez zmian,
+ *     3185.9745 → 3186.9495). Partia tarkir-bg|warhammer-ub jest bez zmian,
  *     a wybory niezwiązane z poświęceniem (np. `permanent-18#0→permanent-45`
  *     w @1000, tura 14) zachowują IDENTYCZNY zestaw opcji i wynik.
  *   - d5349621… → 0e1c042c… (BATCH 71, 2026-11-01, PMSSB-80…86): zmiana jest
@@ -57,9 +57,9 @@ import {
  *       ravnica-wur|innistrad-wu@1001: BEZ ZMIAN (298, 3186.9495),
  *       dominaria-brg|mirrodin-wu@1000: 205→203, 3030.4126→3048.1072,
  *       dominaria-brg|mirrodin-wu@1001: 300→313, 3580.9562→3591.2971,
- *       tarkir-bg|warhammer-ubr@1000: 179→174, 1576.1099→2531.0099,
- *       tarkir-bg|warhammer-ubr@1001: 126→164, 2279.7081→2503.0099.
- *     Skok scoreSum na tarkir-bg|warhammer-ubr wymagałby osobnego porównania
+ *       tarkir-bg|warhammer-ub@1000: 179→174, 1576.1099→2531.0099,
+ *       tarkir-bg|warhammer-ub@1001: 126→164, 2279.7081→2503.0099.
+ *     Skok scoreSum na tarkir-bg|warhammer-ub wymagałby osobnego porównania
  *     pełnych śladów: same wyceny niewybranych wariantów nie zmieniają sumy
  *     wyników WYBRANYCH komend. Hash i agregaty nie dowodzą jakości gry ani
  *     przyczyny dryfu. Historyczny pomiar quick: heuristic 87.5% ogółem,
@@ -93,7 +93,7 @@ import {
  *     natomiast trzy partie zmieniają trajektorię: ravnica-wur|innistrad-wu
  *     @1000 263→235 decyzji, scoreSum 2971.65→2825.82; @1001 284→256,
  *     3018.6759→1963.8357; dominaria-brg|mirrodin-wu@1001 313→285,
- *     3591.2971→3307.1953. Obie partie tarkir-bg|warhammer-ubr bez zmian.
+ *     3591.2971→3307.1953. Obie partie tarkir-bg|warhammer-ub bez zmian.
  *     Kontrola jakości: test/bot-benchmark.test.js 10/10 (progi regresji),
  *     co nie dowodzi równej siły gry — tylko brak załamania poniżej progów.
  *     Świadoma regeneracja.
@@ -139,14 +139,31 @@ import {
  *         zmienił się wyłącznie zbiór ofert (niewybrane warianty),
  *       dominaria-brg|mirrodin-wu@1000: 203→203, 3048.1072→3046.3063, 6→6,
  *       dominaria-brg|mirrodin-wu@1001: 285→356, 3307.1953→3980.2998, 5→8,
- *       tarkir-bg|warhammer-ubr@1000: 174→174, 2531.0099→2531.0099, 5→5,
- *       tarkir-bg|warhammer-ubr@1001: 164→164, 2503.0099→2503.0099, 5→5.
+ *       tarkir-bg|warhammer-ub@1000: 174→174, 2531.0099→2531.0099, 5→5,
+ *       tarkir-bg|warhammer-ub@1001: 164→164, 2503.0099→2503.0099, 5→5.
  *     Kluczowa partia @1001 rzuca TRZY czary więcej (5→8): bot nie marnuje
  *     już kolorów na generic i stać go na kolejne karty — to poprawa siły gry,
  *     nie dryf wyceny; @1000 zachowuje liczbę decyzji i czarów z bazy
  *     (scoreSum drga o 1.8 pkt na wycenie tapowanych źródeł). Zachowanie
  *     z zgłoszenia pinują M/1–M/4 w test/zgloszenie-tapowanie-many-nadmiar.test.js.
  *     Świadoma regeneracja.
+ *   - 95f3692a… → 27a4e7b5… (Batch 74/Etap 3, 2026-11-16, karty 656–665):
+ *     generator talii przeliczył werk z kolorami po dodaniu 10 kart i to
+ *     zmieniło SKŁAD talii, nie wycenę bota. Dowód rozdzielenia: na obecnym
+ *     kodzie, z przywróconymi plikami `decks/innistrad-wu.txt` i
+ *     `decks/mirrodin-wu.txt` z commita bazowego, para ravnica-wur@1000/1001
+ *     daje DOKŁADNIE 217/1584.9844 i 309/2494.5772 (hash bit w bit z fixture) —
+ *     czyli zmiany w silniku nie ruszają śladu, a różnicę wnosi talia.
+ *     Zmierzona różnica per partia (decisions, scoreSum; stara nazwa worka →
+ *     nowa): ravnica-wur|innistrad-wu@1000 217→269, 1584.9844→2983.109
+ *     (innistrad-wu: Ghoulcaller's Bell → Blazing Torch + Scroll of Avacyn,
+ *     +1 Island); @1001 309→293, 2494.5772→1892.2411;
+ *     dominaria-wrg|mirrodin-wu@1000 202→232, 2916.1126→2969.1501;
+ *     @1001 280→197, 4412.4735→2857.8925 (mirrodin-wu +Loxodon Partisan);
+ *     tarkir-bg|warhammer-ubr@1000 174→151, 2531.0099→1442.0099;
+ *     @1001 164→164, 2503.0099→2544.1099 (warhammer UBR→UB to inny werk).
+ *     Żadna decyzja nie została odwrócona przez zmianę WYCENY — fixture
+ *     odzwierciedla nowe talie. Świadoma regeneracja.
  */
 
 test('golden-master: ślad bota == zamrożony fixture (bit w bit)', () => {

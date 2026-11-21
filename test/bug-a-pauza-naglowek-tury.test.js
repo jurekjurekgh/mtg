@@ -64,15 +64,31 @@ test('A/1: rozstrzygnięcie WŁASNEGO czaru w auto-passie nie jest pauzą (szum)
   // Scroll of Avacyn przez generator, ADR 0024) — otwarcie z seeda 30001 ma
   // teraz Blazing Torch jako JEDYNĄ ofertę rzutu, więc kartę wskazujemy po
   // `cardId`, a nie po pozycji na liście (pin odporny na kolejność ofert).
+  // Batch 74/Etap 3: generator przeliczył podział Innistradu (Lambholt Harrier
+  // wchodzi do brg, Blazing Torch odpada) — otwarcie ma teraz Ghoulcaller's
+  // Bell jako jedyną ofertę RZUTU ARTEFAKTU (ten sam kształt: permanent,
+  // nie czar natychmiastowy); pin dalej wskazuje kartę po `cardId`.
   const torch = session.view().legalCommands.find(
-    (c) => c.type === 'cast_permanent' && session.state.objects.get(c.objectId)?.cardId === 'blazing-torch',
+    (c) => c.type === 'cast_permanent' && session.state.objects.get(c.objectId)?.cardId === 'ghoulcallers-bell',
   );
-  assert.ok(torch, 'setup: czar do rzucenia (Blazing Torch)');
+  assert.ok(torch, 'setup: czar do rzucenia (Ghoulcaller\'s Bell)');
   session.apply(torch);
-  // Po rzucie własnego torcha i jego rozstrzygnięciu (bot nie odpowiada) gra
-  // ma DOJECHAĆ do granicy tury i pauzować RAZ — z nagłówkiem nowej tury,
-  // zamiast stawiać beztreściowy postój na „własny czar wchodzi/rozstrzyga
-  // się”, a dopiero za drugim kliknięciem pokazywać „Tura 3 — Nieprzyjaciel”.
+  // Batch 74/Etap 3: nowa oferta otwarcia to artefakt ze zdolnością
+  // aktywowaną (Ghoulcaller's Bell), więc po rzucie priorytet wraca do
+  // człowieka — sesja NIE auto-passuje (ma co robić: może aktywować lub
+  // spasować). Sedno zgłoszenia A (rozstrzygnięcie własnego czaru nie jest
+  // pauzą) sprawdzamy wprost, a potem przechodzimy pasem do granicy tury.
+  assert.equal(session.botPausePending, false,
+    'rozstrzygnięcie własnego czaru nie jest pauzą (szum)');
+  for (let i = 0; i < 20 && !session.botPausePending; i += 1) {
+    const pass = session.view().legalCommands.find((c) => c.type === 'pass_priority');
+    assert.ok(pass, 'setup: okno priorytetu z pasem');
+    session.apply(pass);
+  }
+  // Po rzucie własnego czaru i przejściu okien gra ma DOJECHAĆ do granicy
+  // tury i pauzować RAZ — z nagłówkiem nowej tury, zamiast stawiać
+  // beztreściowy postój na „własny czar wchodzi/rozstrzyga się”, a dopiero
+  // za drugim kliknięciem pokazywać „Tura 3 — Nieprzyjaciel”.
   assert.equal(session.botPausePending, true, 'granica tury pauzuje');
   const texts = session.botMoves.map((m) => m.text ?? '');
   assert.ok(
@@ -145,8 +161,13 @@ test('A/3: odrzucona komenda w trakcie pauzy wciąż nie gubi pauzy (M90/B stoi)
     (c) => c.type === 'cast_permanent' && session.state.objects.get(c.objectId)?.cardId === 'blazing-torch',
   );
   session.apply(torch);
-  // Po fixie A/1 rzut własnego czaru dojeżdża od razu do granicy tury —
-  // pauza z nagłówkiem „Tura 3 — Nieprzyjaciel” (priorytet ma bot).
+  // Po fixie A/1 rzut własnego czaru nie pauzuje; okna człowieka przechodzimy
+  // pasem aż do granicy tury — pauza z nagłówkiem „Tura 3 — Nieprzyjaciel”.
+  for (let i = 0; i < 20 && !session.botPausePending; i += 1) {
+    const pass = session.view().legalCommands.find((c) => c.type === 'pass_priority');
+    assert.ok(pass, 'setup: okno priorytetu z pasem');
+    session.apply(pass);
+  }
   assert.ok(session.botPauseAtTurnBoundary, 'setup: pauza granicy tury');
   const movesBefore = session.botMoves.length;
   // Priorytet po granicy w turę bota ma bot — komenda człowieka odrzucona.

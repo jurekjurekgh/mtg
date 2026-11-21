@@ -1134,36 +1134,20 @@ nie w pytaniu do właściciela.
 → narracja: `docs/LESSONS_PRZYPADKI.md` (L49)
 
 ## L52 (2026-08-20) — Ścieżka mechaniki zależna od przyszłych kart: zaimplementuj i zasygnalizuj, nie odnotuj
-**Przypadek:** audyt PR #66 zostawił dwie obserwacje „bez zmian kodu" — `resolve_madness_cast` wołał bezwarunkowo `castPermanent`; pierwszy instant z madness ujawniłby lukę.
-**Reguła:** lukę ujawnioną dopiero przez hipotetyczną kartę (1) implementuj generycznie (routing po `kind`/deskryptorach, bramki wg AKTYWNEGO kosztu — `altCostColors`), bez przypadków po nazwie karty (ADR 0002); (2) wyprowadź na powierzchnię we wszystkich warstwach — engine, oferta playerView (L48), etykieta UI, boty; (3) granice zakresu sygnalizuj JAWNYM rejectem z czytelnym powodem; (4) daj strażnika czerwieniejącego w dniu wejścia pierwszej takiej karty + testy na obiektach syntetycznych.
-**Strażnik:** M161 (`castMadnessSpell`, `test/m161-madness-spell-path.test.js`).
+
+**Reguła:** lukę ujawnioną dopiero przez hipotetyczną kartę (1) implementuj generycznie (routing po `kind`/deskryptorach, bramki wg AKTYWNEGO kosztu — `altCostColors`), bez nazw kart (ADR 0002); (2) wyprowadź na powierzchnię we wszystkich warstwach — engine, oferta playerView (L48), etykieta UI, boty; (3) granice zakresu sygnalizuj JAWNYM rejectem; (4) daj strażnika czerwieniejącego w dniu wejścia pierwszej takiej karty + testy na obiektach syntetycznych. **Strażnik:** M161 (`castMadnessSpell`, `test/m161-madness-spell-path.test.js`).
 
 → narracja: `docs/LESSONS_PRZYPADKI.md` (L52)
 
 ## L56 (2026-08-23) — Twierdzenie o danych sprawdzasz GREPEM, zanim je zapiszesz
 
-**Przypadek:** M196 ogłosiło „nowy plan w katalogu: Kamigawa".
-
-**Reguła:**
-1. Zdanie o stanie danych („nowy plan", „pierwsza taka karta", „jedyny
-   przypadek") wymaga KOMENDY przed zapisem (`grep` po katalogu i po
-   źródłowym CSV) — koszt 5 sekund.
-2. Jeśli ma trafić do repo, dostaje STRAŻNIKA, nie samą korektę (M197):
-   `test/m197-plany-kolekcji.test.js` skanuje dokumenty i czerwienieje, gdy
-   „nowym" nazwano plan, który repo już zna.
-3. Strażnik z wyjątkiem opartym o słowo kluczowe jest dziurawy: pierwsza wersja
-   zwalniała linie ze słowem „sprostowanie" — mutacja pokazała, że wystarczy
-   postawić błędne zdanie obok tego słowa.
+**Reguła:** (1) Zdanie o stanie danych („nowy plan", „pierwsza taka karta", „jedyny przypadek") wymaga `grep` po katalogu i źródłowym CSV przed zapisem. (2) Jeśli ma trafić do repo, dostaje STRAŻNIKA (M197: `test/m197-plany-kolekcji.test.js`), nie samą korektę. (3) Strażnik bez wyjątków opartych o słowa kluczowe („sprostowanie").
 
 → narracja: `docs/LESSONS_PRZYPADKI.md` (L56)
 
 ## L89 (2026-08-29) — Przebieg, którego nikt nie dograł: długi bieg loguje postęp, a rozmiar macierzy wyznacza budżet, nie liczba kombinacji
 
-**Przypadek:** pełny benchmark liczył 63 minuty bez logu postępu.
-
-**Reguła:** (1) Bieg ponad minutę loguje done/total, czas/jednostkę, ETA i adres OD PIERWSZEJ jednostki (`onProgress`). (2) Watchdog `--stall-ms` kończy tylko jedną zacinkę, zapisuje jej adres w `result.stalls` i idzie dalej. (3) Rozmiar macierzy jest BUDŻETEM, nie wszystkimi kombinacjami; każda talia musi być w próbce (ADR 0025). (4) Stare liczby dokumentacji zweryfikuj komendą przed planowaniem.
-
-**Strażnik:** `test/benchmark-progress-watchdog.test.js`.
+**Reguła:** (1) Bieg ponad minutę loguje done/total, czas/jednostkę, ETA i adres OD PIERWSZEJ jednostki (`onProgress`). (2) Watchdog `--stall-ms` kończy tylko jedną zacinkę, zapisuje jej adres w `result.stalls` i idzie dalej. (3) Rozmiar macierzy jest BUDŻETEM, nie wszystkimi kombinacjami; każda talia w próbce (ADR 0025). (4) Stare liczby dokumentacji zweryfikuj komendą przed planowaniem. **Strażnik:** `test/benchmark-progress-watchdog.test.js`.
 
 → narracja: `docs/LESSONS_PRZYPADKI.md` (L89)
 
@@ -1196,16 +1180,7 @@ zadziałało. Szczegóły punktów 3–5: archiwum.
 
 ## L109 (2026-08-31) — „Komentarz tłumaczący duplikat" to znacznik błędu
 
-**Przypadek:** W M271 (błędy #11/#12) ręczna kopia kodu przenoszenia miała komentarz: „ruch zrealizowany wprost, żeby nie tworzyć cyklu importów".
-
-**Reguła:** komentarz uzasadniający, dlaczego kod NIE korzysta ze wspólnej
-ścieżki („żeby uniknąć cyklu", „dla wydajności"), traktuj jak zgłoszenie błędu,
-nie jak dokumentację; ograniczenie architektoniczne rozwiązuje przesunięcie
-WARSTW, nie powielenie logiki. **Zastosowane w M271:** `deathZoneFor` i
-`spellExitZone` zeszły do `zones.js`, `mover.js` wstrzykuje choke point rejestrą,
-osiem kopii reguły „gdzie ląduje czar" → jedna.
-
-→ Pełna klasa i reguła: [L107].
+**Reguła:** komentarz uzasadniający obejście wspólnej ścieżki („żeby uniknąć cyklu", „dla wydajności") traktuj jak zgłoszenie błędu, nie dokumentację; ograniczenie rozwiązuje przesunięcie WARSTW (w M271: `deathZoneFor`/`spellExitZone` → `zones.js`, `mover.js` rejestrem). → Klasa: [L107].
 
 → narracja: `docs/LESSONS_PRZYPADKI.md` (L109)
 
@@ -1213,18 +1188,13 @@ osiem kopii reguły „gdzie ląduje czar" → jedna.
 
 → Klasa nadrzędna: [L107].
 
-**Reguła:**
-1. Po sprowadzeniu ścieżki do helpera uruchom NAJSZERSZY zestaw (`npm run test:all`, w tym benchmark botów) — `npm test` tego nie złapał.
-2. Nie cofaj naprawy — znajdź, co duplikat maskował: inwarianty na końcu operacji widzą stan POŚREDNI przy rekurencji; pętla zmieniająca wiele powiązanych obiektów musi najpierw zerwać wiązania, potem stosować polityki (M271: ręczna kopia nie sprawdzała inwariantów, winna była kolejność odczepiania KILKU załączników).
+**Reguła:** (1) Po sprowadzeniu ścieżki do helpera uruchom NAJSZERSZY zestaw (`npm run test:all`). (2) Nie cofaj naprawy — znajdź, co duplikat maskował: inwarianty na końcu operacji widzą stan POŚREDNI przy rekurencji; pętla wielu obiektów najpierw zrywa wiązania, potem stosuje polityki.
 
 → narracja: `docs/LESSONS_PRZYPADKI.md` (L110)
 
 ## L111 (2026-08-31) — Sonda wołająca `applyEffect` pomija state-based actions
 
-**Przypadek (M272):** „zmiana kontroli nie usuwa atakującego z walki” (CR 506.4)
-wyglądała na błąd, ale egzekwuje ją `state-based.js` (M201) — sonda nie przepuszczała
-stanu przez pętlę SBA; naprawę wycofano.
-**Reguła:** przed uznaniem braku reguły za błąd: (1) repro przez PEŁNĄ komendę (`execute`), nie `applyEffect`; (2) grep zdarzenia w CAŁYM `src/` — reguła bywa w `state-based.js`; (3) test falsyfikacyjny: usuń własną łatkę i sprawdź, czy repro nadal przechodzi (tylko ten punkt łapie to niezawodnie).
+**Reguła:** przed uznaniem braku reguły za błąd: (1) repro przez PEŁNĄ komendę (`execute`), nie `applyEffect`; (2) `grep` zdarzenia w całym `src/` (reguła bywa w `state-based.js`); (3) test falsyfikacyjny (usuń łatkę i sprawdź repro).
 
 → narracja: `docs/LESSONS_PRZYPADKI.md` (L111)
 
@@ -1863,28 +1833,13 @@ lista pominiętych, dowód RED, piny etykiet) + piny w `test/real-cards-batch{58
 
 ## L170 (2026-09-25) — gest warstwy UI zjada kontrolkę osadzoną w przycisku; bramę daję GESTOWI, nie CSS
 
-**Przypadek:** ptaszek „ta opcja nie przerywa auto-passu” (uwaga C) nie przełączał, tylko grał ofertę; osobno uwaga D — Log pełny, panel „Rozgrywka” pusty.
-
-**Reguła:** (1) kontrolka OSADZONA w przycisku wymaga PAROWANIA aktywacji i zdarzenia — przy `pointer*` `stopPropagation` na `click` jest iluzją; wyspa interakcji nosi markę w module gestu (`PRESS_EXEMPT_ATTRIBUTE`), a bramka mieszka w gesturze, nie w CSS; (2) „panel pusty, log pełny” to ŻYWIOTNOŚĆ wpisu — konsumpcja po potwierdzeniu gracza, re-render otwartego okna w pauzie tylko gdy DOSZŁO nowa pozycja; (3) „poprzedni PR przesunął obiekty” = czytam, KTÓRY element jest rodzicem słuchacza.
-
-**Strażnik:** `test/uwaga-z-gry-C-ptaszek-2026-09-25.test.js` (C1–C7), `test/uwaga-z-gry-D-discover-bota-2026-09-25.test.js` (D1–D8).
+**Reguła:** (1) kontrolka OSADZONA w przycisku wymaga pary aktywacji+zdarzenia (przy `pointer*` `stopPropagation` na `click` to iluzja — wyspa nosi `PRESS_EXEMPT_ATTRIBUTE` w module gestu); (2) „panel pusty, log pełny” to żywotność wpisu (konsumpcja po potwierdzeniu gracza, re-render otwartego okna tylko przy nowej pozycji); (3) sprawdzaj, który element jest rodzicem słuchacza. **Strażnik:** `test/uwaga-z-gry-C-ptaszek-2026-09-25.test.js`, `test/uwaga-z-gry-D-discover-bota-2026-09-25.test.js`.
 
 → narracja: `docs/LESSONS_PRZYPADKI.md` (L170)
 
 ## L171 (2026-09-25) — reguła bez ścieżki importu: wynoszę LIŚĆ; re-eksport bez wiązania = padnięty moduł
 
-**Reguła:**
-1. Regule bez ścieżki importu (tu: `polishPluralCount` w `render.js`, a
-   `session.js` nie może go stamtąd brać — cykl) idzie do **liścia o zerowych
-   zależnościach**, a dawny dom zostawia re-eksport, by konsumenci nie zmieniali
-   importów (L41: naprawiam GEOGRAFIĘ, nie przepisuję reguły).
-2. Gołe `export { x } from './liść.js'` NIE wiąże `x` lokalnie: jeśli plik używa
-   jej u siebie, dostaje `ReferenceError` (tu: 60 testów). Zatem
-   `import` + osobny `export {}`; kontrakt spinam **wywołaniem funkcji**
-   (`commandLabel`), bo odczyt tekstu pliku nie widzi niezwiązanej nazwy.
-3. Odmiana 1 / 2–4 / 5+ (nastki 12–14 za mod100) to KLASA, nie lista przypadków:
-   jedna funkcja + strażnik J1–J5. W
-   regexpach JS `\b` nie działa po diakrytykach — granicę: `(?![a-z])`.
+**Reguła:** (1) regule bez ścieżki importu (cykl) daj liść o zerowych zależnościach + re-eksport (L41); (2) `export { x } from '...'` NIE wiąże `x` lokalnie — gdy plik jej używa, potrzebne `import` + `export {}`; (3) odmiana 1 / 2–4 / 5+ (12–14 za mod100) to jedna funkcja; w regexpach JS po diakrytykach użyj `(?![a-z])` zamiast `\b`.
 
 → narracja: `docs/LESSONS_PRZYPADKI.md` (L171)
 
@@ -1946,148 +1901,84 @@ najwyżej ZEROWAĆ składnik jako bramka pierwszeństwa (`lifeAfter >= 1`, M146)
 
 ## L181 (2026-10-08) — Pin testowy może cementować ZGŁOSZONE zachowanie: czytaj go jak wymaganie, nie jak fakt
 
-**Reguła:** przed naprawą zgłoszenia przeczytaj piny, które bronią obecnego
-zachowania, i oceń, czy nie są treścią skargi (tu: pin „Wrap NADAL premiowany na
-stworze wroga" bronił dokładnie marnotrawstwa, które właściciel zgłosił). Pin
-aktualizuj RAZEM z kodem, z komentarzem o intencji i nowymi pinami warunkowymi
-(oba kierunki reguły). Dotyczy każdej zmiany wyceny: stara zasada „premiujemy X"
-mogła być wpisana jako test. **Strażnik:** `test/m233-bot-wrap-no-targets-noop.test.js`
-(trzy piny warunkowe po fixie I), `test/zgloszenie-i-wrap-in-flames.test.js`.
+**Reguła:** przed naprawą zgłoszenia sprawdź, czy istniejące piny nie bronią zgłaszanego błędu; aktualizuj je razem z kodem i nowymi pinami warunkowymi. **Strażnik:** `test/m233-bot-wrap-no-targets-noop.test.js`, `test/zgloszenie-i-wrap-in-flames.test.js`.
 
 → narracja: `docs/LESSONS_PRZYPADKI.md` (L181)
 
 ## L182 (2026-10-08) — Premia za keyword/ewazję do EOT ma DWA warunki: „czy wróg zneutralizuje" ORAZ „czy efekt cokolwiek zmienia"
 
-**Reguła:** wyceniając grant keywordu do końca tury (flying, menace, haste…)
-sprawdź obie strony: (a) czy przeciwnik ma odpowiedź, która efekt obraca w
-niwecz (flyer/reach na latającego), (b) czy efekt W OGÓLE zmienia wynik, gdyby
-go nie było (bloker naziemny do ominięcia, ciało do przebicia). Sam warunek
-(a) zostawia jałowy zakup, gdy efekt nie ma czego zmieniać — a baza zdolności
-plus koszt many same w sobie nie schodzą poniżej passu, więc jałowy efekt musi
-być KARĄ, nie zerem (L3). Reguła po treści efektu i stanie z `PlayerView`
-(ADR 0002/0017), wspólna dla czarów i zdolności (L41). **Strażnik:**
-`test/zgloszenie-j-fledgling-imp-latanie.test.js` (mJ1–mJ5).
+**Reguła:** wyceniając grant keywordu do EOT sprawdź (a) odpowiedź przeciwnika i (b) czy efekt zmienia wynik; jałowy efekt dostaje KARĘ (< pass, L3), po deskryptorze z `PlayerView` (ADR 0002/0017), wspólnie dla czarów i zdolności (L41). **Strażnik:** `test/zgloszenie-j-fledgling-imp-latanie.test.js`.
 
 → narracja: `docs/LESSONS_PRZYPADKI.md` (L182)
 
 ## L183 (2026-10-08) — Sztuczka bojowa (flash) ma WYMIAŃ OKNA: kara wyzerowuje wycenę, nie „przebija” bazę stałą
 
-**Przypadek:** Village Bell-Ringer (flash, ETB „untap all creatures you control”) był rzucany także po deklaracji blokujących (CR 509.1a). (pełny opis: narracja)
-
-**Reguła:** gdy wartość karty zależy od OKNA, wycenę (ciało + ETB + parytet)
-wyzeruj i obniż o margines — NIE odejmuj stałej od noty, bo silne ETB wróci ponad
-pass (L3); epsilon ma ZAOSTAĆ poniżej passu, żeby różnicował karty (L48). Okno po
-deskryptorze (flash + Creature, ADR 0002) ze stanu PlayerView (ADR 0017);
-wyjątki: haste (CR 302.6), warunkowe ETB (`entersWithCountersIf`) i koszt
-nieopłacalny z nietapniętych lądów później (mana jednorazowa). ETB liczone po
-kreaturze tylko tam, gdzie daje NOWĄ akcję (CR 502.3).
-
-**Strażnik:** `test/zgloszenie-k-flash-combat-trick.test.js` (mK1–mK10).
+**Reguła:** gdy wartość zależy od okna (flash + Creature), wyzeruj wycenę i obniż o margines zamiast odejmować stałą (silne ETB wróciłoby ponad pass, L3), zostawiając epsilon poniżej passu (L48). Wyjątki: haste, warunkowe ETB i mana jednorazowa. **Strażnik:** `test/zgloszenie-k-flash-combat-trick.test.js`.
 
 → narracja: `docs/LESSONS_PRZYPADKI.md` (L183)
 
 ## L184 (2026-10-10) — Każda zmiana = commit + push natychmiast; niezacommitowana ginie z resetem sandboxa
 
-**Przypadek:** batch 10 kart przepadł przy resecie sandboxa, bo nie był zacommitowany.
 **Reguła:** krok = commit + push od razu (ADR 0020 C/D).
 
 → narracja: `docs/LESSONS_PRZYPADKI.md` (L184)
 
 ## L185 (2026-10-15) — Płatność atomowa: pokrycie przed mutacją; domyślny zakres wszędzie tak samo
 
-**Przypadek:** opłata energią rzucała po zdjęciu decyzji; `lose_life` bez `scope` = 0 pkt.
-**Reguła:** pokrycie sprawdzać przed mutacją (`reject`); domyślny deskryptor = jedna reguła (L41).
-**Strażnik:** `test/audyt-pr165-energia-zaplata-atomowa.test.js`, `test/audyt-pr165-zakres-utraty-zycia.test.js`.
+**Reguła:** pokrycie sprawdzaj przed mutacją (`reject`); domyślny deskryptor to jedna reguła (L41). **Strażnik:** `test/audyt-pr165-energia-zaplata-atomowa.test.js`, `test/audyt-pr165-zakres-utraty-zycia.test.js`.
 
 → narracja: `docs/LESSONS_PRZYPADKI.md` (L185)
 
 ## L186 (2026-10-15) — Strażnik mierzy regułę, nie tekst: regexy tolerują białe znaki i jeden podkreślnik
 
-**Przypadek:** etykieta `reflexive_pay` brakowała w logu; wieloliniowy literał (`Object.freeze({⏎ event:`) ominął strażnik M122; slug z jednym podkreślnikiem przeszedł detektor.
-**Reguła:** regexy strażników i skanerów literałów mają `\s*` między tokenami i łapią slug z jednym podkreślnikiem (`SNAKE_CASE_ONE`). → Klasa i reguła: [L5].
-**Strażnik:** `test/card-sources-guard.test.js` (M122), `tools/table-tester/detectors.mjs` (`SNAKE_CASE_ONE`).
+**Reguła:** regexy strażników i skanerów tolerują `\s*` między tokenami i łapią slug z jednym podkreślnikiem (`SNAKE_CASE_ONE`). → Klasa: [L5]. **Strażnik:** `test/card-sources-guard.test.js` (M122), `tools/table-tester/detectors.mjs`.
 
 → narracja: `docs/LESSONS_PRZYPADKI.md` (L186)
 
 ## L187 (2026-10-21) — Spread `slice(checkpoint)` w ŚRODKU funkcji nie może obejmować zdarzeń wypychanych jeszcze raz
 
-**Reguła:** checkpoint do `slice` w środku funkcji stawiaj TUŻ przed
-helperem; zdarzenie wypychane jawnie po spreadzie (`damage_dealt`) nie może
-wejść w zakres — `slice(before, -1)` albo jawny push. → Klasa: [L130].
-**Strażnik:** `test/audyt-pr170-duplikat-damage-dealt-2026-10-21.test.js`.
+**Reguła:** checkpoint do `slice` stawiaj TUŻ przed helperem; jawnie wypychane zdarzenie po spreadzie nie może wejść w zakres (`slice(before, -1)` lub jawny push). → Klasa: [L130]. **Strażnik:** `test/audyt-pr170-duplikat-damage-dealt-2026-10-21.test.js`.
 
 → narracja: `docs/LESSONS_PRZYPADKI.md` (L187)
 
 ## L188 (2026-10-25) — Legalność oferty ≠ wykonalność wprost: osiągalność many jest DWUFAZOWA
 
-**Przypadek:** K (Abstruse) i N (cast przez Eldrazi Scion): komenda legalna jako
-OFERTA (CR 605.3a/608.2g), choć silnik nie wykona jej wprost; kwotowa miara
-botów ignorowała czyste źródła many poza lądami i liczyła `colors` drugą
-jednostką.
-**Reguła:** konsument komendy zna dwufazowość: najpierw legalna aktywacja
-czystej many, potem komenda (wspólna miara automatu
-`src/controllers/mana-offer-guards.js` — jednostki+kolory+pipy); kreator
-many wykonuje fazę pierwszą zamiast zgasić ofertę.
-**Strażnik:** `test/zgloszenie-k-abstruse-scion-platnosc.test.js`,
-`test/zgloszenie-n-cast-z-scion-kreator.test.js`.
+**Reguła:** konsument zna dwufazowość: najpierw aktywacja czystej many, potem komenda (`src/controllers/mana-offer-guards.js`); kreator many wykonuje fazę pierwszą zamiast gasić ofertę. **Strażnik:** `test/zgloszenie-k-abstruse-scion-platnosc.test.js`, `test/zgloszenie-n-cast-z-scion-kreator.test.js`.
 
 → narracja: `docs/LESSONS_PRZYPADKI.md` (L188)
 
 ## L189 (2026-10-25) — „Przestaje pasować” ≠ „anulowane”: stan kluczowany tożsamością wariantu wraca ze stanem planszy
-**Przypadek:** M/M2 (*Revealing Wind*): ptaszek wyciszenia trzymał `commandOptionKey` z pełnym zestawem celów, więc wyciszenie X/Y wracało samo, gdy po śmierci stworzenia Z plansza wróciła do układu X/Y.
-**Reguła:** trwały stan UI/sesji kluczowany pełną tożsamością wariantu komendy to pamięć okoliczności, nie ustawienie gracza. Konsument musi rozróżniać „klucz nie pasuje teraz" od „obowiązuje": przy nowej kombinacji celów klucze kasuje się TRWALE (`interruptMutesOnNewTargetCombination` + migawka per grupa), inaczej powrót stanu wskrzesza ustawienie bez decyzji gracza. Przy objawach „pojawia się i znika" szukaj trwałego stanu poza silnikiem, nie sondy startującej z pustą pamięcią.
-**Strażnik:** `test/zgloszenie-m2-wyciszenie-kombinacje-celow.test.js`.
+
+**Reguła:** przy nowej kombinacji celów klucze wyciszenia kasuj TRWALE (`interruptMutesOnNewTargetCombination`), żeby powrót układu planszy nie wskrzeszał wyciszenia; przy objawie „znika i wraca” szukaj trwałego stanu poza silnikiem. **Strażnik:** `test/zgloszenie-m2-wyciszenie-kombinacje-celow.test.js`.
 
 → narracja: `docs/LESSONS_PRZYPADKI.md` (L189)
 
 ## L190 (2026-11-03) — Mapa diffu PR musi kotwiczyć nagłówki i porównać z REST, bo patch może zawierać patch
 
-**Przypadek:** parser diffu #178 dał 197 wpisów z 194 plików, bo łapał
-`+diff --git` wewnątrz patchów; listy commitów i view też mają limity.
-**Reguła:** inwentarz bierz z `pulls/<nr>/files`; dziel diff przez
-`^diff --git ` i porównaj zbiór z REST; pełną liczbę commitów czytaj z obiektu PR.
-**Strażnik:** `docs/setup/ENVIRONMENT.md` §3; mapa #178 ma 194 wiersze.
+**Reguła:** inwentarz z `pulls/<nr>/files`; dziel diff przez `^diff --git ` i porównaj z REST; pełną liczbę commitów bierz z obiektu PR. **Strażnik:** `docs/setup/ENVIRONMENT.md` §3.
 
 → narracja: `docs/LESSONS_PRZYPADKI.md` (L190)
 
 ## L191 (2026-11-06) — „Whenever you attack” odpala się raz (CR 508.3d)
 
-**Przypadek:** audyt #179: `attacks_you_control` odpalał się per atakujący
-(Living History).
-**Reguła:** trigger „Whenever [a player] attacks" triggeruje się RAZ na
-`attackers_declared` (≥1 stwór gracza), nie per atakujący (CR 508.3d).
-Komentarz opisujący ZNIESIONY model („enumeracja kompletna po usunięciu
-cap" sprzed zgłoszenia G) jest błędem — dociągaj przy naprawie root
-cause; milestony historyczne adnotuj, nie przepisuj.
-**Strażnik:** `test/audyt-pr179-attacks-you-control.test.js`; CR 508.3d
-w `test/helpers/cr-numery-tabela.js`.
+**Reguła:** trigger „Whenever [a player] attacks" odpala się RAZ na `attackers_declared`, nie per atakujący (CR 508.3d). Komentarze o zniesionym modelu poprawiaj przy naprawie root cause; milestony adnotuj. **Strażnik:** `test/audyt-pr179-attacks-you-control.test.js`.
 
 → narracja: `docs/LESSONS_PRZYPADKI.md` (L191)
 
 ## L192 (2026-11-15) — „pre-existing" to twierdzenie o bazie PR: wymaga jej pomiaru
 
-**Przypadek:** PR #185 pushował czerwone commity („46 fail pre-existing", „2
-pre-existing fail w `ability-cost-pips`"), choć autor zmierzył bazę `0d0a12be` = 0
-fail; audyt zmierzył stan końcowy 10 280/10 280 i `ability-cost-pips` 9/9, a faile
-były FABRYKOWANYMI zdolnościami kart produkcyjnych (F-15/F-16).
-**Reguła:** „pre-existing" piszemy tylko po pomiarze `npm test` + `npm run build` na
-bazie PR; bez pomiaru obowiązuje ADR 0020 A–D (każdy commit zielony przed pushem),
-a przyczynę faila nazywamy z pomiaru, nie z przekonania (ADR 0030/L57).
-**Strażnik:** audyt PR #185 §F-15/§F-16; sprostowania `docs/PMSSB.md` §PMSSB-89.
+**Reguła:** „pre-existing" pisz wyłącznie po pomiarze bazy PR; bez pomiaru każdy commit ma być zielony (ADR 0020), a przyczynę faila nazywaj z pomiaru (ADR 0030/L57). **Strażnik:** audyt PR #185 §F-15/§F-16; `docs/PMSSB.md` §PMSSB-89.
 
 → narracja: `docs/LESSONS_PRZYPADKI.md` (L192)
 
 ## L193 (2026-11-15) — rotacja próbki benchmarku to migracja: osobny commit, progi z pomiaru, ślad golden-mastera
-**Przypadek:** PR #185 zmienił nazwy talii Dominarii i podział Forgotten Realms, więc `selectBenchDecks()` zwrócił inną próbkę, a fixture golden-mastera zregenerowano (`overallHash` `95f3692a…`→`ada1d349…`) bez przeliczenia progów i bez śladu PRZED/PO (F-12).
-**Reguła:** każda zmiana `decks/*.txt` idzie jako osobny, zielony commit z czterema śladami: pomiar `node tools/benchmark.mjs` na nowej próbce; progi regułą „zmierzone −15 p.p., tylko w górę"; ślad fixture wg L176 (decyzje i `scoreSum` PRZED/PO per para + hash PO zmianie); wpis w nagłówku `test/bot-benchmark.test.js` i w historii projektu. Zmiana progów bez pomiaru = brak progu.
-**Strażnik:** `test/bot-benchmark.test.js` (wpis „Audyt PR #185 (F-12, pomiar 2026-11-15)", próg vs aggro 0.63→0.69), ADR 0024 §3.
 
-→ narracja: `docs/LESSONS_PRZYPADKI.md` (L193) — tam pełna lista talii i liczby per para.
+**Reguła:** zmiana `decks/*.txt` to osobny zielony commit z: (1) pomiarem `tools/benchmark.mjs`, (2) progami „zmierzone −15 p.p., tylko w górę", (3) śladem fixture (L176), (4) wpisem w `test/bot-benchmark.test.js` i historii. **Strażnik:** `test/bot-benchmark.test.js`, ADR 0024 §3.
+
+→ narracja: `docs/LESSONS_PRZYPADKI.md` (L193)
 
 ## L194 (2026-11-16) — Pin porządku bez progu przechodzi bez naprawy: różnica śladowa i jedna zmienna na scenariusz
 
-**Przypadek:** PMSSB-90/F-90-10 — 70,2036 (Leonin) vs 70,2018 (Kessig) drukowało się w logu jako remis 70,20 = 70,20, assert `>` przechodził bez naprawy, a w jednym pomiarze zmieniały się dwie zmienne (paliwo w ręce i stan hosta).
-**Reguła:** pin porządku ma PRÓG decyzji (Δ ≥ 1 wyświetlany punkt, nie `> 0`) i cytuje wartość z pełną precyzją silnika; nową zmienną wprowadza się JAKO wariant sondy (jedna na wariant); pin na DOSŁOWNE wyrażenie źródła przepisuje się na licznik intencji (L186), a re-pin po zmianie skali obejmuje też piny „SAME/SKIP-proofs" (`grep -rn "<karta>" test/`).
-**Strażnik:** `test/audyt-pmssb90-batch73.test.js` (10a/10b), T9/8 w `test/uwagi-tura9-bot-rowne-ciala-equip.test.js`, warianty KF-06/M-04 sondy PMSSB-90.
+**Reguła:** pin porządku wymaga progu decyzji (Δ ≥ 1 pkt, cytat pełnej precyzji); nowa zmienna idzie jako wariant sondy (jedna na wariant); pin na kod przepisuj na licznik intencji (L186), a re-pin po zmianie skali sprawdza też `grep -rn "<karta>" test/`. **Strażnik:** `test/audyt-pmssb90-batch73.test.js` (10a/10b), `test/uwagi-tura9-bot-rowne-ciala-equip.test.js` T9/8.
 
 → narracja: `docs/LESSONS_PRZYPADKI.md` (L194)

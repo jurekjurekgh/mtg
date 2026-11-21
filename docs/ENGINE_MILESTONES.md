@@ -9440,3 +9440,72 @@ assumption), live Tester three matches × 400 steps on the post-fix
 `dist/mtg-table.html` with Batch 73 cards on both sides (ixalan vs innistrad-brg
 s42, ravnica-bg vs forgotten-realms-wug s7, theros vs dominaria-wrg s9): zero
 detector reports and `NIEWYCENIONE == none` in all three.
+
+## M466 — Batch 74: manual scoring-tuning loop (PMSSB-91), ten real cards (2026-11-16, PR #187)
+
+**Scope:** same owner mandate as M465 — an honest *manual* loop (no full B0, no
+machine tuning): pro-player verification of *when*, *on what* and *under which
+board state* the bot plays the ten Batch 74 cards (656–665). Unlike M465, this
+loop **did** touch `src/controllers/heuristic-params.js`: three of the four
+findings needed a gate or a penalty that no existing scale covered, so they were
+added as knobs (`negativePumpPowerCap`, `selfEvasionWastedPenalty`,
+`raidHoldBonus`, `externalTriggerDrainScale`) with `×0`/`×1` values that restore
+the pre-loop behaviour exactly (M429 anti-over-fix). Plan:
+`docs/plans/PLAN_2026-11-16-pmssb91-batch74-petla.md`. Report:
+`docs/PMSSB.md` → §PMSSB-91.
+
+**Probe.** `tools/pmssb91-batch74-petla-sonda.mjs`: 23 scenarios / 96 records /
+10 cards; dimensions T (moment), C (target), S (state context), K (cost). It
+reuses the PMSSB-90 harness (H-1…H-7) plus three state readers (`rad`,
+`attackedThisTurn`, `ATAKUJE`/`BLOKUJE`) and one new helper: `deklarujAtak()`
+filters illegal attackers before calling the engine, because `declareAttackers`
+throws on *any* illegal id — without it the scenario "attack into a 0/4 wall"
+produced an engine exception instead of a measurement. Pre-loop measurement:
+`.arena/pmssb91-przed.{log,json}` (966 lines).
+
+**The trap this loop found in its own harness.** PMSSB-90's default
+`rozmiarBiblioteki = 20` made Mirelurk Queen look broken: cast scored 7.81 at
+library 20 but 78.01 at library 30 and −35.39 at library 12. The cause was the
+thin-library ladder (`libraryLossPenalty`: 60 + 6 × cards short of the 20-card
+margin) applied to a trigger whose condition is *external* to the card
+("whenever one or more nonland cards are milled"). Two lessons: a probe default
+chosen for one card family can silently distort another, and a penalty aimed at
+*repeatable self-draw* must not be charged to triggers the card does not
+generate itself — hence `externalTriggerDrainScale`, keyed on the event
+descriptor, not the card.
+
+**Four fixes, each with a mutation proof.**
+
+- **F-91/1** `negativePumpValue` priced a power debuff as `4 × |Δpower|`
+  regardless of the target's power: 4/4, 6/7 and 1/1 all measured **35.00**.
+  Capped to `min(|Δpower|, combatPower(target))` — a 1/1 can lose at most one
+  point of damage output. The cap deliberately skips debuffs that kill via SBA
+  (sentinel 58/A12 depends on that branch).
+- **F-91/2** the same `cant_be_blocked` instruction was gated on the ETB/target
+  branch (`attackerCanBeBlocked`) but not on the self branch (Frilled Sea
+  Serpent): 7 mana scored **39.00 against an empty enemy board**. Empty board
+  and tapped blockers now land at −23.00 (below pass), real blockers keep 39.00.
+  This is an L41 divergence closed, not a new scale invented.
+- **F-91/3** Arrow Storm (4 damage / 5 with Raid) was cast in main1 for 13.00
+  at face value, burning the Raid variant forever. `raidHoldBonus` (45) is the
+  `holdForAddendum` pattern applied to Raid, with one legitimate pro-player
+  exception: a blocker that the *non-Raid* variant already kills **and** that
+  was stopping our attack is correct to remove before combat.
+- **F-91/5** Mirelurk Queen's mill trigger is no longer charged the repeatable
+  self-draw ladder; cast is now 78.01 at every library size.
+
+**Left measured, not fixed (pinned, so a future change cannot pass unnoticed):**
+rad counters stay flat (`4 × amount`, no "pressure on a low life total"
+dimension); Gylwain's Role modes differ by 0.35–1.10 with no trample-vs-chump
+dimension; sac-draw already prefers the opponent's end step (18.00/14.00) over
+main1 (8.00/4.00), so the timing exists — only "sacrifice at the last possible
+moment" as a named rule does not.
+
+**Gates:** `node tools/run-tests.mjs fast` **10 532 / 10 533** (the single red,
+`E5/1`, is the non-Latin-script scanner reding its own source pattern — same
+class as the `docs/PROJECT_HISTORY.md` hit), `slow` **282/282**, `npm run build`
+RC=0 (79 modules / 5978.8 kB), golden-master **4/4 without regeneration**
+(`overallHash` `27a4e7b5…` unchanged — the fixture games never enter the changed
+branches), tie-audit **12 ties before and 12 after** (10 `block`, 2 `play_land`,
+none of them ours), mirror-eval candidate-vs-off 6:6 / 6:6 / 7:5 on
+`srodziemie`, `warhammer-ub`, `worek-dziki`.

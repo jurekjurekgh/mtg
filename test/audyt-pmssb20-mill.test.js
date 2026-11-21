@@ -23,6 +23,7 @@ function putSpell(state, id, cardId, c, zone) {
     id, instanceId: `i-${id}`, cardId, controllerId: c, ownerId: c, zone,
     kind: data.kind, power: data.power, toughness: data.toughness, manaCost: data.manaCost,
     spell: data.spell, abilities: data.abilities ?? [], keywords: def.keywords ?? [],
+    ...(def.adventure ? { adventure: def.adventure } : {}),
     subtypes: def.subtypes ?? [], types: def.types ?? [], colors: data.colors ?? [],
   });
   return state.objects.get(id);
@@ -68,8 +69,10 @@ test('S04: self-mill bez synergii/reanimacji — guard −80 historyczny (−65)
   assert.equal(tomeScourScores({ foeLib: 30, myLib: 30 }).self, -65);
 });
 
-test('S05: self-mill pod reanimację w ręce — combo widoczne (−50 = −65+15)', () => {
+test('S05: self-mill pod reanimację w ręce — przy ≥25 kartach w bibliotece combo widoczne (−50 = −65+15)', () => {
   assert.equal(tomeScourScores({ foeLib: 30, myLib: 30, reanimate: true }).self, -50);
+  // Poniżej 25 kart w bibliotece bot nie wrzuca świadomie kart pod reanimację.
+  assert.equal(tomeScourScores({ foeLib: 30, myLib: 24, reanimate: true }).self, -65);
 });
 
 test('S06: self-mill przy cienkiej własnej bibliotece — drabina deck-outu działa (−85)', () => {
@@ -78,9 +81,28 @@ test('S06: self-mill przy cienkiej własnej bibliotece — drabina deck-outu dzi
   assert.equal(tomeScourScores({ foeLib: 30, myLib: 6 }).self, -85);
 });
 
-test('Audyt #144/F3: Grave Exchange (return_creature_card_to_hand) to też reanimacja w ręce (−50)', () => {
+test('Audyt #144/F3: Grave Exchange (return_creature_card_to_hand) to też reanimacja w ręce przy ≥25 kartach (−50)', () => {
   // L72: ten sam KSZTAŁT efektu (karta z grobu → ręka), inna nazwa typu;
   // enumeracja w bocie pomijała bliźniaka, więc combo z self-millem nie było
   // widoczne dla tej karty (self-mill = −65 zamiast −50).
   assert.equal(tomeScourScores({ foeLib: 30, myLib: 30, reanimateCard: 'grave-exchange' }).self, -50);
+});
+
+test('S07: niecelowany self-mill przy karcie czytającej grób (Gray Slaad) działa tylko przy ≥25 kartach w bibliotece', () => {
+  const scoreAdventure = (myLib) => {
+    const state = createGameState({ seed: 7, players: [{ id: 'p1' }, { id: 'p2' }] });
+    state.turn = jumpToStep(state.turn, 'main', 'p2');
+    state.turn.activePlayerId = 'p2';
+    state.turn.priorityPlayerId = 'p2';
+    addMana(state, 'p2', 2, { colors: ['B'] });
+    for (let i = 0; i < myLib; i += 1) putSpell(state, `lib${i}`, 'highland-game', 'p2', 'library');
+    putSpell(state, 'slaad', 'gray-slaad', 'p2', 'hand');
+    const bot = createHeuristicBot({ seed: 99, registry: REGISTRY });
+    bot.chooseCommand(playerView(state, 'p2'), {});
+    return bot.trace().at(-1)?.options?.find((o) => o.cmd.startsWith('cast_adventure(slaad'))?.score;
+  };
+  // ≥25 kart w bibliotece → synergia +6 działa (50 + 6 = 56).
+  assert.equal(scoreAdventure(25), 56);
+  // <25 kart w bibliotece → kara bazowa −25, bez synergii (50 − 25 = 25).
+  assert.equal(scoreAdventure(24), 25);
 });

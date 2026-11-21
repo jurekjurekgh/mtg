@@ -216,6 +216,23 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   // martwych parametrów zatruwa tablicę tune-card.mjs — wycinane u korzenia.
   'drawCardValue',           // wartość jednej dobranej karty (dawniej *6)
   'instantDrawFoeEndBonus', // PMSSB-3/F2: premia za instant-draw na EOT wroga (lustro M211/A1, 10)
+  // PMSSB-91/F-91/6 (Batch 74, Memorial to Genius / Temur Banner): koszt
+  // `sacrificeSelf` na ŹRÓDLE MANY (land/artefakt-rampa) nie miał ŻADNEJ ceny
+  // w main1 — pomiar: aktywacja sac-draw 2 = 8,00 w main1/BoC/main2 identycznie,
+  // a źródło (nietapnięte) wyparowywało z tury. Pro-player: poświęcaj DOPIERO,
+  // gdy źródło jest tapnięte (mana już użyta) — wtedy nie tracisz produkcji.
+  // Kara za poświęcenie NIETAPNIĘTEGO źródła many w swojej turze (0 = dawna cena).
+  'manaSourceSacrificePenalty',
+  'manaSourceSacrificeMinSources', // ile INNYCH źródeł many czyni poświęcenie darmowym
+  'manaSourceSacrificeWarnAboveScore', // poniżej tego score kara jest zbędna (gra i tak odpada)
+  // PMSSB-91/F-91/7 (Batch 74, Gylwain, Casting Director): ETB nadaje Rolę
+  // NIETOKENOWEMU stworowi, więc kolejność w ręce ma cenę — pomiar PRZED:
+  // Gylwain = 64,80 niezależnie od tego, czy na stole/ręce jest drugi stwór
+  // (64,80 sam, 64,80 przy stworze na stole, 64,80 przy drugim w ręce), przez
+  // co bot rzucał NAJPIERW drugi stwór (66,60) i tracił Rolę na zawsze.
+  // Premia, gdy rzut Gylwaina jest POPRZEDZONY innym stworzonym czarem w tej
+  // turze, i kara za rzut, gdy w ręce czeka tańszy stwór (0 = bez wymiaru).
+  'setupBeforePayoffBonus',
   // Zgłoszenie właściciela 2026-11-08e (Inspiration): czysty instant-draw
   // dla siebie, rzucany z ręki, czeka na end step przeciwnika i nie wydaje
   // many kontestowanej przez inny rzucalny czar. Kara przebija bazę/dobór
@@ -451,6 +468,28 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   // to ryzyko POWTARZALNE (każde tapnięcie), a nie jednorazowy dobór z karty.
   'libraryTapSafeMargin',        // minimalny zapas kart po mielącym tapnięciu (właściciel: ~30)
   'repeatLibraryDrainTurns',     // horyzont: ile odpaleń powtarzalnego triggera zakładamy
+  // PMSSB-91/F-91/5 (Batch 74, Mirelurk Queen): trigger doboru, którego WARUNEK
+  // jest ZEWNĘTRZNY wobec karty („whenever one or more nonland cards are
+  // milled" — mielenie kogokolwiek), a sama karta nie jest silnikiem doboru.
+  // Drabina `repeatLibraryDrain` karze go jak samodzielne źródło (biblioteka
+  // 20 → kara 60+6×brak), więc bot odmawiał rzutu Mirelurka przy 12 kartach
+  // i wyceniał go o 70 pkt niżej niż ciało (pomiar: 7,81 vs 78,01 przy 30).
+  // Wartość 0 = dawna (pełna) kara; 1 = kara zdyskontowana wagą horyzontu.
+  'externalTriggerDrainScale',   // udział kary bibliotecznej dla triggerów o warunku zewnętrznym
+  // PMSSB-91/F-91/2 (Batch 74, Frilled Sea Serpent): aktywowana nieblokowalność
+  // na SAMYM źródle. Gałąź ETB (cel) filtruje kandydatów przez
+  // `attackerCanBeBlocked`, gałąź samo-celu nie filtrowała NICZEGO — pomiar:
+  // 39,00 identyczne przy pustym stole wroga i przy blokerze 6/7 (L41).
+  'selfEvasionWastedPenalty',    // kara, gdy ewazji nie ma czym zablokować (0 = dawna pełna wartość)
+  // PMSSB-91/F-91/1 (Batch 74, Saltfield Recluse): debuff mocy wyceniany
+  // 4 × |Δpower| niezależnie od tego, ile mocy cel realnie ma (4/4 → 35,00,
+  // 6/7 → 35,00, 1/1 → 35,00). Na atakującym redukcja obrażeń jest ograniczona
+  // jego mocą — nadwyżka debuffu nie kupuje nic.
+  'negativePumpPowerCap',        // 1 = liczba zdjętych obrażeń ograniczona mocą celu (0 = po staremu)
+  // PMSSB-91/F-91/3 (Batch 74, Arrow Storm): czar z `amountIfRaid`, zagrany
+  // PRZED deklaracją ataku, pali wariant „5 zamiast 4" na zawsze. Wzorzec
+  // `holdForAddendum` (M139/Addendum) — ta sama klasa: niższa liczba obrażeń.
+  'raidHoldBonus',               // kara-dopłata za rzut bez Raidu, gdy atak jest jeszcze możliwy
   // F1 v2 (uwaga właściciela 2026-09-23d, Veiled Ascension): efekt zakrywający
   // kartę z biblioteki (cloak — CR 701.58a) ZAMIENIA ją na permanenta 2/2
   // z wardem, a nie marnuje jak mill czy dobranie — więc „you may” jest
@@ -739,6 +778,15 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   'suspendMain1Penalty',         // surcharge za zawieszenie w Głównej 1 (przed walką)
   // PMSSB-69 (inicjatywa, take_initiative): dopłata za kradzież, kara za ryzyko, limit kary.
   'initiativeStealBonus', 'initiativeExposurePenalty', 'initiativeExposureCap',
+  // Zgłoszenie E (2026-11-16, Forever Young — `graveyard_creatures_to_library_top_choice`):
+  // bez celów w grobie czar tylko marnuje kartę/manę i skraca bibliotekę;
+  // wyjątek to desperacka presja niskiego życia (kopanie po ratunek).
+  'graveLibraryTopEmptyPenalty',
+  'graveLibraryTopDesperatePenalty',
+  'graveLibraryTopLowLifeThreshold',
+  'graveLibraryTopMinCreatureBody',
+  'graveLibraryTopCreatureWeight',
+  'graveLibraryTopAntiDrainBonus',
 ]);
 
 export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
@@ -1012,6 +1060,11 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   // PMSSB-3/F2: instant-draw na EOT przeciwnika (lustro M211/A1-scry: ta sama
   // racja fizzle-many; wartosc jak okno-scry, wlasne pokretlo).
   instantDrawFoeEndBonus: 10,
+  // PMSSB-91 — patrz uzasadnienie przy HEURISTIC_PARAM_KEYS.
+  manaSourceSacrificePenalty: 14,
+  manaSourceSacrificeMinSources: 5,
+  manaSourceSacrificeWarnAboveScore: -40,
+  setupBeforePayoffBonus: 8,
   // Zgłoszenie właściciela 2026-11-08e (Inspiration): patrz klucze wyżej.
   instantDrawHoldPenalty: 120,
   cantBlockCantripHoldPenalty: 120, // zgłoszenie U/RT: patrz klucze wyżej
@@ -1072,8 +1125,9 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   searchToBattlefieldBase: 10,
   searchToHandBase: 9,
   searchLandScrewBonus: 5,
-  // PMSSB-20 (mill — re-audyt): presja deck-outu wroga (wyścig bibliotek)
-  // + combo self-mill z reanimacją. Bazy 20+3n / −80 historyczne (guard).
+  // PMSSB-20 (mill — re-audyt) + korekta właściciela (2026-11-16): presja deck-outu
+  // wroga (wyścig bibliotek) + combo self-mill z reanimacją przy zapasie ≥25 kart
+  // w bibliotece (`GRAVE_SYNERGY_MIN_LIBRARY`). Bazy 20+3n / −80 historyczne (guard).
   millFoeDeckOutWinValue: 400,
   millFoePressureWeight: 4,
   millFoePressureCap: 12,
@@ -1214,6 +1268,11 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   librarySafeMargin: 20,
   libraryTapSafeMargin: 30,
   repeatLibraryDrainTurns: 3,
+  // PMSSB-91 — patrz uzasadnienie przy HEURISTIC_PARAM_KEYS.
+  externalTriggerDrainScale: 0,
+  selfEvasionWastedPenalty: 18,
+  negativePumpPowerCap: 1,
+  raidHoldBonus: 45,
   cloakLibraryFloor: 10,
   cloakThinLibraryPenalty: 60,
   // M429 „licznik na wskazanym celu" (P1 Mutagen, pomiar PRZED: remis 14/14/14).
@@ -1280,9 +1339,9 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   // śmieciem, tylko schodzi o „pół karty".
   cardDuplicateDiscount: 3,
   cardDuplicateMaxCopies: 2,
-  // PMSSB-24/F3: 2 pkt za źródło na kartę, limit 4 — dokładnie tyle, ile
-  // `MILL_CAUTION` (2), więc JEDNO źródło w ręce znosi ostrożność grobu dla
-  // karty na granicy opłacalności, a nie dla każdej.
+  // PMSSB-24/F3 + korekta właściciela (2026-11-16): 2 pkt za źródło na kartę,
+  // limit 4 — tyle, ile `MILL_CAUTION` (2), więc JEDNO źródło w ręce znosi
+  // ostrożność grobu dla karty na granicy opłacalności przy ≥25 kartach w bibliotece.
   surveilGraveSynergyPerSource: 2,
   surveilGraveSynergyCap: 4,
   // PMSSB-25/F1: 5 pkt — tyle, ile warta jest różnica między dwiema grywalnymi
@@ -1428,6 +1487,15 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   initiativeExposurePenalty: 2,
   // initiativeExposureCap 6 = jedna venture: kara nie zjada więcej niż dawny składnik ETB (wynik ≥ 0).
   initiativeExposureCap: 6,
+  // Zgłoszenie E (2026-11-16, Forever Young): bez stworów do odzyskania
+  // `spellBase (50) + drawCardValue (6) - 75 = -19 < 0`; w desperacji
+  // (`life <= 5` lub śmiertelny stół) spada do `-35` → `+21 > 0` (kopie po ratunek).
+  graveLibraryTopEmptyPenalty: 75,
+  graveLibraryTopDesperatePenalty: 35,
+  graveLibraryTopLowLifeThreshold: 5,
+  graveLibraryTopMinCreatureBody: 5,
+  graveLibraryTopCreatureWeight: 4,
+  graveLibraryTopAntiDrainBonus: 6,
 });
 
 /**

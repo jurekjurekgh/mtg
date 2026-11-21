@@ -1,0 +1,33 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Arrow+Storm&set=ktk&format=json",
+  "print": "ktk",
+  "name": "Arrow Storm",
+  "mana_cost": "{3}{R}{R}",
+  "cmc": 5,
+  "type_line": "Sorcery",
+  "oracle_text": "Arrow Storm deals 4 damage to any target.\nRaid — If you attacked this turn, instead Arrow Storm deals 5 damage to that permanent or player and the damage can't be prevented.",
+  "colors": ["R"],
+  "color_identity": ["R"],
+  "keywords": ["Raid"],
+  "set": "ktk",
+  "set_name": "Khans of Tarkir",
+  "collector_number": "98",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/c/5/c57534fb-2591-4003-aeec-6452faa4a759.jpg?1783939075",
+    "normal": "https://cards.scryfall.io/normal/front/c/5/c57534fb-2591-4003-aeec-6452faa4a759.jpg?1783939075"
+  },
+  "rulings": [
+    {
+      "published_at": "2024-11-08",
+      "comment": "Raid abilities care only that you attacked with a creature. It doesn't matter how many creatures you attacked with or which player, planeswalker, or battle those creatures attacked."
+    },
+    {
+      "published_at": "2024-11-08",
+      "comment": "Raid abilities evaluate the entire turn to see if you attacked with a creature. That creature doesn't have to still be on the battlefield. Similarly, the player, planeswalker, or battle it attacked doesn't have to still be in the game or on the battlefield."
+    }
+  ],
+  "rulingsSource": "https://api.scryfall.com/cards/ktk/98/rulings",
+  "rulingsPobrano": "2026-11-16",
+  "pobrano": "2026-11-16"
+}

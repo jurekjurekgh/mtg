@@ -1,7 +1,7 @@
 // PMSSB-69 (inicjatywa, `take_initiative`) — sonda POMIARU PRZED / PO dla wyceny bota.
 // Uruchomienie: node tools/pmssb69-initiative-sonda.mjs
 //
-// Rodzina: `take_initiative` (CR 725) — trzy karty z ETB „you take the initiative”:
+// Rodzina: `take_initiative` (CR 727) — trzy karty z ETB „you take the initiative”:
 //   * Underdark Explorer (5/3, koszt 5), Stirring Bard (0/4 defender, koszt 4),
 //     Caves of Chaos Adventurer (5/3, koszt 4).
 // Pytanie (L41): czy wycena ETB zależy od tego, kto ma inicjatywę (nikt / ja / wróg),

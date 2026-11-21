@@ -59,7 +59,7 @@ test('B47/A3: każdy egzemplarz trafia do talii SWOJEGO planu', () => {
     // przetasowaniu po awansie „The Edge" (ADR 0023 §4).
     ['curate-stx', 'worek-legend.txt'],
     ['negate', 'wiedzmin-wur.txt'],
-    ['negate-m15', 'warhammer-ubr.txt'],
+    ['negate-m15', 'warhammer-ub.txt'],
   ]) {
     assert.deepEqual(gdzie(cardId), [oczekiwane],
       `${cardId} ma być w DOKŁADNIE jednej talii: ${oczekiwane}`);

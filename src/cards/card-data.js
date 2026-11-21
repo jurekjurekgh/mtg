@@ -5337,7 +5337,7 @@ export const REAL_CARDS = Object.freeze([
 
 
 /**
- * Karta lochu „The Undercity" (dungeon z inicjatywy, CR 725; karta
+ * Karta lochu „The Undercity" (dungeon z inicjatywy, CR 727; karta
  * „Undercity // The Initiative" z CLB). W legacy aplikacji to karta specjalna
  * 990006 („Dungeon: The Undercity"), a jej druk pobiera Scryfall przez
  * `api.scryfall.com/cards/tclb/20?format=image` — używamy tego samego adresu.
@@ -15478,8 +15478,309 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     artId: 644, plan: 'Forgotten Realms',
     support: { status: 'supported', limitations: [] },
   }),
-]);
 
+  // ===== Batch 74 (2026-11-16, kolekcja 656–665) =====
+  // Snapshoty Oracle + rulingi WotC: docs/cards/scryfall-*.json (pobrane
+  // 2026-11-16 z `set=`), roadmapa: docs/plans/PLAN_2026-11-16-batch74-*.md.
+  // Pole `plan` = 1:1 z arkusza właściciela (ADR 0029 — wiążące).
+
+  // 656. Grollub (EXO #63) {2}{B} 3/3 Beast — „Whenever this creature is dealt
+  //      damage, each opponent gains that much life." Kwota z kontekstu zdarzenia
+  //      (`damageAmount`), odbiorcy `each_opponent` — mechanika z Etapu 2A.
+  defineCard({
+    id: 'grollub', name: 'Grollub', set: 'EXO', artId: 656,
+    types: ['Creature'], subtypes: ['Beast'], colors: ['B'],
+    power: 3, toughness: 3, manaCost: 3,
+    oracleText: 'Whenever this creature is dealt damage, each opponent gains that much life.',
+    imageUri: 'https://cards.scryfall.io/large/front/4/7/47f6301a-d581-4aaf-9993-3013323074aa.jpg?1783946517',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'dealt_damage' },
+        effect: [{ type: 'gain_life', scope: 'each_opponent', amountFrom: 'damageAmount' }],
+      }),
+    ],
+    plan: 'Warhammer Fantasy',
+    support: { status: 'supported', limitations: [] },
+    notes: ['trigger „is dealt damage" obejmuje obrażenia bojowe i niebojowe (CR 615.6 — w pełni zapobiegnięte nie odpala); życie zyskują PRZECIWNICY (także przy obrażeniach 0)'],
+  }),
+
+  // 657. Saltfield Recluse (PLC #16) {2}{W} 1/2 Human Rebel Cleric —
+  //      „{T}: Target creature gets -2/-0 until end of turn."
+  defineCard({
+    id: 'saltfield-recluse', name: 'Saltfield Recluse', set: 'PLC', artId: 657,
+    types: ['Creature'], subtypes: ['Human', 'Rebel', 'Cleric'], colors: ['W'],
+    power: 1, toughness: 2, manaCost: 3,
+    oracleText: '{T}: Target creature gets -2/-0 until end of turn.',
+    imageUri: 'https://cards.scryfall.io/large/front/5/f/5ffed4e4-0f54-4ab1-8563-ac4be7ae8309.jpg?1783943167',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { tap: true },
+        targets: [{ type: 'creature' }],
+        effect: { type: 'pump', power: -2, toughness: 0 },
+      }),
+    ],
+    plan: 'Amonkhet',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 658. Memorial to Genius (DOM #243) — Land, enters tapped.
+  //      „{T}: Add {U}." / „{4}{U}, {T}, Sacrifice this land: Draw two cards."
+  defineCard({
+    id: 'memorial-to-genius', name: 'Memorial to Genius', set: 'DOM', artId: 658,
+    types: ['Land'], colors: [], entersTapped: true,
+    oracleText: 'This land enters tapped.\n{T}: Add {U}.\n{4}{U}, {T}, Sacrifice this land: Draw two cards.',
+    imageUri: 'https://cards.scryfall.io/large/front/b/9/b97bb62e-45cf-4862-b181-5af463a442b5.jpg?1783934947',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { tap: true },
+        effect: { type: 'add_mana', amount: 1, colors: ['U'] },
+      }),
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 5, colors: ['U'], tap: true, sacrificeSelf: true },
+        effect: { type: 'draw_cards', amount: 2 },
+      }),
+    ],
+    plan: 'Dominaria',
+    support: { status: 'supported', limitations: [] },
+    notes: ['poświęcenie landa jest kosztem aktywacji — karta trafia do grobu PRZED rozstrzygnięciem, więc dobranie dwóch kart nie może być zapobiegnięte przez odzyskanie źródła'],
+  }),
+
+  // 659. Gylwain, Casting Director (WOC #4) {1}{G}{W} 2/3 Legendary Human Bard —
+  //      „Whenever Gylwain or another nontoken creature you control enters,
+  //      choose one — Create a Royal/Sorcerer/Monster Role token attached to
+  //      that creature." Tokeny-aury z Etapu 2C (SBA Role: jedna własna na
+  //      stworze, CR 303.4).
+  defineCard({
+    id: 'gylwain-casting-director', name: 'Gylwain, Casting Director', set: 'WOC', artId: 659,
+    types: ['Legendary', 'Creature'], subtypes: ['Human', 'Bard'], colors: ['G', 'W'],
+    power: 2, toughness: 3, manaCost: 3,
+    oracleText: 'Whenever Gylwain or another nontoken creature you control enters, choose one —\n• Create a Royal Role token attached to that creature.\n• Create a Sorcerer Role token attached to that creature.\n• Create a Monster Role token attached to that creature.',
+    imageUri: 'https://cards.scryfall.io/large/front/7/9/79e4242c-a53a-4287-976b-8e545888a1fa.jpg?1783914989',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: {
+          event: 'self_or_another_creature_you_control_enters',
+          nontokenOnly: true,
+          modes: [
+            {
+              name: 'Royal Role (+1/+1, ward {1})',
+              effects: [{
+                type: 'create_token', cardId: 'token_royal_role', name: 'Royal Role',
+                kind: 'aura', colors: [], types: ['Enchantment', 'Token'], subtypes: ['Aura', 'Role'],
+                attachToContext: 'enteredCreatureId',
+                aura: { target: 'creature', pump: { power: 1, toughness: 1 }, keywords: ['ward'], ward: 1 },
+              }],
+            },
+            {
+              name: 'Sorcerer Role (+1/+1, „attacks → scry 1")',
+              effects: [{
+                type: 'create_token', cardId: 'token_sorcerer_role', name: 'Sorcerer Role',
+                kind: 'aura', colors: [], types: ['Enchantment', 'Token'], subtypes: ['Aura', 'Role'],
+                attachToContext: 'enteredCreatureId',
+                aura: {
+                  target: 'creature', pump: { power: 1, toughness: 1 },
+                  grantAbilities: [
+                    createAbility({
+                      type: ABILITY_TYPE.triggered,
+                      trigger: { event: 'attacks' },
+                      effect: { type: 'scry', amount: 1 },
+                    }),
+                  ],
+                },
+              }],
+            },
+            {
+              name: 'Monster Role (+1/+1, trample)',
+              effects: [{
+                type: 'create_token', cardId: 'token_monster_role', name: 'Monster Role',
+                kind: 'aura', colors: [], types: ['Enchantment', 'Token'], subtypes: ['Aura', 'Role'],
+                attachToContext: 'enteredCreatureId',
+                aura: { target: 'creature', pump: { power: 1, toughness: 1 }, keywords: ['trample'] },
+              }],
+            },
+          ],
+        },
+      }),
+    ],
+    plan: 'Eldraine',
+    support: { status: 'supported', limitations: [] },
+    notes: ['Rola to token-AURA przypięta do wchodzącego stwora; wybór trybu zapada przy kładzeniu zdolności na stos (CR 603.3b), a SBA zdejmuje starszą Rolę TEGO SAMEGO kontrolera (ruling WOC 2023-09-01)'],
+  }),
+
+  // 660. Lambholt Harrier (MID #145) {1}{R} 2/2 Wolf —
+  //      „{3}{R}: Target creature can't block this turn."
+  defineCard({
+    id: 'lambholt-harrier', name: 'Lambholt Harrier', set: 'MID', artId: 660,
+    types: ['Creature'], subtypes: ['Wolf'], colors: ['R'],
+    power: 2, toughness: 2, manaCost: 2,
+    oracleText: "{3}{R}: Target creature can't block this turn.",
+    imageUri: 'https://cards.scryfall.io/large/front/e/2/e2a732ca-cd68-465f-8e44-783e1fe34e44.jpg?1783925598',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 4, colors: ['R'] },
+        targets: [{ type: 'creature' }],
+        effect: { type: 'cant_block' },
+      }),
+    ],
+    plan: 'Innistrad',
+    support: { status: 'supported', limitations: [] },
+    notes: ['zdolność działa tylko PRZED deklaracją blokerów (ruling MID 2021-09-24: po fakcie nie cofa bloku); flaga wygasa z końcem tury'],
+  }),
+
+  // 661. Arrow Storm (KTK #98) {3}{R}{R} Sorcery — „Arrow Storm deals 4 damage
+  //      to any target. Raid — If you attacked this turn, instead Arrow Storm
+  //      deals 5 damage to that permanent or player and the damage can\'t be
+  //      prevented." Raid z Etapu 2B (stan gracza `playersAttackedThisTurn`).
+  defineCard({
+    id: 'arrow-storm', name: 'Arrow Storm', set: 'KTK', artId: 661,
+    types: ['Sorcery'], colors: ['R'], manaCost: 5,
+    oracleText: "Arrow Storm deals 4 damage to any target.\nRaid — If you attacked this turn, instead Arrow Storm deals 5 damage to that permanent or player and the damage can't be prevented.",
+    imageUri: 'https://cards.scryfall.io/large/front/c/5/c57534fb-2591-4003-aeec-6452faa4a759.jpg?1783939075',
+    spell: {
+      timing: 'sorcery',
+      targets: [{ type: 'any_target' }],
+      effects: [{
+        type: 'damage', amount: 4, amountIfRaid: 5, cantBePreventedIfRaid: true,
+      }],
+    },
+    plan: 'Tarkir',
+    support: { status: 'supported', limitations: [] },
+    notes: ['Raid liczy FAKT zadeklarowania atakującego w tej turze, nie obecność stwora na stole (ruling KTK 2014-09-20); wariant 5 obrażeń omija tarcze prewencji i ochronę (CR 615)'],
+  }),
+
+  // 662. Loxodon Partisan (MBS #12) {4}{W} 3/4 Elephant Soldier — Battle cry
+  //      (CR 702.91a: każde INNE atakujące stworzenie +1/+0 do końca tury).
+  defineCard({
+    id: 'loxodon-partisan', name: 'Loxodon Partisan', set: 'MBS', artId: 662,
+    types: ['Creature'], subtypes: ['Elephant', 'Soldier'], colors: ['W'],
+    power: 3, toughness: 4, manaCost: 5, keywords: ['battle_cry'],
+    oracleText: 'Battle cry (Whenever this creature attacks, each other attacking creature gets +1/+0 until end of turn.)',
+    imageUri: 'https://cards.scryfall.io/large/front/a/4/a4a76016-96a1-40f5-9002-4b3bed65cd5c.jpg?1783941392',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        keyword: 'battle_cry',
+        trigger: { event: 'attacks' },
+        effect: { type: 'buff_attacking_creatures', power: 1, toughness: 0, excludeSource: true },
+      }),
+    ],
+    plan: 'Mirrodin',
+    support: { status: 'supported', limitations: [] },
+    notes: ['„each other attacking creature" — źródło nie buffuje samo siebie (CR 702.91a); kilka instancji battle cry rozwiązuje się osobno (702.91b)'],
+  }),
+
+  // 663. Temur Banner (KTK #226) {3} Artifact —
+  //      „{T}: Add {G}, {U}, or {R}." / „{G}{U}{R}, {T}, Sacrifice this artifact: Draw a card."
+  defineCard({
+    id: 'temur-banner', name: 'Temur Banner', set: 'KTK', artId: 663,
+    types: ['Artifact'], colors: [], manaCost: 3,
+    oracleText: '{T}: Add {G}, {U}, or {R}.\n{G}{U}{R}, {T}, Sacrifice this artifact: Draw a card.',
+    imageUri: 'https://cards.scryfall.io/large/front/9/9/9990bdff-c27a-447f-b530-d8b7614fe9a0.jpg?1783939048',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { tap: true },
+        effect: { type: 'add_mana', amount: 1, colors: ['G', 'U', 'R'] },
+      }),
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 3, colors: ['G', 'U', 'R'], tap: true, sacrificeSelf: true },
+        effect: { type: 'draw_cards', amount: 1 },
+      }),
+    ],
+    plan: 'Tarkir',
+    support: { status: 'supported', limitations: [] },
+    notes: ['jedna jednostka many „{G}, {U} or {R}" (wybór przy aktywacji), nie trzy oddzielne zdolności — tak jak Oracle'],
+  }),
+
+  // 664. Frilled Sea Serpent (M20 #61) {4}{U}{U} 4/6 Serpent —
+  //      „{5}{U}{U}: This creature can't be blocked this turn." (Etap 2A:
+  //      aktywowana `cant_be_blocked` na SAMYM źródle).
+  defineCard({
+    id: 'frilled-sea-serpent', name: 'Frilled Sea Serpent', set: 'M20', artId: 664,
+    types: ['Creature'], subtypes: ['Serpent'], colors: ['U'],
+    power: 4, toughness: 6, manaCost: 6,
+    oracleText: "{5}{U}{U}: This creature can't be blocked this turn.",
+    imageUri: 'https://cards.scryfall.io/large/front/b/5/b59698a5-be76-4ce2-a337-9052821f239f.jpg?1783933010',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 7, colors: ['U', 'U'] },
+        effect: { type: 'cant_be_blocked', applyTo: 'self' },
+      }),
+    ],
+    plan: 'Forgotten Realms',
+    support: { status: 'supported', limitations: [] },
+    notes: ['nieblokowalność nadana PO deklaracji blokerów nie cofa bloku (ruling M20 2019-07-12) — flaga wygasa z końcem tury'],
+  }),
+
+  // 665. Mirelurk Queen (PIP #33) {4}{U} 4/4 Crab Mutant — vigilance;
+  //      ETB „target player gets two rad counters" i trigger „whenever one or
+  //      more nonland cards are milled" (raz na turę). Rad counters + batched
+  //      mill z Etapu 2D (CR 729.1).
+  defineCard({
+    id: 'mirelurk-queen', name: 'Mirelurk Queen', set: 'PIP', artId: 665,
+    types: ['Creature'], subtypes: ['Crab', 'Mutant'], colors: ['U'],
+    power: 4, toughness: 4, manaCost: 5, keywords: ['vigilance'],
+    oracleText: 'Vigilance\nWhen this creature enters, target player gets two rad counters.\nWhenever one or more nonland cards are milled, draw a card, then put a +1/+1 counter on this creature. This ability triggers only once each turn.',
+    imageUri: 'https://cards.scryfall.io/large/front/6/e/6e6d1843-9e05-4cdd-ad4e-15d7913d87f7.jpg?1783912412',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield', requiresTarget: { type: 'player', prefer: 'opponent' } },
+        effect: [{ type: 'add_rad_counters', amount: 2 }],
+      }),
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'nonland_cards_milled', oncePerTurn: true },
+        effect: [
+          { type: 'draw_cards', amount: 1 },
+          // `applyTo: 'self'` — licznik na SAMYM źródle triggera (wzorzec
+          // etap 2D); bez tego `add_counter` szuka celu i nic nie robi.
+          { type: 'add_counter', counter: '+1/+1', amount: 1, applyTo: 'self' },
+        ],
+      }),
+    ],
+    plan: 'Teenage Mutant Ninja Turtles',
+    support: { status: 'supported', limitations: [] },
+    notes: [
+      'liczniki radiacji są licznikami GRACZA (CR 729.1) — panel stołu `renderRadPanel`, nie badge na kaflu',
+      'trigger milla odpala się RAZ na pojedynczą operację milla (partia „all at once", CR 603.2) i tylko raz na turę; landy nie liczą się do warunku',
+    ],
+  }),
+
+  // ---- Tokeny Ról (Gylwain, Batch 74) — druk TWOE: Royal // Young Hero
+  // (twoe/16) oraz Monster // Sorcerer (twoe/15). Token-aury z podtypem
+  // `Role`; SBA zdejmuje starszą Rolę tego samego kontrolera (ruling WOC
+  // 2023-09-01, CR 303.4). Grafiki: `cards.scryfall.io` (front/back flipa).
+  defineCard({
+    id: 'token_royal_role', name: 'Royal Role', set: null,
+    types: ['Enchantment', 'Token'], subtypes: ['Aura', 'Role'], colors: [], manaCost: 0,
+    oracleText: 'Enchant creature\nEnchanted creature gets +1/+1 and has ward {1}.',
+    imageUri: 'https://cards.scryfall.io/large/front/c/f/cff8ef48-2988-4d21-837e-01f1459e07c5.jpg?1783914992',
+    support: { status: 'token', limitations: ['token — nie można umieścić w talii'] },
+  }),
+  defineCard({
+    id: 'token_sorcerer_role', name: 'Sorcerer Role', set: null,
+    types: ['Enchantment', 'Token'], subtypes: ['Aura', 'Role'], colors: [], manaCost: 0,
+    oracleText: 'Enchant creature\nEnchanted creature gets +1/+1 and has "Whenever this creature attacks, scry 1."',
+    imageUri: 'https://cards.scryfall.io/large/back/6/b/6b8a810b-8538-41c3-a792-dbd1a1845faa.jpg?1783914994',
+    support: { status: 'token', limitations: ['token — nie można umieścić w talii'] },
+  }),
+  defineCard({
+    id: 'token_monster_role', name: 'Monster Role', set: null,
+    types: ['Enchantment', 'Token'], subtypes: ['Aura', 'Role'], colors: [], manaCost: 0,
+    oracleText: 'Enchant creature\nEnchanted creature gets +1/+1 and has trample.',
+    imageUri: 'https://cards.scryfall.io/large/front/6/b/6b8a810b-8538-41c3-a792-dbd1a1845faa.jpg?1783914994',
+    support: { status: 'token', limitations: ['token — nie można umieścić w talii'] },
+  }),
+]);
 /**
  * M173/B (uwaga właściciela): druki Scryfalla dla TOKENÓW. Tokeny mają
  * cardId `token_*` spoza rejestru kart, więc kafel nie znajdował żadnej

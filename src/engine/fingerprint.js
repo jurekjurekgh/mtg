@@ -83,7 +83,7 @@ const STATE_EFFECT_FIELDS = Object.freeze([
 const STATE_COUNTER_FIELDS = Object.freeze([
   'spellsCastThisTurn', 'spellsCastThisTurnByPlayer', 'instantSorceryCastThisTurnByPlayer',
   'lastTurnSpellsCastByPlayer', 'lastTurnSpellsCast', 'mulliganCounts',
-  'cardsDrawnThisTurn', 'lifeGainedThisTurn', 'creatureDiedThisTurn',
+  'cardsDrawnThisTurn', 'lifeGainedThisTurn', 'playersAttackedThisTurn', 'creatureDiedThisTurn',
   'landEnteredThisTurn', 'damageTakenByPlayerThisTurn',
   'speedIncreasedThisTurn', 'moonlitUsedThisTurn',
   'preventCombatExceptEnchanted',

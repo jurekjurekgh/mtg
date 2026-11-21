@@ -1,0 +1,2880 @@
+[
+  {
+    "id": "G-01",
+    "karta": "grollub",
+    "wymiar": "T",
+    "wariant": "main1, pusty stół po obu stronach",
+    "stan": "krok=main1 aktywny=p1 priorytet=p1 tura=1\n    życie p1=20 p2=20 | mana p1=3 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false\n    stół p1: —\n    stół p2: —\n    ręka p1: grollub-hand:Grollub (3/3) | ręka p2: 0 kart(y)\n    grób p1: 0 | grób p2: 0 | biblioteka p1: 20",
+    "wybrano": "cast_permanent(grollub-hand)",
+    "score": 67.5045,
+    "alternatywy": [
+      {
+        "cmd": "cast_permanent(grollub-hand)",
+        "score": 67.5045
+      },
+      {
+        "cmd": "pass_priority",
+        "score": 0
+      },
+      {
+        "cmd": "concede",
+        "score": null
+      }
+    ]
+  },
+  {
+    "id": "G-01",
+    "karta": "grollub",
+    "wymiar": "T",
+    "wariant": "main1, wróg ma 2/2 (blok-wymiana: my 3/3 zabija 2/2, heal 2 wrogowi)",
+    "stan": "krok=main1 aktywny=p1 priorytet=p1 tura=1\n    życie p1=20 p2=20 | mana p1=3 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false\n    stół p1: —\n    stół p2: wrog-2-2:Leafcrown Dryad (2/2 reach)\n    ręka p1: grollub-hand:Grollub (3/3) | ręka p2: 0 kart(y)\n    grób p1: 0 | grób p2: 0 | biblioteka p1: 20",
+    "wybrano": "cast_permanent(grollub-hand)",
+    "score": 71.1045,
+    "alternatywy": [
+      {
+        "cmd": "cast_permanent(grollub-hand)",
+        "score": 71.1045
+      },
+      {
+        "cmd": "pass_priority",
+        "score": 0
+      },
+      {
+        "cmd": "concede",
+        "score": null
+      }
+    ]
+  },
+  {
+    "id": "G-01",
+    "karta": "grollub",
+    "wymiar": "T",
+    "wariant": "main1, moje życie 5, wróg ma 4/4 atakującego",
+    "stan": "krok=main1 aktywny=p1 priorytet=p1 tura=1\n    życie p1=20 p2=20 | mana p1=3 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false\n    stół p1: —\n    stół p2: wrog-4-4:Grizzled Outcasts (4/4 transform)\n    ręka p1: grollub-hand:Grollub (3/3) | ręka p2: 0 kart(y)\n    grób p1: 0 | grób p2: 0 | biblioteka p1: 20",
+    "wybrano": "cast_permanent(grollub-hand)",
+    "score": 71.1045,
+    "alternatywy": [
+      {
+        "cmd": "cast_permanent(grollub-hand)",
+        "score": 71.1045
+      },
+      {
+        "cmd": "pass_priority",
+        "score": 0
+      },
+      {
+        "cmd": "concede",
+        "score": null
+      }
+    ]
+  },
+  {
+    "id": "G-02",
+    "karta": "grollub",
+    "wymiar": "S",
+    "wariant": "wróg: ściana 0/4 (nie atakuje, tylko blokuje)",
+    "stan": "krok=declare_attackers aktywny=p2 priorytet=p1 tura=1\n    życie p1=20 p2=20 | mana p1=0 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false\n    stół p1: grollub-bf:Grollub (3/3)\n    stół p2: sciana:Mnemonic Wall (0/4 defender)\n    ręka p1: — | ręka p2: 0 kart(y)\n    grób p1: 0 | grób p2: 0 | biblioteka p1: 20",
+    "wybrano": "pass_priority",
+    "score": 0,
+    "alternatywy": [
+      {
+        "cmd": "pass_priority",
+        "score": 0
+      },
+      {
+        "cmd": "concede",
+        "score": null
+      }
+    ]
+  },
+  {
+    "id": "G-02",
+    "karta": "grollub",
+    "wymiar": "S",
+    "wariant": "wróg: 5/5 atakujący (blok = oddaję 5 życia wrogowi)",
+    "stan": "krok=declare_attackers aktywny=p2 priorytet=p1 tura=1\n    życie p1=20 p2=20 | mana p1=0 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false\n    stół p1: grollub-bf:Grollub (3/3)\n    stół p2: duzy:Grizzled Outcasts (TAP 4/4 transform)\n    ręka p1: — | ręka p2: 0 kart(y)\n    grób p1: 0 | grób p2: 0 | biblioteka p1: 20",
+    "wybrano": "pass_priority",
+    "score": 0,
+    "alternatywy": [
+      {
+        "cmd": "pass_priority",
+        "score": 0
+      },
+      {
+        "cmd": "concede",
+        "score": null
+      }
+    ]
+  },
+  {
+    "id": "G-02",
+    "karta": "grollub",
+    "wymiar": "S",
+    "wariant": "wróg: 1/1 ({blok = zabijam i oddaję 1 życie}",
+    "stan": "krok=declare_attackers aktywny=p2 priorytet=p1 tura=1\n    życie p1=20 p2=20 | mana p1=0 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false\n    stół p1: grollub-bf:Grollub (3/3)\n    stół p2: maly:Soulmender (TAP 1/1)\n    ręka p1: — | ręka p2: 0 kart(y)\n    grób p1: 0 | grób p2: 0 | biblioteka p1: 20",
+    "wybrano": "pass_priority",
+    "score": 0,
+    "alternatywy": [
+      {
+        "cmd": "pass_priority",
+        "score": 0
+      },
+      {
+        "cmd": "concede",
+        "score": null
+      }
+    ]
+  },
+  {
+    "id": "G-03",
+    "karta": "grollub",
+    "wymiar": "C",
+    "wariant": "mój Shock vs Grollub wroga (3/3, nie zabija — heal dla MNIE jest OK)",
+    "stan": "krok=main1 aktywny=p1 priorytet=p1 tura=1\n    życie p1=20 p2=20 | mana p1=1 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false\n    stół p1: moj-grollub:Grollub (3/3)\n    stół p2: grollub-wroga:Grollub (3/3)\n    ręka p1: shock-hand:Shock | ręka p2: 0 kart(y)\n    grób p1: 0 | grób p2: 0 | biblioteka p1: 20",
+    "wybrano": "pass_priority",
+    "score": 0,
+    "alternatywy": [
+      {
+        "cmd": "pass_priority",
+        "score": 0
+      },
+      {
+        "cmd": "cast_spell(shock-hand->grollub-wroga)",
+        "score": -81
+      },
+      {
+        "cmd": "cast_spell(shock-hand->p1)",
+        "score": -109
+      },
+      {
+        "cmd": "cast_spell(shock-hand->p2)",
+        "score": -111
+      },
+      {
+        "cmd": "cast_spell(shock-hand->moj-grollub)",
+        "score": -157
+      }
+    ]
+  },
+  {
+    "id": "G-03",
+    "karta": "grollub",
+    "wymiar": "C",
+    "wariant": "mój Grollub dostaje 2 z mojego Shoca? (nielegalne — tylko wróg może) — pominięty",
+    "stan": "krok=main1 aktywny=p1 priorytet=p1 tura=1\n    życie p1=20 p2=20 | mana p1=1 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false\n    stół p1: moj-grollub:Grollub (3/3)\n    stół p2: grollub-wroga:Grollub (3/3)\n    ręka p1: shock-hand:Shock | ręka p2: 0 kart(y)\n    grób p1: 0 | grób p2: 0 | biblioteka p1: 20",
+    "wybrano": "pass_priority",
+    "score": 0,
+    "alternatywy": [
+      {
+        "cmd": "pass_priority",
+        "score": 0
+      },
+      {
+        "cmd": "cast_spell(shock-hand->grollub-wroga)",
+        "score": -81
+      },
+      {
+        "cmd": "cast_spell(shock-hand->p1)",
+        "score": -109
+      },
+      {
+        "cmd": "cast_spell(shock-hand->p2)",
+        "score": -111
+      },
+      {
+        "cmd": "cast_spell(shock-hand->moj-grollub)",
+        "score": -157
+      }
+    ]
+  },
+  {
+    "id": "SR-01",
+    "karta": "saltfield-recluse",
+    "wymiar": "T",
+    "wariant": "upkeep",
+    "stan": "krok=upkeep aktywny=p1 priorytet=p1 tura=1\n    życie p1=20 p2=20 | mana p1=0 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false\n    stół p1: recluse:Saltfield Recluse (1/2), nasz-3-3:Grollub (3/3)\n    stół p2: wrog-3-3:Grizzled Outcasts (4/4 transform)\n    ręka p1: — | ręka p2: 0 kart(y)\n    grób p1: 0 | grób p2: 0 | biblioteka p1: 20",
+    "wybrano": "pass_priority",
+    "score": 0,
+    "alternatywy": [
+      {
+        "cmd": "pass_priority",
+        "score": 0
+      },
+      {
+        "cmd": "activate_ability(recluse#0->recluse)",
+        "score": -30
+      },
+      {
+        "cmd": "activate_ability(recluse#0->nasz-3-3)",
+        "score": -30
+      },
+      {
+        "cmd": "activate_ability(recluse#0->wrog-3-3)",
+        "score": -30
+      },
+      {
+        "cmd": "concede",
+        "score": null
+      }
+    ]
+  },
+  {
+    "id": "SR-01",
+    "karta": "saltfield-recluse",
+    "wymiar": "T",
+    "wariant": "draw",
+    "stan": "krok=draw aktywny=p1 priorytet=p1 tura=1\n    życie p1=20 p2=20 | mana p1=0 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false\n    stół p1: recluse:Saltfield Recluse (1/2), nasz-3-3:Grollub (3/3)\n    stół p2: wrog-3-3:Grizzled Outcasts (4/4 transform)\n    ręka p1: — | ręka p2: 0 kart(y)\n    grób p1: 0 | grób p2: 0 | biblioteka p1: 20",
+    "wybrano": "pass_priority",
+    "score": 0,
+    "alternatywy": [
+      {
+        "cmd": "pass_priority",
+        "score": 0
+      },
+      {
+        "cmd": "activate_ability(recluse#0->recluse)",
+        "score": -30
+      },
+      {
+        "cmd": "activate_ability(recluse#0->nasz-3-3)",
+        "score": -30
+      },
+      {
+        "cmd": "activate_ability(recluse#0->wrog-3-3)",
+        "score": -30
+      },
+      {
+        "cmd": "concede",
+        "score": null
+      }
+    ]
+  },
+  {
+    "id": "SR-01",
+    "karta": "saltfield-recluse",
+    "wymiar": "T",
+    "wariant": "main1",
+    "stan": "krok=main1 aktywny=p1 priorytet=p1 tura=1\n    życie p1=20 p2=20 | mana p1=0 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false\n    stół p1: recluse:Saltfield Recluse (1/2), nasz-3-3:Grollub (3/3)\n    stół p2: wrog-3-3:Grizzled Outcasts (4/4 transform)\n    ręka p1: — | ręka p2: 0 kart(y)\n    grób p1: 0 | grób p2: 0 | biblioteka p1: 20",
+    "wybrano": "pass_priority",
+    "score": 0,
+    "alternatywy": [
+      {
+        "cmd": "pass_priority",
+        "score": 0
+      },
+      {
+        "cmd": "activate_ability(recluse#0->wrog-3-3)",
+        "score": -73
+      },
+      {
+        "cmd": "activate_ability(recluse#0->nasz-3-3)",
+        "score": -77
+      },
+      {
+        "cmd": "activate_ability(recluse#0->recluse)",
+        "score": -104
+      },
+      {
+        "cmd": "concede",
+        "score": null
+      }
+    ]
+  },
+  {
+    "id": "SR-01",
+    "karta": "saltfield-recluse",
+    "wymiar": "T",
+    "wariant": "beginning_of_combat",
+    "stan": "krok=beginning_of_combat aktywny=p1 priorytet=p1 tura=1\n    życie p1=20 p2=20 | mana p1=0 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false\n    stół p1: recluse:Saltfield Recluse (1/2), nasz-3-3:Grollub (3/3)\n    stół p2: wrog-3-3:Grizzled Outcasts (4/4 transform)\n    ręka p1: — | ręka p2: 0 kart(y)\n    grób p1: 0 | grób p2: 0 | biblioteka p1: 20",
+    "wybrano": "pass_priority",
+    "score": 0,
+    "alternatywy": [
+      {
+        "cmd": "pass_priority",
+        "score": 0
+      },
+      {
+        "cmd": "activate_ability(recluse#0->wrog-3-3)",
+        "score": -73
+      },
+      {
+        "cmd": "activate_ability(recluse#0->nasz-3-3)",
+        "score": -77
+      },
+      {
+        "cmd": "activate_ability(recluse#0->recluse)",
+        "score": -104
+      },
+      {
+        "cmd": "concede",
+        "score": null
+      }
+    ]
+  },
+  {
+    "id": "SR-01",
+    "karta": "saltfield-recluse",
+    "wymiar": "T",
+    "wariant": "declare_attackers",
+    "stan": "krok=declare_attackers aktywny=p1 priorytet=p1 tura=1\n    życie p1=20 p2=20 | mana p1=0 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false\n    stół p1: recluse:Saltfield Recluse (1/2), nasz-3-3:Grollub (3/3)\n    stół p2: wrog-3-3:Grizzled Outcasts (4/4 transform)\n    ręka p1: — | ręka p2: 0 kart(y)\n    grób p1: 0 | grób p2: 0 | biblioteka p1: 20",
+    "wybrano": "attack[]",
+    "score": 0,
+    "alternatywy": [
+      {
+        "cmd": "attack[]",
+        "score": 0
+      },
+      {
+        "cmd": "pass_priority",
+        "score": 0
+      },
+      {
+        "cmd": "attack[recluse,nasz-3-3]",
+        "score": -6
+      },
+      {
+        "cmd": "attack[recluse]",
+        "score": -10
+      },
+      {
+        "cmd": "attack[nasz-3-3]",
+        "score": -10
+      }
+    ]
+  },
+  {
+    "id": "SR-01",
+    "karta": "saltfield-recluse",
+    "wymiar": "T",
+    "wariant": "declare_blockers",
+    "stan": "krok=declare_blockers aktywny=p1 priorytet=p1 tura=1\n    życie p1=20 p2=20 | mana p1=0 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false\n    stół p1: recluse:Saltfield Recluse (1/2), nasz-3-3:Grollub (3/3)\n    stół p2: wrog-3-3:Grizzled Outcasts (4/4 transform)\n    ręka p1: — | ręka p2: 0 kart(y)\n    grób p1: 0 | grób p2: 0 | biblioteka p1: 20",
+    "wybrano": "pass_priority",
+    "score": 0,
+    "alternatywy": [
+      {
+        "cmd": "pass_priority",
+        "score": 0
+      },
+      {
+        "cmd": "activate_ability(recluse#0->wrog-3-3)",
+        "score": -73
+      },
+      {
+        "cmd": "activate_ability(recluse#0->nasz-3-3)",
+        "score": -77
+      },
+      {
+        "cmd": "activate_ability(recluse#0->recluse)",
+        "score": -104
+      },
+      {
+        "cmd": "concede",
+        "score": null
+      }
+    ]
+  },
+  {
+    "id": "SR-01",
+    "karta": "saltfield-recluse",
+    "wymiar": "T",
+    "wariant": "combat_damage",
+    "stan": "krok=combat_damage aktywny=p1 priorytet=p1 tura=1\n    życie p1=20 p2=20 | mana p1=0 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false\n    stół p1: recluse:Saltfield Recluse (1/2), nasz-3-3:Grollub (3/3)\n    stół p2: wrog-3-3:Grizzled Outcasts (4/4 transform)\n    ręka p1: — | ręka p2: 0 kart(y)\n    grób p1: 0 | grób p2: 0 | biblioteka p1: 20",
+    "wybrano": "pass_priority",
+    "score": 0,
+    "alternatywy": [
+      {
+        "cmd": "pass_priority",
+        "score": 0
+      },
+      {
+        "cmd": "activate_ability(recluse#0->wrog-3-3)",
+        "score": -73
+      },
+      {
+        "cmd": "activate_ability(recluse#0->nasz-3-3)",
+        "score": -77
+      },
+      {
+        "cmd": "activate_ability(recluse#0->recluse)",
+        "score": -104
+      },
+      {
+        "cmd": "concede",
+        "score": null
+      }
+    ]
+  },
+  {
+    "id": "SR-01",
+    "karta": "saltfield-recluse",
+    "wymiar": "T",
+    "wariant": "end_of_combat",
+    "stan": "krok=end_of_combat aktywny=p1 priorytet=p1 tura=1\n    życie p1=20 p2=20 | mana p1=0 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false\n    stół p1: recluse:Saltfield Recluse (1/2), nasz-3-3:Grollub (3/3)\n    stół p2: wrog-3-3:Grizzled Outcasts (4/4 transform)\n    ręka p1: — | ręka p2: 0 kart(y)\n    grób p1: 0 | grób p2: 0 | biblioteka p1: 20",
+    "wybrano": "pass_priority",
+    "score": 0,
+    "alternatywy": [
+      {
+        "cmd": "pass_priority",
+        "score": 0
+      },
+      {
+        "cmd": "activate_ability(recluse#0->wrog-3-3)",
+        "score": -73
+      },
+      {
+        "cmd": "activate_ability(recluse#0->nasz-3-3)",
+        "score": -77
+      },
+      {
+        "cmd": "activate_ability(recluse#0->recluse)",
+        "score": -104
+      },
+      {
+        "cmd": "concede",
+        "score": null
+      }
+    ]
+  },
+  {
+    "id": "SR-01",
+    "karta": "saltfield-recluse",
+    "wymiar": "T",
+    "wariant": "main2",
+    "stan": "krok=main2 aktywny=p1 priorytet=p1 tura=1\n    życie p1=20 p2=20 | mana p1=0 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false\n    stół p1: recluse:Saltfield Recluse (1/2), nasz-3-3:Grollub (3/3)\n    stół p2: wrog-3-3:Grizzled Outcasts (4/4 transform)\n    ręka p1: — | ręka p2: 0 kart(y)\n    grób p1: 0 | grób p2: 0 | biblioteka p1: 20",
+    "wybrano": "pass_priority",
+    "score": 0,
+    "alternatywy": [
+      {
+        "cmd": "pass_priority",
+        "score": 0
+      },
+      {
+        "cmd": "activate_ability(recluse#0->wrog-3-3)",
+        "score": -73
+      },
+      {
+        "cmd": "activate_ability(recluse#0->nasz-3-3)",
+        "score": -77
+      },
+      {
+        "cmd": "activate_ability(recluse#0->recluse)",
+        "score": -104
+      },
+      {
+        "cmd": "concede",
+        "score": null
+      }
+    ]
+  },
+  {
+    "id": "SR-01",
+    "karta": "saltfield-recluse",
+    "wymiar": "T",
+    "wariant": "end",
+    "stan": "krok=end aktywny=p1 priorytet=p1 tura=1\n    życie p1=20 p2=20 | mana p1=0 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false\n    stół p1: recluse:Saltfield Recluse (1/2), nasz-3-3:Grollub (3/3)\n    stół p2: wrog-3-3:Grizzled Outcasts (4/4 transform)\n    ręka p1: — | ręka p2: 0 kart(y)\n    grób p1: 0 | grób p2: 0 | biblioteka p1: 20",
+    "wybrano": "pass_priority",
+    "score": 0,
+    "alternatywy": [
+      {
+        "cmd": "pass_priority",
+        "score": 0
+      },
+      {
+        "cmd": "activate_ability(recluse#0->recluse)",
+        "score": -30
+      },
+      {
+        "cmd": "activate_ability(recluse#0->nasz-3-3)",
+        "score": -30
+      },
+      {
+        "cmd": "activate_ability(recluse#0->wrog-3-3)",
+        "score": -30
+      },
+      {
+        "cmd": "concede",
+        "score": null
+      }
+    ]
+  },
+  {
+    "id": "SR-02",
+    "karta": "saltfield-recluse",
+    "wymiar": "C",
+    "wariant": "wróg: atakujący 4/4 i 1/1 (kogo osłabia?)",
+    "stan": "krok=declare_attackers aktywny=p2 priorytet=p1 tura=1\n    życie p1=20 p2=20 | mana p1=0 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false\n    stół p1: recluse:Saltfield Recluse (1/2)\n    stół p2: w-4-4:Grizzled Outcasts (TAP 4/4 transform), w-1-1:Soulmender (TAP 1/1)\n    ręka p1: — | ręka p2: 0 kart(y)\n    grób p1: 0 | grób p2: 0 | biblioteka p1: 20",
+    "wybrano": "activate_ability(recluse#0->w-4-4)",
+    "score": 35,
+    "alternatywy": [
+      {
+        "cmd": "activate_ability(recluse#0->w-4-4)",
+        "score": 35
+      },
+      {
+        "cmd": "activate_ability(recluse#0->w-1-1)",
+        "score": 35
+      },
+      {
+        "cmd": "pass_priority",
+        "score": 0
+      },
+      {
+        "cmd": "activate_ability(recluse#0->recluse)",
+        "score": -108
+      },
+      {
+        "cmd": "concede",
+        "score": null
+      }
+    ]
+  },
+  {
+    "id": "SR-02",
+    "karta": "saltfield-recluse",
+    "wymiar": "C",
+    "wariant": "wróg: tylko 1/1 atakujący",
+    "stan": "krok=declare_attackers aktywny=p2 priorytet=p1 tura=1\n    życie p1=20 p2=20 | mana p1=0 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false\n    stół p1: recluse:Saltfield Recluse (1/2)\n    stół p2: w-1-1:Soulmender (TAP 1/1)\n    ręka p1: — | ręka p2: 0 kart(y)\n    grób p1: 0 | grób p2: 0 | biblioteka p1: 20",
+    "wybrano": "activate_ability(recluse#0->w-1-1)",
+    "score": 35,
+    "alternatywy": [
+      {
+        "cmd": "activate_ability(recluse#0->w-1-1)",
+        "score": 35
+      },
+      {
+        "cmd": "pass_priority",
+        "score": 0
+      },
+      {
+        "cmd": "activate_ability(recluse#0->recluse)",
+        "score": -108
+      },
+      {
+        "cmd": "concede",
+        "score": null
+      }
+    ]
+  },
+  {
+    "id": "SR-02",
+    "karta": "saltfield-recluse",
+    "wymiar": "C",
+    "wariant": "wróg: moc 0 (wall of wood) atakujący",
+    "stan": "krok=declare_attackers aktywny=p2 priorytet=p1 tura=1\n    życie p1=20 p2=20 | mana p1=0 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false\n    stół p1: recluse:Saltfield Recluse (1/2)\n    stół p2: w-0:Emissary Escort (TAP 0/4)\n    ręka p1: — | ręka p2: 0 kart(y)\n    grób p1: 0 | grób p2: 0 | biblioteka p1: 20",
+    "wybrano": "pass_priority",
+    "score": 0,
+    "alternatywy": [
+      {
+        "cmd": "pass_priority",
+        "score": 0
+      },
+      {
+        "cmd": "activate_ability(recluse#0->w-0)",
+        "score": -73
+      },
+      {
+        "cmd": "activate_ability(recluse#0->recluse)",
+        "score": -108
+      },
+      {
+        "cmd": "concede",
+        "score": null
+      }
+    ]
+  },
+  {
+    "id": "MG-01",
+    "karta": "memorial-to-genius",
+    "wymiar": "T",
+    "wariant": "upkeep",
+    "stan": "krok=upkeep aktywny=p1 priorytet=p1 tura=1\n    życie p1=20 p2=20 | mana p1=5 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false\n    stół p1: memorial:Memorial to Genius, reka-a:Leafcrown Dryad (2/2 reach)\n    stół p2: —\n    ręka p1: — | ręka p2: 0 kart(y)\n    grób p1: 0 | grób p2: 0 | biblioteka p1: 20",
+    "wybrano": "pass_priority",
+    "score": 0,
+    "alternatywy": [
+      {
+        "cmd": "pass_priority",
+        "score": 0
+      },
+      {
+        "cmd": "activate_ability(memorial#0)",
+        "score": -30
+      },
+      {
+        "cmd": "activate_ability(memorial#1)",
+        "score": -30
+      },
+      {
+        "cmd": "concede",
+        "score": null
+      }
+    ]
+  },
+  {
+    "id": "MG-01",
+    "karta": "memorial-to-genius",
+    "wymiar": "T",
+    "wariant": "draw",
+    "stan": "krok=draw aktywny=p1 priorytet=p1 tura=1\n    życie p1=20 p2=20 | mana p1=5 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false\n    stół p1: memorial:Memorial to Genius, reka-a:Leafcrown Dryad (2/2 reach)\n    stół p2: —\n    ręka p1: — | ręka p2: 0 kart(y)\n    grób p1: 0 | grób p2: 0 | biblioteka p1: 20",
+    "wybrano": "pass_priority",
+    "score": 0,
+    "alternatywy": [
+      {
+        "cmd": "pass_priority",
+        "score": 0
+      },
+      {
+        "cmd": "activate_ability(memorial#0)",
+        "score": -30
+      },
+      {
+        "cmd": "activate_ability(memorial#1)",
+        "score": -30
+      },
+      {
+        "cmd": "concede",
+        "score": null
+      }
+    ]
+  },
+  {
+    "id": "MG-01",
+    "karta": "memorial-to-genius",
+    "wymiar": "T",
+    "wariant": "main1",
+    "stan": "krok=main1 aktywny=p1 priorytet=p1 tura=1\n    życie p1=20 p2=20 | mana p1=5 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false\n    stół p1: memorial:Memorial to Genius, reka-a:Leafcrown Dryad (2/2 reach)\n    stół p2: —\n    ręka p1: — | ręka p2: 0 kart(y)\n    grób p1: 0 | grób p2: 0 | biblioteka p1: 20",
+    "wybrano": "activate_ability(memorial#1)",
+    "score": 8,
+    "alternatywy": [
+      {
+        "cmd": "activate_ability(memorial#1)",
+        "score": 8
+      },
+      {
+        "cmd": "pass_priority",
+        "score": 0
+      },
+      {
+        "cmd": "activate_ability(memorial#0)",
+        "score": -30
+      },
+      {
+        "cmd": "concede",
+        "score": null
+      }
+    ]
+  },
+  {
+    "id": "MG-01",
+    "karta": "memorial-to-genius",
+    "wymiar": "T",
+    "wariant": "beginning_of_combat",
+    "stan": "krok=beginning_of_combat aktywny=p1 priorytet=p1 tura=1\n    życie p1=20 p2=20 | mana p1=5 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false\n    stół p1: memorial:Memorial to Genius, reka-a:Leafcrown Dryad (2/2 reach)\n    stół p2: —\n    ręka p1: — | ręka p2: 0 kart(y)\n    grób p1: 0 | grób p2: 0 | biblioteka p1: 20",
+    "wybrano": "activate_ability(memorial#1)",
+    "score": 8,
+    "alternatywy": [
+      {
+        "cmd": "activate_ability(memorial#1)",
+        "score": 8
+      },
+      {
+        "cmd": "pass_priority",
+        "score": 0
+      },
+      {
+        "cmd": "activate_ability(memorial#0)",
+        "score": -30
+      },
+      {
+        "cmd": "concede",
+        "score": null
+      }
+    ]
+  },
+  {
+    "id": "MG-01",
+    "karta": "memorial-to-genius",
+    "wymiar": "T",
+    "wariant": "declare_attackers",
+    "stan": "krok=declare_attackers aktywny=p1 priorytet=p1 tura=1\n    życie p1=20 p2=20 | mana p1=5 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false\n    stół p1: memorial:Memorial to Genius, reka-a:Leafcrown Dryad (2/2 reach)\n    stół p2: —\n    ręka p1: — | ręka p2: 0 kart(y)\n    grób p1: 0 | grób p2: 0 | biblioteka p1: 20",
+    "wybrano": "attack[reka-a]",
+    "score": 13,
+    "alternatywy": [
+      {
+        "cmd": "attack[reka-a]",
+        "score": 13
+      },
+      {
+        "cmd": "activate_ability(memorial#1)",
+        "score": 8
+      },
+      {
+        "cmd": "attack[]",
+        "score": 0
+      },
+      {
+        "cmd": "pass_priority",
+        "score": 0
+      },
+      {
+        "cmd": "activate_ability(memorial#0)",
+        "score": -30
+      }
+    ]
+  },
+  {
+    "id": "MG-01",
+    "karta": "memorial-to-genius",
+    "wymiar": "T",
+    "wariant": "declare_blockers",
+    "stan": "krok=declare_blockers aktywny=p1 priorytet=p1 tura=1\n    życie p1=20 p2=20 | mana p1=5 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false\n    stół p1: memorial:Memorial to Genius, reka-a:Leafcrown Dryad (2/2 reach)\n    stół p2: —\n    ręka p1: — | ręka p2: 0 kart(y)\n    grób p1: 0 | grób p2: 0 | biblioteka p1: 20",
+    "wybrano": "activate_ability(memorial#1)",
+    "score": 8,
+    "alternatywy": [
+      {
+        "cmd": "activate_ability(memorial#1)",
+        "score": 8
+      },
+      {
+        "cmd": "pass_priority",
+        "score": 0
+      },
+      {
+        "cmd": "activate_ability(memorial#0)",
+        "score": -30
+      },
+      {
+        "cmd": "concede",
+        "score": null
+      }
+    ]
+  },
+  {
+    "id": "MG-01",
+    "karta": "memorial-to-genius",
+    "wymiar": "T",
+    "wariant": "combat_damage",
+    "stan": "krok=combat_damage aktywny=p1 priorytet=p1 tura=1\n    życie p1=20 p2=20 | mana p1=5 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false\n    stół p1: memorial:Memorial to Genius, reka-a:Leafcrown Dryad (2/2 reach)\n    stół p2: —\n    ręka p1: — | ręka p2: 0 kart(y)\n    grób p1: 0 | grób p2: 0 | biblioteka p1: 20",
+    "wybrano": "activate_ability(memorial#1)",
+    "score": 8,
+    "alternatywy": [
+      {
+        "cmd": "activate_ability(memorial#1)",
+        "score": 8
+      },
+      {
+        "cmd": "pass_priority",
+        "score": 0
+      },
+      {
+        "cmd": "activate_ability(memorial#0)",
+        "score": -30
+      },
+      {
+        "cmd": "concede",
+        "score": null
+      }
+    ]
+  },
+  {
+    "id": "MG-01",
+    "karta": "memorial-to-genius",
+    "wymiar": "T",
+    "wariant": "end_of_combat",
+    "stan": "krok=end_of_combat aktywny=p1 priorytet=p1 tura=1\n    życie p1=20 p2=20 | mana p1=5 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false\n    stół p1: memorial:Memorial to Genius, reka-a:Leafcrown Dryad (2/2 reach)\n    stół p2: —\n    ręka p1: — | ręka p2: 0 kart(y)\n    grób p1: 0 | grób p2: 0 | biblioteka p1: 20",
+    "wybrano": "activate_ability(memorial#1)",
+    "score": 8,
+    "alternatywy": [
+      {
+        "cmd": "activate_ability(memorial#1)",
+        "score": 8
+      },
+      {
+        "cmd": "pass_priority",
+        "score": 0
+      },
+      {
+        "cmd": "activate_ability(memorial#0)",
+        "score": -30
+      },
+      {
+        "cmd": "concede",
+        "score": null
+      }
+    ]
+  },
+  {
+    "id": "MG-01",
+    "karta": "memorial-to-genius",
+    "wymiar": "T",
+    "wariant": "main2",
+    "stan": "krok=main2 aktywny=p1 priorytet=p1 tura=1\n    życie p1=20 p2=20 | mana p1=5 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false\n    stół p1: memorial:Memorial to Genius, reka-a:Leafcrown Dryad (2/2 reach)\n    stół p2: —\n    ręka p1: — | ręka p2: 0 kart(y)\n    grób p1: 0 | grób p2: 0 | biblioteka p1: 20",
+    "wybrano": "activate_ability(memorial#1)",
+    "score": 8,
+    "alternatywy": [
+      {
+        "cmd": "activate_ability(memorial#1)",
+        "score": 8
+      },
+      {
+        "cmd": "pass_priority",
+        "score": 0
+      },
+      {
+        "cmd": "activate_ability(memorial#0)",
+        "score": -30
+      },
+      {
+        "cmd": "concede",
+        "score": null
+      }
+    ]
+  },
+  {
+    "id": "MG-01",
+    "karta": "memorial-to-genius",
+    "wymiar": "T",
+    "wariant": "end",
+    "stan": "krok=end aktywny=p1 priorytet=p1 tura=1\n    życie p1=20 p2=20 | mana p1=5 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false\n    stół p1: memorial:Memorial to Genius, reka-a:Leafcrown Dryad (2/2 reach)\n    stół p2: —\n    ręka p1: — | ręka p2: 0 kart(y)\n    grób p1: 0 | grób p2: 0 | biblioteka p1: 20",
+    "wybrano": "pass_priority",
+    "score": 0,
+    "alternatywy": [
+      {
+        "cmd": "pass_priority",
+        "score": 0
+      },
+      {
+        "cmd": "activate_ability(memorial#0)",
+        "score": -30
+      },
+      {
+        "cmd": "activate_ability(memorial#1)",
+        "score": -30
+      },
+      {
+        "cmd": "concede",
+        "score": null
+      }
+    ]
+  },
+  {
+    "id": "MG-02",
+    "karta": "memorial-to-genius",
+    "wymiar": "S",
+    "wariant": "manascrew: 5 lądów na stole, w ręce 6-manowy czar",
+    "stan": "krok=main2 aktywny=p1 priorytet=p1 tura=1\n    życie p1=20 p2=20 | mana p1=5 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false\n    stół p1: memorial:Memorial to Genius, land-0:Island, land-1:Island, land-2:Island, land-3:Island\n    stół p2: —\n    ręka p1: reka-0:Grizzled Outcasts (4/4 transform) | ręka p2: 0 kart(y)\n    grób p1: 0 | grób p2: 0 | biblioteka p1: 20",
+    "wybrano": "cast_permanent(reka-0)",
+    "score": 68.4054,
+    "alternatywy": [
+      {
+        "cmd": "cast_permanent(reka-0)",
+        "score": 68.4054
+      },
+      {
+        "cmd": "activate_ability(memorial#1)",
+        "score": 8
+      },
+      {
+        "cmd": "pass_priority",
+        "score": 0
+      },
+      {
+        "cmd": "activate_ability(memorial#0)",
+        "score": -4
+      },
+      {
+        "cmd": "concede",
+        "score": null
+      }
+    ]
+  },
+  {
+    "id": "MG-02",
+    "karta": "memorial-to-genius",
+    "wymiar": "S",
+    "wariant": "flood: 9 lądów, pusta ręka",
+    "stan": "krok=main2 aktywny=p1 priorytet=p1 tura=1\n    życie p1=20 p2=20 | mana p1=5 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false\n    stół p1: memorial:Memorial to Genius, land-0:Island, land-1:Island, land-2:Island, land-3:Island, land-4:Island, land-5:Island, land-6:Island, land-7:Island\n    stół p2: —\n    ręka p1: — | ręka p2: 0 kart(y)\n    grób p1: 0 | grób p2: 0 | biblioteka p1: 20",
+    "wybrano": "activate_ability(memorial#1)",
+    "score": 8,
+    "alternatywy": [
+      {
+        "cmd": "activate_ability(memorial#1)",
+        "score": 8
+      },
+      {
+        "cmd": "pass_priority",
+        "score": 0
+      },
+      {
+        "cmd": "activate_ability(memorial#0)",
+        "score": -30
+      },
+      {
+        "cmd": "concede",
+        "score": null
+      }
+    ]
+  },
+  {
+    "id": "MG-02",
+    "karta": "memorial-to-genius",
+    "wymiar": "S",
+    "wariant": "cienka biblioteka: 3 karty, nadmiar lądów",
+    "stan": "krok=main2 aktywny=p1 priorytet=p1 tura=1\n    życie p1=20 p2=20 | mana p1=5 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false\n    stół p1: memorial:Memorial to Genius, land-0:Island, land-1:Island, land-2:Island, land-3:Island, land-4:Island, land-5:Island, land-6:Island, land-7:Island\n    stół p2: —\n    ręka p1: — | ręka p2: 0 kart(y)\n    grób p1: 0 | grób p2: 0 | biblioteka p1: 20",
+    "wybrano": "activate_ability(memorial#1)",
+    "score": 8,
+    "alternatywy": [
+      {
+        "cmd": "activate_ability(memorial#1)",
+        "score": 8
+      },
+      {
+        "cmd": "pass_priority",
+        "score": 0
+      },
+      {
+        "cmd": "activate_ability(memorial#0)",
+        "score": -30
+      },
+      {
+        "cmd": "concede",
+        "score": null
+      }
+    ]
+  },
+  {
+    "id": "MG-02",
+    "karta": "memorial-to-genius",
+    "wymiar": "S",
+    "wariant": "pusta biblioteka (1 karta)",
+    "stan": "krok=main2 aktywny=p1 priorytet=p1 tura=1\n    życie p1=20 p2=20 | mana p1=5 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false\n    stół p1: memorial:Memorial to Genius, land-0:Island, land-1:Island, land-2:Island, land-3:Island, land-4:Island, land-5:Island, land-6:Island, land-7:Island\n    stół p2: —\n    ręka p1: — | ręka p2: 0 kart(y)\n    grób p1: 0 | grób p2: 0 | biblioteka p1: 20",
+    "wybrano": "activate_ability(memorial#1)",
+    "score": 8,
+    "alternatywy": [
+      {
+        "cmd": "activate_ability(memorial#1)",
+        "score": 8
+      },
+      {
+        "cmd": "pass_priority",
+        "score": 0
+      },
+      {
+        "cmd": "activate_ability(memorial#0)",
+        "score": -30
+      },
+      {
+        "cmd": "concede",
+        "score": null
+      }
+    ]
+  },
+  {
+    "id": "GY-01",
+    "karta": "gylwain-casting-director",
+    "wymiar": "T",
+    "wariant": "mana 3: tylko Gylwain możliwy",
+    "stan": "krok=main1 aktywny=p1 priorytet=p1 tura=1\n    życie p1=20 p2=20 | mana p1=3 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false\n    stół p1: —\n    stół p2: —\n    ręka p1: gylwain-hand:Gylwain, Casting Director (2/3), bears-hand:Leafcrown Dryad (2/2 reach) | ręka p2: 0 kart(y)\n    grób p1: 0 | grób p2: 0 | biblioteka p1: 20",
+    "wybrano": "cast_permanent(bears-hand)",
+    "score": 66.6027,
+    "alternatywy": [
+      {
+        "cmd": "cast_permanent(bears-hand)",
+        "score": 66.6027
+      },
+      {
+        "cmd": "cast_permanent(gylwain-hand)",
+        "score": 64.8018
+      },
+      {
+        "cmd": "pass_priority",
+        "score": 0
+      },
+      {
+        "cmd": "concede",
+        "score": null
+      }
+    ]
+  },
+  {
+    "id": "GY-01",
+    "karta": "gylwain-casting-director",
+    "wymiar": "T",
+    "wariant": "mana 5: Gylwain (3) + Grizzly Bears (2) oba możliwe",
+    "stan": "krok=main1 aktywny=p1 priorytet=p1 tura=1\n    życie p1=20 p2=20 | mana p1=5 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false\n    stół p1: —\n    stół p2: —\n    ręka p1: gylwain-hand:Gylwain, Casting Director (2/3), bears-hand:Leafcrown Dryad (2/2 reach) | ręka p2: 0 kart(y)\n    grób p1: 0 | grób p2: 0 | biblioteka p1: 20",
+    "wybrano": "cast_permanent(bears-hand)",
+    "score": 66.6027,
+    "alternatywy": [
+      {
+        "cmd": "cast_permanent(bears-hand)",
+        "score": 66.6027
+      },
+      {
+        "cmd": "cast_permanent(gylwain-hand)",
+        "score": 64.8018
+      },
+      {
+        "cmd": "pass_priority",
+        "score": 0
+      },
+      {
+        "cmd": "concede",
+        "score": null
+      }
+    ]
+  },
+  {
+    "id": "GY-01",
+    "karta": "gylwain-casting-director",
+    "wymiar": "T",
+    "wariant": "mana 5, ale Grizzly Bears jest w ręce i Gylwain też",
+    "stan": "krok=main1 aktywny=p1 priorytet=p1 tura=1\n    życie p1=20 p2=20 | mana p1=5 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false\n    stół p1: —\n    stół p2: —\n    ręka p1: gylwain-hand:Gylwain, Casting Director (2/3) | ręka p2: 0 kart(y)\n    grób p1: 0 | grób p2: 0 | biblioteka p1: 20",
+    "wybrano": "cast_permanent(gylwain-hand)",
+    "score": 64.8018,
+    "alternatywy": [
+      {
+        "cmd": "cast_permanent(gylwain-hand)",
+        "score": 64.8018
+      },
+      {
+        "cmd": "pass_priority",
+        "score": 0
+      },
+      {
+        "cmd": "concede",
+        "score": null
+      }
+    ]
+  },
+  {
+    "id": "GY-02",
+    "karta": "gylwain-casting-director",
+    "wymiar": "C",
+    "wariant": "host 2/2, wróg ma 2/2 (chump-block możliwy)",
+    "stan": "krok=main1 aktywny=p1 priorytet=p1 tura=1\n    życie p1=20 p2=20 | mana p1=3 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false\n    stół p1: host:Leafcrown Dryad (2/2 reach)\n    stół p2: wrog-2-2:Leafcrown Dryad (2/2 reach)\n    ręka p1: gylwain-hand:Gylwain, Casting Director (2/3) | ręka p2: 0 kart(y)\n    grób p1: 0 | grób p2: 0 | biblioteka p1: 20",
+    "wybrano": "cast_permanent(gylwain-hand)",
+    "score": 64.8018,
+    "alternatywy": [
+      {
+        "cmd": "cast_permanent(gylwain-hand)",
+        "score": 64.8018
+      },
+      {
+        "cmd": "pass_priority",
+        "score": 0
+      },
+      {
+        "cmd": "concede",
+        "score": null
+      }
+    ],
+    "przebieg": [
+      {
+        "krok": 1,
+        "cmd": "cast_permanent(gylwain-hand)",
+        "score": 64.8018,
+        "ok": true,
+        "powod": null
+      },
+      {
+        "krok": "stos-1",
+        "cmd": "pass_priority",
+        "score": 0,
+        "ok": true,
+        "powod": null
+      },
+      {
+        "krok": "stos-3",
+        "cmd": "resolve_modal_choice{modeIndex:2}",
+        "score": 16.3,
+        "ok": true,
+        "powod": null,
+        "galezie": [
+          "resolve_modal_choice{modeIndex:0}",
+          "resolve_modal_choice{modeIndex:1}",
+          "resolve_modal_choice{modeIndex:2}"
+        ],
+        "scoreOpcji": [
+          "16.30",
+          "15.95",
+          "15.20"
+        ]
+      },
+      {
+        "krok": "stos-4",
+        "cmd": "pass_priority",
+        "score": 0,
+        "ok": true,
+        "powod": null,
+        "nastepnie": "pass_priority"
+      }
+    ],
+    "stanPo": "krok=main1 aktywny=p1 priorytet=p1 tura=1\n    życie p1=20 p2=20 | mana p1=0 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false\n    stół p1: host:Leafcrown Dryad (2/2 reach), permanent-1:Gylwain, Casting Director (chory 3/4 załączone: Monster Role), token-3:Monster Role (chory)\n    stół p2: wrog-2-2:Leafcrown Dryad (2/2 reach)\n    ręka p1: — | ręka p2: 0 kart(y)\n    grób p1: 0 | grób p2: 0 | biblioteka p1: 20"
+  },
+  {
+    "id": "GY-02",
+    "karta": "gylwain-casting-director",
+    "wymiar": "C",
+    "wariant": "host 4/4, wróg ma 3x 1/1 (chump-block pewny → Monster)",
+    "stan": "krok=main1 aktywny=p1 priorytet=p1 tura=1\n    życie p1=20 p2=20 | mana p1=3 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false\n    stół p1: host:Grizzled Outcasts (4/4 transform)\n    stół p2: chump-0:Soulmender (1/1), chump-1:Soulmender (1/1), chump-2:Soulmender (1/1)\n    ręka p1: gylwain-hand:Gylwain, Casting Director (2/3) | ręka p2: 0 kart(y)\n    grób p1: 0 | grób p2: 0 | biblioteka p1: 20",
+    "wybrano": "cast_permanent(gylwain-hand)",
+    "score": 68.4018,
+    "alternatywy": [
+      {
+        "cmd": "cast_permanent(gylwain-hand)",
+        "score": 68.4018
+      },
+      {
+        "cmd": "pass_priority",
+        "score": 0
+      },
+      {
+        "cmd": "concede",
+        "score": null
+      }
+    ],
+    "przebieg": [
+      {
+        "krok": 1,
+        "cmd": "cast_permanent(gylwain-hand)",
+        "score": 68.4018,
+        "ok": true,
+        "powod": null
+      },
+      {
+        "krok": "stos-1",
+        "cmd": "pass_priority",
+        "score": 0,
+        "ok": true,
+        "powod": null
+      },
+      {
+        "krok": "stos-3",
+        "cmd": "resolve_modal_choice{modeIndex:2}",
+        "score": 16.3,
+        "ok": true,
+        "powod": null,
+        "galezie": [
+          "resolve_modal_choice{modeIndex:0}",
+          "resolve_modal_choice{modeIndex:1}",
+          "resolve_modal_choice{modeIndex:2}"
+        ],
+        "scoreOpcji": [
+          "16.30",
+          "15.95",
+          "15.20"
+        ]
+      },
+      {
+        "krok": "stos-4",
+        "cmd": "pass_priority",
+        "score": 0,
+        "ok": true,
+        "powod": null,
+        "nastepnie": "pass_priority"
+      }
+    ],
+    "stanPo": "krok=main1 aktywny=p1 priorytet=p1 tura=1\n    życie p1=20 p2=20 | mana p1=0 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false\n    stół p1: host:Grizzled Outcasts (4/4 transform), permanent-1:Gylwain, Casting Director (chory 3/4 załączone: Monster Role), token-3:Monster Role (chory)\n    stół p2: chump-0:Soulmender (1/1), chump-1:Soulmender (1/1), chump-2:Soulmender (1/1)\n    ręka p1: — | ręka p2: 0 kart(y)\n    grób p1: 0 | grób p2: 0 | biblioteka p1: 20"
+  },
+  {
+    "id": "GY-02",
+    "karta": "gylwain-casting-director",
+    "wymiar": "C",
+    "wariant": "host 2/2, pusta ręka (Sorcerer = scry pomocny)",
+    "stan": "krok=main1 aktywny=p1 priorytet=p1 tura=1\n    życie p1=20 p2=20 | mana p1=3 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false\n    stół p1: host:Leafcrown Dryad (2/2 reach)\n    stół p2: —\n    ręka p1: gylwain-hand:Gylwain, Casting Director (2/3) | ręka p2: 0 kart(y)\n    grób p1: 0 | grób p2: 0 | biblioteka p1: 20",
+    "wybrano": "cast_permanent(gylwain-hand)",
+    "score": 64.8018,
+    "alternatywy": [
+      {
+        "cmd": "cast_permanent(gylwain-hand)",
+        "score": 64.8018
+      },
+      {
+        "cmd": "pass_priority",
+        "score": 0
+      },
+      {
+        "cmd": "concede",
+        "score": null
+      }
+    ],
+    "przebieg": [
+      {
+        "krok": 1,
+        "cmd": "cast_permanent(gylwain-hand)",
+        "score": 64.8018,
+        "ok": true,
+        "powod": null
+      },
+      {
+        "krok": "stos-1",
+        "cmd": "pass_priority",
+        "score": 0,
+        "ok": true,
+        "powod": null
+      },
+      {
+        "krok": "stos-3",
+        "cmd": "resolve_modal_choice{modeIndex:0}",
+        "score": 15.95,
+        "ok": true,
+        "powod": null,
+        "galezie": [
+          "resolve_modal_choice{modeIndex:0}",
+          "resolve_modal_choice{modeIndex:1}",
+          "resolve_modal_choice{modeIndex:2}"
+        ],
+        "scoreOpcji": [
+          "15.95",
+          "15.20",
+          "14.70"
+        ]
+      },
+      {
+        "krok": "stos-4",
+        "cmd": "pass_priority",
+        "score": 0,
+        "ok": true,
+        "powod": null,
+        "nastepnie": "pass_priority"
+      }
+    ],
+    "stanPo": "krok=main1 aktywny=p1 priorytet=p1 tura=1\n    życie p1=20 p2=20 | mana p1=0 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false\n    stół p1: host:Leafcrown Dryad (2/2 reach), permanent-1:Gylwain, Casting Director (chory 3/4 załączone: Royal Role), token-3:Royal Role (chory)\n    stół p2: —\n    ręka p1: — | ręka p2: 0 kart(y)\n    grób p1: 0 | grób p2: 0 | biblioteka p1: 20"
+  },
+  {
+    "id": "LH-01",
+    "karta": "lambholt-harrier",
+    "wymiar": "T",
+    "wariant": "upkeep",
+    "stan": "krok=upkeep aktywny=p1 priorytet=p1 tura=1\n    życie p1=20 p2=20 | mana p1=4 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false\n    stół p1: harrier:Lambholt Harrier (2/2), nasz-atak:Grizzled Outcasts (4/4 transform)\n    stół p2: bloker:Leafcrown Dryad (2/2 reach)\n    ręka p1: — | ręka p2: 0 kart(y)\n    grób p1: 0 | grób p2: 0 | biblioteka p1: 20",
+    "wybrano": "pass_priority",
+    "score": 0,
+    "alternatywy": [
+      {
+        "cmd": "pass_priority",
+        "score": 0
+      },
+      {
+        "cmd": "activate_ability(harrier#0->harrier)",
+        "score": -5
+      },
+      {
+        "cmd": "activate_ability(harrier#0->nasz-atak)",
+        "score": -5
+      },
+      {
+        "cmd": "activate_ability(harrier#0->bloker)",
+        "score": -5
+      },
+      {
+        "cmd": "concede",
+        "score": null
+      }
+    ]
+  },
+  {
+    "id": "LH-01",
+    "karta": "lambholt-harrier",
+    "wymiar": "T",
+    "wariant": "draw",
+    "stan": "krok=draw aktywny=p1 priorytet=p1 tura=1\n    życie p1=20 p2=20 | mana p1=4 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false\n    stół p1: harrier:Lambholt Harrier (2/2), nasz-atak:Grizzled Outcasts (4/4 transform)\n    stół p2: bloker:Leafcrown Dryad (2/2 reach)\n    ręka p1: — | ręka p2: 0 kart(y)\n    grób p1: 0 | grób p2: 0 | biblioteka p1: 20",
+    "wybrano": "pass_priority",
+    "score": 0,
+    "alternatywy": [
+      {
+        "cmd": "pass_priority",
+        "score": 0
+      },
+      {
+        "cmd": "activate_ability(harrier#0->harrier)",
+        "score": -5
+      },
+      {
+        "cmd": "activate_ability(harrier#0->nasz-atak)",
+        "score": -5
+      },
+      {
+        "cmd": "activate_ability(harrier#0->bloker)",
+        "score": -5
+      },
+      {
+        "cmd": "concede",
+        "score": null
+      }
+    ]
+  },
+  {
+    "id": "LH-01",
+    "karta": "lambholt-harrier",
+    "wymiar": "T",
+    "wariant": "main1",
+    "stan": "krok=main1 aktywny=p1 priorytet=p1 tura=1\n    życie p1=20 p2=20 | mana p1=4 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false\n    stół p1: harrier:Lambholt Harrier (2/2), nasz-atak:Grizzled Outcasts (4/4 transform)\n    stół p2: bloker:Leafcrown Dryad (2/2 reach)\n    ręka p1: — | ręka p2: 0 kart(y)\n    grób p1: 0 | grób p2: 0 | biblioteka p1: 20",
+    "wybrano": "activate_ability(harrier#0->bloker)",
+    "score": 2,
+    "alternatywy": [
+      {
+        "cmd": "activate_ability(harrier#0->bloker)",
+        "score": 2
+      },
+      {
+        "cmd": "pass_priority",
+        "score": 0
+      },
+      {
+        "cmd": "activate_ability(harrier#0->harrier)",
+        "score": -22
+      },
+      {
+        "cmd": "activate_ability(harrier#0->nasz-atak)",
+        "score": -22
+      },
+      {
+        "cmd": "concede",
+        "score": null
+      }
+    ]
+  },
+  {
+    "id": "LH-01",
+    "karta": "lambholt-harrier",
+    "wymiar": "T",
+    "wariant": "beginning_of_combat",
+    "stan": "krok=beginning_of_combat aktywny=p1 priorytet=p1 tura=1\n    życie p1=20 p2=20 | mana p1=4 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false\n    stół p1: harrier:Lambholt Harrier (2/2), nasz-atak:Grizzled Outcasts (4/4 transform)\n    stół p2: bloker:Leafcrown Dryad (2/2 reach)\n    ręka p1: — | ręka p2: 0 kart(y)\n    grób p1: 0 | grób p2: 0 | biblioteka p1: 20",
+    "wybrano": "activate_ability(harrier#0->bloker)",
+    "score": 2,
+    "alternatywy": [
+      {
+        "cmd": "activate_ability(harrier#0->bloker)",
+        "score": 2
+      },
+      {
+        "cmd": "pass_priority",
+        "score": 0
+      },
+      {
+        "cmd": "activate_ability(harrier#0->harrier)",
+        "score": -22
+      },
+      {
+        "cmd": "activate_ability(harrier#0->nasz-atak)",
+        "score": -22
+      },
+      {
+        "cmd": "concede",
+        "score": null
+      }
+    ]
+  },
+  {
+    "id": "LH-01",
+    "karta": "lambholt-harrier",
+    "wymiar": "T",
+    "wariant": "declare_attackers",
+    "stan": "krok=declare_attackers aktywny=p1 priorytet=p1 tura=1\n    życie p1=20 p2=20 | mana p1=4 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false\n    stół p1: harrier:Lambholt Harrier (2/2), nasz-atak:Grizzled Outcasts (4/4 transform)\n    stół p2: bloker:Leafcrown Dryad (2/2 reach)\n    ręka p1: — | ręka p2: 0 kart(y)\n    grób p1: 0 | grób p2: 0 | biblioteka p1: 20",
+    "wybrano": "attack[harrier,nasz-atak]",
+    "score": 12,
+    "alternatywy": [
+      {
+        "cmd": "attack[harrier,nasz-atak]",
+        "score": 12
+      },
+      {
+        "cmd": "attack[nasz-atak]",
+        "score": 7
+      },
+      {
+        "cmd": "attack[harrier]",
+        "score": 1
+      },
+      {
+        "cmd": "attack[]",
+        "score": 0
+      },
+      {
+        "cmd": "pass_priority",
+        "score": 0
+      }
+    ]
+  },
+  {
+    "id": "LH-01",
+    "karta": "lambholt-harrier",
+    "wymiar": "T",
+    "wariant": "declare_blockers",
+    "stan": "krok=declare_blockers aktywny=p1 priorytet=p1 tura=1\n    życie p1=20 p2=20 | mana p1=4 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false\n    stół p1: harrier:Lambholt Harrier (2/2), nasz-atak:Grizzled Outcasts (4/4 transform)\n    stół p2: bloker:Leafcrown Dryad (2/2 reach)\n    ręka p1: — | ręka p2: 0 kart(y)\n    grób p1: 0 | grób p2: 0 | biblioteka p1: 20",
+    "wybrano": "pass_priority",
+    "score": 0,
+    "alternatywy": [
+      {
+        "cmd": "pass_priority",
+        "score": 0
+      },
+      {
+        "cmd": "activate_ability(harrier#0->harrier)",
+        "score": -22
+      },
+      {
+        "cmd": "activate_ability(harrier#0->nasz-atak)",
+        "score": -22
+      },
+      {
+        "cmd": "activate_ability(harrier#0->bloker)",
+        "score": -22
+      },
+      {
+        "cmd": "concede",
+        "score": null
+      }
+    ]
+  },
+  {
+    "id": "LH-01",
+    "karta": "lambholt-harrier",
+    "wymiar": "T",
+    "wariant": "combat_damage",
+    "stan": "krok=combat_damage aktywny=p1 priorytet=p1 tura=1\n    życie p1=20 p2=20 | mana p1=4 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false\n    stół p1: harrier:Lambholt Harrier (2/2), nasz-atak:Grizzled Outcasts (4/4 transform)\n    stół p2: bloker:Leafcrown Dryad (2/2 reach)\n    ręka p1: — | ręka p2: 0 kart(y)\n    grób p1: 0 | grób p2: 0 | biblioteka p1: 20",
+    "wybrano": "pass_priority",
+    "score": 0,
+    "alternatywy": [
+      {
+        "cmd": "pass_priority",
+        "score": 0
+      },
+      {
+        "cmd": "activate_ability(harrier#0->harrier)",
+        "score": -22
+      },
+      {
+        "cmd": "activate_ability(harrier#0->nasz-atak)",
+        "score": -22
+      },
+      {
+        "cmd": "activate_ability(harrier#0->bloker)",
+        "score": -22
+      },
+      {
+        "cmd": "concede",
+        "score": null
+      }
+    ]
+  },
+  {
+    "id": "LH-01",
+    "karta": "lambholt-harrier",
+    "wymiar": "T",
+    "wariant": "end_of_combat",
+    "stan": "krok=end_of_combat aktywny=p1 priorytet=p1 tura=1\n    życie p1=20 p2=20 | mana p1=4 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false\n    stół p1: harrier:Lambholt Harrier (2/2), nasz-atak:Grizzled Outcasts (4/4 transform)\n    stół p2: bloker:Leafcrown Dryad (2/2 reach)\n    ręka p1: — | ręka p2: 0 kart(y)\n    grób p1: 0 | grób p2: 0 | biblioteka p1: 20",
+    "wybrano": "pass_priority",
+    "score": 0,
+    "alternatywy": [
+      {
+        "cmd": "pass_priority",
+        "score": 0
+      },
+      {
+        "cmd": "activate_ability(harrier#0->harrier)",
+        "score": -22
+      },
+      {
+        "cmd": "activate_ability(harrier#0->nasz-atak)",
+        "score": -22
+      },
+      {
+        "cmd": "activate_ability(harrier#0->bloker)",
+        "score": -22
+      },
+      {
+        "cmd": "concede",
+        "score": null
+      }
+    ]
+  },
+  {
+    "id": "LH-01",
+    "karta": "lambholt-harrier",
+    "wymiar": "T",
+    "wariant": "main2",
+    "stan": "krok=main2 aktywny=p1 priorytet=p1 tura=1\n    życie p1=20 p2=20 | mana p1=4 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false\n    stół p1: harrier:Lambholt Harrier (2/2), nasz-atak:Grizzled Outcasts (4/4 transform)\n    stół p2: bloker:Leafcrown Dryad (2/2 reach)\n    ręka p1: — | ręka p2: 0 kart(y)\n    grób p1: 0 | grób p2: 0 | biblioteka p1: 20",
+    "wybrano": "pass_priority",
+    "score": 0,
+    "alternatywy": [
+      {
+        "cmd": "pass_priority",
+        "score": 0
+      },
+      {
+        "cmd": "activate_ability(harrier#0->harrier)",
+        "score": -22
+      },
+      {
+        "cmd": "activate_ability(harrier#0->nasz-atak)",
+        "score": -22
+      },
+      {
+        "cmd": "activate_ability(harrier#0->bloker)",
+        "score": -22
+      },
+      {
+        "cmd": "concede",
+        "score": null
+      }
+    ]
+  },
+  {
+    "id": "LH-01",
+    "karta": "lambholt-harrier",
+    "wymiar": "T",
+    "wariant": "end",
+    "stan": "krok=end aktywny=p1 priorytet=p1 tura=1\n    życie p1=20 p2=20 | mana p1=4 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false\n    stół p1: harrier:Lambholt Harrier (2/2), nasz-atak:Grizzled Outcasts (4/4 transform)\n    stół p2: bloker:Leafcrown Dryad (2/2 reach)\n    ręka p1: — | ręka p2: 0 kart(y)\n    grób p1: 0 | grób p2: 0 | biblioteka p1: 20",
+    "wybrano": "pass_priority",
+    "score": 0,
+    "alternatywy": [
+      {
+        "cmd": "pass_priority",
+        "score": 0
+      },
+      {
+        "cmd": "activate_ability(harrier#0->harrier)",
+        "score": -5
+      },
+      {
+        "cmd": "activate_ability(harrier#0->nasz-atak)",
+        "score": -5
+      },
+      {
+        "cmd": "activate_ability(harrier#0->bloker)",
+        "score": -5
+      },
+      {
+        "cmd": "concede",
+        "score": null
+      }
+    ]
+  },
+  {
+    "id": "LH-02",
+    "karta": "lambholt-harrier",
+    "wymiar": "C",
+    "wariant": "odkręcony 4/4 + tapnięty 4/4 (kogo wybiera?)",
+    "stan": "krok=main1 aktywny=p1 priorytet=p1 tura=1\n    życie p1=20 p2=20 | mana p1=4 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false\n    stół p1: harrier:Lambholt Harrier (2/2), nasz-4-4:Grizzled Outcasts (4/4 transform)\n    stół p2: odk:Grizzled Outcasts (4/4 transform), tap:Grizzled Outcasts (TAP 4/4 transform)\n    ręka p1: — | ręka p2: 0 kart(y)\n    grób p1: 0 | grób p2: 0 | biblioteka p1: 20",
+    "wybrano": "activate_ability(harrier#0->odk)",
+    "score": 8,
+    "alternatywy": [
+      {
+        "cmd": "activate_ability(harrier#0->odk)",
+        "score": 8
+      },
+      {
+        "cmd": "pass_priority",
+        "score": 0
+      },
+      {
+        "cmd": "activate_ability(harrier#0->harrier)",
+        "score": -22
+      },
+      {
+        "cmd": "activate_ability(harrier#0->nasz-4-4)",
+        "score": -22
+      },
+      {
+        "cmd": "activate_ability(harrier#0->tap)",
+        "score": -22
+      }
+    ]
+  },
+  {
+    "id": "LH-02",
+    "karta": "lambholt-harrier",
+    "wymiar": "C",
+    "wariant": "tylko tapnięty 4/4",
+    "stan": "krok=main1 aktywny=p1 priorytet=p1 tura=1\n    życie p1=20 p2=20 | mana p1=4 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false\n    stół p1: harrier:Lambholt Harrier (2/2), nasz-4-4:Grizzled Outcasts (4/4 transform)\n    stół p2: tap:Grizzled Outcasts (TAP 4/4 transform)\n    ręka p1: — | ręka p2: 0 kart(y)\n    grób p1: 0 | grób p2: 0 | biblioteka p1: 20",
+    "wybrano": "pass_priority",
+    "score": 0,
+    "alternatywy": [
+      {
+        "cmd": "pass_priority",
+        "score": 0
+      },
+      {
+        "cmd": "activate_ability(harrier#0->harrier)",
+        "score": -22
+      },
+      {
+        "cmd": "activate_ability(harrier#0->nasz-4-4)",
+        "score": -22
+      },
+      {
+        "cmd": "activate_ability(harrier#0->tap)",
+        "score": -22
+      },
+      {
+        "cmd": "concede",
+        "score": null
+      }
+    ]
+  },
+  {
+    "id": "LH-02",
+    "karta": "lambholt-harrier",
+    "wymiar": "C",
+    "wariant": "tylko własny 4/4 na stole (brak legalnego wrogiego blokera? są — własne stwory SĄ legalnym celem cant_block!)",
+    "stan": "krok=main1 aktywny=p1 priorytet=p1 tura=1\n    życie p1=20 p2=20 | mana p1=4 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false\n    stół p1: harrier:Lambholt Harrier (2/2), nasz-4-4:Grizzled Outcasts (4/4 transform)\n    stół p2: —\n    ręka p1: — | ręka p2: 0 kart(y)\n    grób p1: 0 | grób p2: 0 | biblioteka p1: 20",
+    "wybrano": "pass_priority",
+    "score": 0,
+    "alternatywy": [
+      {
+        "cmd": "pass_priority",
+        "score": 0
+      },
+      {
+        "cmd": "activate_ability(harrier#0->harrier)",
+        "score": -22
+      },
+      {
+        "cmd": "activate_ability(harrier#0->nasz-4-4)",
+        "score": -22
+      },
+      {
+        "cmd": "concede",
+        "score": null
+      }
+    ]
+  },
+  {
+    "id": "AS-01",
+    "karta": "arrow-storm",
+    "wymiar": "T",
+    "wariant": "main1, attackedThisTurn = false, cel 5/5 (Shock 4 nie zabija)",
+    "stan": "krok=main1 aktywny=p1 priorytet=p1 tura=1\n    życie p1=20 p2=20 | mana p1=5 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false\n    stół p1: atakujacy:Grizzled Outcasts (4/4 transform)\n    stół p2: cel-5-5:Gloomfang Mauler (5/5 menace)\n    ręka p1: storm-hand:Arrow Storm | ręka p2: 0 kart(y)\n    grób p1: 0 | grób p2: 0 | biblioteka p1: 20",
+    "wybrano": "cast_spell(storm-hand->p2)",
+    "score": 13,
+    "alternatywy": [
+      {
+        "cmd": "cast_spell(storm-hand->p2)",
+        "score": 13
+      },
+      {
+        "cmd": "pass_priority",
+        "score": 0
+      },
+      {
+        "cmd": "cast_spell(storm-hand->cel-5-5)",
+        "score": -81
+      },
+      {
+        "cmd": "cast_spell(storm-hand->p1)",
+        "score": -117
+      },
+      {
+        "cmd": "cast_spell(storm-hand->atakujacy)",
+        "score": -159
+      }
+    ]
+  },
+  {
+    "id": "AS-01",
+    "karta": "arrow-storm",
+    "wymiar": "T",
+    "wariant": "main2, attackedThisTurn = true, ten sam cel 5/5",
+    "stan": "krok=main2 aktywny=p1 priorytet=p1 tura=1\n    życie p1=20 p2=20 | mana p1=5 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false\n    stół p1: atakujacy:Grizzled Outcasts (TAP 4/4 transform)\n    stół p2: cel-5-5:Gloomfang Mauler (5/5 menace)\n    ręka p1: storm-hand:Arrow Storm | ręka p2: 0 kart(y)\n    grób p1: 0 | grób p2: 0 | biblioteka p1: 20",
+    "wybrano": "cast_spell(storm-hand->cel-5-5)",
+    "score": 55,
+    "alternatywy": [
+      {
+        "cmd": "cast_spell(storm-hand->cel-5-5)",
+        "score": 55
+      },
+      {
+        "cmd": "cast_spell(storm-hand->p2)",
+        "score": 15
+      },
+      {
+        "cmd": "pass_priority",
+        "score": 0
+      },
+      {
+        "cmd": "cast_spell(storm-hand->p1)",
+        "score": -119
+      },
+      {
+        "cmd": "cast_spell(storm-hand->atakujacy)",
+        "score": -159
+      }
+    ]
+  },
+  {
+    "id": "AS-02",
+    "karta": "arrow-storm",
+    "wymiar": "C",
+    "wariant": "wróg 5 życia + stwór 5/5 + token 1/1 (Raid)",
+    "stan": "krok=main2 aktywny=p1 priorytet=p1 tura=1\n    życie p1=20 p2=5 | mana p1=5 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false\n    stół p1: atakujacy:Grizzled Outcasts (TAP 4/4 transform)\n    stół p2: token-1-1:Soulmender (1/1), cel-5-5:Gloomfang Mauler (5/5 menace)\n    ręka p1: storm-hand:Arrow Storm | ręka p2: 0 kart(y)\n    grób p1: 0 | grób p2: 0 | biblioteka p1: 20",
+    "wybrano": "cast_spell(storm-hand->p2)",
+    "score": 999,
+    "alternatywy": [
+      {
+        "cmd": "cast_spell(storm-hand->p2)",
+        "score": 999
+      },
+      {
+        "cmd": "cast_spell(storm-hand->cel-5-5)",
+        "score": 55
+      },
+      {
+        "cmd": "cast_spell(storm-hand->token-1-1)",
+        "score": 27
+      },
+      {
+        "cmd": "pass_priority",
+        "score": 0
+      },
+      {
+        "cmd": "cast_spell(storm-hand->p1)",
+        "score": -119
+      }
+    ]
+  },
+  {
+    "id": "AS-02",
+    "karta": "arrow-storm",
+    "wymiar": "C",
+    "wariant": "wróg 20 życia + stwór 5/5 + token 1/1 (Raid)",
+    "stan": "krok=main2 aktywny=p1 priorytet=p1 tura=1\n    życie p1=20 p2=20 | mana p1=5 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false\n    stół p1: atakujacy:Grizzled Outcasts (TAP 4/4 transform)\n    stół p2: token-1-1:Soulmender (1/1), cel-5-5:Gloomfang Mauler (5/5 menace)\n    ręka p1: storm-hand:Arrow Storm | ręka p2: 0 kart(y)\n    grób p1: 0 | grób p2: 0 | biblioteka p1: 20",
+    "wybrano": "cast_spell(storm-hand->cel-5-5)",
+    "score": 55,
+    "alternatywy": [
+      {
+        "cmd": "cast_spell(storm-hand->cel-5-5)",
+        "score": 55
+      },
+      {
+        "cmd": "cast_spell(storm-hand->token-1-1)",
+        "score": 27
+      },
+      {
+        "cmd": "cast_spell(storm-hand->p2)",
+        "score": 15
+      },
+      {
+        "cmd": "pass_priority",
+        "score": 0
+      },
+      {
+        "cmd": "cast_spell(storm-hand->p1)",
+        "score": -119
+      }
+    ]
+  },
+  {
+    "id": "AS-02",
+    "karta": "arrow-storm",
+    "wymiar": "C",
+    "wariant": "wróg 20 życia, tylko token 1/1 (Raid)",
+    "stan": "krok=main2 aktywny=p1 priorytet=p1 tura=1\n    życie p1=20 p2=20 | mana p1=5 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false\n    stół p1: atakujacy:Grizzled Outcasts (TAP 4/4 transform)\n    stół p2: token-1-1:Soulmender (1/1)\n    ręka p1: storm-hand:Arrow Storm | ręka p2: 0 kart(y)\n    grób p1: 0 | grób p2: 0 | biblioteka p1: 20",
+    "wybrano": "cast_spell(storm-hand->token-1-1)",
+    "score": 27,
+    "alternatywy": [
+      {
+        "cmd": "cast_spell(storm-hand->token-1-1)",
+        "score": 27
+      },
+      {
+        "cmd": "cast_spell(storm-hand->p2)",
+        "score": 15
+      },
+      {
+        "cmd": "pass_priority",
+        "score": 0
+      },
+      {
+        "cmd": "cast_spell(storm-hand->p1)",
+        "score": -119
+      },
+      {
+        "cmd": "cast_spell(storm-hand->atakujacy)",
+        "score": -159
+      }
+    ]
+  },
+  {
+    "id": "LP-01",
+    "karta": "loxodon-partisan",
+    "wymiar": "T",
+    "wariant": "tylko Partisan na stole",
+    "stan": "krok=declare_attackers aktywny=p1 priorytet=p1 tura=1\n    życie p1=20 p2=20 | mana p1=0 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false\n    stół p1: partisan:Loxodon Partisan (3/4 battle_cry)\n    stół p2: —\n    ręka p1: — | ręka p2: 0 kart(y)\n    grób p1: 0 | grób p2: 0 | biblioteka p1: 20",
+    "wybrano": "attack[partisan]",
+    "score": 14,
+    "alternatywy": [
+      {
+        "cmd": "attack[partisan]",
+        "score": 14
+      },
+      {
+        "cmd": "attack[]",
+        "score": 0
+      },
+      {
+        "cmd": "pass_priority",
+        "score": 0
+      },
+      {
+        "cmd": "concede",
+        "score": null
+      }
+    ]
+  },
+  {
+    "id": "LP-01",
+    "karta": "loxodon-partisan",
+    "wymiar": "T",
+    "wariant": "Partisan + Grizzly Bears 2/2 (battle cry → 3/2)",
+    "stan": "krok=declare_attackers aktywny=p1 priorytet=p1 tura=1\n    życie p1=20 p2=20 | mana p1=0 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false\n    stół p1: partisan:Loxodon Partisan (3/4 battle_cry), kolega:Leafcrown Dryad (2/2 reach)\n    stół p2: —\n    ręka p1: — | ręka p2: 0 kart(y)\n    grób p1: 0 | grób p2: 0 | biblioteka p1: 20",
+    "wybrano": "attack[partisan,kolega]",
+    "score": 20,
+    "alternatywy": [
+      {
+        "cmd": "attack[partisan,kolega]",
+        "score": 20
+      },
+      {
+        "cmd": "attack[partisan]",
+        "score": 14
+      },
+      {
+        "cmd": "attack[kolega]",
+        "score": 13
+      },
+      {
+        "cmd": "attack[]",
+        "score": 0
+      },
+      {
+        "cmd": "pass_priority",
+        "score": 0
+      }
+    ]
+  },
+  {
+    "id": "LP-01",
+    "karta": "loxodon-partisan",
+    "wymiar": "T",
+    "wariant": "Partisan + dwa 1/1 tokeny (battle cry → 2/1 każdy)",
+    "stan": "krok=declare_attackers aktywny=p1 priorytet=p1 tura=1\n    życie p1=20 p2=20 | mana p1=0 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false\n    stół p1: partisan:Loxodon Partisan (3/4 battle_cry), tok-0:Soulmender (1/1), tok-1:Soulmender (1/1)\n    stół p2: —\n    ręka p1: — | ręka p2: 0 kart(y)\n    grób p1: 0 | grób p2: 0 | biblioteka p1: 20",
+    "wybrano": "attack[partisan,tok-0,tok-1]",
+    "score": 24,
+    "alternatywy": [
+      {
+        "cmd": "attack[partisan,tok-0,tok-1]",
+        "score": 24
+      },
+      {
+        "cmd": "attack[partisan,tok-1]",
+        "score": 19
+      },
+      {
+        "cmd": "attack[partisan,tok-0]",
+        "score": 19
+      },
+      {
+        "cmd": "attack[tok-0,tok-1]",
+        "score": 16
+      },
+      {
+        "cmd": "attack[partisan]",
+        "score": 14
+      }
+    ]
+  },
+  {
+    "id": "LP-02",
+    "karta": "loxodon-partisan",
+    "wymiar": "S",
+    "wariant": "pusty stół + Partisan w ręce vs Serra Angel (5 many)",
+    "stan": "krok=main1 aktywny=p1 priorytet=p1 tura=1\n    życie p1=20 p2=20 | mana p1=5 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false\n    stół p1: —\n    stół p2: —\n    ręka p1: partisan-hand:Loxodon Partisan (3/4 battle_cry), angel-hand:Gloomfang Mauler (5/5 menace) | ręka p2: 0 kart(y)\n    grób p1: 0 | grób p2: 0 | biblioteka p1: 20",
+    "wybrano": "cast_permanent(partisan-hand)",
+    "score": 66.6036,
+    "alternatywy": [
+      {
+        "cmd": "cast_permanent(partisan-hand)",
+        "score": 66.6036
+      },
+      {
+        "cmd": "activate_ability(angel-hand#0)",
+        "score": 33
+      },
+      {
+        "cmd": "pass_priority",
+        "score": 0
+      },
+      {
+        "cmd": "concede",
+        "score": null
+      }
+    ]
+  },
+  {
+    "id": "LP-02",
+    "karta": "loxodon-partisan",
+    "wymiar": "S",
+    "wariant": "2 stwory na stole + Partisan w ręce vs Serra Angel",
+    "stan": "krok=main1 aktywny=p1 priorytet=p1 tura=1\n    życie p1=20 p2=20 | mana p1=5 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false\n    stół p1: nasz-0:Leafcrown Dryad (2/2 reach), nasz-1:Soulmender (1/1)\n    stół p2: —\n    ręka p1: partisan-hand:Loxodon Partisan (3/4 battle_cry), angel-hand:Gloomfang Mauler (5/5 menace) | ręka p2: 0 kart(y)\n    grób p1: 0 | grób p2: 0 | biblioteka p1: 20",
+    "wybrano": "cast_permanent(partisan-hand)",
+    "score": 66.6036,
+    "alternatywy": [
+      {
+        "cmd": "cast_permanent(partisan-hand)",
+        "score": 66.6036
+      },
+      {
+        "cmd": "activate_ability(angel-hand#0)",
+        "score": 33
+      },
+      {
+        "cmd": "activate_ability(nasz-1#0)",
+        "score": 3
+      },
+      {
+        "cmd": "pass_priority",
+        "score": 0
+      },
+      {
+        "cmd": "concede",
+        "score": null
+      }
+    ]
+  },
+  {
+    "id": "TB-01",
+    "karta": "temur-banner",
+    "wymiar": "T",
+    "wariant": "upkeep",
+    "stan": "krok=upkeep aktywny=p1 priorytet=p1 tura=1\n    życie p1=20 p2=20 | mana p1=3 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false\n    stół p1: banner:Temur Banner, land-0:Forest, land-1:Island, land-2:Mountain\n    stół p2: —\n    ręka p1: — | ręka p2: 0 kart(y)\n    grób p1: 0 | grób p2: 0 | biblioteka p1: 20",
+    "wybrano": "pass_priority",
+    "score": 0,
+    "alternatywy": [
+      {
+        "cmd": "pass_priority",
+        "score": 0
+      },
+      {
+        "cmd": "activate_ability(banner#0)",
+        "score": -30
+      },
+      {
+        "cmd": "activate_ability(banner#1)",
+        "score": -30
+      },
+      {
+        "cmd": "concede",
+        "score": null
+      }
+    ]
+  },
+  {
+    "id": "TB-01",
+    "karta": "temur-banner",
+    "wymiar": "T",
+    "wariant": "draw",
+    "stan": "krok=draw aktywny=p1 priorytet=p1 tura=1\n    życie p1=20 p2=20 | mana p1=3 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false\n    stół p1: banner:Temur Banner, land-0:Forest, land-1:Island, land-2:Mountain\n    stół p2: —\n    ręka p1: — | ręka p2: 0 kart(y)\n    grób p1: 0 | grób p2: 0 | biblioteka p1: 20",
+    "wybrano": "pass_priority",
+    "score": 0,
+    "alternatywy": [
+      {
+        "cmd": "pass_priority",
+        "score": 0
+      },
+      {
+        "cmd": "activate_ability(banner#0)",
+        "score": -30
+      },
+      {
+        "cmd": "activate_ability(banner#1)",
+        "score": -30
+      },
+      {
+        "cmd": "concede",
+        "score": null
+      }
+    ]
+  },
+  {
+    "id": "TB-01",
+    "karta": "temur-banner",
+    "wymiar": "T",
+    "wariant": "main1",
+    "stan": "krok=main1 aktywny=p1 priorytet=p1 tura=1\n    życie p1=20 p2=20 | mana p1=3 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false\n    stół p1: banner:Temur Banner, land-0:Forest, land-1:Island, land-2:Mountain\n    stół p2: —\n    ręka p1: — | ręka p2: 0 kart(y)\n    grób p1: 0 | grób p2: 0 | biblioteka p1: 20",
+    "wybrano": "activate_ability(banner#1)",
+    "score": 4,
+    "alternatywy": [
+      {
+        "cmd": "activate_ability(banner#1)",
+        "score": 4
+      },
+      {
+        "cmd": "pass_priority",
+        "score": 0
+      },
+      {
+        "cmd": "activate_ability(banner#0)",
+        "score": -30
+      },
+      {
+        "cmd": "concede",
+        "score": null
+      }
+    ]
+  },
+  {
+    "id": "TB-01",
+    "karta": "temur-banner",
+    "wymiar": "T",
+    "wariant": "beginning_of_combat",
+    "stan": "krok=beginning_of_combat aktywny=p1 priorytet=p1 tura=1\n    życie p1=20 p2=20 | mana p1=3 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false\n    stół p1: banner:Temur Banner, land-0:Forest, land-1:Island, land-2:Mountain\n    stół p2: —\n    ręka p1: — | ręka p2: 0 kart(y)\n    grób p1: 0 | grób p2: 0 | biblioteka p1: 20",
+    "wybrano": "activate_ability(banner#1)",
+    "score": 4,
+    "alternatywy": [
+      {
+        "cmd": "activate_ability(banner#1)",
+        "score": 4
+      },
+      {
+        "cmd": "pass_priority",
+        "score": 0
+      },
+      {
+        "cmd": "activate_ability(banner#0)",
+        "score": -30
+      },
+      {
+        "cmd": "concede",
+        "score": null
+      }
+    ]
+  },
+  {
+    "id": "TB-01",
+    "karta": "temur-banner",
+    "wymiar": "T",
+    "wariant": "declare_attackers",
+    "stan": "krok=declare_attackers aktywny=p1 priorytet=p1 tura=1\n    życie p1=20 p2=20 | mana p1=3 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false\n    stół p1: banner:Temur Banner, land-0:Forest, land-1:Island, land-2:Mountain\n    stół p2: —\n    ręka p1: — | ręka p2: 0 kart(y)\n    grób p1: 0 | grób p2: 0 | biblioteka p1: 20",
+    "wybrano": "activate_ability(banner#1)",
+    "score": 4,
+    "alternatywy": [
+      {
+        "cmd": "activate_ability(banner#1)",
+        "score": 4
+      },
+      {
+        "cmd": "attack[]",
+        "score": 0
+      },
+      {
+        "cmd": "pass_priority",
+        "score": 0
+      },
+      {
+        "cmd": "activate_ability(banner#0)",
+        "score": -30
+      },
+      {
+        "cmd": "concede",
+        "score": null
+      }
+    ]
+  },
+  {
+    "id": "TB-01",
+    "karta": "temur-banner",
+    "wymiar": "T",
+    "wariant": "declare_blockers",
+    "stan": "krok=declare_blockers aktywny=p1 priorytet=p1 tura=1\n    życie p1=20 p2=20 | mana p1=3 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false\n    stół p1: banner:Temur Banner, land-0:Forest, land-1:Island, land-2:Mountain\n    stół p2: —\n    ręka p1: — | ręka p2: 0 kart(y)\n    grób p1: 0 | grób p2: 0 | biblioteka p1: 20",
+    "wybrano": "activate_ability(banner#1)",
+    "score": 4,
+    "alternatywy": [
+      {
+        "cmd": "activate_ability(banner#1)",
+        "score": 4
+      },
+      {
+        "cmd": "pass_priority",
+        "score": 0
+      },
+      {
+        "cmd": "activate_ability(banner#0)",
+        "score": -30
+      },
+      {
+        "cmd": "concede",
+        "score": null
+      }
+    ]
+  },
+  {
+    "id": "TB-01",
+    "karta": "temur-banner",
+    "wymiar": "T",
+    "wariant": "combat_damage",
+    "stan": "krok=combat_damage aktywny=p1 priorytet=p1 tura=1\n    życie p1=20 p2=20 | mana p1=3 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false\n    stół p1: banner:Temur Banner, land-0:Forest, land-1:Island, land-2:Mountain\n    stół p2: —\n    ręka p1: — | ręka p2: 0 kart(y)\n    grób p1: 0 | grób p2: 0 | biblioteka p1: 20",
+    "wybrano": "activate_ability(banner#1)",
+    "score": 4,
+    "alternatywy": [
+      {
+        "cmd": "activate_ability(banner#1)",
+        "score": 4
+      },
+      {
+        "cmd": "pass_priority",
+        "score": 0
+      },
+      {
+        "cmd": "activate_ability(banner#0)",
+        "score": -30
+      },
+      {
+        "cmd": "concede",
+        "score": null
+      }
+    ]
+  },
+  {
+    "id": "TB-01",
+    "karta": "temur-banner",
+    "wymiar": "T",
+    "wariant": "end_of_combat",
+    "stan": "krok=end_of_combat aktywny=p1 priorytet=p1 tura=1\n    życie p1=20 p2=20 | mana p1=3 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false\n    stół p1: banner:Temur Banner, land-0:Forest, land-1:Island, land-2:Mountain\n    stół p2: —\n    ręka p1: — | ręka p2: 0 kart(y)\n    grób p1: 0 | grób p2: 0 | biblioteka p1: 20",
+    "wybrano": "activate_ability(banner#1)",
+    "score": 4,
+    "alternatywy": [
+      {
+        "cmd": "activate_ability(banner#1)",
+        "score": 4
+      },
+      {
+        "cmd": "pass_priority",
+        "score": 0
+      },
+      {
+        "cmd": "activate_ability(banner#0)",
+        "score": -30
+      },
+      {
+        "cmd": "concede",
+        "score": null
+      }
+    ]
+  },
+  {
+    "id": "TB-01",
+    "karta": "temur-banner",
+    "wymiar": "T",
+    "wariant": "main2",
+    "stan": "krok=main2 aktywny=p1 priorytet=p1 tura=1\n    życie p1=20 p2=20 | mana p1=3 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false\n    stół p1: banner:Temur Banner, land-0:Forest, land-1:Island, land-2:Mountain\n    stół p2: —\n    ręka p1: — | ręka p2: 0 kart(y)\n    grób p1: 0 | grób p2: 0 | biblioteka p1: 20",
+    "wybrano": "activate_ability(banner#1)",
+    "score": 4,
+    "alternatywy": [
+      {
+        "cmd": "activate_ability(banner#1)",
+        "score": 4
+      },
+      {
+        "cmd": "pass_priority",
+        "score": 0
+      },
+      {
+        "cmd": "activate_ability(banner#0)",
+        "score": -30
+      },
+      {
+        "cmd": "concede",
+        "score": null
+      }
+    ]
+  },
+  {
+    "id": "TB-01",
+    "karta": "temur-banner",
+    "wymiar": "T",
+    "wariant": "end",
+    "stan": "krok=end aktywny=p1 priorytet=p1 tura=1\n    życie p1=20 p2=20 | mana p1=3 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false\n    stół p1: banner:Temur Banner, land-0:Forest, land-1:Island, land-2:Mountain\n    stół p2: —\n    ręka p1: — | ręka p2: 0 kart(y)\n    grób p1: 0 | grób p2: 0 | biblioteka p1: 20",
+    "wybrano": "pass_priority",
+    "score": 0,
+    "alternatywy": [
+      {
+        "cmd": "pass_priority",
+        "score": 0
+      },
+      {
+        "cmd": "activate_ability(banner#0)",
+        "score": -30
+      },
+      {
+        "cmd": "activate_ability(banner#1)",
+        "score": -30
+      },
+      {
+        "cmd": "concede",
+        "score": null
+      }
+    ]
+  },
+  {
+    "id": "TB-02",
+    "karta": "temur-banner",
+    "wymiar": "S",
+    "wariant": "pusta ręka, 6 many, 3 lądy",
+    "stan": "krok=main2 aktywny=p1 priorytet=p1 tura=1\n    życie p1=20 p2=20 | mana p1=6 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false\n    stół p1: banner:Temur Banner, land-0:Forest, land-1:Island, land-2:Mountain\n    stół p2: —\n    ręka p1: — | ręka p2: 0 kart(y)\n    grób p1: 0 | grób p2: 0 | biblioteka p1: 20",
+    "wybrano": "activate_ability(banner#1)",
+    "score": 4,
+    "alternatywy": [
+      {
+        "cmd": "activate_ability(banner#1)",
+        "score": 4
+      },
+      {
+        "cmd": "pass_priority",
+        "score": 0
+      },
+      {
+        "cmd": "activate_ability(banner#0)",
+        "score": -30
+      },
+      {
+        "cmd": "concede",
+        "score": null
+      }
+    ]
+  },
+  {
+    "id": "TB-02",
+    "karta": "temur-banner",
+    "wymiar": "S",
+    "wariant": "kolory w ręce: czar {G}{U}{R} czeka (Banner = źródło)",
+    "stan": "krok=main2 aktywny=p1 priorytet=p1 tura=1\n    życie p1=20 p2=20 | mana p1=6 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false\n    stół p1: banner:Temur Banner, land-0:Forest, land-1:Island, land-2:Mountain\n    stół p2: —\n    ręka p1: reka-0:Temur Banner | ręka p2: 0 kart(y)\n    grób p1: 0 | grób p2: 0 | biblioteka p1: 20",
+    "wybrano": "cast_permanent(reka-0)",
+    "score": 60.2973,
+    "alternatywy": [
+      {
+        "cmd": "cast_permanent(reka-0)",
+        "score": 60.2973
+      },
+      {
+        "cmd": "activate_ability(banner#1)",
+        "score": 4
+      },
+      {
+        "cmd": "pass_priority",
+        "score": 0
+      },
+      {
+        "cmd": "activate_ability(banner#0)",
+        "score": -4
+      },
+      {
+        "cmd": "concede",
+        "score": null
+      }
+    ]
+  },
+  {
+    "id": "TB-02",
+    "karta": "temur-banner",
+    "wymiar": "S",
+    "wariant": "biblioteka 2 karty",
+    "stan": "krok=main2 aktywny=p1 priorytet=p1 tura=1\n    życie p1=20 p2=20 | mana p1=6 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false\n    stół p1: banner:Temur Banner, land-0:Forest, land-1:Island, land-2:Mountain\n    stół p2: —\n    ręka p1: — | ręka p2: 0 kart(y)\n    grób p1: 0 | grób p2: 0 | biblioteka p1: 20",
+    "wybrano": "activate_ability(banner#1)",
+    "score": 4,
+    "alternatywy": [
+      {
+        "cmd": "activate_ability(banner#1)",
+        "score": 4
+      },
+      {
+        "cmd": "pass_priority",
+        "score": 0
+      },
+      {
+        "cmd": "activate_ability(banner#0)",
+        "score": -30
+      },
+      {
+        "cmd": "concede",
+        "score": null
+      }
+    ]
+  },
+  {
+    "id": "FS-01",
+    "karta": "frilled-sea-serpent",
+    "wymiar": "T",
+    "wariant": "upkeep",
+    "stan": "krok=upkeep aktywny=p1 priorytet=p1 tura=1\n    życie p1=20 p2=20 | mana p1=7 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false\n    stół p1: serpent:Frilled Sea Serpent (4/6)\n    stół p2: bloker:Grizzled Outcasts (4/4 transform)\n    ręka p1: — | ręka p2: 0 kart(y)\n    grób p1: 0 | grób p2: 0 | biblioteka p1: 20",
+    "wybrano": "pass_priority",
+    "score": 0,
+    "alternatywy": [
+      {
+        "cmd": "pass_priority",
+        "score": 0
+      },
+      {
+        "cmd": "activate_ability(serpent#0)",
+        "score": -5
+      },
+      {
+        "cmd": "concede",
+        "score": null
+      }
+    ]
+  },
+  {
+    "id": "FS-01",
+    "karta": "frilled-sea-serpent",
+    "wymiar": "T",
+    "wariant": "draw",
+    "stan": "krok=draw aktywny=p1 priorytet=p1 tura=1\n    życie p1=20 p2=20 | mana p1=7 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false\n    stół p1: serpent:Frilled Sea Serpent (4/6)\n    stół p2: bloker:Grizzled Outcasts (4/4 transform)\n    ręka p1: — | ręka p2: 0 kart(y)\n    grób p1: 0 | grób p2: 0 | biblioteka p1: 20",
+    "wybrano": "pass_priority",
+    "score": 0,
+    "alternatywy": [
+      {
+        "cmd": "pass_priority",
+        "score": 0
+      },
+      {
+        "cmd": "activate_ability(serpent#0)",
+        "score": -5
+      },
+      {
+        "cmd": "concede",
+        "score": null
+      }
+    ]
+  },
+  {
+    "id": "FS-01",
+    "karta": "frilled-sea-serpent",
+    "wymiar": "T",
+    "wariant": "main1",
+    "stan": "krok=main1 aktywny=p1 priorytet=p1 tura=1\n    życie p1=20 p2=20 | mana p1=7 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false\n    stół p1: serpent:Frilled Sea Serpent (4/6)\n    stół p2: bloker:Grizzled Outcasts (4/4 transform)\n    ręka p1: — | ręka p2: 0 kart(y)\n    grób p1: 0 | grób p2: 0 | biblioteka p1: 20",
+    "wybrano": "activate_ability(serpent#0)",
+    "score": 36,
+    "alternatywy": [
+      {
+        "cmd": "activate_ability(serpent#0)",
+        "score": 36
+      },
+      {
+        "cmd": "pass_priority",
+        "score": 0
+      },
+      {
+        "cmd": "concede",
+        "score": null
+      }
+    ]
+  },
+  {
+    "id": "FS-01",
+    "karta": "frilled-sea-serpent",
+    "wymiar": "T",
+    "wariant": "beginning_of_combat",
+    "stan": "krok=beginning_of_combat aktywny=p1 priorytet=p1 tura=1\n    życie p1=20 p2=20 | mana p1=7 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false\n    stół p1: serpent:Frilled Sea Serpent (4/6)\n    stół p2: bloker:Grizzled Outcasts (4/4 transform)\n    ręka p1: — | ręka p2: 0 kart(y)\n    grób p1: 0 | grób p2: 0 | biblioteka p1: 20",
+    "wybrano": "activate_ability(serpent#0)",
+    "score": 39,
+    "alternatywy": [
+      {
+        "cmd": "activate_ability(serpent#0)",
+        "score": 39
+      },
+      {
+        "cmd": "pass_priority",
+        "score": 0
+      },
+      {
+        "cmd": "concede",
+        "score": null
+      }
+    ]
+  },
+  {
+    "id": "FS-01",
+    "karta": "frilled-sea-serpent",
+    "wymiar": "T",
+    "wariant": "declare_attackers",
+    "stan": "krok=declare_attackers aktywny=p1 priorytet=p1 tura=1\n    życie p1=20 p2=20 | mana p1=7 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false\n    stół p1: serpent:Frilled Sea Serpent (4/6)\n    stół p2: bloker:Grizzled Outcasts (4/4 transform)\n    ręka p1: — | ręka p2: 0 kart(y)\n    grób p1: 0 | grób p2: 0 | biblioteka p1: 20",
+    "wybrano": "activate_ability(serpent#0)",
+    "score": 39,
+    "alternatywy": [
+      {
+        "cmd": "activate_ability(serpent#0)",
+        "score": 39
+      },
+      {
+        "cmd": "attack[serpent]",
+        "score": 7
+      },
+      {
+        "cmd": "attack[]",
+        "score": 0
+      },
+      {
+        "cmd": "pass_priority",
+        "score": 0
+      },
+      {
+        "cmd": "concede",
+        "score": null
+      }
+    ]
+  },
+  {
+    "id": "FS-01",
+    "karta": "frilled-sea-serpent",
+    "wymiar": "T",
+    "wariant": "declare_blockers",
+    "stan": "krok=declare_blockers aktywny=p1 priorytet=p1 tura=1\n    życie p1=20 p2=20 | mana p1=7 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false\n    stół p1: serpent:Frilled Sea Serpent (4/6)\n    stół p2: bloker:Grizzled Outcasts (4/4 transform)\n    ręka p1: — | ręka p2: 0 kart(y)\n    grób p1: 0 | grób p2: 0 | biblioteka p1: 20",
+    "wybrano": "pass_priority",
+    "score": 0,
+    "alternatywy": [
+      {
+        "cmd": "pass_priority",
+        "score": 0
+      },
+      {
+        "cmd": "activate_ability(serpent#0)",
+        "score": -9
+      },
+      {
+        "cmd": "concede",
+        "score": null
+      }
+    ]
+  },
+  {
+    "id": "FS-01",
+    "karta": "frilled-sea-serpent",
+    "wymiar": "T",
+    "wariant": "combat_damage",
+    "stan": "krok=combat_damage aktywny=p1 priorytet=p1 tura=1\n    życie p1=20 p2=20 | mana p1=7 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false\n    stół p1: serpent:Frilled Sea Serpent (4/6)\n    stół p2: bloker:Grizzled Outcasts (4/4 transform)\n    ręka p1: — | ręka p2: 0 kart(y)\n    grób p1: 0 | grób p2: 0 | biblioteka p1: 20",
+    "wybrano": "pass_priority",
+    "score": 0,
+    "alternatywy": [
+      {
+        "cmd": "pass_priority",
+        "score": 0
+      },
+      {
+        "cmd": "activate_ability(serpent#0)",
+        "score": -9
+      },
+      {
+        "cmd": "concede",
+        "score": null
+      }
+    ]
+  },
+  {
+    "id": "FS-01",
+    "karta": "frilled-sea-serpent",
+    "wymiar": "T",
+    "wariant": "end_of_combat",
+    "stan": "krok=end_of_combat aktywny=p1 priorytet=p1 tura=1\n    życie p1=20 p2=20 | mana p1=7 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false\n    stół p1: serpent:Frilled Sea Serpent (4/6)\n    stół p2: bloker:Grizzled Outcasts (4/4 transform)\n    ręka p1: — | ręka p2: 0 kart(y)\n    grób p1: 0 | grób p2: 0 | biblioteka p1: 20",
+    "wybrano": "pass_priority",
+    "score": 0,
+    "alternatywy": [
+      {
+        "cmd": "pass_priority",
+        "score": 0
+      },
+      {
+        "cmd": "activate_ability(serpent#0)",
+        "score": -9
+      },
+      {
+        "cmd": "concede",
+        "score": null
+      }
+    ]
+  },
+  {
+    "id": "FS-01",
+    "karta": "frilled-sea-serpent",
+    "wymiar": "T",
+    "wariant": "main2",
+    "stan": "krok=main2 aktywny=p1 priorytet=p1 tura=1\n    życie p1=20 p2=20 | mana p1=7 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false\n    stół p1: serpent:Frilled Sea Serpent (4/6)\n    stół p2: bloker:Grizzled Outcasts (4/4 transform)\n    ręka p1: — | ręka p2: 0 kart(y)\n    grób p1: 0 | grób p2: 0 | biblioteka p1: 20",
+    "wybrano": "pass_priority",
+    "score": 0,
+    "alternatywy": [
+      {
+        "cmd": "pass_priority",
+        "score": 0
+      },
+      {
+        "cmd": "activate_ability(serpent#0)",
+        "score": -9
+      },
+      {
+        "cmd": "concede",
+        "score": null
+      }
+    ]
+  },
+  {
+    "id": "FS-01",
+    "karta": "frilled-sea-serpent",
+    "wymiar": "T",
+    "wariant": "end",
+    "stan": "krok=end aktywny=p1 priorytet=p1 tura=1\n    życie p1=20 p2=20 | mana p1=7 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false\n    stół p1: serpent:Frilled Sea Serpent (4/6)\n    stół p2: bloker:Grizzled Outcasts (4/4 transform)\n    ręka p1: — | ręka p2: 0 kart(y)\n    grób p1: 0 | grób p2: 0 | biblioteka p1: 20",
+    "wybrano": "pass_priority",
+    "score": 0,
+    "alternatywy": [
+      {
+        "cmd": "pass_priority",
+        "score": 0
+      },
+      {
+        "cmd": "activate_ability(serpent#0)",
+        "score": -5
+      },
+      {
+        "cmd": "concede",
+        "score": null
+      }
+    ]
+  },
+  {
+    "id": "FS-02",
+    "karta": "frilled-sea-serpent",
+    "wymiar": "S",
+    "wariant": "pusty stół wroga",
+    "stan": "krok=beginning_of_combat aktywny=p1 priorytet=p1 tura=1\n    życie p1=20 p2=20 | mana p1=7 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false\n    stół p1: serpent:Frilled Sea Serpent (4/6)\n    stół p2: —\n    ręka p1: — | ręka p2: 0 kart(y)\n    grób p1: 0 | grób p2: 0 | biblioteka p1: 20",
+    "wybrano": "activate_ability(serpent#0)",
+    "score": 39,
+    "alternatywy": [
+      {
+        "cmd": "activate_ability(serpent#0)",
+        "score": 39
+      },
+      {
+        "cmd": "pass_priority",
+        "score": 0
+      },
+      {
+        "cmd": "concede",
+        "score": null
+      }
+    ]
+  },
+  {
+    "id": "FS-02",
+    "karta": "frilled-sea-serpent",
+    "wymiar": "S",
+    "wariant": "bloker 4/6 (zatrzyma Serpenta)",
+    "stan": "krok=beginning_of_combat aktywny=p1 priorytet=p1 tura=1\n    życie p1=20 p2=20 | mana p1=7 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false\n    stół p1: serpent:Frilled Sea Serpent (4/6)\n    stół p2: blok:Grizzled Outcasts (4/4 transform)\n    ręka p1: — | ręka p2: 0 kart(y)\n    grób p1: 0 | grób p2: 0 | biblioteka p1: 20",
+    "wybrano": "activate_ability(serpent#0)",
+    "score": 39,
+    "alternatywy": [
+      {
+        "cmd": "activate_ability(serpent#0)",
+        "score": 39
+      },
+      {
+        "cmd": "pass_priority",
+        "score": 0
+      },
+      {
+        "cmd": "concede",
+        "score": null
+      }
+    ]
+  },
+  {
+    "id": "FS-02",
+    "karta": "frilled-sea-serpent",
+    "wymiar": "S",
+    "wariant": "wróg 4 życia + bloker 2/2",
+    "stan": "krok=beginning_of_combat aktywny=p1 priorytet=p1 tura=1\n    życie p1=20 p2=4 | mana p1=7 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false\n    stół p1: serpent:Frilled Sea Serpent (4/6)\n    stół p2: blok:Leafcrown Dryad (2/2 reach)\n    ręka p1: — | ręka p2: 0 kart(y)\n    grób p1: 0 | grób p2: 0 | biblioteka p1: 20",
+    "wybrano": "activate_ability(serpent#0)",
+    "score": 39,
+    "alternatywy": [
+      {
+        "cmd": "activate_ability(serpent#0)",
+        "score": 39
+      },
+      {
+        "cmd": "pass_priority",
+        "score": 0
+      },
+      {
+        "cmd": "concede",
+        "score": null
+      }
+    ]
+  },
+  {
+    "id": "MQ-01",
+    "karta": "mirelurk-queen",
+    "wymiar": "C",
+    "wariant": "zwykły stan (20/20 życia)",
+    "stan": "krok=main1 aktywny=p1 priorytet=p1 tura=1\n    życie p1=20 p2=20 | mana p1=5 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false\n    stół p1: —\n    stół p2: —\n    ręka p1: queen-hand:Mirelurk Queen (4/4 vigilance) | ręka p2: 0 kart(y)\n    grób p1: 0 | grób p2: 0 | biblioteka p1: 20",
+    "wybrano": "cast_permanent(queen-hand)",
+    "score": 7.805400000000005,
+    "alternatywy": [
+      {
+        "cmd": "cast_permanent(queen-hand)",
+        "score": 7.805400000000005
+      },
+      {
+        "cmd": "pass_priority",
+        "score": 0
+      },
+      {
+        "cmd": "concede",
+        "score": null
+      }
+    ],
+    "przebieg": [
+      {
+        "krok": 1,
+        "cmd": "cast_permanent(queen-hand)",
+        "score": 7.805400000000005,
+        "ok": true,
+        "powod": null
+      },
+      {
+        "krok": "stos-1",
+        "cmd": "pass_priority",
+        "score": 0,
+        "ok": true,
+        "powod": null
+      },
+      {
+        "krok": "stos-3",
+        "cmd": "resolve_trigger_target{targetId:\"p2\",friendly:false,removesTarget:false}",
+        "score": 25,
+        "ok": true,
+        "powod": null,
+        "galezie": [
+          "resolve_trigger_target{targetId:\"p2\",friendly:false,removesTarget:false}",
+          "resolve_trigger_target{targetId:\"p1\",friendly:false,removesTarget:false}"
+        ],
+        "scoreOpcji": [
+          "25.00",
+          "-40.00"
+        ]
+      },
+      {
+        "krok": "stos-4",
+        "cmd": "pass_priority",
+        "score": 0,
+        "ok": true,
+        "powod": null,
+        "nastepnie": "pass_priority"
+      }
+    ],
+    "stanPo": "krok=main1 aktywny=p1 priorytet=p1 tura=1\n    życie p1=20 p2=20 | mana p1=0 p2=0 | rad p1=0 p2=2 | attackedThisTurn p1=false p2=false\n    stół p1: permanent-1:Mirelurk Queen (chory 4/4 vigilance)\n    stół p2: —\n    ręka p1: — | ręka p2: 0 kart(y)\n    grób p1: 0 | grób p2: 0 | biblioteka p1: 20"
+  },
+  {
+    "id": "MQ-01",
+    "karta": "mirelurk-queen",
+    "wymiar": "C",
+    "wariant": "wróg na 5 życia (rad = dodatkowa presja)",
+    "stan": "krok=main1 aktywny=p1 priorytet=p1 tura=1\n    życie p1=20 p2=5 | mana p1=5 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false\n    stół p1: —\n    stół p2: —\n    ręka p1: queen-hand:Mirelurk Queen (4/4 vigilance) | ręka p2: 0 kart(y)\n    grób p1: 0 | grób p2: 0 | biblioteka p1: 20",
+    "wybrano": "cast_permanent(queen-hand)",
+    "score": 7.805400000000005,
+    "alternatywy": [
+      {
+        "cmd": "cast_permanent(queen-hand)",
+        "score": 7.805400000000005
+      },
+      {
+        "cmd": "pass_priority",
+        "score": 0
+      },
+      {
+        "cmd": "concede",
+        "score": null
+      }
+    ],
+    "przebieg": [
+      {
+        "krok": 1,
+        "cmd": "cast_permanent(queen-hand)",
+        "score": 7.805400000000005,
+        "ok": true,
+        "powod": null
+      },
+      {
+        "krok": "stos-1",
+        "cmd": "pass_priority",
+        "score": 0,
+        "ok": true,
+        "powod": null
+      },
+      {
+        "krok": "stos-3",
+        "cmd": "resolve_trigger_target{targetId:\"p2\",friendly:false,removesTarget:false}",
+        "score": 25,
+        "ok": true,
+        "powod": null,
+        "galezie": [
+          "resolve_trigger_target{targetId:\"p2\",friendly:false,removesTarget:false}",
+          "resolve_trigger_target{targetId:\"p1\",friendly:false,removesTarget:false}"
+        ],
+        "scoreOpcji": [
+          "25.00",
+          "-40.00"
+        ]
+      },
+      {
+        "krok": "stos-4",
+        "cmd": "pass_priority",
+        "score": 0,
+        "ok": true,
+        "powod": null,
+        "nastepnie": "pass_priority"
+      }
+    ],
+    "stanPo": "krok=main1 aktywny=p1 priorytet=p1 tura=1\n    życie p1=20 p2=5 | mana p1=0 p2=0 | rad p1=0 p2=2 | attackedThisTurn p1=false p2=false\n    stół p1: permanent-1:Mirelurk Queen (chory 4/4 vigilance)\n    stół p2: —\n    ręka p1: — | ręka p2: 0 kart(y)\n    grób p1: 0 | grób p2: 0 | biblioteka p1: 20"
+  },
+  {
+    "id": "MQ-01",
+    "karta": "mirelurk-queen",
+    "wymiar": "C",
+    "wariant": "wróg z cienką biblioteką (rad = deck-out pressure)",
+    "stan": "krok=main1 aktywny=p1 priorytet=p1 tura=1\n    życie p1=20 p2=20 | mana p1=5 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false\n    stół p1: —\n    stół p2: —\n    ręka p1: queen-hand:Mirelurk Queen (4/4 vigilance) | ręka p2: 0 kart(y)\n    grób p1: 0 | grób p2: 0 | biblioteka p1: 20",
+    "wybrano": "cast_permanent(queen-hand)",
+    "score": 7.805400000000005,
+    "alternatywy": [
+      {
+        "cmd": "cast_permanent(queen-hand)",
+        "score": 7.805400000000005
+      },
+      {
+        "cmd": "pass_priority",
+        "score": 0
+      },
+      {
+        "cmd": "concede",
+        "score": null
+      }
+    ],
+    "przebieg": [
+      {
+        "krok": 1,
+        "cmd": "cast_permanent(queen-hand)",
+        "score": 7.805400000000005,
+        "ok": true,
+        "powod": null
+      },
+      {
+        "krok": "stos-1",
+        "cmd": "pass_priority",
+        "score": 0,
+        "ok": true,
+        "powod": null
+      },
+      {
+        "krok": "stos-3",
+        "cmd": "resolve_trigger_target{targetId:\"p2\",friendly:false,removesTarget:false}",
+        "score": 25,
+        "ok": true,
+        "powod": null,
+        "galezie": [
+          "resolve_trigger_target{targetId:\"p2\",friendly:false,removesTarget:false}",
+          "resolve_trigger_target{targetId:\"p1\",friendly:false,removesTarget:false}"
+        ],
+        "scoreOpcji": [
+          "25.00",
+          "-40.00"
+        ]
+      },
+      {
+        "krok": "stos-4",
+        "cmd": "pass_priority",
+        "score": 0,
+        "ok": true,
+        "powod": null,
+        "nastepnie": "pass_priority"
+      }
+    ],
+    "stanPo": "krok=main1 aktywny=p1 priorytet=p1 tura=1\n    życie p1=20 p2=20 | mana p1=0 p2=0 | rad p1=0 p2=2 | attackedThisTurn p1=false p2=false\n    stół p1: permanent-1:Mirelurk Queen (chory 4/4 vigilance)\n    stół p2: —\n    ręka p1: — | ręka p2: 0 kart(y)\n    grób p1: 0 | grób p2: 0 | biblioteka p1: 20"
+  },
+  {
+    "id": "MQ-02",
+    "karta": "mirelurk-queen",
+    "wymiar": "S",
+    "wariant": "Queen na stole, Tome Scour w ręce, biblioteka 20",
+    "stan": "krok=main1 aktywny=p1 priorytet=p1 tura=1\n    życie p1=20 p2=20 | mana p1=1 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false\n    stół p1: queen:Mirelurk Queen (4/4 vigilance)\n    stół p2: —\n    ręka p1: scour-hand:Tome Scour | ręka p2: 0 kart(y)\n    grób p1: 0 | grób p2: 0 | biblioteka p1: 20",
+    "wybrano": "cast_spell(scour-hand->p2)",
+    "score": 85,
+    "alternatywy": [
+      {
+        "cmd": "cast_spell(scour-hand->p2)",
+        "score": 85
+      },
+      {
+        "cmd": "pass_priority",
+        "score": 0
+      },
+      {
+        "cmd": "cast_spell(scour-hand->p1)",
+        "score": -65
+      },
+      {
+        "cmd": "concede",
+        "score": null
+      }
+    ]
+  },
+  {
+    "id": "MQ-02",
+    "karta": "mirelurk-queen",
+    "wymiar": "S",
+    "wariant": "bez Queeny, Tome Scour w ręce (baseline)",
+    "stan": "krok=main1 aktywny=p1 priorytet=p1 tura=1\n    życie p1=20 p2=20 | mana p1=1 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false\n    stół p1: —\n    stół p2: —\n    ręka p1: scour-hand:Tome Scour | ręka p2: 0 kart(y)\n    grób p1: 0 | grób p2: 0 | biblioteka p1: 20",
+    "wybrano": "cast_spell(scour-hand->p2)",
+    "score": 85,
+    "alternatywy": [
+      {
+        "cmd": "cast_spell(scour-hand->p2)",
+        "score": 85
+      },
+      {
+        "cmd": "pass_priority",
+        "score": 0
+      },
+      {
+        "cmd": "cast_spell(scour-hand->p1)",
+        "score": -65
+      },
+      {
+        "cmd": "concede",
+        "score": null
+      }
+    ]
+  },
+  {
+    "id": "MQ-02",
+    "karta": "mirelurk-queen",
+    "wymiar": "S",
+    "wariant": "Queen na stole, biblioteka własna 4 (deck-out ryzyko przy draw triggera)",
+    "stan": "krok=main1 aktywny=p1 priorytet=p1 tura=1\n    życie p1=20 p2=20 | mana p1=1 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false\n    stół p1: queen:Mirelurk Queen (4/4 vigilance)\n    stół p2: —\n    ręka p1: scour-hand:Tome Scour | ręka p2: 0 kart(y)\n    grób p1: 0 | grób p2: 0 | biblioteka p1: 20",
+    "wybrano": "cast_spell(scour-hand->p2)",
+    "score": 85,
+    "alternatywy": [
+      {
+        "cmd": "cast_spell(scour-hand->p2)",
+        "score": 85
+      },
+      {
+        "cmd": "pass_priority",
+        "score": 0
+      },
+      {
+        "cmd": "cast_spell(scour-hand->p1)",
+        "score": -65
+      },
+      {
+        "cmd": "concede",
+        "score": null
+      }
+    ]
+  }
+]

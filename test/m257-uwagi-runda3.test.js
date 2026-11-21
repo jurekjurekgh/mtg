@@ -241,7 +241,7 @@ test('M257B3: sort panelu — pass na górze, Przygoda nadal w grupie czarów', 
 function morphGameSession(onCast, { seed = 1 } = {}) {
   const registry = createCardRegistry();
   // Gracz = tarkir-bg (m.in. Woolly Loxodon, Morph {3}, artId 518 — karta,
-  // którą właściciel zobaczył na warstwie); bot (p2) = warhammer-ubr.
+  // którą właściciel zobaczył na warstwie); bot (p2) = warhammer-ub.
   // Role zamienione (zgłoszenie G, 2026-10-14): ten test pinuje PŁYTKĘ
   // `onCast`, więc rzut morphem musi pochodzić od strony sterowanej SKRYPTEM
   // (pętla zna komendę i jej `faceDown`), a nie od bota — wybór „morph czy
@@ -249,7 +249,7 @@ function morphGameSession(onCast, { seed = 1 } = {}) {
   // zgłoszenia G) i pin nie może od niej zależeć (L181).
   const decks = new Map([
     [HUMAN_ID, parseDeckText(fs.readFileSync('decks/tarkir-bg.txt', 'utf8'), registry).cardIds],
-    [BOT_ID, parseDeckText(fs.readFileSync('decks/warhammer-ubr.txt', 'utf8'), registry).cardIds],
+    [BOT_ID, parseDeckText(fs.readFileSync('decks/warhammer-ub.txt', 'utf8'), registry).cardIds],
   ]);
   return { registry, session: createSession({ seed, registry, decks, onCast }) };
 }
@@ -260,7 +260,7 @@ test('M257A1: paylod onCast — rzut twarzą w dół niesie faceDown:true (wypł
   const calls = [];
   // Seed 2 (przelosowany po zmianie talii — Batch 64: Sultai Scavenger doszedł
   // do planu Tarkir, więc seed 1 przestał rzucać morpha w limicie 400 kroków;
-  // Batch 68: podział talii warhammer-ubr (Child of Night, Meteorite) przesunął
+  // Batch 68: podział talii warhammer-ub (Child of Night, Meteorite) przesunął
   // przebieg, seed 3 nie rzuca już morpha — skan 1..30: pierwszy seed z rzutem
   // morpha to 2; L25: „przelosowany po zmianie X”).
   // Batch 69: podział Ravnicy/Zendikar (ravnica-rg/wub, zendikar-wu/rg) przesunął

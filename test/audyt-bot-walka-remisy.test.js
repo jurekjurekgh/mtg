@@ -142,9 +142,9 @@ test('projekcja walki istnieje — bez niej bramka milczałaby zamiast mierzyć'
 
 test('grzechotka audytu: remisy rozstrzygalne nie rosną ponad stan przejrzany', () => {
   const { global, rows } = audytRemisow({ pary: [
-    ['ravnica-wur', 'innistrad-wu'], ['dominaria-wrg', 'mirrodin-wu'], ['tarkir-bg', 'warhammer-ubr'],
+    ['ravnica-wur', 'innistrad-wu'], ['dominaria-brg', 'mirrodin-wu'], ['tarkir-bg', 'warhammer-ub'],
     ['wiedzmin-bg', 'tarkir-bg'], ['srodziemie', 'theros'], ['kaladesh', 'zendikar-wu'],
-    ['dominaria-ub', 'worek-mroczny'],
+    ['dominaria-wu', 'worek-mroczny'],
   ], gry: 1 });
   const dla = (k) => rows.find((r) => r.kind === k) ?? { rozroznialne: 0, akcyjne: 0, noOp: 0 };
   const lad = dla('play_land'); const atak = dla('attack'); const blok = dla('block');
@@ -168,7 +168,7 @@ test('grzechotka audytu: remisy rozstrzygalne nie rosną ponad stan przejrzany',
   // stały, nazwy talii bez zmian). Rozjazd ZMIERZONY per para, nie zgadnięty
   // (tools/bot-tie-audit.mjs, ten sam kod, podstawiane talie):
   //   stare talie: ravnica|innistrad-wu 0, dominaria-brg|mirrodin-wu 0,
-  //   tarkir-bg|warhammer-ubr 1, wiedzmin|tarkir-bg 0, srodziemie|theros 0,
+  //   tarkir-bg|warhammer-ub 1, wiedzmin|tarkir-bg 0, srodziemie|theros 0,
   //   kaladesh|zendikar 0, dominaria-wu|worek-mroczny 2 → razem 3;
   //   po B2: identyczne poza `kaladesh|zendikar` 0 → 4 (razem 7).
   // Wiedźmin (re-podział ADR 0024 → wiedzmin-bg|wiedzmin-wur) nie dołożył nic.
@@ -187,7 +187,7 @@ test('grzechotka audytu: remisy rozstrzygalne nie rosną ponad stan przejrzany',
   // ravnica-wub, dominaria-brg, tarkir-bg — trajektorie par się przesunęły).
   // Dwanaście pozycji przejrzane co do klasy: dominaria-brg|mirrodin-wu (4) i
   // srodziemie|theros (4) — „+1 trafienie i +1 ginie” albo wymiana 1 za 1 ex aequo
-  // z attack[] (klasa z nagłówka); tarkir-bg|warhammer-ubr (3) — wymiana 1 za 1
+  // z attack[] (klasa z nagłówka); tarkir-bg|warhammer-ub (3) — wymiana 1 za 1
   // oraz „+1 trafienie, +1 ginie”. OTWARTE do decyzji właściciela: ravnica-wub|
   // innistrad-wu s4011 t26 @1033 — +1 atakujący ginie BEZ dodatkowego trafienia
   // i BEZ zabicia, ex aequo z attack[] (strata bez zysku, nie mieści się w klasach
@@ -195,8 +195,8 @@ test('grzechotka audytu: remisy rozstrzygalne nie rosną ponad stan przejrzany',
   assert.ok(atak.rozroznialne <= 12, `attack groźb: ${atak.rozroznialne}\n${opis.join('\n')}`);
   // Sufit 6 po reaudycie 2026-09-06 (patrz nagłówek): 3 → 6 po zmianie składu
   // talii `wiedzmin`, cztery nowe pozycje przejrzane i zakwalifikowane do klas A/B.
-  // Sufit 7 po E7/C (2026-09-07): Shock przeniesiony kaladesh → warhammer-ubr
-  // (plan wg kolumny właściciela), zmiana trajektorii pary tarkir-bg|warhammer-ubr
+  // Sufit 7 po E7/C (2026-09-07): Shock przeniesiony kaladesh → warhammer-ub
+  // (plan wg kolumny właściciela), zmiana trajektorii pary tarkir-bg|warhammer-ub
   // dodała jedną pozycję TEJ SAMEJ klasy polityki bloków (s4009 t19: remis @10 —
   // wariant „blokujący ginie, nikt nie ginie” vs „cztery ataki zabite”; trade
   // obrażeń bez śmiertelnych danych — klasy A/B wg nagłówka, przejrzane).
@@ -250,7 +250,7 @@ test('grzechotka audytu: remisy rozstrzygalne nie rosną ponad stan przejrzany',
       });
     if (tylkoDodatkoweCele) continue;
     if (nazwa === 'cast_spell' && r.rozroznialne === 1
-      && r.przyklady.some((x) => typeof x === 'object' && x.para === 'tarkir-bg|warhammer-ubr'
+      && r.przyklady.some((x) => typeof x === 'object' && x.para === 'tarkir-bg|warhammer-ub'
         && x.seed === 4009 && x.turn === 24
         && (x.chosen ?? '').startsWith('cast_spell('))) continue;
     assert.equal(r.rozroznialne, 0,

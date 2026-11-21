@@ -148,7 +148,10 @@ test('DESK-D: kotwice liczności (L13) — język deskryptorów rośnie z batcha
   // Stan po naprawie F-3 (Batch 73): `qualifier` opuścił katalog (był
   // podrabianym kluczem), `tapped_creature` + `opponentControls` weszły do
   // ścieżki triggerów.
-  assert.equal(instances.length, 274, 'liczba deskryptorów celu w katalogu');
+  // Batch 74 (Etap 3): +4 deskryptory celów — Saltfield Recluse (`{type:'creature'}`),
+  // Lambholt Harrier (j.w.), Arrow Storm (`any_target`), Mirelurk Queen
+  // (`player` z `prefer: 'opponent'`) → 278.
+  assert.equal(instances.length, 278, 'liczba deskryptorów celu w katalogu');
   assert.equal(spellTypes.size, 35, 'typy celów czarów/zdolności aktywowanych');
   assert.equal(triggerTypes.size, 30, 'typy celów triggerów');
   assert.equal(keys.size, 24, 'klucze deskryptorów (bez podrabianego `qualifier`)');

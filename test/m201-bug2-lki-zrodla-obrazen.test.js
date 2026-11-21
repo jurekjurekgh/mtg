@@ -10,7 +10,7 @@
 //    (Scroll Thief) — nie odpalało, mimo że zdarzenie zaszło, gdy stwór jeszcze
 //    istniał (CR 603.10a — zdolność wyzwala się z ostatniej znanej informacji);
 //  • „one or more creatures you control deal combat damage” (Disa) i przejęcie
-//    inicjatywy (CR 725) — tak samo.
+//    inicjatywy (CR 727) — tak samo.
 //
 // Realny scenariusz: atakujący z TRAMPLE ginie od blokera, a nadwyżka i tak
 // idzie w gracza (CR 702.19b). Obrażenia są jednoczesne, więc w chwili

@@ -237,9 +237,9 @@ import {
  * Audyt PR #185 (F-12, pomiar 2026-11-15) — rotacja próbki Batcha 73 bez
  * udokumentowanej rekalibracji progów i bez śladu regeneracji golden-mastera
  * (ADR 0024 §3, L176). Migracja talii Dominaria (`dominaria-brg` →
- * `dominaria-wrg`, `dominaria-wu` usunięty → `dominaria-ub`) i podział
+ * `dominaria-brg`, `dominaria-wu` usunięty → `dominaria-wu`) i podział
  * Forgotten Realms (`forgotten-realms` → `forgotten-realms-br`) zmieniły wynik
- * `selectBenchDecks()` na: alara, dominaria-ub, dominaria-wrg, eldraine,
+ * `selectBenchDecks()` na: alara, dominaria-wu, dominaria-brg, eldraine,
  * final-fantasy, forgotten-realms-br; PR #185 zregenerował też
  * `test/fixtures/bot-scoring-snapshot.json` bez zapisu PRZED/PO.
  * Pomiar na obecnej próbce (HEAD `f00e581`, 672 mecze, 8 seedów, baza 2026,
@@ -250,7 +250,7 @@ import {
  * vs aggro 84.2 → 0.692 → próg **0.69 (podniesiony z 0.63)** — wzrost o 5.6 p.p.
  * wobec pomiaru PR #145 mieści się w zmianach wycen bota z PR #186 (`wardTargetTax`
  * F-7, wspólny `graveyardBodyValue` F-8), a nie w rotacji próbki (para
- * `tarkir-bg|warhammer-ubr` golden-mastera jest bit w bit bez zmian — patrz niżej).
+ * `tarkir-bg|warhammer-ub` golden-mastera jest bit w bit bez zmian — patrz niżej).
  * Ślad regeneracji golden-mastera (L176), zmierzony 2026-11-15:
  * `node tools/bot-scoring-snapshot.mjs` na HEAD daje `overallHash ada1d349d18e97a3…`
  * i 6/6 wpisów IDENTYCZNYCH z fixture (brak dryfu po zmianach wycen F-7/F-8 —
@@ -258,12 +258,12 @@ import {
  * `test/audyt-pr185-f7-ward-sciezka-danych.test.js` i
  * `test/audyt-pr185-f8-wycena-reanimacji.test.js`). PRZED (`0d0a12b`, baza PR
  * #185) → PO (`5df0e96`): `overallHash 95f3692a4fc89914… → ada1d349d18e97a3…`;
- * `dominaria-brg|mirrodin-wu` → `dominaria-wrg|mirrodin-wu` (migracja nazwy +
+ * `dominaria-brg|mirrodin-wu` → `dominaria-brg|mirrodin-wu` (migracja nazwy +
  * Leonin Lightbringer w `mirrodin-wu`): decyzje 203→202 i 356→280, `scoreSum`
  * 3046.3063→2916.1126 i 3980.2998→4412.4735; `ravnica-wur|innistrad-wu`
  * (w talii `innistrad-wu` jedna karta: Scroll of Avacyn → Ghoulcaller's Bell):
  * decyzje 235→217 i 256→309, `scoreSum` 2825.82→1584.9844 i 1963.8357→2494.5772;
- * `tarkir-bg|warhammer-ubr` BEZ zmian (174/174 i 164/164 decyzji, `scoreSum`
+ * `tarkir-bg|warhammer-ub` BEZ zmian (174/174 i 164/164 decyzji, `scoreSum`
  * 2531.0099 i 2503.0099 — żadna z tych dwóch talii nie była w PR #185 ruszona).
  */
 const MIN_WIN_RATE_VS_RANDOM = 0.82;
@@ -276,7 +276,7 @@ function gamesWon(board, bot) {
 test('harness jest deterministyczny: dwa przebiegi dają identyczny wynik', () => {
   const config = {
     bots: ['aggro', 'heuristic'],
-    decks: ['tarkir-bg', 'warhammer-ubr'],
+    decks: ['tarkir-bg', 'warhammer-ub'],
     seedsCount: 2,
     seedBase: 11,
     maxCommands: 5000,
@@ -366,7 +366,7 @@ test('bot heurystyczny nie jest słabszy niż próg regresji vs aggro', () => {
 test('raport tekstowy zawiera macierz i wyniki par (smoke formatowania)', () => {
   const result = runBenchmark({
     bots: ['heuristic', 'random'],
-    decks: ['tarkir-bg', 'warhammer-ubr'],
+    decks: ['tarkir-bg', 'warhammer-ub'],
     seedsCount: 1,
     seedBase: 5,
     maxCommands: 5000,
@@ -375,7 +375,7 @@ test('raport tekstowy zawiera macierz i wyniki par (smoke formatowania)', () => 
   assert.match(report, /Benchmark botów \(B0\)/);
   assert.match(report, /Macierz win-rate/);
   assert.match(report, /== heuristic vs random ==/);
-  assert.match(report, /tarkir-bg | warhammer-ubr/);
+  assert.match(report, /tarkir-bg | warhammer-ub/);
 });
 
 test('runBenchmark: macierz mieści się w budżecie i mierzy każdą talię z katalogu', () => {

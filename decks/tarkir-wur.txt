@@ -19,13 +19,16 @@
 1x Ojutai's Breath
 1x Rediscover the Way
 1x Tail Slash
+1x Temur Banner
 1x Bring Low
 1x Gurmag Drowner
 1x Rush of Battle
+1x Arrow Storm
 1x Narset's Rebuke
 1x Sarkhan's Rage
 1x Vandalize
 1x Ainok Tracker
-5x Plains
+4x Plains
 3x Island
-5x Mountain
+6x Mountain
+1x Forest

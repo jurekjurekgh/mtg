@@ -149,3 +149,36 @@ export function recordCardDrawn(state, playerId, payload = {}) {
   state.events.push(drawnEvent);
   return drawnEvent;
 }
+
+/**
+ * Liczniki radiacji (rad counters, PIP, ruling 2024-03-08):
+ * jedyne choke pointy zapisujące `player.rad` (jak `addPoisonCounters`/`addEnergyCounters`).
+ * Emitują zdarzenia `rad_counters_added` / `rad_counters_removed`.
+ */
+export function addRadCounters(state, playerId, amount) {
+  if (!Number.isInteger(amount) || amount < 0 || !state.players.some((player) => player.id === playerId)) {
+    throw new TypeError('Nadanie liczników radiacji wymaga gracza i nieujemnej wartości');
+  }
+  if (amount === 0) return [];
+  const player = state.players.find((entry) => entry.id === playerId);
+  const before = player.rad ?? 0;
+  player.rad = before + amount;
+  const events = [event('rad_counters_added', { playerId, before, after: player.rad, amount })];
+  state.events.push(...events);
+  return events;
+}
+
+export function removeRadCounters(state, playerId, amount) {
+  if (!Number.isInteger(amount) || amount < 0 || !state.players.some((player) => player.id === playerId)) {
+    throw new TypeError('Zdjęcie liczników radiacji wymaga gracza i nieujemnej wartości');
+  }
+  const player = state.players.find((entry) => entry.id === playerId);
+  const before = player.rad ?? 0;
+  const removed = Math.min(amount, before);
+  if (removed === 0) return [];
+  player.rad = before - removed;
+  const events = [event('rad_counters_removed', { playerId, before, after: player.rad, amount: removed })];
+  state.events.push(...events);
+  return events;
+}
+

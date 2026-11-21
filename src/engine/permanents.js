@@ -1130,14 +1130,23 @@ function abilityRemovalTimestamp(object) {
  * (abilityGrants — np. Fake Your Own Death nadaje stworowi trigger dies).
  * Triggery i legalne aktywacje czytają zawsze tę listę, nie object.abilities.
  */
-export function effectiveAbilities(object) {
+export function effectiveAbilities(object, state = null) {
   // Xu-Ifit (Batch60, „has no abilities", ruling 2 EOE 2025-07-25): strip
   // tłumi ZDOLNOŚCI WYDRUKOWANE; granty nadane PO wejściu działają.
   // Triggery, aktywacje i statyki własne czytają tę listę — jeden choke point.
-  if (object?.abilitiesStripped) return [...(object?.abilityGrants ?? [])];
-  const grants = object?.abilityGrants ?? [];
-  if (grants.length === 0) return object?.abilities ?? [];
-  return [...(object.abilities ?? []), ...grants];
+  const own = object?.abilitiesStripped
+    ? [...(object?.abilityGrants ?? [])]
+    : ((object?.abilityGrants ?? []).length === 0 ? (object?.abilities ?? []) : [...(object.abilities ?? []), ...(object.abilityGrants ?? [])]);
+  if (!state || object?.zone !== 'battlefield') return own;
+  const removedAt = abilityRemovalTimestamp(object);
+  const grantedByAttachments = [];
+  for (const attachment of attachmentsAttachedTo(state, object.id)) {
+    const grant = attachmentGrant(attachment);
+    if (!grant.grantAbilities?.length) continue;
+    if (removedAt != null && attachmentTimestampOf(attachment) <= removedAt) continue;
+    grantedByAttachments.push(...grant.grantAbilities);
+  }
+  return grantedByAttachments.length === 0 ? own : [...own, ...grantedByAttachments];
 }
 
 /**
@@ -1333,7 +1342,14 @@ export function effectiveSubtypesOnBattlefield(state, object) {
 export function wardAmountOf(object, state = null) {
   if (!object) return null;
   if (!effectiveKeywords(object, state).includes('ward')) return null;
-  return object.ward ?? null;
+  if (object.ward != null) return object.ward;
+  if (state && object.zone === 'battlefield') {
+    for (const attachment of attachmentsAttachedTo(state, object.id)) {
+      const ward = attachmentGrant(attachment)?.ward;
+      if (ward != null) return ward;
+    }
+  }
+  return null;
 }
 
 export function effectiveKeywords(object, state = null) {
@@ -1650,20 +1666,20 @@ export function recordDamageSource(state, objectId, sourceId) {
   state.damageSourcesThisTurn = [...list, { objectId, sourceId }];
 }
 
-export function markDamage(state, objectId, amount, sourceId = null) {
+export function markDamage(state, objectId, amount, sourceId = null, { cantBePrevented = false } = {}) {
   let object = state.objects.get(objectId);
   if (!object || object.zone !== 'battlefield') throw new Error('Nieprawidłowy cel obrażeń');
   if (!Number.isInteger(amount) || amount < 0) throw new RangeError('Obrażenia muszą być nieujemne');
-  // Prewencja (CR 614): filtr „prevent all damage" — zamiast zaznaczyć
-  // obrażenia emitujemy fakt ich skasowania.
-  if (amount > 0 && isDamagePrevented(state, object)) {
+  // Prewencja (CR 614 / CR 615.1): gdy obrażenia nie mogą być zapobiegnięte,
+  // pomijamy filtr, protection oraz tarczę z licznika shield (bez ich zużycia).
+  if (!cantBePrevented && amount > 0 && isDamagePrevented(state, object)) {
     const prevented = event('damage_prevented', { objectId, amount, cardId: object.cardId });
     state.events.push(prevented);
     return object;
   }
   // Protection (CR 702.16e): obrażenia od źródła chronionego koloru
   // są zapobiegane.
-  if (amount > 0 && sourceId) {
+  if (!cantBePrevented && amount > 0 && sourceId) {
     const source = state.objects.get(sourceId);
     if (source && isDamagePreventedByProtection(state, object, source)) {
       const prevented = event('damage_prevented', { objectId, amount, cardId: object.cardId, protection: true });
@@ -1672,7 +1688,9 @@ export function markDamage(state, objectId, amount, sourceId = null) {
     }
   }
   // Ta sama prewencja także dla bezpośredniego API markDamage.
-  if (preventDamageWithShieldCounter(state, objectId, amount) > 0) return state.objects.get(objectId);
+  if (!cantBePrevented && preventDamageWithShieldCounter(state, objectId, amount) > 0) {
+    return state.objects.get(objectId);
+  }
   object = removeLoyaltyForDamage(state, object, amount);
   if (isPlaneswalker(object) && object.kind !== 'creature') {
     return replaceObject(state, object, { damagedThisTurn: amount > 0 || object.damagedThisTurn });

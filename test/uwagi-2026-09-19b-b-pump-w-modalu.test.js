@@ -153,7 +153,7 @@ test('B/3: skutek czaru CZŁOWIEKA widać w modalu „Rozgrywka" (nie tylko log)
   for (const seed of [2, 42, 17]) {
     const decks = new Map([
       [HUMAN_ID, parseDeckText(fs.readFileSync('decks/tarkir-bg.txt', 'utf8'), REGISTRY).cardIds],
-      [BOT_ID, parseDeckText(fs.readFileSync('decks/warhammer-ubr.txt', 'utf8'), REGISTRY).cardIds],
+      [BOT_ID, parseDeckText(fs.readFileSync('decks/warhammer-ub.txt', 'utf8'), REGISTRY).cardIds],
     ]);
     const session = createSession({ registry: REGISTRY, decks, seed, pauseOnBotMoves: true });
     if (!reachHumanMainWithCreature(session)) continue;

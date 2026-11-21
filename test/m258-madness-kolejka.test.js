@@ -14,7 +14,7 @@ import { jumpToStep } from '../src/engine/turn.js';
  * w execute wyżej) rozjeżdżały się — resolve_discard_choice było odrzucane
  * z 'madness_unresolved', a symulacja bota kończyła się wyjątkiem
  * „Bot wybrał nielegalną komendę" (test/real-cards-batch3.test.js, seed 31,
- * dominaria-brg vs warhammer-ubr — Revolutionist odrzucony w cleanupie).
+ * dominaria-brg vs warhammer-ub — Revolutionist odrzucony w cleanupie).
  *
  * Kontrakt po fixie (CR 702.35a: opcja rzutu powstaje PO dokończeniu efektu
  * odrzucania): karty z madness kolejkują triggery po zakończeniu sekwencji;

@@ -16,7 +16,7 @@ import { jumpToStep } from '../src/engine/turn.js';
  *
  *   echo    → Bone Shredder (mirrodin-brg): brak echoUnpaid → brak pytania
  *             o płatność echo w upkeep (CR 702.30),
- *   madness → Revolutionist, Terminal Agony (warhammer-ubr): odrzucenie
+ *   madness → Revolutionist, Terminal Agony (warhammer-ub): odrzucenie
  *             nie oferowało rzutu za koszt madness (CR 702.35),
  *   surge   → Jwar Isle Avenger (zendikar): brak oferty rzutu za {2}{U}
  *             po innym czarze w turze (CR 702.117),

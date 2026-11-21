@@ -49,7 +49,8 @@ test('M228 (ADR 0024): Innistrad po podziale kolorystycznym — dwie talie ≥15
   // Batch 69 (Heron-Blessed Geist, plan Innistrad): +1 → 42.
   // Batch 70 (Moldgraf Millipede, plan Innistrad): +1 → 43.
   // Batch 73 (Kessig Flamebreather, plan Innistrad): +1 → 44.
-  assert.equal(wu.spells + brg.spells, 44, 'suma nielandów obu połówek = 44 (po Batchu 73)');
+  // Batch 74 (Lambholt Harrier, plan Innistrad): +1 → 45.
+  assert.equal(wu.spells + brg.spells, 45, 'suma nielandów obu połówek = 45 (po Batchu 74)');
   assert.equal(wu.lands, Math.ceil(wu.spells / 2), 'wu: landy = ceil(nielandów/2)');
   assert.equal(brg.lands, Math.ceil(brg.spells / 2), 'brg: landy = ceil(nielandów/2)');
 });

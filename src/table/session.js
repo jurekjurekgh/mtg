@@ -858,6 +858,9 @@ export const TRIGGER_EVENT_LABELS = Object.freeze({
   // M177/B (Rakshasa Vizier): karty wygnane z twojego grobu.
   cards_exiled_from_your_graveyard: 'karty wygnane z twojego grobu',
   creature_you_control_enters: 'wejście stwora pod twoją kontrolą',
+  // Batch 74/659 (Gylwain, Casting Director): „Whenever Gylwain or another
+  // nontoken creature you control enters" — ETB obejmuje też samo źródło.
+  self_or_another_creature_you_control_enters: 'wejście tego stwora lub innego stwora pod twoją kontrolą',
   // audyt M100/E6 (Żywy Tester, azorius vs green seed 34): surowy slug
   // w LOGU zamiast etykiety (Setessan Skirmisher).
   enchantment_you_control_enters: 'wejście enchantmentu pod twoją kontrolę',
@@ -963,6 +966,9 @@ export const TRIGGER_EVENT_LABELS = Object.freeze({
   // Batch 57/B6a (Baral and Kari Zev): „your first instant or sorcery spell
   // each turn" — zdarzenie silnika (licznik per gracz w triggers.js).
   first_instant_sorcery_cast: 'rzucenie pierwszego instantu/sorcery w turze',
+  // Batch 74 (Mirelurk Queen): liczniki radiacji i mill kart niebędących lądami.
+  rad_counters: 'liczniki radiacji',
+  nonland_cards_milled: 'zmielenie kart niebędących lądami',
 });
 
 /**
@@ -1101,6 +1107,8 @@ const DRUGA_OSOBA = Object.freeze({
   mulliganuje: 'mulliganujesz', może: 'możesz', musi: 'musisz', niszczy: 'niszczysz',
   obejmuje: 'obejmujesz', odkłada: 'odkładasz', odpala: 'odpalasz', odrzuca: 'odrzucasz',
   odsłania: 'odsłaniasz', ogląda: 'oglądasz', otrzymuje: 'otrzymujesz',
+  // Etap 2D (Mirelurk Queen): „Ty traci N liczników radiacji” — brakowało odmiany.
+  traci: 'tracisz',
   patrzy: 'patrzysz', plotuje: 'plotujesz', poddaje: 'poddajesz',
   poświęca: 'poświęcasz', przegrywa: 'przegrywasz', przeszukuje: 'przeszukujesz',
   przygotowuje: 'przygotowujesz', płaci: 'płacisz', rezygnuje: 'rezygnujesz',
@@ -1652,6 +1660,8 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { drugaOsoba = t
       // licznik gracza bez opisu byłby dla gracza niewidzialny.
       case 'energy_counters_added': return `${whoN(e.playerId)} otrzymuje {E}×${e.amount} energii (łącznie: ${e.after})`;
       case 'energy_counters_paid': return `${whoN(e.playerId)} płaci {E}×${e.amount} energii (zostaje: ${e.after})`;
+      case 'rad_counters_added': return `${whoN(e.playerId)} otrzymuje ${e.amount} ${polishPlural(e.amount, 'licznik', 'liczniki', 'liczników')} radiacji (łącznie: ${e.after})`;
+      case 'rad_counters_removed': return `${whoN(e.playerId)} traci ${e.amount} ${polishPlural(e.amount, 'licznik', 'liczniki', 'liczników')} radiacji (zostaje: ${e.after})`;
       case 'permanent_animated': {
         const duration = e.linkedTo ? ' (dopóki źródło jest na polu bitwy)' : ' do końca tury';
         return `${nameOfObject(e.objectId)} staje się stworzeniem ${e.power}/${e.toughness}${duration}`;
@@ -1796,6 +1806,9 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { drugaOsoba = t
         // daje ŻYWY obiekt (objectOrLki, reguła M100); cardId z LKI dopiero
         // po odejściu ze stanu (CR 708.8/708.9). Bez tego log zdradzał
         // „Plains — trigger (ward)" przy bezimiennym Morphu.
+        if (e.trigger === 'rad_counters' && !e.objectId && !e.cardId) {
+          return `${whoN(e.playerId)} — ${triggerLabel} (początek fazy głównej)`;
+        }
         const src = objectOrLki(e.objectId, e.cardId);
         return `${src} — trigger (${triggerLabel})`;
       }
@@ -2779,6 +2792,9 @@ export function botMovesPaintedUpdate({ moves, painted = 0 } = {}) {
 export const HUMAN_DIGEST_EVENTS = new Set([
   'spell_cast', 'permanent_cast', 'aura_spell_cast', 'land_played',
   'ability_activated', 'permanent_entered_battlefield', 'object_transformed',
+  // Zgłoszenie D (2026-11-16): Suspend i Plot to specjalne akcje z ręki
+  // (nie używają stosu) — muszą trafić do „Rozgrywki" gracza tak jak rzut/ląd.
+  'card_suspended', 'card_plotted',
   // I (zgłoszenie właściciela 2026-09-20): bieg i wynik discover to WŁASNE
   // zagranie gracza (jego biblioteka, jego karty) — musi trafić do panelu
   // „Rozgrywka” także wtedy, gdy trigger zdążył już zejść ze stosu
@@ -3417,7 +3433,12 @@ export function createSession(config) {
    * kart OBU stron. Filtr: czary/permanenty/aury zawsze; land TYLKO gdy
    * NIE jest basic (basic-lądy są nieciekawe wizualnie i nie mają artId).
    */
-  const CAST_EVENT_TYPES = new Set(['spell_cast', 'permanent_cast', 'aura_spell_cast', 'land_played']);
+  const CAST_EVENT_TYPES = new Set([
+    'spell_cast', 'permanent_cast', 'aura_spell_cast', 'land_played',
+    // Zgłoszenie D (2026-11-16): Suspend i Plot odpalają też warstwę
+    // wysoko-graficzną (jak rzut czaru / non-basic ląd).
+    'card_suspended', 'card_plotted',
+  ]);
   function emitCastEvent(e) {
     if (!onCast || !CAST_EVENT_TYPES.has(e.type)) return;
     const cardId = e.cardId ?? e.object?.cardId ?? null;
@@ -3543,6 +3564,9 @@ export function createSession(config) {
     // Wcześniej token_created było w BOT_PAUSE_EVENTS (pauza), ale brak
     // cardId w botMoves powodował pominięcie wpisu w modalu.
     'token_created',
+    // Zgłoszenie D (2026-11-16): Suspend i Plot przenoszą jawną kartę do
+    // wygnania (CR 400.2) — wpis w „Rozgrywce" obu graczy nosi jej miniaturę.
+    'card_suspended', 'card_plotted',
   ]);
 
   /**

@@ -441,14 +441,9 @@ function wyborExplore(id, indeks) {
 }
 
 test('PMSSB-90/F-90-5a: ANTY-OVER-FIX — użyteczna karta NIE idzie do grobu (RG-02 A/B)', () => {
-  // REZYDUALNE ZNALEZISKO F-90/5b (udokumentowane w raporcie PMSSB-90, nie naprawione
-  // w tej pętli): `graveyardReadingCardsInHand` zna delve i reanimację, ale NIE zna
-  // warunków czytających grób po liczbie kart/typach (Threshold `minGraveyardCards`,
-  // delirium CR 207.2c), więc dopełnienie progu jedną zmieloną kartą nie podnosi
-  // wartości mielenia. W RG-02 A (Angel's Feather → 4. typ i 7. karta, w ręce Seton's
-  // Desire) bot zostawia kartę na wierzchu. Ten pin ZAMRAŻA tamtą decyzję, żeby
-  // naprawa jakości karty nie zaczęła millować kart, które realnie chcemy dobrać —
-  // a przyszła naprawa F-90/5b musi go świadomie przepiąć (jak re-piny PMSSB-67/F2).
+  // Decyzja właściciela (2026-11-16, zamyka F-90/5b i F-90/6): gracz nie
+  // wrzuca świadomie kart do grobu pod progi Threshold/delirium ani pod
+  // późniejsze wyciąganie — w RG-02 A/B użyteczna karta zostaje na wierzchu.
   const a = wyborExplore('RG-02', 0);
   const b = wyborExplore('RG-02', 1);
   assert.equal(a.milled, false, `Angel's Feather (artefakt za 2, w zasięgu many) zostaje: ${a.opcje.join(' | ')}`);

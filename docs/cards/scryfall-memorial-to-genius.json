@@ -1,0 +1,25 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Memorial+to+Genius&set=dom&format=json",
+  "print": "dom",
+  "name": "Memorial to Genius",
+  "mana_cost": "",
+  "cmc": 0,
+  "type_line": "Land",
+  "oracle_text": "This land enters tapped.\n{T}: Add {U}.\n{4}{U}, {T}, Sacrifice this land: Draw two cards.",
+  "colors": [],
+  "color_identity": ["U"],
+  "keywords": [],
+  "produced_mana": ["U"],
+  "set": "dom",
+  "set_name": "Dominaria",
+  "collector_number": "243",
+  "rarity": "uncommon",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/b/9/b97bb62e-45cf-4862-b181-5af463a442b5.jpg?1783934947",
+    "normal": "https://cards.scryfall.io/normal/front/b/9/b97bb62e-45cf-4862-b181-5af463a442b5.jpg?1783934947"
+  },
+  "rulings": [],
+  "rulingsSource": "https://api.scryfall.com/cards/dom/243/rulings",
+  "rulingsPobrano": "2026-11-16",
+  "pobrano": "2026-11-16"
+}

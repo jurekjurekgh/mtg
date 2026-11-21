@@ -329,6 +329,13 @@ const HANDLED_TRIGGER_EVENTS = new Set([
   'counter_removed',
   // Batch 72 (Living History): attack event observed by a controlled permanent.
   'attacks_you_control',
+  // Batch 74/659 (Gylwain, Casting Director): „Whenever Gylwain or ANOTHER
+  // nontoken creature you control enters" — gałąź enter_battlefield w
+  // triggers.js (etap 2C), obejmuje samo źródło i wyklucza tokeny.
+  'self_or_another_creature_you_control_enters',
+  // Batch 74/665 (Mirelurk Queen): „Whenever one or more nonland cards are
+  // milled" — partia milla, raz na operację i raz na turę (etap 2D).
+  'nonland_cards_milled',
 ]);
 
 test('strażnik: każdy trigger w registry używa zdarzenia obsługiwanego przez engine', () => {

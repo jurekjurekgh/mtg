@@ -5,14 +5,14 @@ import { event } from '../protocol/types.js';
 import { singleTargetOfStackEntry } from './objects.js';
 import {
   applyEffect, applyEnterCounters, creaturesNotControlledByOwner, creaturesYouControl, faceDownCreaturesYouControl,
-  landCreaturesYouControl, libraryCardsOf, millTargetPlayerId, otherCreaturesYouControl,
+  landCreaturesYouControl, libraryCardsOf, millTargetPlayerId, millTopCardsForPlayer, otherCreaturesYouControl,
   counterStackObject,
 } from './effects.js';
 import { addCounter, hasCounter } from './counters.js';
 import { queueRiotEntry, applyRiotOnEntry, riotCountOf, validRiotChoices } from './riot.js';
 import { deathZoneFor, isCardInOpponentGraveyard, isCardObject } from './zones.js';
 import { countGraveyardCardTypes, isInstantOrSorceryCardInGraveyard } from './graveyard-types.js';
-import { changeLife, setPlayerSpeed } from './players.js';
+import { changeLife, removeRadCounters, setPlayerSpeed } from './players.js';
 // CARD_TYPES (O-2 audytu PR #134, L41): zamknięta lista typów kart (CR 205.2a)
 // ma JEDNO źródło w `permanents.js` — delirium (CR 207.2c), licznik wszystkich
 // grobów i dozwolone typy w `render.js` czytają tę samą listę.
@@ -1548,6 +1548,23 @@ export function resolveTriggerEntry(state, entry) {
   // powrót w upkeep celu): aplikacja niestandardowa (nie efekt generyczny).
   // Markery (delayedType/delayed/sagaChapter) niosie extra wpisu.
   const extra = payload.extra ?? {};
+  // Inherentny trigger liczników radiacji (ruling PIP 2024-03-08):
+  // aktywny gracz z rad > 0 na starcie main1 mieli tyle kart ile ma rad,
+  // traci 1 życie i zdejmuje 1 rad za każdą nonland kartę zmieloną w ten sposób.
+  if (extra.inherentRad) {
+    const targetPlayerId = extra.playerId;
+    const player = state.players.find((p) => p.id === targetPlayerId);
+    const radCount = player?.rad ?? 0;
+    if (radCount > 0) {
+      const milled = millTopCardsForPlayer(state, targetPlayerId, radCount, { fromRad: true });
+      const nonlandCount = milled.filter((obj) => obj && obj.kind !== 'land' && !(obj.types ?? []).includes('Land')).length;
+      if (nonlandCount > 0) {
+        changeLife(state, targetPlayerId, -nonlandCount);
+        removeRadCounters(state, targetPlayerId, nonlandCount);
+      }
+    }
+    return state.events.slice(before);
+  }
   // Madness (CR 702.35a): dopiero TERAZ, po rundzie priorytetu, właściciel
   // może rzucić kartę z exile albo odmówić. Jeśli zmieniła strefę, jest już
   // nowym obiektem i trigger nie daje prawa do rzutu ani przeniesienia.
@@ -2669,6 +2686,15 @@ function fireEnterBattlefieldTriggers(state, entered, events, context = {}) {
         if (entered.kind === 'creature' && source.id !== entered.id && controlOk && colorOk) {
           tryFire(state, ability, source, [], events);
         }
+      } else if (triggerEvent === 'self_or_another_creature_you_control_enters') {
+        const tt = ability.trigger ?? {};
+        const nontokenOk = entered.id === source.id || !tt.nontokenOnly || !entered.isToken;
+        if (entered.kind === 'creature' && entered.controllerId === source.controllerId && nontokenOk) {
+          tryFire(state, ability, source, [], events, {
+            enteredCreatureId: entered.id,
+            enteredCreatureCardId: entered.cardId ?? null,
+          });
+        }
       } else if (triggerEvent === 'land_entered_under_your_control') {
         if (entered.kind === 'land' && entered.controllerId === source.controllerId) {
           tryFire(state, ability, source, [], events);
@@ -3210,6 +3236,32 @@ function processTriggersScan(state, recentEvents) {
         }
       }
     }
+    // Mirelurk Queen (PIP, ruling 2024-03-08): „Whenever one or more nonland
+    // cards are milled, ... This ability triggers only once each turn.”
+    // Skanujemy grupowe zdarzenie `cards_milled` (nie pojedyncze `card_milled`,
+    // bo mill N kart odbywa się „all at once" → dokładnie 1 wyzwolenie).
+    // `fromBottom: true` (Cellar Door) to „put bottom card into graveyard", nie mill.
+    if (ev.type === 'cards_milled' && !ev.fromBottom) {
+      const milledIds = Array.isArray(ev.ids) ? ev.ids : [];
+      const hasNonland = milledIds.some((id) => {
+        const obj = state.objects.get(id);
+        return obj && obj.kind !== 'land' && !(obj.types ?? []).includes('Land');
+      });
+      if (hasNonland) {
+        for (const source of [...state.objects.values()]) {
+          if (source.zone !== 'battlefield') continue;
+          for (const [index, ability] of effectiveAbilities(source, state).entries()) {
+            if (ability?.type !== 'triggered' || ability.trigger?.event !== 'nonland_cards_milled') continue;
+            const key = `${source.id}:${index}`;
+            if (ability.trigger.oncePerTurn && state.triggerFiredThisTurn?.[key]) continue;
+            const fired = tryFire(state, ability, source, [], events);
+            if (fired && ability.trigger.oncePerTurn) {
+              state.triggerFiredThisTurn = { ...(state.triggerFiredThisTurn ?? {}), [key]: true };
+            }
+          }
+        }
+      }
+    }
     if (ev.type === 'exploited') {
       let exploiter = state.objects.get(ev.exploiterId);
       // M361/B1 (ZŁOTO; VOW Release Notes, mtg.wiki/Exploit 2026-09-16, ADR 0030):
@@ -3395,13 +3447,13 @@ function processTriggersScan(state, recentEvents) {
       // naraz: trigger obrońcy („whenever you're dealt combat damage”),
       // własny trigger źródła („deals combat damage to a player” — zdarzenie
       // zaszło, gdy stwór jeszcze istniał), grupowy trigger kontrolera
-      // (Disa) i przejęcie inicjatywy (CR 725).
+      // (Disa) i przejęcie inicjatywy (CR 727).
       // Zdolności czytamy z LKI zdarzenia; brak jakiejkolwiek informacji
       // o źródle = pomijamy WYŁĄCZNIE gałęzie źródła, nie całe zdarzenie.
       const source = state.objects.get(ev.source) ?? ev.sourceLki ?? null;
       // Speed rośnie z life_changed (M361/B4) — obrażenia combat wołają
       // changeLife, więc osobny hook tutaj już nie istnieje.
-      // Inicjatywa (CR 725): stwory zadające combat damage posiadaczowi
+      // Inicjatywa (CR 727): stwory zadające combat damage posiadaczowi
       // inicjatywy przejmują ją (karta The Initiative; podstawa Underdark
       // Explorer). Pierwsze objęcie inicjatywy = venture do lochu.
       if (source && state.initiativePlayerId === ev.target && source.controllerId !== state.initiativePlayerId) {
@@ -4218,7 +4270,7 @@ function processTriggersScan(state, recentEvents) {
       for (const attackerId of ev.attackerIds ?? []) {
         const attacker = state.objects.get(attackerId);
         if (!attacker || attacker.zone !== 'battlefield') continue;
-        for (const ability of effectiveAbilities(attacker)) {
+        for (const ability of effectiveAbilities(attacker, state)) {
           // Kontekst zdarzenia dla triggerów ataku: lista współdeklarowanych
           // atakujących ORAZ wynik testu „z innym atakującym o większej sile"
           // (Training/trening, CR 702.149) — liczone RAZ, na mocy z chwili deklaracji
@@ -4332,7 +4384,7 @@ function processTriggersScan(state, recentEvents) {
       }
     }
     // Początek upkeepu: triggery z warunkiem na liczbę czarów w poprzedniej
-    // turze (transform wilkołaków), zasada inicjatywy (CR 725) „venture into
+    // turze (transform wilkołaków), zasada inicjatywy (CR 727) „venture into
     // Undercity" oraz opóźnione triggery „at the beginning of their next
     // upkeep" (Plague Reaver — powrót pod kontrolą gracza-celu).
     if (ev.type === 'step_advanced' && ev.step === 'upkeep') {
@@ -4519,6 +4571,39 @@ function processTriggersScan(state, recentEvents) {
     // Temat 2 dla Sag: rozdziały z `requiresTarget` kolejkuja decyzję CELU
     // (resolve_trigger_target) zamiast iść od razu na stos.
     if (ev.type === 'step_advanced' && ev.step === 'main1' && ev.phase === 'precombat_main') {
+      const activePlayer = state.players.find((p) => p.id === state.turn.activePlayerId);
+      if ((activePlayer?.rad ?? 0) > 0) {
+        const radId = `trigger-${state.objectSequence++}`;
+        const radEntry = Object.freeze({
+          id: radId,
+          zone: 'stack',
+          controllerId: activePlayer.id,
+          cardId: null,
+          kind: 'trigger',
+          triggerEntry: Object.freeze({
+            ability: Object.freeze({ type: 'triggered', trigger: Object.freeze({ event: 'rad_counters' }), effect: Object.freeze([]) }),
+            sourceId: null,
+            targets: Object.freeze([]),
+            extra: Object.freeze({ inherentRad: true, playerId: activePlayer.id }),
+            sourceLki: Object.freeze({}),
+            printLki: null,
+          }),
+        });
+        if (state.pendingWardPay) {
+          (state.pendingWardPay.deferredTriggers ??= []).push(radEntry);
+        } else if (state.pendingOptionalPay) {
+          (state.pendingOptionalPay.deferredTriggers ??= []).push(radEntry);
+        } else {
+          state.objects.set(radId, radEntry);
+          state.zones.stack.push(radId);
+        }
+        const radFired = event('ability_triggered', {
+          objectId: null, cardId: null, trigger: 'rad_counters',
+          onStack: true, stackEntryId: radId, playerId: activePlayer.id, targets: [],
+        });
+        state.events.push(radFired);
+        events.push(radFired);
+      }
       for (const object of [...state.objects.values()]) {
         if (object.zone !== 'battlefield' || object.controllerId !== state.turn.activePlayerId || !object.saga) continue;
         const loreBefore = object.counters?.lore ?? 0;

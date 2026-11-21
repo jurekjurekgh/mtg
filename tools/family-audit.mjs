@@ -149,6 +149,15 @@ export const FIELD_FAMILIES = [
     legal: ['player.energy === 3;', 'const energy = player.energy;', 'energy: energy ?? 0,'],
   },
   {
+    id: 'rad',
+    label: 'liczniki radiacji (rad counters)',
+    owner: 'src/engine/players.js',
+    pattern: /\.rad\s*(?:\+=|-=|=(?!=))/,
+    why: 'zmienia liczniki radiacji poza addRadCounters/removeRadCounters — gubi zdarzenia rad_counters_added/removed',
+    bypass: ['player.rad = 2;', 'state.players[1].rad += 2;', 'p.rad -= 1;'],
+    legal: ['player.rad === 2;', 'const rad = player.rad;', 'rad: rad ?? 0,'],
+  },
+  {
     id: 'speed',
     label: 'prędkość gracza (DFT „Start your engines!”)',
     owner: 'src/engine/players.js',

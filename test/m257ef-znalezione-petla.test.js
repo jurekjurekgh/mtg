@@ -57,7 +57,7 @@ test('E1: talia 1 karta — mulligan: wybór 1/1 wymuszony, auto-rozstrzygnięci
 
 test('E2: talie 60-kartowe — mulligan: wybór 1 z 7 wystawiany (pendingMulliganBottom stoi)', () => {
   const green = parseDeckText(fs.readFileSync('decks/tarkir-bg.txt', 'utf8'), REGISTRY).cardIds;
-  const black = parseDeckText(fs.readFileSync('decks/dominaria-wrg.txt', 'utf8'), REGISTRY).cardIds;
+  const black = parseDeckText(fs.readFileSync('decks/dominaria-brg.txt', 'utf8'), REGISTRY).cardIds;
   const state = setupCardMatch({
     seed: 2026, players: [{ id: 'p1' }, { id: 'p2' }],
     decks: new Map([['p1', green], ['p2', black]]), registry: REGISTRY,

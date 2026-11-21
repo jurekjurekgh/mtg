@@ -66,6 +66,8 @@ const BEZ_SNAPSHOTU = Object.freeze([
   'token_kithkin',
   'token_knight',
   'token_merfolk',
+  // Batch 74: tokeny Ról (Royal/Sorcerer/Monster) — druk TWOE, bez osobnych plików.
+  'token_monster_role',
   'token_mutagen',
   'token_orc_army',
   'token_phyrexian',
@@ -74,9 +76,13 @@ const BEZ_SNAPSHOTU = Object.freeze([
   'token_rat',
   'token_reliquary_dragon',
   'token_robot',
+  // Batch 74: tokeny Ról — j.w.
+  'token_royal_role',
   'token_skeleton',
   'token_soldier',
   'token_soldier_lifelink',
+  // Batch 74: token Ról — j.w.
+  'token_sorcerer_role',
   'token_spirit',
   'token_spirit_flying',
   'token_spirit_red_white',
@@ -97,10 +103,8 @@ const BEZ_SNAPSHOTU = Object.freeze([
 // plan: docs/plans/PLAN_2026-10-14-batch67-kolekcja-369-398.md). Wpisy schodzą
 // z tej listy wraz z implementacją kolejnych fal; do tego czasu są OSIEROCONE.
 const OSIEROCONE_SNAPSHOTY = Object.freeze([
-  // Batch 70 (E3): 10 snapshotów batcha dostało definicje — z listy zostaje
-  // wyłącznie „undercity” (snapshot bez karty katalogowej, wpis historyczny).
-  // Batch 71/B3 (2026-11-01): 10 snapshotów dostało definicje w B3, więc lista
-  // w toku wróciła do zera (zostaje „undercity").
+  // Batch 74 (2026-11-16, Etap 3): 10 snapshotów 656–665 dostało definicje
+  // (`card-data.js`) — z listy został wyłącznie obiekt wsparcia `undercity`.
   'undercity',
 ]);
 
@@ -237,14 +241,16 @@ test('pokrycie snapshotów katalogu jest jawne i dokładne', () => {
   // Batch 70 (E3): +10 definicji → 680.
   // Batch 71 (B3): +10 kart i +token Elf Warrior → 691.
   // Batch 72 (B3): +10 kart i +token Spirit → 702.
-  assert.equal(registry.all().length, 713, 'liczba definicji wymaga przeglądu po zmianie katalogu (Batch 72: +10 kart + token)');
+  // Batch 74 (Etap 3): +10 kart i +3 tokeny Ról (Royal/Sorcerer/Monster) → 726.
+  assert.equal(registry.all().length, 726, 'liczba definicji wymaga przeglądu po zmianie katalogu (Batch 74: +10 kart + 3 tokeny Ról)');
   // Batch 67: 582 + 10 snapshotów nowego batcha (definicje wchodzą falami, E1–E6).
   // Batch 68: +10 snapshotów (docs/cards/scryfall-*.json) → 602.
   // Batch 69: +10 snapshotów (412–425) → 612.
   // Batch 70: +10 snapshotów (426–624) → 622; definicje wchodzą w E3.
   // Batch 71 (B1): +10 snapshotów (625–634) → 632.
-  // Batch 72 (B1): +10 snapshotów (635–644) → 642.
-  assert.equal(idsSnapshotow.length, 652, 'liczba snapshotów wymaga przeglądu po zmianie dokumentów');
+  // Batch 73: +10 nowych snapshotów (TDFC jako 1 plik) → 651.
+  // Batch 74 (Etap 1): +10 snapshotów w toku (656–665) → 662 plików; par sparowanych nadal 651 do Etapu 3.
+  assert.equal(idsSnapshotow.length, 662, 'liczba snapshotów wymaga przeglądu po zmianie dokumentów');
   assert.deepEqual(brakujace, [...BEZ_SNAPSHOTU], 'zmieniła się jawna lista kart bez snapshotu');
   assert.deepEqual(osierocone, [...OSIEROCONE_SNAPSHOTY], 'zmieniły się snapshoty bez definicji katalogowej');
   // Batch 67: 581 + 5 snapshotów fali A (pary snapshot↔definicja już istnieją).
@@ -253,7 +259,8 @@ test('pokrycie snapshotów katalogu jest jawne i dokładne', () => {
   // Batch 71/B3: 632 snapshotów − 1 osierocony (undercity) = 631 par.
   // Batch 72: +10 sparowanych snapshotów; token nie ma własnego snapshotu → 641.
   // Batch 73: +10 nowych snapshotów (TDFC jako 1 plik) → 651.
-  assert.equal(idsSnapshotow.length - osierocone.length, 651,
+  // Batch 74 (Etap 3): +10 par snapshot↔definicja (656–665) → 661.
+  assert.equal(idsSnapshotow.length - osierocone.length, 661,
     'liczba dopasowanych snapshotów wymaga aktualizacji wraz z allowlistą');
 });
 
@@ -382,13 +389,15 @@ test('dane katalogu zgodne ze snapshotami Oracle (front face, coverage, keywords
   }
 
   // Batch 71/B3: 621 + 10 par (625–634) → 631; Batch 72: +10 par → 641.
-  assert.equal(porownano, 651, `zmieniła się liczba dopasowanych snapshotów: ${porownano}`);
+  // Batch 74 (Etap 3): +10 par (656–665) → 661.
+  assert.equal(porownano, 661, `zmieniła się liczba dopasowanych snapshotów: ${porownano}`);
   // Batch 69: +token_heron_spirit (token bez pliku Scryfall) → 59.
   // Batch 71/B3: +1 token (Elf Warrior) → 60; Batch 72/B3: +1 Spirit token → 61.
-  assert.equal(bezSnapshotu, 62, `zmieniła się liczba brakujących snapshotów: ${bezSnapshotu}`);
+  // Batch 74 (Etap 3): +3 tokeny Ról (bez plików Scryfall) → 65.
+  assert.equal(bezSnapshotu, 65, `zmieniła się liczba brakujących snapshotów: ${bezSnapshotu}`);
   assert.equal(wielostronnych, 12, `zmieniła się liczba kart wielostronnych: ${wielostronnych}`);
-  assert.equal(frontTypePorownano, 651, `typy/podtypy nie porównano dla ${651 - frontTypePorownano} snapshotów`);
-  assert.equal(frontOraclePorownano, 651, `Oracle frontu nie porównano dla ${651 - frontOraclePorownano} snapshotów`);
+  assert.equal(frontTypePorownano, 661, `typy/podtypy nie porównano dla ${661 - frontTypePorownano} snapshotów`);
+  assert.equal(frontOraclePorownano, 661, `Oracle frontu nie porównano dla ${661 - frontOraclePorownano} snapshotów`);
   assert.equal(oracleTopNull, 10, `oracle_text null/brak: oczekiwano 9, jest ${oracleTopNull}`);
   assert.equal(oracleTopNullMultiface, 10, `oracle_text null/brak na DFC: oczekiwano 9, jest ${oracleTopNullMultiface}`);
   assert.equal(oracleTopEmpty, 14, `pusty oracle_text: oczekiwano 14, jest ${oracleTopEmpty}`);

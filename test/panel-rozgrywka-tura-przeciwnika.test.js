@@ -36,7 +36,7 @@ import { BOT_ID, HUMAN_ID, createSession } from '../src/table/session.js';
 import { createCardRegistry } from '../src/cards/card-data.js';
 import { parseDeckText } from '../src/cards/deck-text.js';
 
-function makeSession(seed, botDeck = 'dominaria-wrg.txt') {
+function makeSession(seed, botDeck = 'dominaria-brg.txt') {
   const registry = createCardRegistry();
   const decks = new Map([
     [HUMAN_ID, parseDeckText(fs.readFileSync('decks/innistrad-brg.txt', 'utf8'), registry).cardIds],
@@ -181,10 +181,14 @@ test('M101/D: trigger jako JEDYNY obiekt na stosie też raportuje swój skutek',
   // (1 opóźniony trigger, panel kompletny; hunter 1..15 — kolejne trafienia
   // w tej parze: 3, 4, 6, 7, 12, 14; drugi nośnik to `lorwyn.txt` seed 2 i 6).
   // Konwencja L25: zmiana wycen bota przelosowuje seedy scenariuszowe.
-  const { shown, log } = playCollectingPanel(makeSession(1, 'the-edge.txt'));
+  // Batch 74/Etap 3: generator przeliczył podział Dominarii i Warhammera
+  // (Memorial to Genius, Grollub), a talia `the-edge` zmieniła skład — seed 1
+  // nie ma już opóźnionych triggerów. Hunter (1..20) po nowym składzie:
+  // `the-edge` seed 4/6/7 → 3 opóźnione. Konwencja L25 (przelosowanie seedów).
+  const { shown, log } = playCollectingPanel(makeSession(4, 'the-edge.txt'));
   const panel = shown.join('\n');
   const opoznione = log.filter((l) => /trigger się rozstrzyga \(opóźniony\)/.test(l));
-  assert.ok(opoznione.length > 0, 'seed 1 (the-edge) miał zawierać opóźnione triggery — zmienił się przebieg partii');
+  assert.ok(opoznione.length > 0, 'seed 4 (the-edge) miał zawierać opóźnione triggery — zmienił się przebieg partii');
   for (const line of opoznione) {
     assert.ok(panel.includes(line), `opóźniony trigger poza panelem: „${line}"`);
   }

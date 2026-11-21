@@ -50,8 +50,8 @@ export const SNAPSHOT_CONFIG = Object.freeze({
   // już nie istnieje, więc partia golden-mastera czytałaby pustą talię.
   pairs: Object.freeze([
     Object.freeze(['ravnica-wur', 'innistrad-wu']),
-    Object.freeze(['dominaria-wrg', 'mirrodin-wu']),
-    Object.freeze(['tarkir-bg', 'warhammer-ubr']),
+    Object.freeze(['dominaria-brg', 'mirrodin-wu']),
+    Object.freeze(['tarkir-bg', 'warhammer-ub']),
   ]),
   seeds: Object.freeze([1000, 1001]),
   maxCommands: 4000,

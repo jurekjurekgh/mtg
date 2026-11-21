@@ -1,0 +1,26 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Saltfield+Recluse&set=plc&format=json",
+  "print": "plc",
+  "name": "Saltfield Recluse",
+  "mana_cost": "{2}{W}",
+  "cmc": 3,
+  "type_line": "Creature — Human Rebel Cleric",
+  "oracle_text": "{T}: Target creature gets -2/-0 until end of turn.",
+  "power": "1",
+  "toughness": "2",
+  "colors": ["W"],
+  "color_identity": ["W"],
+  "keywords": [],
+  "set": "plc",
+  "set_name": "Planar Chaos",
+  "collector_number": "16",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/5/f/5ffed4e4-0f54-4ab1-8563-ac4be7ae8309.jpg?1783943167",
+    "normal": "https://cards.scryfall.io/normal/front/5/f/5ffed4e4-0f54-4ab1-8563-ac4be7ae8309.jpg?1783943167"
+  },
+  "rulings": [],
+  "rulingsSource": "https://api.scryfall.com/cards/plc/16/rulings",
+  "rulingsPobrano": "2026-11-16",
+  "pobrano": "2026-11-16"
+}

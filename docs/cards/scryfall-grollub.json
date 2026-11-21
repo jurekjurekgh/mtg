@@ -1,0 +1,26 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Grollub&set=exo&format=json",
+  "print": "exo",
+  "name": "Grollub",
+  "mana_cost": "{2}{B}",
+  "cmc": 3,
+  "type_line": "Creature — Beast",
+  "oracle_text": "Whenever this creature is dealt damage, each opponent gains that much life.",
+  "power": "3",
+  "toughness": "3",
+  "colors": ["B"],
+  "color_identity": ["B"],
+  "keywords": [],
+  "set": "exo",
+  "set_name": "Exodus",
+  "collector_number": "63",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/4/7/47f6301a-d581-4aaf-9993-3013323074aa.jpg?1783946517",
+    "normal": "https://cards.scryfall.io/normal/front/4/7/47f6301a-d581-4aaf-9993-3013323074aa.jpg?1783946517"
+  },
+  "rulings": [],
+  "rulingsSource": "https://api.scryfall.com/cards/exo/63/rulings",
+  "rulingsPobrano": "2026-11-16",
+  "pobrano": "2026-11-16"
+}

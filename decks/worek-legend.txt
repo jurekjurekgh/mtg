@@ -13,6 +13,7 @@
 1x Tah-Crop Skirmisher
 1x Cancel
 1x Lotusguard Disciple
+1x Saltfield Recluse
 1x Ulna Alley Shopkeep
 1x Vortex Runner
 1x Capture Sphere
@@ -23,8 +24,8 @@
 1x Captivating Gyre
 1x Necrosavant
 1x Sifter Wurm
-1x Plains
+2x Plains
 4x Island
 3x Swamp
 1x Mountain
-3x Forest
+2x Forest

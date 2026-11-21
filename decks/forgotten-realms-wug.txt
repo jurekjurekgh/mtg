@@ -1,6 +1,6 @@
 # Forgotten Realms (WUG)
 
-1x Heap Gate
+1x Gond Gate
 1x Manor Gate
 1x Fleeting Flight
 1x Circle of the Land Druid
@@ -15,6 +15,7 @@
 1x Angel of the Dawn
 1x Ettercap
 1x Waveskimmer Aven
-3x Plains
-1x Island
-4x Forest
+1x Frilled Sea Serpent
+2x Plains
+3x Island
+3x Forest

@@ -52,14 +52,14 @@ const REPO = path.resolve(import.meta.dirname, '..');
  * `decks/dominaria-wu.txt`, a ta lista została przy starej nazwie — narzędzie
  * padało ENOENT w `deckOf`, więc domyślny pomiar remisów nie działał wcale
  * (test bramkowy `test/audyt-bot-walka-remisy.test.js` podaje własną listę par
- * i był zielony). Wpis brzmi teraz jak w bramce: `dominaria-ub`. Strażnikiem
+ * i był zielony). Wpis brzmi teraz jak w bramce: `dominaria-wu`. Strażnikiem
  * istnienia nazw jest `test/audyt-pr185-f22-martwe-nazwy-talii.test.js` — bez
  * niego następna rotacja talii (ADR 0024 §3) znów zostawiłaby martwy audyt.
  */
 export const AUDIT_PAIRS = Object.freeze([
-  ['ravnica-wur', 'innistrad-wu'], ['dominaria-wrg', 'mirrodin-wu'], ['tarkir-bg', 'warhammer-ubr'],
+  ['ravnica-wur', 'innistrad-wu'], ['dominaria-brg', 'mirrodin-wu'], ['tarkir-bg', 'warhammer-ub'],
   ['wiedzmin-bg', 'tarkir-bg'], ['worek-legend', 'wiedzmin-bg'], ['srodziemie', 'theros'],
-  ['kaladesh', 'zendikar-wu'], ['warhammer-wg', 'innistrad-brg'], ['dominaria-ub', 'worek-mroczny'],
+  ['kaladesh', 'zendikar-wu'], ['warhammer-wrg', 'innistrad-brg'], ['dominaria-wu', 'worek-mroczny'],
   ['forgotten-realms-br', 'worek-dziki'], ['tarkir-wur', 'wiedzmin-bg'], ['worek-basni', 'mirrodin-brg'],
 ].map((p) => Object.freeze(p)));
 

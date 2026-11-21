@@ -339,7 +339,7 @@ export function createGameState({ seed, players }) {
     // { playerId, candidateIds, restorePriorityTo }. Blokuje grę do
     // resolve_sacrifice_choice (jak scry/surveil).
     pendingSacrifice: null,
-    // Inicjatywa (CR 725): id gracza, który ją posiada (null = nikt). Kto ją
+    // Inicjatywa (CR 727): id gracza, który ją posiada (null = nikt). Kto ją
     // obejmuje po raz pierwszy, zagłębia się w Podziemia; posiadacz venture'uje
     // też na początku swojego upkeepu. Postęp lochu: undercityProgress[player].
     initiativePlayerId: null,
@@ -366,6 +366,9 @@ export function createGameState({ seed, players }) {
     // Infusion: „as long as you gained life this turn"). Zerowane przy
     // zmianie tury, jak cardsDrawnThisTurn.
     lifeGainedThisTurn: {},
+    // Którzy gracze zaatakowali stworem w bieżącej turze (Raid, CR 207.2c /
+    // CR 508.1 / ruling Arrow Storm 2024-11-08: pamięta nawet po śmierci atakującego).
+    playersAttackedThisTurn: {},
     // Aktywowane w bieżącej turze zdolności z limitem „activate only once
     // each turn" (Snarling Wolf): klucz `${objectId}:${abilityIndex}` → true.
     // Zerowane przy zmianie tury, jak cardsDrawnThisTurn.
@@ -837,6 +840,7 @@ function beginTurnContinuation(state, events, { keepTappedIds = [] } = {}) {
   state.instantSorceryCastThisTurnByPlayer = {};
   state.cardsDrawnThisTurn = {};
   state.lifeGainedThisTurn = {};
+  state.playersAttackedThisTurn = {};
   // »Activate only once each turn« (Snarling Wolf) — limit aktywacji
   // zeruje się z nową turą, jak licznik dobrań.
   state.abilityActivatedThisTurn = {};
@@ -2966,13 +2970,20 @@ export function execute(state, input) {
     // sprawdzany jest stan przejściowy).
     state.pendingSurveil = null;
     const before = state.events.length;
+    const milledGraveIds = [];
     for (const id of surveil.objectIds) {
       if (!millIds.includes(id)) continue;
       const object = state.objects.get(id);
       const graveId = `grave-${state.objectSequence++}`;
       const moved = moveObjectDirectly(state, id, 'graveyard', graveId);
+      milledGraveIds.push(graveId);
       state.events.push(event('card_milled', {
         playerId: surveil.playerId, fromId: id, objectId: graveId, cardId: moved.cardId, object: moved,
+      }));
+    }
+    if (milledGraveIds.length > 0) {
+      state.events.push(event('cards_milled', {
+        playerId: surveil.playerId, amount: milledGraveIds.length, ids: milledGraveIds, fromSurveil: true,
       }));
     }
     // Karty pozostawione na wierzchu w wybranej kolejności; reszta biblioteki
@@ -3871,7 +3882,10 @@ export function execute(state, input) {
   // (treasure) — jak pay_x_cast_from_graveyard ogranicza się do prostych
   // czarów. abilityWindowCast w castSpell/castPermanent omija bramki timingu (CR 601.2b
   // ignorowany, gdyż rzut następuje w trakcie rozstrzygania zdolności).
-  if (state.pendingExileCast) {
+  if (state.pendingExileCast && !manaGeneratingCommandFor(state, cmd, state.pendingExileCast.playerId)) {
+    // M200/E (wzór pay_or_sacrifice / counter_pay): zdolności many gracza
+    // podejmującego decyzję (tap_for_mana / manowe activate_ability) muszą
+    // działać w oknie Vaana, żeby kreator many mógł tapować źródła przed rzutem.
     if (cmd.type !== 'resolve_exile_cast') return reject('exile_cast_unresolved');
     if (cmd.playerId !== state.pendingExileCast.playerId) return reject('exile_cast_not_your_decision');
     const pending = state.pendingExileCast;
@@ -5272,7 +5286,7 @@ export function execute(state, input) {
   // płacącego musi nadal działać, nawet gdy jej wcześniejsza aktywacja
   // wyzwoliła oczekujący wybór celu. Sam cel pozostaje zablokowany wyżej
   // przez decyzję dopłaty; to nie rozwiązuje kolejności APNAP triggerów.
-  const pendingManaPayment = state.pendingPayOrSacrifice ?? state.pendingCounterPay ?? state.pendingWardPay ?? state.pendingOptionalPay;
+  const pendingManaPayment = state.pendingPayOrSacrifice ?? state.pendingCounterPay ?? state.pendingWardPay ?? state.pendingOptionalPay ?? state.pendingExileCast;
   if (state.pendingTriggerTargets.length > 0
     && !(pendingManaPayment && manaGeneratingCommandFor(state, cmd, pendingManaPayment.playerId))) {
     const pending = state.pendingTriggerTargets[0];
@@ -7499,7 +7513,8 @@ export function playerView(state, playerId) {
         // pola prawdziwy kafel (renderBattlefield czyta wpis z playerView)
         // nie pokazywał „Ward {2}\", a test W8 sprawdzał cardInfo na SUROWYM
         // obiekcie i luki nie widział.
-        if (object.ward != null) entry.ward = object.ward;
+        const wardVal = wardAmountOf(object, state);
+        if (wardVal != null) entry.ward = wardVal;
         // M315: mechanika zakrycia JAWNA dla kontrolera (CR 708.5 — swój
         // permanent możesz obejrzeć; kafel podpisuje „Cloak" zamiast „Morph").
         // Przeciwnik nie dostaje tej flagi — cloak-vs-morph to informacja
@@ -7965,6 +7980,8 @@ export function playerView(state, playerId) {
         // Wygnanie jest jawne (CR 406.3), koszt to publiczny Oracle.
         if (object.warpReady) waiting.warpReady = true;
         if (object.warp) waiting.warp = object.warp;
+        if (object.bestow) waiting.bestow = object.bestow;
+        if (object.surge) waiting.surge = object.surge;
         // Publiczny skutek rozstrzygniętej zdolności: ten konkretny obiekt
         // można rzucić z exile. UI/bot nie muszą wnioskować wyłącznie z listy
         // komend, a ponowne wygnanie nowego obiektu pola nie odziedziczy.
@@ -9296,6 +9313,12 @@ export function playerView(state, playerId) {
       cast: false, objectId: exilePending.objectId, cardId: exilePending.cardId,
     }));
     if (exileCastable && exileCard.zone === 'exile') {
+      // CR 109.4: podczas rzutu z okna Vaana kontrolerem czaru staje się
+      // `playerId` — zniżki kosztów i legalne cele (bestow/X) liczą się dla
+      // rzucającego, tak jak po przełączeniu controllerId w `execute`.
+      const exileCastObj = exileCard.controllerId !== playerId
+        ? Object.freeze({ ...exileCard, controllerId: playerId })
+        : exileCard;
       // Jeden wzorzec komendy dla WSZYSTKICH wariantów rzutu (cele, tryb,
       // koszt dodatkowy, X, gospodarz aury) — L48: oferta niesie dokładnie to,
       // co potem rozlicza bramka `resolve_exile_cast`.
@@ -9319,20 +9342,20 @@ export function playerView(state, playerId) {
           ...(offer.damageDivision ? { damageDivision: offer.damageDivision } : {}),
         }));
       };
-      if (exileCard.aura || exileCard.bestow) {
+      if (exileCastObj.aura || exileCastObj.bestow) {
         // Aura (CR 303.4a, znalezisko E audytu PR #93): gospodarza wybiera
         // gracz, a wariant bestow ma WŁASNY koszt — jedno i drugie wylicza
         // `legalAuraCastsForObject` (ten sam generator co dla ręki).
-        for (const offer of epicCastOffers(state, playerId, exileCard, { aura: true })) pushExileCast(offer);
+        for (const offer of epicCastOffers(state, playerId, exileCastObj, { aura: true })) pushExileCast(offer);
       } else {
-        const budget = producibleMana(state, playerId, null, spellManaPurpose(exileCard), coloredPipsOf(exileCard.cardId, 0));
-        const cost = effectiveSpellManaCost(state, exileCard);
-        if (cost <= budget && hasColorForCardId(state, playerId, exileCard.cardId, 0, spellManaPurpose(exileCard))) {
-          if (exileCard.kind === 'spell') {
+        const budget = producibleMana(state, playerId, null, spellManaPurpose(exileCastObj), coloredPipsOf(exileCastObj.cardId, 0));
+        const cost = effectiveSpellManaCost(state, exileCastObj);
+        if (cost <= budget && hasColorForCardId(state, playerId, exileCastObj.cardId, 0, spellManaPurpose(exileCastObj))) {
+          if (exileCastObj.kind === 'spell') {
             // Vaan idzie przez `castSpell`: płaci PEŁNY koszt, więc potrafi
             // rozliczyć tryb z celami zmiennymi (CR 601.2c) i wybranego X
             // (CR 107.3a) — oferta enumeruje jedno i drugie.
-            for (const offer of epicCastOffers(state, playerId, exileCard, {
+            for (const offer of epicCastOffers(state, playerId, exileCastObj, {
               variableTargets: true, xCost: true, divided: true,
             })) pushExileCast(offer);
           } else {
@@ -9340,6 +9363,11 @@ export function playerView(state, playerId) {
           }
         }
       }
+    }
+    // CR 605.3a / 601.2g: legalne zdolności many (Skarb, dork, itp.) przed
+    // wyborem rzutu w oknie Vaana — źródła dla kreatora many.
+    for (const { ability, ...offer } of legalManaAbilities(state, playerId)) {
+      legalCommands.push(command('activate_ability', playerId, offer));
     }
   } else if (state.status === 'active' && !blockedByOthersDecision && activeMadnessCast) {
     // M158/Batch 39: Madness — rzuć za koszt madness albo do cmentarza.
@@ -9937,8 +9965,8 @@ export function playerView(state, playerId) {
   // Batch 56 (energia, CR 122.1): licznik gracza jest JAWNY dla obu graczy
   // (jak poison i speed) — bez niego gracz nie widziałby, ile energii ma,
   // a bot nie miałby z czego wyceniać kosztu {E}.
-  const players = state.players.map(({ id, name, life, mana, landPlays, poison, manaPool, restrictedPool, purposeRestrictedPool, speed, energy }) => ({
-    id, name, life, mana: mana ?? 0, landPlays: landPlays ?? 0, poison: poison ?? 0, energy: energy ?? 0,
+  const players = state.players.map(({ id, name, life, mana, landPlays, poison, manaPool, restrictedPool, purposeRestrictedPool, speed, energy, rad }) => ({
+    id, name, life, mana: mana ?? 0, landPlays: landPlays ?? 0, poison: poison ?? 0, energy: energy ?? 0, rad: rad ?? 0,
     // M313 (zgłoszenie właściciela, Leonin Surveyor): prędkość (DFT „Start
     // your engines!", Batch 24) jest jawna dla OBU graczy — licznik publiczny,
     // jak poison; bez niej UI nie miało z czego rysować panelu speed.
@@ -10689,6 +10717,7 @@ export function playerView(state, playerId) {
     undercityProgress: { ...state.undercityProgress },
     descendedThisTurn: { ...state.descendedThisTurn },
     cardsLeftGraveyardThisTurn: { ...(state.cardsLeftGraveyardThisTurn ?? {}) },
+    playersAttackedThisTurn: { ...(state.playersAttackedThisTurn ?? {}) },
     // M107 (ADR 0017 — kompletność widoku; zlecenie właściciela 2026-08-16):
     // PEŁNA sekcja WALKI. Do tej pory widok nie niósł jej wcale: kontroler
     // (bot, UI, tester) musiał rekonstruować walkę ze znaczników na kaflach

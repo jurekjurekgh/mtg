@@ -1,22 +1,28 @@
-# Warhammer Fantasy (WG)
+# Warhammer Fantasy (WRG)
 
-1x Rupture Spire
+1x Brute Force
+1x Fireball
 1x Lionheart Maverick
+1x Shock
 1x Squire's Lightblade
-1x Cellar Door
 1x Cherished Hatchling
-1x Contested Game Ball
+1x Goblin Piker
 1x Savage Surge
 1x Wooden Stake
-1x Brawler's Plate
+1x Bloodfire Infusion
 1x Glorifier of Suffering
 1x Hobble
 1x Invasive Species
-1x Ramroller
 1x Thunderstaff
+1x Goblin Battle Jester
+1x Gorehorn Minotaurs
+1x Hill Giant
 1x Inspiring Captain
 1x Irontread Crusher
+1x Wrap in Flames
 1x You're Confronted by Robbers
 1x Acidic Slime
-5x Plains
-4x Forest
+1x Revolutionist
+3x Plains
+6x Mountain
+3x Forest

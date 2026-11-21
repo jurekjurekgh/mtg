@@ -20,7 +20,7 @@ import { isActivatedManaAbility } from '../src/engine/mana-sources.js';
  * w oknie z prawdziwą decyzją. Testy są headless — bez DOM-u.
  */
 
-function buildDecks(humanFile = 'tarkir-bg.txt', botFile = 'warhammer-ubr.txt') {
+function buildDecks(humanFile = 'tarkir-bg.txt', botFile = 'warhammer-ub.txt') {
   const registry = createCardRegistry();
   const decks = new Map([
     [HUMAN_ID, parseDeckText(fs.readFileSync(`decks/${humanFile}`, 'utf8'), registry).cardIds],
@@ -176,10 +176,10 @@ test('sesje z tym samym seedem przebiegają identycznie (bez Math.random)', () =
 });
 
 test('partia z czarami przechodzi przez stos i event log to opisuje', () => {
-  const { registry, decks } = buildDecks('tarkir-bg.txt', 'warhammer-ubr.txt');
+  const { registry, decks } = buildDecks('tarkir-bg.txt', 'warhammer-ub.txt');
   // Seed 4 po Batch 35 E3 (green +Trade Route Envoy, red bez zmian) —
   // przelosowane hunterem (kolejne trafienia: 17, 32).
-  // Seed 1 po E7/C (2026-09-07): Shock przeniesiony kaladesh → warhammer-ubr
+  // Seed 1 po E7/C (2026-09-07): Shock przeniesiony kaladesh → warhammer-ub
   // (plan wg kolumny planu właściciela) — zmiana trajektorii; przelosowane
   // hunterem na dokładnym chooseHumanCommand (seed 1: pełna partia, 8 rzutów).
   const session = createSession({ seed: 1, registry, decks });

@@ -1,0 +1,25 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Temur+Banner&set=ktk&format=json",
+  "print": "ktk",
+  "name": "Temur Banner",
+  "mana_cost": "{3}",
+  "cmc": 3,
+  "type_line": "Artifact",
+  "oracle_text": "{T}: Add {G}, {U}, or {R}.\n{G}{U}{R}, {T}, Sacrifice this artifact: Draw a card.",
+  "colors": [],
+  "color_identity": ["G", "R", "U"],
+  "keywords": [],
+  "produced_mana": ["G", "R", "U"],
+  "set": "ktk",
+  "set_name": "Khans of Tarkir",
+  "collector_number": "226",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/9/9/9990bdff-c27a-447f-b530-d8b7614fe9a0.jpg?1783939048",
+    "normal": "https://cards.scryfall.io/normal/front/9/9/9990bdff-c27a-447f-b530-d8b7614fe9a0.jpg?1783939048"
+  },
+  "rulings": [],
+  "rulingsSource": "https://api.scryfall.com/cards/ktk/226/rulings",
+  "rulingsPobrano": "2026-11-16",
+  "pobrano": "2026-11-16"
+}

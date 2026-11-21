@@ -219,6 +219,8 @@ export function createGameObject({ id, instanceId, cardId, controllerId, zone, p
       ...(aura.conditionalKeywords?.length
         ? { conditionalKeywords: Object.freeze(aura.conditionalKeywords.map((ck) => Object.freeze({ condition: Object.freeze({ ...ck.condition }), keywords: Object.freeze([...ck.keywords]) }))) }
         : {}),
+      ...(aura.ward != null ? { ward: aura.ward } : {}),
+      ...(aura.grantAbilities?.length ? { grantAbilities: Object.freeze([...aura.grantAbilities]) } : {}),
     }) : null,
     // Equipment (CR 301.5/702.6): permanent-artefakt ze zdolnością equip;
     // załączony daje zaczarowanemu nosicielowi pump/keywordy, a po utracie

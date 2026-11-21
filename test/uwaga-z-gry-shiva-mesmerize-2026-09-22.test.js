@@ -243,8 +243,10 @@ test('F/5 klasa (ADR 0002): inwentarz descriptorowy cant_be_blocked + Enter the 
   // this turn" (efekt `cant_be_blocked` z `requiresTarget`) — ta sama polityka celu
   // co Enter the Enigma (F/5 b). Jej statyczna zdolność „can't be blocked" to
   // `cantBeBlocked` na permanencie (combat.js), NIE efekt — nie wchodzi tu.
+  // Batch 74/664 (M20 61 Frilled Sea Serpent): aktywowana „This creature can't be
+  // blocked this turn" (`applyTo: 'self'`) — dar na SAMYM źródle, bez celu.
   const KNOWN = new Set(['shiva-warden-of-ice', 'enter-the-enigma', 'coralhelm-guide', 'subterranean-scout',
-    'neurok-invisimancer']);
+    'neurok-invisimancer', 'frilled-sea-serpent']);
   const found = new Set();
   for (const card of REGISTRY.all()) {
     const hits = [];

@@ -189,7 +189,7 @@ test('H/remis: 5 mocy w 5/5 + 1/1 — ginie CENNIEJSZY (wartość > liczba)', ()
 });
 
 test('H/trample: za mało mocy na lethal — CAŁOŚĆ w blokera (nie na gracza, M101/B6)', () => {
-  // Regresja znaleziona grzechotką remisów (tarkir-bg|warhammer-ubr): duch 1/1
+  // Regresja znaleziona grzechotką remisów (tarkir-bg|warhammer-ub): duch 1/1
   // z trample, blokowany przez 4/6. Need 6 > moc 1: żaden lethal nieosiągalny,
   // więc cała moc idzie w blokera (suma = moc — walidator nie wymaga wtedy
   // lethal, a reszta „na gracza" byłaby nielegalna: trample_blocker_below_lethal).
