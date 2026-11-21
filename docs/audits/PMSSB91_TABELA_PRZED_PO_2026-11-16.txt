@@ -1,0 +1,20 @@
+PMSSB-91 — TABELA PRZED -> PO (sonda tools/pmssb91-batch74-petla-sonda.mjs)
+
+Zrzuty źródłowe:
+  PRZED: docs/audits/PMSSB91_POMIAR_PRZED_2026-11-16.{json,txt}  (zbudowane na commicie 9673af3)
+  PO:    docs/audits/PMSSB91_POMIAR_PO_2026-11-16.{json,txt}
+
+96 rekordów; ZMIENIONYCH: 6 (dokładnie wiersze objęte findingami F-91/1, /2, /3, /5).
+Żaden inny wiersz nie drgnął — brak skutków ubocznych napraw w pozostałych 90 rekordach.
+
+wiersz | PRZED | PO | finding
+------+-------+----+---------
+ 20 | activate_ability(recluse#0->w-1-1)  score=35.00 | activate_ability(recluse#0->w-1-1)  score=31.00 | F-91/1 Saltfield: cap mocy (1/1 vs 4/4)
+ 55 | cast_spell(storm-hand->p2)  score=13.00 | pass_priority  score=0.00 | F-91/3 Arrow Storm: hold-for-Raid
+ 88 | activate_ability(serpent#0)  score=39.00 | pass_priority  score=0.00 | F-91/2 Frilled: ewazja bez blokera
+ 91 | cast_permanent(queen-hand)  score=7.81 | cast_permanent(queen-hand)  score=78.01 | F-91/5 Mirelurk: trigger o warunku zewnętrznym
+ 92 | cast_permanent(queen-hand)  score=7.81 | cast_permanent(queen-hand)  score=78.01 | F-91/5 (ten sam, inny wariant stanu)
+ 93 | cast_permanent(queen-hand)  score=7.81 | cast_permanent(queen-hand)  score=78.01 | F-91/5 (ten sam, inny wariant stanu)
+
+Uwaga: wiersze MQ-01 (rad, F-91/4) i GY-02 pozostają bez zmian w tym zrzucie;
+pomiar F-91/4 wykonano osobno (życie wroga 20 vs 5 -> 82,09 = 82,09) i zamrożono pinem.
