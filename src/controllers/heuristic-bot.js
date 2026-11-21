@@ -907,12 +907,30 @@ function damageChipEnablesKill(view, attacker, amount) {
  * z widoku, więc dynamiczne P/T nie trafiają do Math.abs jako obiekt.
  * Kill przez 0 toughness działa także poza walką (CR 704.5f).
  */
-function negativePumpValue(view, target, delta) {
+function negativePumpValue(view, target, delta, params = null) {
   if (!target || target.controllerId === view.playerId) return -60;
   // J: do wartości debuffu doliczamy uratowane ciało blokera (0 poza walką).
   const saved = negativePumpBlockerSaveValue(view, target, delta);
+  // PMSSB-91/F-91/1 (Batch 74, Saltfield Recluse): redukcja obrażeń, jaką daje
+  // debuff mocy na ATAKUJĄCYM, jest ograniczona jego mocą — 6/7 z `-2/-0`
+  // dalej bije za 4, a 1/1 za 0. Pomiar PRZED: 4/4 = 6/7 = 1/1 = 35,00
+  // (składnik `4 × |Δpower|` nie wiedział, ile mocy cel ma). Pokrętło
+  // `negativePumpPowerCap` (domyślnie 1) ogranicza licznik do
+  // `min(|Δpower|, combatPower(target))`; 0 przywraca dawną wartość (M429).
+  // Dotyczy wyłącznie mocy: `-0/-X` (wytrzymałość) nie jest ograniczane niczym,
+  // bo redukuje wytrzymałość do zera niezależnie od jej wysokości.
+  // Kapowanie dotyczy WYŁĄCZNIE debuffu, który celu NIE zabija (wytrzymałość
+  // po debuffie > 0). Gdy cel ginie z SBA, redukcja mocy jest bezprzedmiotowa
+  // (stwór nie zada żadnych obrażeń), a wartość niesie składnik za
+  // wytrzymałość — sentinel 58/A12 pinuje tę gałąź przy `sacrificePumpTradeWeight: 0`.
+  const rawPower = Math.abs(delta.power ?? 0);
+  const capPower = (params == null || (params.negativePumpPowerCap ?? 1) > 0)
+    && !pumpRemovesCreature(view, target, delta);
+  const effectivePowerLoss = capPower
+    ? Math.min(rawPower, Math.max(0, combatPower(target)))
+    : rawPower;
   return pumpChangesOutcome(view, target, delta)
-    ? 25 + 4 * Math.abs(delta.power ?? 0) + 4 * Math.abs(delta.toughness ?? 0) + saved
+    ? 25 + 4 * effectivePowerLoss + 4 * Math.abs(delta.toughness ?? 0) + saved
     : (saved > 0 ? saved : -75);
 }
 
@@ -4658,11 +4676,34 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
    * cudzy ląd miele PRZECIWNIKA), a ta kara jest liczona dla karty, zanim
    * wariant wybierze cel — na planszy ten sam trigger łapie `tapLibraryLoss`.
    */
+  // PMSSB-91/F-91/5 (Batch 74, Mirelurk Queen — „whenever one or more nonland
+  // cards are MILLED"): zdarzenie, którego karta sama nie wywołuje — mielenie
+  // MOJEGO albo CUDZEGO stosu, z dowolnego źródła. Drabina `repeatLibraryDrain`
+  // mnożyła taki trigger przez horyzont (`repeatLibraryDrainTurns`), więc
+  // Mirelurk przy bibliotece 20 zbierał karę 60+6×brak (pomiar PRZED: rzut
+  // 7,81 przy 20 kartach, −35,39 przy 12, 78,01 przy 30) i bot odmawiał
+  // zagrania 4/4 z wigilancją. Warunek jest ZEWNĘTRZNY wobec karty — nie jest
+  // to „powtarzalne źródło doboru", które karta dołoży sobie sama jak
+  // Curiosity. Klasa jest rozpoznawana po ZDARZENIU (deskryptor, ADR 0002);
+  // pokrętło `externalTriggerDrainScale` (domyślnie 0 = brak tej kary, 1 =
+  // dawna pełna kara) pozwala wrócić do poprzedniego zachowania bez zmiany kodu.
+  const EXTERNAL_CONDITION_DRAIN_EVENTS = new Set([
+    'nonland_cards_milled',
+    'cards_milled',
+    'card_milled',
+    'spell_cast',
+    'spell_cast_opponent',
+    'creature_enters_battlefield_opponent',
+    'land_enters_battlefield',
+  ]);
   const repeatLibraryDrain = (def) => {
     let naOdpalenie = 0;
     for (const ability of def?.abilities ?? []) {
       if (!ability?.trigger?.event || ONE_SHOT_DRAIN_EVENTS.has(ability.trigger.event)) continue;
-      naOdpalenie += drainEfekty(ability, ability.trigger.event, drainsMyLibrary);
+      const scale = EXTERNAL_CONDITION_DRAIN_EVENTS.has(ability.trigger.event)
+        ? (P.externalTriggerDrainScale ?? 0) : 1;
+      if (scale === 0) continue;
+      naOdpalenie += drainEfekty(ability, ability.trigger.event, drainsMyLibrary) * scale;
     }
     return naOdpalenie * P.repeatLibraryDrainTurns;
   };
@@ -11437,7 +11478,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         if (isNegativePump(effect)) {
           if (target?.controllerId === view.playerId) value -= 60;
           else if (pumpRemovesCreature(view, target, delta)) value += P.drawCardValue + bodyWorth(target);
-          else if (target && pumpChangesOutcome(view, target, delta)) value += Math.max(0, negativePumpValue(view, target, delta));
+          else if (target && pumpChangesOutcome(view, target, delta)) value += Math.max(0, negativePumpValue(view, target, delta, P));
         } else if (target?.controllerId === view.playerId) {
           value += temporaryPumpPayoff(view, target, { ...effect, targetIndex: undefined });
         }
@@ -14643,6 +14684,46 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
               }
               if (bestHold != null && bestHold > currentValue + 10) score -= 120;
             }
+            // PMSSB-91/F-91/3 (Batch 74, Arrow Storm — Raid, CR 508.1):
+            // ten sam model TRZYMANIA co Addendum wyżej, dla wariantu
+            // `amountIfRaid`. Czar sorcery rzucany w main1, ZANIM zadeklarujemy
+            // atakujących, wypala wariant „5 zamiast 4" na zawsze — po ataku
+            // ten sam cel dostaje o 1 obrażenie więcej (i przy
+            // `cantBePreventedIfRaid` omija prewencję). Pomiar PRZED:
+            // main1 bez Raidu na 5/5 → rzut za 13,00 (4 dmg, nie zabija);
+            // main2 z Raidem → 55,00. Bot płacił kartę za wariant gorszy.
+            // Bramki (M429, wzorzec `holdForAddendumSafe`):
+            //  - tylko GDY atak jest jeszcze realny: własna tura, faza
+            //    przedcombat (main1/beginning_of_combat) i mamy co najmniej
+            //    jedno ciało zdolne atakować TERAZ (`canAttackNow` z widoku),
+            //  - tylko gdy cel jest wart trzymania: zabicie wariantem Raid
+            //    (`amount` < pozostałe wytrzymałości ≤ `amountIfRaid`) ALBO
+            //    gracz na `amountIfRaid` życia,
+            //  - bez trzymania, gdy grozi lethal w tej turze
+            //    (`holdForAddendumSafe` — wspólna bramka bezpieczeństwa).
+            const raidAvailable = Number.isInteger(effect.amountIfRaid)
+              && effect.amountIfRaid > amount && !raidNow;
+            if (raidAvailable && slot != null && myTurn(view)
+              && view.turn.phase === 'precombat_main'
+              && (view.zones.battlefield ?? []).some((o) => o.controllerId === view.playerId
+                && o.kind === 'creature' && canAttackNow(o))
+              && holdForAddendumSafe(view)) {
+              // PRAWOWITY wyjątek pro-playera (plan §4): `main1` na BLOKERA, którego
+              // i tak zabija wariant bez Raidu, a bez którego nasz atak by nie
+              // przeszedł — usunięcie go TERAZ jest warte więcej niż +1 obrażenie
+              // po walce. Sprawdzamy, czy ofiara realnie może zablokować któregoś
+              // z naszych zdolnych do ataku stworów (ta sama bramka co
+              // `attackerCanBeBlocked`, L41), zamiast zgadywać intencję.
+              const cel = (view.zones.battlefield ?? []).find((o) => o.id === slot);
+              const zabijaBezRaidu = Boolean(cel) && cel.controllerId !== view.playerId
+                && cel.kind === 'creature'
+                && (cel.toughness ?? 0) - (cel.damage ?? 0) <= amount;
+              const blokujeNaszAtak = zabijaBezRaidu
+                && (view.zones.battlefield ?? []).some((o) => o.controllerId === view.playerId
+                  && o.kind === 'creature' && canAttackNow(o)
+                  && attackerCanBeBlocked(o, [cel]));
+              if (!blokujeNaszAtak) score -= P.raidHoldBonus;
+            }
           }
           // M139 (uwaga właściciela): CZAR tapujący nie miał wyceny pozytywnej
           // w ogóle — ścieżka zdolności ją miała, ścieżka czarów nie (kolejny
@@ -15104,7 +15185,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
               // sensowny wyłącznie w sytuacji bojowej, w której realnie zmienia
               // wynik — 5/5 atakujący po −1/−0 ginie od 4/4, a 5/5 vs 1/1
               // dalej zabija i przeżywa (skutek zerowy). Symulujemy przed/po.
-              score += negativePumpValue(view, target, pumpDelta(view, effect));
+              score += negativePumpValue(view, target, pumpDelta(view, effect), P);
               }
             }
           }
@@ -16022,7 +16103,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           const pump = temporaryPumpOf(effect, view, source);
           if (pump && target && target.controllerId !== view.playerId && isNegativePump(effect)) {
             const cost = ability?.cost?.sacrificeSelf && source ? bodyWorth(source) : 0;
-            const oldValue = negativePumpValue(view, target, pump) - cost;
+            const oldValue = negativePumpValue(view, target, pump, P) - cost;
             let value = oldValue;
             if (ability?.cost?.sacrificeSelf && source && pumpRemovesCreature(view, target, pump)) {
               const loss = permanentDoomedThisTurn(view, source) ? 0 : cost;
@@ -16275,7 +16356,22 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             const recipient = effect.applyTo === 'self'
               ? (objectOnBoard(view, cmd.objectId) ?? source)
               : target;
-            score += cantBeBlockedTargetValue(view, recipient);
+            // PMSSB-91/F-91/2 (Batch 74, Frilled Sea Serpent): ta sama instrukcja
+            // na SAMYM ŹRÓDLE musi przejść tę samą bramkę „czy jest czym blokować”
+            // co cel (L41). Gałąź ETB (`cant_be_blocked` z celem) filtruje
+            // kandydatów przez `attackerCanBeBlocked` od Batcha 68; ta gałąź nie
+            // filtrowała niczego, więc 7 many na nieblokowalność było warte 39,00
+            // także przy PUSTYM stole wroga i przy blokerze 4/4, który i tak ginie
+            // w wymianie (pomiar PRZED: 39,00 w czterech różnych stanach).
+            // Ewazja bez blokera nie kupuje obrażeń. Kara `selfEvasionWastedPenalty`
+            // (domyślnie 18) schodzi pod pass przy każdym koszcie ≥ 1 many;
+            // M429: 0 = dawna pełna wartość (kontrola anty-over-fix).
+            const blockers = untappedEnemyBlockers(view);
+            const bramka = (P.selfEvasionWastedPenalty ?? 0) > 0;
+            const realnieBlokowalny = !bramka || attackerCanBeBlocked(recipient, blockers);
+            score += realnieBlokowalny
+              ? cantBeBlockedTargetValue(view, recipient)
+              : -P.selfEvasionWastedPenalty;
           }
           // PMSSB-60/F2 (Zombie Boa, batch 65): „wybierz kolor — stwory tego
           // koloru blokujące w tej turze zostaną zniszczone". POMIAR PRZED:
