@@ -377,3 +377,84 @@ test('PMSSB-91/K4: L41 — ta sama bramka ewazji dla obu gałęzi cant_be_blocke
   assert.ok(Array.isArray(d.opcje) && d.opcje.length > 0, 'stan buduje legalne oferty (bramka nie wywraca wyceny)');
   assert.equal(execute, execute, 'import `execute` używany przez pozostałe piny pliku');
 });
+
+// ---------------------------------------------------------------------------
+// D2/D3 — okno walki dla zdolności zależnych od blokowania.
+// Pomiar PRZED (macierz momentu) był artefaktem sondy bez ZADEKLAROWANEGO
+// atakującego: Saltfield dostawał płaskie −73 w każdym kroku. Po zbudowaniu
+// sceny z realnym atakiem 4/4 zdolność jest poprawnie wyceniana wtedy, gdy
+// naprawdę coś kupuje (pin F-91/1a/1b to już dokumentuje). Realnym defektem
+// okazał się `cant_block`: `attackWindowAttackerIds` nie uznawał kroku
+// `declare_attackers` za okno przed atakiem, więc w JEDYNYM momencie, w którym
+// odmowa bloku przesądza atak, zdolność spadała do fallbacku −20.
+// ---------------------------------------------------------------------------
+
+test('PMSSB-91/D2: Saltfield Recluse ceni debuff DOKŁADNIE wtedy, gdy atak wroga jest zadeklarowany', () => {
+  const wBloku = scoreOferty(saltfieldScenariusz('grizzled-outcasts'), 'activate_ability(recluse');
+  assert.ok(wBloku > 0, `w bloku debuff atakującego jest wart dodatnio: ${wBloku}`);
+  // Poza walką (moja main1, brak zadeklarowanego ataku) ta sama zdolność
+  // nie kupuje obrażeń — schodzi pod pass.
+  const pozaWalka = stan({
+    krok: 'main1',
+    pole: [
+      { id: 'recluse', karta: 'saltfield-recluse', gracz: 'p1' },
+      { id: 'napastnik', karta: 'grizzled-outcasts', gracz: 'p2' },
+    ],
+    mana: { p1: 5 },
+  });
+  const luzem = scoreOferty(pozaWalka, 'activate_ability(recluse');
+  assert.ok(luzem < 0, `poza walką bez realnego ataku debuff jest jałowy: ${luzem}`);
+  assert.ok(wBloku > luzem, `${wBloku} > ${luzem}: różne momenty`);
+});
+
+test('PMSSB-91/D3: cant_block ma TĘ SAMĄ wartość w całym oknie przed atakiem (main1, BoC, declare_attackers)', () => {
+  const scen = (krok) => stan({
+    krok, aktywny: 'p1', priorytet: 'p1',
+    pole: [
+      { id: 'h', karta: 'lambholt-harrier', gracz: 'p1' },
+      { id: 'a', karta: 'grizzled-outcasts', gracz: 'p1' },
+      { id: 'b', karta: 'grizzled-outcasts', gracz: 'p2' },
+    ],
+    mana: { p1: 8 },
+  });
+  const wMain1 = scoreOferty(scen('main1'), 'activate_ability(h');
+  const wBoc = scoreOferty(scen('beginning_of_combat'), 'activate_ability(h');
+  const wDeklaracji = scoreOferty(scen('declare_attackers'), 'activate_ability(h');
+  assert.ok(wMain1 > 0, `main1: realny bloker wroga → dodatnio (${wMain1})`);
+  assert.equal(wBoc, wMain1, `beginning_of_combat == main1 (${wBoc} vs ${wMain1})`);
+  // PRZED naprawą: −22 (fallback), mimo że to jedyny moment, w którym
+  // odmowa bloku przesądza atak.
+  assert.equal(wDeklaracji, wMain1,
+    `declare_attackers == main1 (${wDeklaracji} vs ${wMain1}) — krok deklaracji JEST oknem przed atakiem`);
+});
+
+test('PMSSB-91/D3b: cant_block poza oknem walki schodzi pod pass (main2, tura wroga)', () => {
+  const poMain2 = stan({
+    krok: 'main2', aktywny: 'p1', priorytet: 'p1',
+    pole: [
+      { id: 'h', karta: 'lambholt-harrier', gracz: 'p1' },
+      { id: 'a', karta: 'grizzled-outcasts', gracz: 'p1' },
+      { id: 'b', karta: 'grizzled-outcasts', gracz: 'p2' },
+    ],
+    mana: { p1: 8 },
+  });
+  const v = scoreOferty(poMain2, 'activate_ability(h');
+  assert.ok(v < 0, `main2: atak w tej turze już się odbył — zdolność jałowa (${v})`);
+});
+
+test('PMSSB-91/D3c: tapnięty bloker nie jest usuwany z planu ataku — cant_block jałowy w KAŻDYM kroku', () => {
+  for (const krok of ['main1', 'declare_attackers']) {
+    const s = stan({
+      krok, aktywny: 'p1', priorytet: 'p1',
+      pole: [
+        { id: 'h', karta: 'lambholt-harrier', gracz: 'p1' },
+        { id: 'a', karta: 'grizzled-outcasts', gracz: 'p1' },
+        { id: 'b', karta: 'grizzled-outcasts', gracz: 'p2' },
+      ],
+      mana: { p1: 8 },
+    });
+    s.objects.set('b', Object.freeze({ ...s.objects.get('b'), tapped: true }));
+    const v = scoreOferty(s, 'activate_ability(h');
+    assert.ok(v < 0, `${krok}: tapnięty bloker już nie blokuje (${v})`);
+  }
+});

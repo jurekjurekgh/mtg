@@ -11135,8 +11135,13 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     const ableAttackers = () => myCreatures(view)
       .filter((c) => canAttackNow(c) && combatPower(c) > 0);
     if (declaredAttack) return combat.attackers ?? [];
+    // `declare_attackers` to NIE „po ataku" — przeciwieństwo: to moment,
+    // w którym decyzja o ataku dopiero zapada, a bloker jeszcze może zostać
+    // usunięty. Wcześniej ten krok wypadał z okna, więc zdolność „can't
+    // block" miała najwyższą wartość w main1 (8), a w jedynym momencie, w
+    // którym naprawdę coś kupuje, spadała do fallbacku −20 (zmierzone).
     const preAttackWindow = myTurn(view)
-      && ['main1', 'beginning_of_combat'].includes(view.turn.step)
+      && ['main1', 'beginning_of_combat', 'declare_attackers'].includes(view.turn.step)
       && ableAttackers().length > 0;
     return preAttackWindow ? ableAttackers().map((c) => c.id) : null;
   };
