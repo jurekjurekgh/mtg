@@ -61,24 +61,30 @@
 - [ ] Zapis raportu `docs/audits/AUDYT_PR187_2026-11-21.md` + aktualizacja opisu PR.
 
 ### E2. Naprawy znalezisk z audytu PR #187
-- [ ] Każde znalezisko z E1 (`F-187/x`) naprawione u root cause, z testem RED→GREEN i
-  weryfikacją mutacyjną jako **osobny, samodzielnie zielony commit**
-  (`npm test` + `npm run build` + `git push`).
+- [x] Audyt PR #187 nie wykazał błędów regułowych w `src/` (raport
+  `docs/audits/AUDYT_PR187_2026-11-21.md`) — kod zgodny z CR/Oracle, ADR 0002/0017/0022.
+- [x] **Znalezisko pętli jakości (E3) naprawione u root cause (`7132d47`):** surowy slug
+  `instants_and_sorceries_in_your_graveyard` w kaflu „Blitz of the Thunder-Raptor" —
+  brak wpisu w `DYNAMIC_AMOUNT_NOUNS` (render.js); dodano wpis + test
+  `test/audyt-pr187-raw-slug-blitz.test.js` (bez maskowania, bez nowych wyjątków).
 
 ### E3. Pętla jakości (ADR 0021 pkt 4)
-- [ ] Audyt Żywym Testerem (`tools/table-tester/`) po `npm run build`: partie na
-  taliach zawierających karty Batcha 74 — detektory (0 zgłoszeń), niewycenione ruchy
-  (0), błędy runtime (0); osie: (1) bezsensowne działania bota, (2) kompletność logu/
-  modału „Ruch przeciwnika”, (3) ptaszki wyciszenia auto-pass.
-- [ ] Audyt zgodności z CR / przegląd ścieżek silnika (`state-based.js`, `combat.js`,
-  `triggers.js`, `effects.js`, `attachments.js`, `abilities.js`) — polowanie na
-  niespójności innymi ścieżkami niż poprzednia sesja.
-- [ ] Nie wymyślam nowego batcha kart (ADR 0021 pkt 4c).
+- [x] Audyt Żywym Testerem (`tools/table-tester/`) po `npm run build`: **14 partii**
+  (×400–500 kroków) na świeżych parach talii z Batchem 74 — detektory **0 zgłoszeń**
+  (przed i po naprawie E2), niewycenione ruchy **0**, błędy runtime **0**; osie:
+  (1) bezsensowne działania bota, (2) kompletność logu/modału, (3) ptaszki auto-pass.
+  Partia x9 (bot=worek-basni, seed 21) zgłosiła 1 detektor `[info]` (surowy slug) →
+  zamknięta w E2; po naprawie `== DETEKTORY: brak zgłoszeń ==`.
+- [x] Audyt zgodności z CR / przegląd ścieżek silnika (`state-based.js`, `combat.js`,
+  `triggers.js`, `effects.js`, `attachments.js`) — mechaniki Batch 74 zgodne; resetowanie
+  `playersAttackedThisTurn`/`triggerFiredThisTurn` w `beginTurnContinuation` poprawne.
+- [x] Nie wymyślono nowego batcha kart (ADR 0021 pkt 4c) — kolekcja kończy się na 665.
 
 ### E4. Bramy końcowe i domknięcie sesji
-- [ ] Pełna brama `npm run test:all` (cicho do `.arena/`), `npm run build`,
-  `node tools/cr-numery.mjs`, `node tools/bot-tie-audit.mjs --gry=2`,
-  `test/dokumentacja-budzet-lektury.test.js`.
+- [x] `npm test` **10 543/10 543** (fail 0, slow 282/282), `npm run build` **79 modułów / 5988,3 kB**,
+  `node tools/cr-numery.mjs` **OK** (563/6857), `node tools/bot-tie-audit.mjs --gry=2` **RC=0**,
+  `test/dokumentacja-budzet-lektury.test.js` **2/2**. Pełna brama `npm run test:all` w toku
+  (`.arena/test-all-final.log`).
 - [ ] Aktualizacja dokumentacji (`docs/PROJECT_HISTORY.md`, `docs/setup/HANDOFF_2026-11-21.md`,
   odhaczenie tego planu, aktualizacja opisu PR).
 - [ ] Weryfikacja `git status` (czysto) i przekazanie raportu końcowego (bez merge — ADR 0007).
