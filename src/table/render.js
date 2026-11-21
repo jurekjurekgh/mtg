@@ -1130,6 +1130,11 @@ const DYNAMIC_AMOUNT_NOUNS = Object.freeze({
   // lands you control" — bez tego wpisu kafel drukował surowy slug
   // `lands_you_control` zamiast treści (klasa M122/#5).
   lands_you_control: 'kontrolujesz lądów',
+  // Batch 65 (Blitz of the Thunder-Raptor, IKO): „deals damage ... equal to the
+  // number of instant and sorcery cards in your graveyard" — bez tego wpisu
+  // kafel drukował surowy slug `instants_and_sorceries_in_your_graveyard`
+  // zamiast treści (wykryte w pętli jakości Żywego Testera, 2026-11-21).
+  instants_and_sorceries_in_your_graveyard: 'instants i sorcery w twoim grobie',
 });
 
 /** Czytelna wartość P/T tokena, także dynamiczna (greatest_power_you_control). */
