@@ -451,6 +451,28 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   // to ryzyko POWTARZALNE (każde tapnięcie), a nie jednorazowy dobór z karty.
   'libraryTapSafeMargin',        // minimalny zapas kart po mielącym tapnięciu (właściciel: ~30)
   'repeatLibraryDrainTurns',     // horyzont: ile odpaleń powtarzalnego triggera zakładamy
+  // PMSSB-91/F-91/5 (Batch 74, Mirelurk Queen): trigger doboru, którego WARUNEK
+  // jest ZEWNĘTRZNY wobec karty („whenever one or more nonland cards are
+  // milled" — mielenie kogokolwiek), a sama karta nie jest silnikiem doboru.
+  // Drabina `repeatLibraryDrain` karze go jak samodzielne źródło (biblioteka
+  // 20 → kara 60+6×brak), więc bot odmawiał rzutu Mirelurka przy 12 kartach
+  // i wyceniał go o 70 pkt niżej niż ciało (pomiar: 7,81 vs 78,01 przy 30).
+  // Wartość 0 = dawna (pełna) kara; 1 = kara zdyskontowana wagą horyzontu.
+  'externalTriggerDrainScale',   // udział kary bibliotecznej dla triggerów o warunku zewnętrznym
+  // PMSSB-91/F-91/2 (Batch 74, Frilled Sea Serpent): aktywowana nieblokowalność
+  // na SAMYM źródle. Gałąź ETB (cel) filtruje kandydatów przez
+  // `attackerCanBeBlocked`, gałąź samo-celu nie filtrowała NICZEGO — pomiar:
+  // 39,00 identyczne przy pustym stole wroga i przy blokerze 6/7 (L41).
+  'selfEvasionWastedPenalty',    // kara, gdy ewazji nie ma czym zablokować (0 = dawna pełna wartość)
+  // PMSSB-91/F-91/1 (Batch 74, Saltfield Recluse): debuff mocy wyceniany
+  // 4 × |Δpower| niezależnie od tego, ile mocy cel realnie ma (4/4 → 35,00,
+  // 6/7 → 35,00, 1/1 → 35,00). Na atakującym redukcja obrażeń jest ograniczona
+  // jego mocą — nadwyżka debuffu nie kupuje nic.
+  'negativePumpPowerCap',        // 1 = liczba zdjętych obrażeń ograniczona mocą celu (0 = po staremu)
+  // PMSSB-91/F-91/3 (Batch 74, Arrow Storm): czar z `amountIfRaid`, zagrany
+  // PRZED deklaracją ataku, pali wariant „5 zamiast 4" na zawsze. Wzorzec
+  // `holdForAddendum` (M139/Addendum) — ta sama klasa: niższa liczba obrażeń.
+  'raidHoldBonus',               // kara-dopłata za rzut bez Raidu, gdy atak jest jeszcze możliwy
   // F1 v2 (uwaga właściciela 2026-09-23d, Veiled Ascension): efekt zakrywający
   // kartę z biblioteki (cloak — CR 701.58a) ZAMIENIA ją na permanenta 2/2
   // z wardem, a nie marnuje jak mill czy dobranie — więc „you may” jest
@@ -1224,6 +1246,11 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   librarySafeMargin: 20,
   libraryTapSafeMargin: 30,
   repeatLibraryDrainTurns: 3,
+  // PMSSB-91 — patrz uzasadnienie przy HEURISTIC_PARAM_KEYS.
+  externalTriggerDrainScale: 0,
+  selfEvasionWastedPenalty: 18,
+  negativePumpPowerCap: 1,
+  raidHoldBonus: 45,
   cloakLibraryFloor: 10,
   cloakThinLibraryPenalty: 60,
   // M429 „licznik na wskazanym celu" (P1 Mutagen, pomiar PRZED: remis 14/14/14).
