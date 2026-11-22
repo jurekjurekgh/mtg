@@ -10453,6 +10453,32 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     'resolve_rebound_cast',
     'resolve_grave_free_cast',
   ]);
+  /**
+   * H (zgłoszenie właściciela 2026-11-21, Epic Experiment): dwa removaly w
+   * TEN SAM cel — czar rzucony wcześniej leży na DOLE stosu i rozstrzyga się
+   * PO drugim (Summary Judgment zabija Pilgrim's Eye, Piercing Rays dostaje
+   * „cel nielegalny — bez efektu", CR 608.2b). Właściciel: „zamiast w dwie
+   * różne. BEZ SENSU." Kara za zdublowany cel usuwania MOJEGO stosu
+   * przechyla remis wariantów na drugą istotę; przy jedynym legalnym celu
+   * wynik spada, ale rzut i tak przechodzi nad `done` (i tak poszedłby do
+   * grobu — H/3). Tylko MOJE wpisy stosu: cudzy removal zduplikowany to
+   * jego fizzle, nie nasza strata. Rozpoznanie po deskryptorach (ADR 0002):
+   * damage / hard-removal po obu stronach; bounce może dołączyć przy
+   * zgłoszeniu. Jeden lejek dla całej rodziny darmowych rzutów (L41).
+   */
+  function stackRemovalDuplicationPenalty(view, effects, cmd) {
+    const targets = cmd?.targets ?? [];
+    if (targets.length === 0 || P.stackRemovalDuplicationPenalty <= 0) return 0;
+    const removes = (effs) => (effs ?? []).some((e) => e?.type === 'damage'
+      || e?.type === 'damage_divided_among_targets' || HARD_REMOVAL_EFFECTS.has(e?.type));
+    if (!removes(effects)) return 0;
+    const duplicated = (view.zones.stack ?? []).some((entry) =>
+      entry.controllerId === view.playerId
+      && (entry.targets ?? []).some((id) => targets.includes(id))
+      && removes(stackEntryEffects(entry)));
+    return duplicated ? P.stackRemovalDuplicationPenalty : 0;
+  }
+
   function freeCastTargetPenalty(view, effects, cmd) {
     const target = objectOnBoard(view, (cmd.targets ?? [])[0]) ?? null;
     const penalizeIdle = !FREE_CAST_NO_HOLD_OPTION_TYPES.has(cmd?.type);
@@ -10461,9 +10487,12 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     // cel na wrogu podnosi ją. Jeden lejek dla całej rodziny darmowych rzutów
     // (epic/suspend/rebound/madness/exile — L41), więc remisy wariantów
     // w Epic Experiment nie kończą się już pierwszym celem z brzegu.
+    // H (2026-11-21): zdublowany cel usuwania na MOIM stosie dokłada karę
+    // (`stackRemovalDuplicationPenalty`) — patrz helper wyżej.
     return selfHarmPenalty(view, effects, cmd, target)
       + friendlyMisaimPenalty(view, effects, cmd, target)
-      - preventShieldTargetValue(view, effects, cmd, { penalizeIdle });
+      - preventShieldTargetValue(view, effects, cmd, { penalizeIdle })
+      + stackRemovalDuplicationPenalty(view, effects, cmd);
   }
 
   /**
