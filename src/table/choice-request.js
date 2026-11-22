@@ -6,7 +6,7 @@ import { installPressActivation } from './gestures.js';
 import { renderPickerCancel, renderPickerChipList, renderPickerRow, renderPickerSection } from './picker.js';
 import { OPTION_IGNORABLE_TYPES, polishPluralCount } from './render.js';
 import { commandOptionKey, faceDownLabel } from './session.js';
-import { commandForCrewSelection, crewSelectionPower, commandForDiscardSelection, commandForEpicDiscardSelection, commandForSelection, commandForMulliganSelection, commandForMulliganBottomSelection, commandForXSelection, commandForSacrificeSelection, commandForTargetIdsSelection, commandForSingleTargetSelection, commandForCastWindowSelection, commandForButtonsSelection, commandForTapXSelection, commandForChooseOneOrBoth, commandForChooseModes, stunCandidatesFor } from './multi-target.js';
+import { commandForCrewSelection, crewSelectionPower, commandForDiscardSelection, commandForEpicDiscardSelection, commandForSelection, commandForMulliganSelection, commandForMulliganBottomSelection, commandForXSelection, commandForSacrificeSelection, ALT_PAY_ROW_ID, commandForTargetIdsSelection, commandForSingleTargetSelection, commandForCastWindowSelection, commandForButtonsSelection, commandForTapXSelection, commandForChooseOneOrBoth, commandForChooseModes, stunCandidatesFor } from './multi-target.js';
 
 function clearChoiceElement(element) {
   if (element) element.textContent = '';
@@ -1285,7 +1285,10 @@ function labelLooksLikeHtml(label) {
 }
 
 export function renderMultiTargetWizard(host, { view, session, plan, commands, sourceName = null, intro = null, introCard = null, slotLabels: slotLabels_ = null, onComplete, onCancel, onOpenCard = null, onOpenCardByCardId = null, onHoverCard = null, onHoverCardByCardId = null, onHoverCardEnd = null }) {
-  if (plan.buttonsMode || plan.castWindowMode) assertNoCombinationRows(commands, session);
+  if (plan.buttonsMode || plan.castWindowMode) assertNoCombinationRows(commands, session,
+    // M300: okno rzutu to lista GOTOWYCH rzutów (jeden wiersz = jedna
+    // komenda), nie modal wyboru kombinacji — F1 go nie rusza.
+    { allowScalarProduct: Boolean(plan.castWindowMode) });
   clearChoiceElement(host);
   // M257-r5/C: druga sekcja kreatora — stwór do poświęcenia (koszt dodatkowy).
   // Wybór JEDNOKROTNY (jeden stwór = jedna płatność), niezależny od celu czaru.
@@ -1329,7 +1332,7 @@ export function renderMultiTargetWizard(host, { view, session, plan, commands, s
       : slots
       ? `${sourceName ? `${sourceName} — ` : ''}wskaż po jednym celu dla każdej pozycji:\n`
       : sacMode
-        ? `${sourceName ? `${sourceName} — ` : ''}wskaż cel czaru oraz stwora do poświęcenia (koszt):\n`
+        ? `${sourceName ? `${sourceName} — ` : ''}wskaż cel czaru oraz stwora do poświęcenia${plan.altPay ? ` albo zapłatę ${plan.altPayAmount != null ? `{${plan.altPayAmount}}` : 'kosztu alternatywnego'}` : ' (koszt)'}:\n`
         : singleMode
           ? `${sourceName ? `${sourceName} — ` : ''}wskaż ${itemWord} (${range})${xLabel}:\n`
           : keepMode
@@ -1504,7 +1507,11 @@ export function renderMultiTargetWizard(host, { view, session, plan, commands, s
         : castWindowMode
           ? commandForCastWindowSelection(commands, [...chosen][0] ?? null)
           : sacMode
-        ? commandForSacrificeSelection(commands, { targets: [...chosen], sacrifice: sacrificeChoice })
+        ? commandForSacrificeSelection(commands, {
+          targets: [...chosen],
+          sacrifice: sacrificeChoice === ALT_PAY_ROW_ID ? null : sacrificeChoice,
+          payAlt: sacrificeChoice === ALT_PAY_ROW_ID,
+        })
         : plan.chooseOneOrBothMode
           ? commandForChooseOneOrBoth(plan, slotChoice)
           : slots
@@ -1892,6 +1899,14 @@ export function renderMultiTargetWizard(host, { view, session, plan, commands, s
   if (sacMode) {
     renderPickerSection(list, `${slotLabels[1] ?? 'Poświęcenie (koszt)'}:`, { className: 'multi-target-slot-label' });
     for (const id of plan.sacrifices) addRow(id, 'sac');
+    // F1 (zgłoszenie właściciela 2026-11-21, Lash of the Balrog): wariant
+    // „Zapłać {N} zamiast poświęcenia” to PEŁNY wiersz tej samej sekcji
+    // (radio), nie Osobna lista permutacji. Komendę dobiera
+    // commandForSacrificeSelection({ payAlt: true }) z legalCommands (L48).
+    if (plan.altPay) {
+      const amount = plan.altPayAmount != null ? `{${plan.altPayAmount}}` : 'koszt alternatywny';
+      addRow(ALT_PAY_ROW_ID, 'sac', { labelOverride: `Zapłać ${amount} zamiast poświęcenia` });
+    }
   }
 
   // Batch 62: sekcja kosztu niemanowego (np. ląd do zwrotu przy kickerze) —

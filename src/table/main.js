@@ -1328,7 +1328,15 @@ function bootstrapTable() {
     // ma obowiązkowe poświęcenie, ≥1 cel i ≥2 ofiary — inaczej zwykła
     // lista (Village Rites bez celu; Lash of the Balrog z wariantem
     // payAltCost {4}, którego kreator by ukrył).
-    const sacrificePlan = sacrificeCastPlanOf(request.options ?? []);
+    // F1 (zgłoszenie właściciela 2026-11-21, Lash of the Balrog): kwota
+    // zapłaty alternatywnej (`additionalCost.orPayMana`) siedzi w pełnym
+    // stanie, nie w komendach — plan dostaje ją na wiersz „Zapłać {N}”.
+    const sacrificeAltPay = (() => {
+      const castId = (request.options ?? []).find((c) => c?.type === 'cast_spell')?.objectId ?? null;
+      const spell = castId ? session.state?.objects?.get(castId)?.spell : null;
+      return Number.isInteger(spell?.additionalCost?.orPayMana) ? spell.additionalCost.orPayMana : null;
+    })();
+    const sacrificePlan = sacrificeCastPlanOf(request.options ?? [], { altPayAmount: sacrificeAltPay });
     if (sacrificePlan) {
       const sourceObject = [...(choiceView.zones?.hand ?? []), ...(choiceView.zones?.battlefield ?? []),
         ...(choiceView.zones?.graveyard ?? []), ...(choiceView.zones?.exile ?? [])]

@@ -12,7 +12,7 @@ import { moveObjectDirectly } from '../src/engine/objects.js';
 import { createSession, HUMAN_ID, BOT_ID } from '../src/table/session.js';
 import { parseDeckText } from '../src/cards/deck-text.js';
 import {
-  sacrificeCastPlanOf, singleTargetPlanOf, buttonsPlanOf, commandForButtonsSelection,
+  sacrificeCastPlanOf, singleTargetPlanOf, commandForSacrificeSelection,
 } from '../src/table/multi-target.js';
 
 /**
@@ -269,14 +269,15 @@ test('Lash of the Balrog: zapłata {4} zamiast poświęcenia — niszczy cel, ni
   const casts = view.legalCommands.filter((c) => c.type === 'cast_spell' && c.objectId === 'lash');
   const payAlt = casts.find((c) => c.payAltCost && c.targets[0] === 'target');
   assert.ok(payAlt, 'oferta zawiera wariant zapłaty {4} (payAltCost)');
-  assert.equal(sacrificeCastPlanOf(casts), null, 'mieszana grupa nie pasuje do kreatora „cel + ofiara”');
+  // F1 (2026-11-21): mieszana grupa idzie KREATOREM GRUPOWYM (cel + koszt
+  // z wierszem „Zapłać {4}”), nigdy listą permutacji.
+  const plan = sacrificeCastPlanOf(casts, { altPayAmount: 4 });
+  assert.ok(plan, 'mieszana grupa tworzy plan grupowy');
+  assert.equal(plan.altPay, true);
   assert.equal(singleTargetPlanOf(casts), null,
     'kreator samego celu nie może ukryć wyboru payAltCost za pierwszą ofiarą');
-  const fallback = buttonsPlanOf(casts);
-  assert.ok(fallback, 'grupa trafia do ogólnego planu przyciskowego');
-  assert.equal(fallback.rows.length, casts.length, 'każdy wariant z legalCommands ma własny przycisk');
-  const selected = commandForButtonsSelection(casts, `opt-${casts.indexOf(payAlt)}`);
-  assert.equal(selected, payAlt, 'wiersz {4} zachowuje dokładną komendę payAltCost');
+  const selected = commandForSacrificeSelection(casts, { targets: ['target'], payAlt: true });
+  assert.equal(selected, payAlt, 'wiersz „Zapłać {4}” znajduje dokładną komendę payAltCost (L48)');
   const r = execute(state, selected);
   assert.ok(r.ok, 'rzut z zapłatą: ' + (r.events?.[0]?.reason ?? ''));
   assert.equal(state.objects.get('sac').zone, 'battlefield', 'stwór NIE został poświęcony (zapłacono maną)');
@@ -299,12 +300,12 @@ test('Lash of the Balrog: wybór drugiej ofiary pozostaje dostępny przy opcji {
   const secondSacrifice = casts.find((c) => c.targets[0] === 'target' && c.sacrificeTargetId === 'sac2');
   assert.ok(secondSacrifice, 'legalCommands zawiera wariant z drugą ofiarą');
   assert.ok(casts.some((c) => c.targets[0] === 'target' && c.payAltCost), 'ta sama grupa zawiera też zapłatę {4}');
-  assert.equal(sacrificeCastPlanOf(casts), null, 'mieszana grupa omija kreator sacrifice-only');
+  // F1: plan grupowy obejmuje CAŁĄ mieszaną grupę (ofiary + zapłata).
+  const plan = sacrificeCastPlanOf(casts, { altPayAmount: 4 });
+  assert.ok(plan, 'mieszana grupa tworzy plan grupowy (nie lista permutacji)');
+  assert.equal(plan.altPay, true);
   assert.equal(singleTargetPlanOf(casts), null, 'plan jednego celu nie może zgubić wyboru kosztu');
-  const fallback = buttonsPlanOf(casts);
-  assert.ok(fallback);
-  assert.equal(fallback.rows.length, casts.length, 'fallback zachowuje wszystkie kombinacje target × koszt');
-  const selected = commandForButtonsSelection(casts, `opt-${casts.indexOf(secondSacrifice)}`);
+  const selected = commandForSacrificeSelection(casts, { targets: ['target'], sacrifice: 'sac2' });
   assert.equal(selected, secondSacrifice, 'wiersz drugiej ofiary zwraca komendę silnika bez zmian');
 
   const r = execute(state, selected);

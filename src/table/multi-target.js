@@ -379,30 +379,42 @@ export function commandForXSelection(plan, commands, {
 
 /**
  * Plan „cel + poświęcenie” dla grupy wariantów jednego rzutu albo null, gdy
- * grupa nie pasuje. Wyzwalacz (celowo wąski):
- *  - CAŁA grupa to `cast_spell` z OBOWIĄZKOWYM poświęceniem
- *    (`sacrificeTargetId` zawsze ustawiony) — mieszanina wariantów
- *    `payAltCost` (Lash of the Balrog: „sacrifice a creature OR pay {4}”)
- *    zostaje zwykłą listą, bo kreator ukryłby wariant zapłaty maną;
+ * grupa nie pasuje. Wyzwalacz:
+ *  - CAŁA grupa to `cast_spell`, którego warianty są albo poświęceniem
+ *    (`sacrificeTargetId`), albo zapłatą alternatywną (`payAltCost`);
  *  - czar ma co najmniej JEDEN cel (Village Rites `targets: []` = zwykła
  *    lista ofiar — i tak jest czytelna);
- *  - ≥2 różne ofiary (jedna ofiara = jeden wiersz, kreator zbędny);
+ *  - wymiar wyboru istnieje: ≥2 różne ofiary, albo (grupa mieszana
+ *    Lash of the Balrog „sacrifice a creature OR pay {4}”) ≥1 ofiara
+ *    + wariant zapłaty — zapłata dostaje WŁASNY wiersz w sekcji kosztu;
  *  - wspólny obiekt rzutu (jedna karta, jeden tryb).
+ *
+ * Zgłoszenie właściciela F1 (2026-11-21): grupy mieszane MUSZĄ iść tym
+ * kreatorem (dwie sekcje: cel + koszt/albo zapłata), nigdy listą
+ * permutacji „wszystkich kombinacji” — nawet jako fallback.
  */
-export function sacrificeCastPlanOf(commands) {
+export function sacrificeCastPlanOf(commands, { altPayAmount = null } = {}) {
   const options = commands ?? [];
   if (options.length < 2) return null;
-  const list = options.filter((cmd) => cmd?.type === 'cast_spell'
-    && cmd.sacrificeTargetId != null
-    && Array.isArray(cmd.targets) && cmd.targets.length >= 1);
+  const isCast = (cmd) => cmd?.type === 'cast_spell'
+    && Array.isArray(cmd.targets) && cmd.targets.length >= 1;
+  const payList = options.filter((cmd) => isCast(cmd) && cmd.payAltCost === true);
+  const sacList = options.filter((cmd) => isCast(cmd) && cmd.payAltCost !== true
+    && cmd.sacrificeTargetId != null);
+  const list = [...sacList, ...payList];
   if (list.length !== options.length) return null;
   // N: niejednolity dar — commandForSacrificeSelection nie zna `gifted`.
   if (!uniformGiftOf(list)) return null;
   if (!list.every((cmd) => cmd.objectId === list[0].objectId
     && (cmd.modeIndex ?? null) === (list[0].modeIndex ?? null))) return null;
   const sacrifices = [];
-  for (const cmd of list) if (!sacrifices.includes(cmd.sacrificeTargetId)) sacrifices.push(cmd.sacrificeTargetId);
-  if (sacrifices.length < 2) return null;
+  for (const cmd of sacList) if (!sacrifices.includes(cmd.sacrificeTargetId)) sacrifices.push(cmd.sacrificeTargetId);
+  const mixed = payList.length > 0;
+  if (mixed) {
+    // Grupa czysto-pay (sama zapłata per cel) = jeden wymiar (cele) — zwykła
+    // lista. Plan tylko wtedy, gdy sekcja kosztu ma CO WYBIERAĆ.
+    if (sacrifices.length < 1) return null;
+  } else if (sacrifices.length < 2) return null;
   const targets = [];
   for (const cmd of list) for (const id of cmd.targets) if (!targets.includes(id)) targets.push(id);
   const sizes = [...new Set(list.map((cmd) => cmd.targets.length))];
@@ -418,22 +430,34 @@ export function sacrificeCastPlanOf(commands) {
     maxTargets: Math.max(...sizes),
     hasX: false,
     sacrificeMode: true,
+    // F1: wariant „Zapłać {N} zamiast poświęcenia” ma własny wiersz w
+    // sekcji kosztu (kwota z pełnego stanu, patrz main.js).
+    altPay: mixed,
+    altPayAmount: Number.isInteger(altPayAmount) ? altPayAmount : null,
   };
 }
 
+/** Id wiersza „Zapłać {N} zamiast poświęcenia” w sekcji kosztu (radio). */
+export const ALT_PAY_ROW_ID = '__alt-pay-cost__';
+
 /**
- * Komenda odpowiadająca parze (cele, ofiara) albo null — szukana wśród
- * wariantów legalnych silnika (L48: UI nie buduje komendy z palca).
+ * Komenda odpowiadająca parze (cele, ofiara) albo wariantowi zapłaty
+ * alternatywnej (`payAlt: true`) — szukana wśród wariantów legalnych
+ * silnika (L48: UI nie buduje komendy z palca).
  * Fizzle (cel = ofiara, CR 601.2c/608.2b) pozostaje osiągalny: taki wariant
  * jest w legalCommands, więc zatwierdzenie go legalne.
  */
-export function commandForSacrificeSelection(commands, { targets = [], sacrifice = null } = {}) {
+export function commandForSacrificeSelection(commands, { targets = [], sacrifice = null, payAlt = false } = {}) {
   const key = targetKey(targets);
-  return (commands ?? []).find((cmd) =>
-    cmd?.type === 'cast_spell'
-    && cmd.sacrificeTargetId === sacrifice
-    && Array.isArray(cmd.targets)
-    && targetKey(cmd.targets) === key) ?? null;
+  return (commands ?? []).find((cmd) => {
+    if (cmd?.type !== 'cast_spell' || !Array.isArray(cmd.targets)) return false;
+    if (targetKey(cmd.targets) !== key) return false;
+    // F1: payAlt wymaga jawnego wskazania — sam `sacrifice: null` NIE
+    // może trafić w wariant zapłaty (w grupie mieszanej null = „brak
+    // poświęcenia”, a nie „zapłać”).
+    if (payAlt) return cmd.payAltCost === true && cmd.sacrificeTargetId == null;
+    return cmd.payAltCost !== true && cmd.sacrificeTargetId === sacrifice;
+  }) ?? null;
 }
 
 // ===========================================================================
