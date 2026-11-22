@@ -7,6 +7,70 @@ poniżej (PMSSB-1, PMSSB-2, …). Po zakończeniu pętli rodzina jest ZAMKNIĘTA
 kolejny agent czyta raport i piny zamiast badać od nowa — ponowny audyt
 tej samej rodziny wymaga nowego dowodu (sonda/Żywy Tester), nie przeczucia.
 
+**Zanim zaczniesz pracę: przeczytaj sekcję [„Czym PMSSB JEST i czym NIE
+jest”](#czym-pmssb-jest-i-czym-nie-jest--czytaj-przed-pierwszą-pętlą) —
+bez niej agenci mylą pętlę z checką „testy zielone + scoring istnieje”.
+
+## Czym PMSSB JEST i czym NIE jest — czytaj PRZED pierwszą pętlą
+
+> Kontekst (zgłoszenie właściciela 2026-11-21): agenci za każdym razem
+> traktują pętlę jako wymóg sprawdzenia, czy testy są zielone i czy scoring
+> istnieje dla każdej zdolności. **Nie o to w PMSSB chodzi** — poniższa
+> sekcja jest wiążąca dla wszystkich prac w tej pętli.
+
+### Czym NIE jest (najczęstsze złapania agentów)
+
+- **NIE jest checką „testy są zielone + scoring istnieje dla każdej
+  zdolności”.** Zielone testy i obecność pokrętła to warunek brzegowy
+  (dowód, że zmiana *działa*), nie sedno pętli. Raport w stylu „piny
+  zielone, każda zdolność ma ścieżkę wyceny → DONE” **bez żadnego
+  osądu o momencie rzutu to pętla nieodpracowana**.
+- **NIE jest testem regresyjnym parametrów** ani maszynowym tuningiem
+  scoringu (kompletny B0 = ADR 0018, wyłącznie na komendę właściciela).
+- **NIE jest inwentarzem zdolności** („czy istnieje kod wyceniający X”) —
+  to weryfikują silnik i piny techniczne; pętla zaczyna się dopiero
+  tam, gdzie trzeba odpowiedzieć, *kiedy* ta zdolność powinna być
+  użyta, a kiedy wstrzymana.
+
+### Czym JEST — sedno: optymalny MOMENT rzucenia (ok. 90% przypadków)
+
+PMSSB to **manualne strojenie scoringu bota na podstawie pro-playerowego
+wykorzystania kart z daną zdolnością.** W ok. 90% przypadków sprowadza się
+do **zidentyfikowania optymalnego momentu rzucenia takiej karty i
+penalizowania rzucania w momencie nieoptymalnym.**
+
+Agent **wciela się w rolę pro-playera MtG** i odpowiada na pytanie
+„kiedy najlepiej rzucić tę kartę?” — a nie „czy test przechodzi?”.
+Realna treść audytu to pytania w stylu:
+
+- **w której fazie**: ten sorcery idzie w Main 1, czy jako combat trick
+  dopiero w fazie walki **po deklaracji blokerów**, czy lepiej w Main 2?
+- **gdy mam cokolwiek na stole**: mam jakąkolwiek kreaturę na stole →
+  czy w ogóle jest sens rzucać ten czar, czy lepiej go przytrzymać na
+  moment, gdy nie mam nic na stole?
+- **w czyjej turze**: castuję w swojej turze (sorcery-speed) czy
+  reaguję w turze rywala (instant window)?
+- **gdy na stole jest X, w ręku jest Y, na cmentarzu jest Z**: kontekst
+  stołu, ręki, grobu, man i progów (threshold/delirium/prowes) zmienia
+  optymalny moment — macierz **kierunek × cel × timing × stan** z kroku
+  2 procedury jest narzędziem właśnie tej odpowiedzi, nie ozdobnikiem.
+
+**Wynik pętli to osąd pro-playera + pokrętło/kara implementująca ten
+osąd** (np. premia za hold do fazy walki; kara za rzut w Main 1, gdy
+lepszy jest combat trick; kara za rzucenie „bo mam mana”, gdy karta jest
+warta czekania na pusty stół) — udowodniona pinami RED→GREEN. Sam fakt,
+że pokrętło *istnieje* na liście, nie jest wynikiem.
+
+### Rola testów i bramek w pętli
+
+Testy (`test/audyt-pmssb<N>-….test.js`) **pinują osąd pro-playera**
+(RED na starym, złym momencie rzutu → GREEN po strojeniu) — są **dowodem
+osądu, nie jego substytutem**. Zielone bramki (`npm test`, snapshot,
+mirror) legitymizują zmianę; nigdy same w sobie nie zamykają pętli.
+Zamknięcie „BEZ ZMIANY KODU” jest legalne tylko wtedy, gdy audyt
+momentu rzutu został przeprowadzony i udokumentowany (werdykt + dowód),
+a nie dlatego, że „testy i tak były zielone”.
+
 ## Kiedy pętla jest OBOWIĄZKOWA
 
 Pętla nie jest opcjonalnym „dopieściem": **każdy batch kart z nową mechaniką**
@@ -24,10 +88,20 @@ teraz obowiązkowy, a nie zalecany.
 
 ## Procedura pętli (checklist dla agenta)
 
+> **Nie myl tej listy z celem pętli** (patrz „Czym PMSSB JEST i czym NIE
+> jest” wyżej): kroki 4–5 (testy, bramki) są **dowodem** osądu o momencie
+> rzutu, nie jego substytutem. Pętla bez osądu pro-playera w kroku 2 jest
+> nieodpracowana nawet przy zielonych pinach.
+
 0. Plan `docs/plans/PLAN_<data>-pmssb<N>-<rodzina>.md` (wzór: PMSSB-1) — commit.
 1. POMIAR PRZED: sonda `/tmp/pmssb<N>-<rodzina>-przed.mjs` (scenariusze → tabela
    wynik/FINDING) + inwentarz kart rodziny i ich okien (instant vs sorcery!).
 2. AUDYT: macierz kierunek × cel × timing × stan → findingi F1…Fn → fale.
+   **Sedno kroku — osąd pro-playera o MOMENCIE rzutu** (90% pętli): w której
+   fazie (Main 1 / combat trick po blokerach / Main 2), w czyjej turze, czy
+   rzucać w ogóle gdy mam stwory na stole, czy trzymać na pusty stół, co
+   zmienia ręka/grób/próg — patrz sekcja wyżej. Znajdź momenty, w których
+   bot rzuca nieoptymalnie, i zaprojektuj premię/karę dla nich.
    OBOWIĄZKOWE kontrole każdej pętli: (a) L41 — cast_spell / activate_ability /
    tryb modalny / trigger-decyzje / wrapper `apply_to_each_target` liczą TO SAMO
    (rozjazdy to findingi); (b) wymiar KOSZTU czaru (S11: 5 vs 2 many nie mogą

@@ -269,6 +269,13 @@ Bez niej silnik poprawnie *wykonuje* regułę, a bot nadal wybiera nią źle
 albo traktuje ją jak zero — mechanika jest wtedy dla gracza martwa, choć
 wszystkie piny są zielone.
 
+**PMSSB NIE jest checką „testy zielone + scoring istnieje dla każdej
+zdolności”.** Sedno pętli to osąd pro-playera o **optymalnym momencie
+rzucenia** karty (w której fazie, w czyjej turze, przy jakim stanie
+stołu/ręki/grobu) i kara nieoptymalnego timing — ok. 90% przypadków.
+Pełna definicja (co pętla JEST i czym NIE jest): sekcja „Czym PMSSB JEST
+i czym NIE jest” w `docs/PMSSB.md` — czytaj PRZED pierwszą pętlą.
+
 Procedura jest w `docs/PMSSB.md` („Procedura pętli”, kroki 0–7). Minimum
 dla batcha kart:
 
