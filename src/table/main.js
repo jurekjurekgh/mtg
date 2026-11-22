@@ -3161,6 +3161,13 @@ function bootstrapTable() {
     // odrzucał z "Brak kolorowej many" (komunikat ginął w kreatorze).
     if (cmd.type === 'cast_spell' || cmd.type === 'cast_permanent' || isExileCast) {
       if (stateObject?.spell?.xCost?.black === true) opts.xBlack = true;
+      // F2 (zgłoszenie właściciela 2026-11-21): kwota alternatywnego kosztu
+      // dodatkowego („pay {4}”, Lash of the Balrog) z pełnego stanu —
+      // deskryptor kreatora liczy PEŁNĄ płatność (baza + {4}); bez tego
+      // bramka zamykała kreator i silnik tapował lądy sam (auto-tap).
+      if (cmd.payAltCost === true && Number.isInteger(stateObject?.spell?.additionalCost?.orPayMana)) {
+        opts.altPayAmount = stateObject.spell.additionalCost.orPayMana;
+      }
     }
     // M327 (audyt PR #102, F7): koszt ODSŁONIĘCIA (CR 701.58b cloaka,
     // 701.40b manifestu) nosi tylko pełny stan — zakryty permanent ma w widoku

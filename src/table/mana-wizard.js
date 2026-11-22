@@ -628,8 +628,24 @@ export function paymentDescriptorOf(cmd, view, opts = {}) {
   const generic = Number.isInteger(opts.effectiveGeneric) && opts.effectiveGeneric >= 0
     ? Math.min(parsed.generic, opts.effectiveGeneric)
     : parsed.generic;
-  const totalNeeded = generic + requirements.length;
-  return buildDescriptor(object, totalNeeded, requirements, costStr, generic);
+  // F2 (zgłoszenie właściciela 2026-11-21, Lash of the Balrog): wariant
+  // „Zapłać {4} zamiast poświęcenia” płaci koszt BAZOWY + {4} — jedna
+  // płatność (CR 601.2h). Deskryptor musi nieść PEŁNĄ kwotę: bramka
+  // `shouldOpenManaWizard` i progress kreatora liczą z `totalNeeded`, a
+  // stara wartość (samej bazy) zamykała kreator przy „1 many” i silnik
+  // tapował resztę lądów sam (auto-tap) — dokładnie zgłoszenie F2.
+  // Kwota: pełny stan przez `opts.altPayAmount` (main.js) albo deskryptor
+  // `spell` z widoku własnej ręki (playerView go niesie).
+  const altPayAmount = cmd.payAltCost === true
+    ? (Number.isInteger(opts.altPayAmount) ? opts.altPayAmount
+      : (Number.isInteger(object.spell?.additionalCost?.orPayMana)
+        ? object.spell.additionalCost.orPayMana : null))
+    : null;
+  if (cmd.payAltCost === true && altPayAmount == null) return null; // fail-closed: bez kwoty nie otwieramy złego kreatora
+  const totalNeeded = generic + requirements.length + (altPayAmount ?? 0);
+  return buildDescriptor(object, totalNeeded, requirements,
+    altPayAmount != null ? `${costStr} + {${altPayAmount}}` : costStr,
+    generic + (altPayAmount ?? 0));
 }
 
 /**
