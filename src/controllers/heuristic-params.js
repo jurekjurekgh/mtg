@@ -490,6 +490,13 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   // PRZED deklaracją ataku, pali wariant „5 zamiast 4" na zawsze. Wzorzec
   // `holdForAddendum` (M139/Addendum) — ta sama klasa: niższa liczba obrażeń.
   'raidHoldBonus',               // kara-dopłata za rzut bez Raidu, gdy atak jest jeszcze możliwy
+  // G (zgłoszenie właściciela 2026-11-21, Glorifier of Suffering): refleks
+  // „poświęć stwora/artefakt → +1/+1 na dwóch celów" nie jest wart ZDROWEGO
+  // permanentu — bot palił super fajny artefakt za 4 many dla marnej
+  // licznikowej zapłaty. Strażnik nakłada ujemny wynik na zdrowych
+  // kandydatów (wyjątki właściciela: obca aura, TMC ≤ 1, token 1/1 bez
+  // zdolności); 0 = dawne `40 − strata` dla każdego (anti-over-fix M429).
+  'counterReflexSacrificeGuard', // 1 = zakaz poświęcania zdrowych permanentów (0 = po staremu)
   // F1 v2 (uwaga właściciela 2026-09-23d, Veiled Ascension): efekt zakrywający
   // kartę z biblioteki (cloak — CR 701.58a) ZAMIENIA ją na permanenta 2/2
   // z wardem, a nie marnuje jak mill czy dobranie — więc „you may” jest
@@ -1273,6 +1280,7 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   selfEvasionWastedPenalty: 18,
   negativePumpPowerCap: 1,
   raidHoldBonus: 45,
+  counterReflexSacrificeGuard: 1,
   cloakLibraryFloor: 10,
   cloakThinLibraryPenalty: 60,
   // M429 „licznik na wskazanym celu" (P1 Mutagen, pomiar PRZED: remis 14/14/14).

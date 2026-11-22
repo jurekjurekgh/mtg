@@ -8820,6 +8820,43 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     }
     return (target.manaCost ?? 0) * 2;
   }
+  /**
+   * G (zgłoszenie właściciela 2026-11-21, Glorifier of Suffering): czy ta
+   * decyzja poświęcenia należy do rodziny „refleks licznikowy" — zdolność
+   * `reflexive_sacrifice` („you may sacrifice another creature or artifact"),
+   * której refleks „When you do" kładzie liczniki (`add_counter`). Rozpoznanie
+   * deskryptorowe (ADR 0002), nie po nazwie karty. Inne ofiary — Grave
+   * Exchange, champion (`moveTo: exile`), pay-or-sacrifice — nie wchodzą
+   * w rodzinę i zostają przy własnych politykach.
+   */
+  function counterReflexSacrificePending(view) {
+    const pending = view.pendingSacrifice;
+    if (!pending?.cardId) return false;
+    const abilities = cardDef(pending.cardId)?.abilities ?? [];
+    const sacStage = abilities.find((a) => a?.effect?.type === 'reflexive_sacrifice');
+    if (!sacStage) return false;
+    const reflexEvent = sacStage.effect.reflexiveEvent ?? 'reflexive_sacrifice';
+    const reflex = abilities.find((a) => a?.trigger?.event === reflexEvent);
+    return reflex?.effect?.type === 'add_counter';
+  }
+  /**
+   * G: ułomna ofiara dla refleksu licznikowego — właściciel zezwala
+   * poświęcać TYLKO odpadki:
+   *  - obca (wroga) aura na permanencie: stwór jest już wyłączony z gry
+   *    (np. Pacifism), a aura ginie z gospodarzem (CR 704.5m);
+   *  - TMC z przypiętymi aurami i equipmentem ≤ 1 (drobiazg; model N/O);
+   *  - token 1/1 bez zdolności (jawne `isToken`, brak keywordów w widoku).
+   */
+  function deficientCounterReflexSacrifice(view, target) {
+    if (!target) return false;
+    const enemyAura = (view.zones?.battlefield ?? []).some((o) => o?.attachedTo === target.id
+      && (o.kind === 'aura' || o.aura) && !o.bestow && o.controllerId !== view.playerId);
+    if (enemyAura) return true;
+    if (tmcWithAttachmentsOf(view, target) <= 1) return true;
+    return Boolean(target.isToken)
+      && (target.power ?? 0) === 1 && (target.toughness ?? 0) === 1
+      && (target.keywords ?? []).length === 0;
+  }
 
   /**
    * K (zgłoszenie właściciela 2026-10-29, Rupture Spire): ląd z ETB „zapłać {N}
@@ -18688,6 +18725,20 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           const offset = cmd.reflexReady === false ? 5 : 40;
           const lossFactor = target.isToken ? 1 : P.championExileLossFactor;
           return finish(offset - lossFactor * value);
+        }
+        // G (zgłoszenie właściciela 2026-11-21, Glorifier of Suffering):
+        // refleks „+1/+1 na dwóch celów" nie jest wart zdrowego stwora ani
+        // artefaktu — poświęcenie takiego permanentu dostaje ujemny wynik
+        // (zakaz → skip wygrywa). Zielone światło TYLKO dla ułomnych ofiar
+        // (`deficientCounterReflexSacrifice`): bot ma palić odpadki, nie
+        // „super fajne artefakty za 4 many". Refleks jałowy (reflexReady
+        // = false) zostaje przy starej gałęzi — tam skip i tak wygrywa.
+        // Pokrętło ×0 (counterReflexSacrificeGuard) przywraca dawne
+        // `40 − value` dla każdego kandydata (anti-over-fix M429).
+        if (cmd.reflexReady !== false && P.counterReflexSacrificeGuard > 0
+          && counterReflexSacrificePending(view)
+          && !deficientCounterReflexSacrifice(view, target)) {
+          return finish(-Math.max(1, value));
         }
         return finish(cmd.reflexReady === false ? 5 - value : 40 - value);
       }
