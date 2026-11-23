@@ -505,6 +505,14 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   // cel usuwania MOJEGO stosu przechyla remis wariantów na drugą istotę
   // („zamiast w dwie różne"); 0 = dawne „pierwszy z listy" (anti-over-fix).
   'stackRemovalDuplicationPenalty', // kara za cel zajęty przez mój czar na stosie (0 = po staremu)
+  // J (zgłoszenie właściciela 2026-11-21, Containment Membrane): wroga aura
+  // unieruchamiająca (doesntUntap/cantAttack/pompa ujemna…) na MOIM stworze
+  // czyni gospodarza NIEPEŁNOSPRAWNYM — buforowanie go aurą lub equipmentem
+  // to marnowanie karty („sprawdzać czy cel jest pełnosprawny, a jeśli ma
+  // wrogą aurę to nie powinien go wyposażyć"). Kara w ścieżce wyboru
+  // gospodarza (cast_permanent dla aury + equip w activate_ability);
+  // 0 = dawne zachowanie (wycena gospodarza po P+T).
+  'disabledAttachTargetPenalty', // kara za gospodarza z wrogą aurą (0 = po staremu)
   // F1 v2 (uwaga właściciela 2026-09-23d, Veiled Ascension): efekt zakrywający
   // kartę z biblioteki (cloak — CR 701.58a) ZAMIENIA ją na permanenta 2/2
   // z wardem, a nie marnuje jak mill czy dobranie — więc „you may” jest
@@ -1290,6 +1298,7 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   raidHoldBonus: 45,
   counterReflexSacrificeGuard: 1,
   stackRemovalDuplicationPenalty: 20,
+  disabledAttachTargetPenalty: 1000,
   cloakLibraryFloor: 10,
   cloakThinLibraryPenalty: 60,
   // M429 „licznik na wskazanym celu" (P1 Mutagen, pomiar PRZED: remis 14/14/14).

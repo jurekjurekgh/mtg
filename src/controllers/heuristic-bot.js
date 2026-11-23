@@ -5734,7 +5734,15 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     // gospodarza i okna walki), wrogi stwór dostaje prezent za naszą manę
     // (M155) — kara tylko za stwora, inny permanent nic z niego nie ma.
     if (STAT_COUNTERS.has(counterName) || KEYWORD_COUNTERS.has(counterName)) {
-      if (mine) return counterHostValue(view, target, counterName, amount);
+      if (mine) {
+        // J (zgłoszenie właściciela, Containment Membrane): licznik +1/+1 na
+        // gospodarzu unieruchomionym wrogą aurą to marnowanie — wrapper nie
+        // zaatakuje i nie obroni. Ten sam gate co aura/equip (L41); obejmuje
+        // rzut czaru (Courage in Crisis) i aktywację (Mutagen), bo obie
+        // ścieżki liczą PRZEZ counterEffectValue.
+        if (attachTargetDisabled(view, target)) return -P.disabledAttachTargetPenalty;
+        return counterHostValue(view, target, counterName, amount);
+      }
       return (target.kind === 'creature' || (target.types ?? []).includes('Creature')) ? -90 : 0;
     }
     // Licznik zasobowy (oil/level/point…): wartość TYLKO, gdy inna zdolność
@@ -10619,6 +10627,25 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       });
     });
   }
+  /**
+   * J (zgłoszenie właściciela 2026-11-21, Containment Membrane): „Nakładając
+   * aurę albo equipment powinien sprawdzać czy cel jest pełnosprawny, a jeśli
+   * ma wrogą aurę to nie powinien go wyposażyć bo to marnowanie tych
+   * aur/equipmentów." Gospodarz z wrogą aurą-wrogą (`auraIsHostile` — m.in.
+   * `doesntUntap` Containment Membrane, cantAttack, pompa ujemna,
+   * losesKeywords) jest unieruchomiony: buff na nim nie zaatakuje i nie
+   * obroni — karta marnowana. Rozpoznanie po DESKRYPTORZE załączonej aury
+   * z widoku (ADR 0002), bez nazw kart; zdolności na trigger wejścia czytamy
+   * z `cardDef` — to ta sama bramka, którą ma `auraIsHostile`.
+   */
+  function attachTargetDisabled(view, creature) {
+    if (!creature || P.disabledAttachTargetPenalty <= 0) return false;
+    return (view.zones.battlefield ?? []).some((o) => o
+      && o.attachedTo === creature.id
+      && o.kind === 'aura'
+      && o.controllerId !== creature.controllerId
+      && auraIsHostile(o.aura, cardDef(o.cardId), creature));
+  }
   const hasKeyword = (object, keyword) => (object?.keywords ?? []).includes(keyword);
   const canAttackNow = (object) => Boolean(object) && !object.tapped && !object.summoningSickness;
 
@@ -13395,6 +13422,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
                 + anticipatedTailValue(view, card ? cardDef(card.cardId) : undefined, cmd));
           }
           if (!target || target.controllerId !== view.playerId) return finish(-P.auraNoTargetPenalty);
+          // J (Containment Membrane): gospodarz unieruchomiony wrogą aurą —
+          // buforowanie go marnuje kartę; zdrowy cel (jeśli jest) wygrywa
+          // wariant, brak zdrowego = bot trzyma aurę w ręce.
+          if (attachTargetDisabled(view, target)) return finish(-P.disabledAttachTargetPenalty);
           // M209 (audyt M207, Guildscorn Ward): aura, ktorej CALA wartoscia
           // jest OCHRONA przed konkretna jakoscia (CR 702.16b-f), jest jalowa,
           // gdy przeciwnik nie ma czym w nia uderzyc. Bot rzucal „protection
@@ -17463,6 +17494,11 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // świeżych stworów mają realną cenę — bez tego bot nigdy nie wyposaża.
         const sourceEquip = source?.equipment && target && target.controllerId === view.playerId;
         if (sourceEquip) {
+          // J (Containment Membrane): nosiciel z wrogą aurą-wrogą (doesntUntap
+          // itd.) jest unieruchomiony — równy „10+2×moc" nie kupuje ataku;
+          // wyposażanie to marnowanie sprzętu (właściciel: niepełnosprawny
+          // cel). Kara przebija każdą premię gałęzi; ×0 = dawne zachowanie.
+          if (attachTargetDisabled(view, target)) return finish(-P.disabledAttachTargetPenalty);
           const grants = source.equipment.keywords ?? [];
           // Patologia M83 (żywy tester): re-equip do stwora, który JUŻ nosi ten
           // sprzęt, to bezczynny no-op — bot zapętlał się wyposażając ten sam
@@ -19223,9 +19259,15 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             }
             // C: w gałęzi wrogiej obie strony celu liczą zrywanie aur (L41).
             const aura2 = auraStripDelta(t2);
+            // J (Containment Membrane): własny cel unieruchomiony wrogą aurą —
+            // ta sama kara co w gałęzi jednocylowej; wielkość celu nie
+            // przykryje marnowania (30+v ≪ -disabledAttachTargetPenalty).
+            const disabledFriendly2 = cmd.friendly && t2.controllerId === view.playerId
+              && attachTargetDisabled(view, t2);
             score += (cmd.friendly
               ? (t2.controllerId === view.playerId ? 30 + v2 + attackBonus2 : -20 - v2)
-              : (t2.controllerId === view.playerId ? (kill2 ? -60 - v2 + aura2 : -20 - v2 + aura2) : (kill2 ? 30 + v2 + 60 + aura2 : 30 + v2 + aura2 + landDenialDelta(t2))));
+              : (t2.controllerId === view.playerId ? (kill2 ? -60 - v2 + aura2 : -20 - v2 + aura2) : (kill2 ? 30 + v2 + 60 + aura2 : 30 + v2 + aura2 + landDenialDelta(t2))))
+              - (disabledFriendly2 ? P.disabledAttachTargetPenalty : 0);
           }
           // F-D (Inferno Titan, plan 2026-09-09): trigger wielocelowy z efektem
           // `damage_divided` dzieli STAŁĄ sumę (`divisionTotal`) na wybrane cele,
@@ -19303,6 +19345,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         const attackingNow = (view.combat?.attackers ?? []).includes(target.id);
         if (cmd.friendly) {
           if (target.controllerId === view.playerId) {
+            // J (Containment Membrane): cel z wrogą aurą-wrogą jest
+            // unieruchomiony — licznik/pump na nim marnuje się; zdrowy cel
+            // (albo odmowa przy allowNone) wygrywa.
+            if (attachTargetDisabled(view, target)) return finish(-P.disabledAttachTargetPenalty);
             // B (Battle-Rattle Shaman): jak w gałęzi wielocelowej (L41) —
             // pump siły idzie na stwora, którym bot zamierza ATAKOWAĆ.
             let attackBonus = attackingNow ? 25 : 0;
