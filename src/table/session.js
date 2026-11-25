@@ -4557,6 +4557,12 @@ export function createSession(config) {
      * nadal wymaga decyzji.
      */
     recheckAutoPass() {
+      // Zgłoszenie właściciela 2026-11-25 + decyzja Bug #1 (2026-08-08):
+      // pauza modala „Rozgrywka" (także po X — wtedy plansza jest żywa)
+      // czeka na jawnne Rozumiem albo pass. Przełącznik wyciszenia opcji
+      // woła recheckAutoPass z panelu — bez tego guardu advance czyścił
+      // awaitingBotAck na wejściu i zjadał pauzę granicy tury bota.
+      if (awaitingBotAck) return { ok: true, botPause: true };
       const internalError = advanceGuarded();
       return { ok: true, botPause: awaitingBotAck, ...(internalError ? { internalError } : {}) };
     },

@@ -193,3 +193,30 @@ test('M101/D: trigger jako JEDYNY obiekt na stosie też raportuje swój skutek',
     assert.ok(panel.includes(line), `opóźniony trigger poza panelem: „${line}"`);
   }
 });
+
+test('recheckAutoPass NIE zjada pauzy granicy tury (Bug #1: X zostawia pauzę do Rozumiem)', () => {
+  // Zgłoszenie właściciela 2026-11-25 (seed 79892, brak stopu Tur 12/20).
+  // Ścieżka: gracz X-uje modal pauzy (plansza żywa), przełącza wyciszenie
+  // opcji w panelu → toggleIgnoredOption → recheckAutoPass. Decyzja Bug #1
+  // (2026-08-08): X pauzuje auto-pass do JAWNEGO Rozumiem/pass — advance
+  // bez guardu czyścił awaitingBotAck na wejściu i zjadał pauzę.
+  const session = makeSession(13);
+  for (let i = 0; i < 600 && !session.botPausePending; i += 1) {
+    if (session.artPausePending) { session.continueArtPlay(); continue; }
+    const view = session.view();
+    const meaningful = view.legalCommands.filter(
+      (c) => !['pass_priority', 'concede', 'tap_for_mana', 'resolve_combat'].includes(c.type));
+    const cmd = meaningful[0] ?? view.legalCommands.find((c) => c.type === 'pass_priority');
+    if (!cmd) break;
+    const res = session.apply(cmd);
+    if (!res.ok) break;
+  }
+  assert.ok(session.botPausePending, 'sterownik nie dotarł do pauzy ruchu bota');
+  const przed = (session.botMoves ?? []).map((m) => m.text);
+  const r = session.recheckAutoPass();
+  assert.equal(r.botPause, true, 'recheck przy pauzie musi zwracać botPause');
+  assert.equal(session.botPausePending, true,
+    'recheckAutoPass nie może zjadać pauzy (Bug #1: X → jawne Rozumiem/pass)');
+  assert.deepEqual((session.botMoves ?? []).map((m) => m.text), przed,
+    'bufor pauzy nietknięty — advance nie ruszył gry');
+});

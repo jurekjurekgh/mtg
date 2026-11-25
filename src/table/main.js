@@ -3758,9 +3758,32 @@ function bootstrapTable() {
     const botMoveOk = el('bot-move-ok');
     // Undo: jeden klik = jeden krok wstecz (do początku poprzedniej tury).
     if (els.undoTurn) els.undoTurn.addEventListener('click', undoTurnClick);
-    if (botMoveOk) botMoveOk.addEventListener('click', closeBotMoveModalResume);
+    // Zgłoszenie właściciela 2026-11-25 (seed 79892, Tury 12/20): drugi
+    // klik dwukliku albo „odprysk" gestu, który zamknął warstwę grafiki/
+    // planszy, trafia w WŁAŚNIE otwarty modal pauzy — bez bramki klik w
+    // „Rozumiem" uznawał pauzę granicy tury w tym samym geście, w którym
+    // gracz dopiero CO zobaczył nagłówek (albo go nie zdążył zobaczyć), i
+    // tura bota jechała dalej aż do pierwszego znaczącego zdarzenia.
+    // Bramka identyczna jak dla tła modala (MODAL_OPEN_GUARD_MS).
+    // `age >= 0`: po resecie mocka zegara (testy) Date potrafi cofnąć się
+    // względem znacznika otwarcia — ujemny wiek nie jest „świeżością" i nie
+    // może blokować świadomych kliknięć sterownika (w przeglądarce zegar
+    // idzie do przodu, więc odprysk nadal łapie się w oknie 450 ms).
+    const botMoveFreshOpen = () => {
+      const age = Date.now() - (modalOpenedAt['bot-move'] ?? 0);
+      return age >= 0 && age < MODAL_OPEN_GUARD_MS;
+    };
+    if (botMoveOk) botMoveOk.addEventListener('click', () => {
+      if (botMoveFreshOpen()) return;
+      closeBotMoveModalResume();
+    });
     const botMoveClose = el('bot-move-close');
-    if (botMoveClose) botMoveClose.addEventListener('click', closeBotMoveModalPause);
+    // X też: odprysk miałby SCHOWAĆ świeżo otwarty nagłówek tury (pauza
+    // zostaje, ale gracz nie widzi, na czym stanęła gra).
+    if (botMoveClose) botMoveClose.addEventListener('click', () => {
+      if (botMoveFreshOpen()) return;
+      closeBotMoveModalPause();
+    });
     // Wysuwany panel akcji: FAB otwiera, ✕ zamyka (auto-otwarcie w rerender).
     if (els.actionsFab) els.actionsFab.addEventListener('click', () => {
       if (els.actionsDrawer) els.actionsDrawer.className = 'drawer open';
