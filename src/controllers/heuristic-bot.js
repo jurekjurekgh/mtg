@@ -3272,7 +3272,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       + (o.power ?? 0) * P.creaturePowerWeight + (o.toughness ?? 0) * P.creatureToughnessWeight));
   };
 
-  const etbEnterBonusValue = (view, def, { kicked = false, offspring = false, reservedMana = 0 } = {}) => {
+  const etbEnterBonusValue = (view, def, { kicked = false, offspring = false, reservedMana = 0, miller = 'mine' } = {}) => {
     if (!def) return 0;
     let total = 0;
     // Riot (CR 702.136a) nie jest triggerem. Ta sama miara co przy wyborze
@@ -3306,6 +3306,22 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       // Jednostka: wspolna drabina selfLifeLossPenalty (L48), bez nowej skali.
       let sub = 0;
       for (const e of effs) {
+        // J (zgłoszenie właściciela 2026-11-23, Moldgraf Millipede): ETB
+        // `mill_cards` był wyceniany jak mill WROGA (tabela +20+3n = +29),
+        // więc auto-mill własnej biblioteki był PREMIĄ przy dowolnym stanie
+        // biblioteki (mierzone: 99.9 przy 5/10/30 kartach). Niecelowany mill
+        // (CR 701.17) mili BIBLIOTEKĘ MILERA: wspólna skala `selfMillValue`
+        // dla mojej karty (L41 — ta sama co czar/aktywacja), `foeMillValue`
+        // gdy mill jest cudzym (analiza odbicia wroga, `miller: 'foe'`).
+        // Cel-gracz (requiresTarget player) odwraca stronę z milerem: mój
+        // czar celuje we wroga, jego trigger — we mnie (konserwatywnie).
+        if (e?.type === 'mill_cards' || e?.type === 'mill_from_bottom') {
+          const n = Math.max(1, Number.isInteger(e.amount) ? e.amount : 1);
+          const targetedPlayer = req?.type === 'player';
+          const millsMine = targetedPlayer ? miller !== 'mine' : miller === 'mine';
+          sub += millsMine ? selfMillValue(view, n) : foeMillValue(view, n);
+          continue;
+        }
         const fn = e?.type ? ETB_EFFECT_BONUS[e.type] : null;
         if (!fn) continue;
         sub += fn(e, view, req, def);
@@ -4711,15 +4727,22 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   // (enter_battlefield, dies) — np. Skaab „ETB mill 4", nie mnożymy przez
   // horyzont. Razem z repeat + payment daje pełny obraz ryzyka deck-outu
   // przy rzucie, zamiast per-karta patchy.
-  const oneShotLibraryDrain = (def) => {
+  const oneShotLibraryDrain = (def, types = LIBRARY_DRAIN_EFFECTS) => {
     let razem = 0;
     for (const ability of def?.abilities ?? []) {
       const ev = ability?.trigger?.event;
       if (!ev || !ONE_SHOT_DRAIN_EVENTS.has(ev)) continue;
-      razem += drainEfekty(ability, ev, drainsMyLibrary);
+      for (const eff of (Array.isArray(ability.effect) ? ability.effect : [ability.effect])) {
+        if (!eff?.type || !types.has(eff.type)) continue;
+        if (drainsMyLibrary(eff)) razem += drainAmount(eff);
+      }
     }
     return razem;
   };
+  // J (Moldgraf): rodziny drenażu jednorazowego ETB — mill wchodzi do pełnej
+  // drabiny cienkiej biblioteki, dobór zostaje przy progu deck-outu (E2/K2/CR1).
+  const MILL_DRAIN_EFFECTS = new Set(['mill_cards', 'mill_from_bottom']);
+  const DRAW_DRAIN_EFFECTS = new Set(['draw_cards', 'draw_then_discard']);
   /**
    * B/1b — ile kart WŁASNEJ biblioteki zje PŁATNOŚĆ za wariant. Auto-tap
    * (`spendMana`) do-tapuje brakujące źródła, a silnik odkłada mielące na koniec
@@ -5066,16 +5089,21 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     const karta = handCard(view, cmd.objectId) ?? zoneCard(view, cmd.objectId);
     const def = karta?.cardId ? cardDef(karta.cardId) : undefined;
     const repeat = repeatLibraryDrain(def);
-    const oneShot = oneShotLibraryDrain(def);
+    const oneShotMill = oneShotLibraryDrain(def, MILL_DRAIN_EFFECTS);
+    const oneShotDraw = oneShotLibraryDrain(def, DRAW_DRAIN_EFFECTS);
     const payment = paymentLibraryLoss(view, cmd);
     // Repeat + payment: pełna drabina (thin 20) — powtarzalne źródła.
-    // OneShot ETB (Rager 1, Skaab 4): tylko deck-out, nie thin.
+    // J (zgłoszenie właściciela 2026-11-23, Moldgraf Millipede): jednorazowy
+    // MILL z ETB („auto-mill") też wchodzi do pełnej drabiny — przy 5 kartach
+    // (zapas 2) rzut był samobójstwem, a `oneShotDeckOutPenalty` milczało
+    // (zapas ≥ 0). Dobór z ETB (Rager 1, CR1) ZOSTAJE przy progu deck-outu —
+    // świadoma decyzja E2/K2/CR1 (2026-09-15), nie ruszamy.
     // C (domknięcie rodziny, L41/L102): tutor z czaru (Caravan Vigil i
     // pokrewne) uszczupla bibliotekę tak samo jak wariant aktywowany.
     // I: jak wyżej — mieląca PŁATNOŚĆ na progu tapnięcia, reszta na ogólnym.
     return tapMillPenalty(view, payment)
-      + libraryLossPenalty(view, repeat + searchLibraryLoss(view, cmd))
-      + oneShotDeckOutPenalty(view, oneShot);
+      + libraryLossPenalty(view, repeat + searchLibraryLoss(view, cmd) + oneShotMill)
+      + oneShotDeckOutPenalty(view, oneShotDraw);
   };
   const myLandCount = (view) => view.zones.battlefield.filter((o) => o.controllerId === view.playerId && o.kind === 'land').length;
 
@@ -6127,7 +6155,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     // bo to argument „co realnie zabieram przeciwnikowi”.
     if (!mine) delta += bounceInvestmentDelta(view, victim);
     if (!mine && victim.cardId) {
-      delta -= P.bounceFoeEtbWeight * etbEnterBonusValue(view, cardDef(victim.cardId));
+      delta -= P.bounceFoeEtbWeight * etbEnterBonusValue(view, cardDef(victim.cardId), { miller: 'foe' });
     }
     // PMSSB-1/C — wymiary STANU celu wroga (wspólne dla cast_spell,
     // activate_ability i wrappera apply_to_each_target — L41):
@@ -19379,7 +19407,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           && target.controllerId !== view.playerId) {
           if (target.isToken === true) bounceDelta += P.bounceTokenBonus;
           if (target.cardId) {
-            bounceDelta -= P.bounceFoeEtbWeight * etbEnterBonusValue(view, cardDef(target.cardId));
+            bounceDelta -= P.bounceFoeEtbWeight * etbEnterBonusValue(view, cardDef(target.cardId), { miller: 'foe' });
           }
         }
         // PMSSB-1/B (F4/F5, L41 z cast_spell): własny cel triggera-bounce
