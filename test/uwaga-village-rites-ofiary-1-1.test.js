@@ -56,7 +56,9 @@ function villageVsKrotiq({ withToken = false, withTreasure = false, mana = 6 } =
   state.turn = jumpToStep(state.turn, 'main', 'bot');
   state.turn.activePlayerId = state.turn.priorityPlayerId = 'bot';
   for (const playerId of ['bot', 'human']) {
-    for (let i = 0; i < 10; i++) put(state, `${playerId}-lib-${i}`, 'basic-forest', playerId, 'library');
+    // KOREKTA 2026-11-23 (podłoga10): Rites dobiera2 → lib10 (8 < 10) weto;
+    // 14 kart = bezpieczne dobranie (12 ≥ 10).
+    for (let i = 0; i < 14; i++) put(state, `${playerId}-lib-${i}`, 'basic-forest', playerId, 'library');
   }
 
   put(state, 'krotiq-hand', 'segmented-krotiq', 'bot', 'hand');

@@ -4836,8 +4836,11 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
    * Klasa po typie efektu (ADR 0002), nie po nazwie karty. Zwraca true = weto.
    */
   const SYMMETRIC_DRAIN_EFFECTS = new Set(['each_player_exiles_top_face_down', 'mill_both_players']);
-  const SYMMETRIC_DRAIN_MIN_LIBRARY = 10;
-  const symmetricDrainVeto = (view, cmd) => {
+  // J2 (unifikacja 2026-11-23): dawny `symmetricDrainVeto` — podłoga10
+  // POchodzi z `libraryDrainVeto`; zostaje TYLKO reguła wyścigu (G,
+  // właściciel 2026-10-15): symetryczny mill przy własnej bibliotece
+  // mniejszej niż przeciwnika to prowadzenie się do zguby.
+  const symmetricDrainRace = (view, cmd) => {
     if (cmd?.type !== 'activate_ability') return false;
     const object = objectOnBoard(view, cmd.objectId) ?? handCard(view, cmd.objectId) ?? zoneCard(view, cmd.objectId);
     const abilities = object?.activatableAbilities
@@ -4847,7 +4850,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     if (!effects.some((eff) => SYMMETRIC_DRAIN_EFFECTS.has(eff?.type))) return false;
     const mojaBiblioteka = myLibraryCount(view);
     const bibliotekaPrzeciwnika = view.zones.library.filter((o) => o.controllerId !== view.playerId).length;
-    return mojaBiblioteka < bibliotekaPrzeciwnika || mojaBiblioteka < SYMMETRIC_DRAIN_MIN_LIBRARY;
+    return mojaBiblioteka < bibliotekaPrzeciwnika;
   };
 
   // D (PR #171): gdy rzut permanentu niesie na własnym upkeepie symetryczny
@@ -4950,8 +4953,9 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         .some((unit) => !unit.some((color) => untappedLandColors.has(color)));
     }).length;
     if (strandedCount < discardTotal) return true;
+    // J2 (unifikacja): próg LOOT_MIN_LIBRARY (PRE10) wchłonięty przez
+    // uniwersalną podłogę `libraryDrainVeto` (loot dobiera → PO drenażu).
     const myLibrary = myLibraryCount(view);
-    if (myLibrary < LOOT_MIN_LIBRARY) return true;
     if (myLibrary > LOOT_MIN_LIBRARY && myLibrary <= LOOT_BEHIND_BAND_MAX) {
       const enemyLibrary = (view.zones.library ?? [])
         .filter((o) => o.controllerId !== view.playerId).length;
@@ -4994,18 +4998,26 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
    */
   const SPRINGBLOOM_MIN_LIBRARY = 10;
   const SPRINGBLOOM_BASIC_LANDS = 2;
-  // J (zgłoszenie właściciela 2026-11-23, Moldgraf Millipede — korekta po
-  // wdrożeniu): poprzedni próg (drabina libraryLossPenalty, margines 20)
-  // był za ostry — właściciel: „przy 15 już bym się zastanawiał, a przy 20
-  // bym na pewno rzucał; bloker powinien pilnować, czy PO rzuceniu tej karty
-  // nie zejdziemy poniżej 10". Weto liczy ZAPAS PO jednorazowym millu
-  // (mill3: 13 → 10 OK, 12 → 9 weto) — jak rodzina próg-10
-  // (`springbloomDrainVeto` / `lootCastVeto` / `symmetricDrainVeto`),
-  // tylko przesunięte na stan PO drenażu.
-  const SELF_MILL_MIN_REMAINING = 10;
+  // J2 (zgłoszenie właściciela 2026-11-23, unifikacja): JEDNA podłoga
+  // drenażu biblioteki dla WSZYSTKICH komend — „po wykonaniu czary library
+  // nie powinna spaść poniżej 10... wszędzie; test liczy inaczej → zmienić
+  // test". Weto liczy ZAPAS PO drenażu (mill3: 13 → 10 OK, 12 → 9 weto);
+  // absorbuje dawne progi: springbloomDrainVeto (PRE10), symmetricDrainVeto
+  // (PRE10), lootCastVeto (LOOT_MIN_LIBRARY), selfMillFloorVeto (POST10
+  // tylko mill). Standardowy draw STEP jest wyjątkiem (E2/K2/CR1).
+  // Próg: `P.libraryDrainFloor` (parametr — nadpisanie przepływa, L429).
+  // Springbloom/Roiling zabiera do 2 basic landów (konsertywne 2 dla podłogi).
+  const SPRINGBLOOM_DRAIN = 2;
+  // J2 (E5, właściciel): efekty WKŁADAJĄCE karty do biblioteki (Forever Young
+  // „creatures on top, then draw" = NET +1 przy2 kreaturach w grobie) —
+  // podłoga liczy bilans, nie sam odpływ. Ilość: bot przy resolve wybiera
+  // kandydatów z grobu — konsertywnie WSZYSTKIE własne kreatury w grobie.
+  const LIBRARY_INFLOW_EFFECTS = new Set(['graveyard_creatures_to_library_top_choice']);
+  const ownGraveCreatures = (view) => (view.zones.graveyard ?? [])
+    .filter((o) => o.controllerId === view.playerId && (o.types ?? []).includes('Creature')).length;
 
   /**
-   * Wspólny predykat (L41) dla rzutu (`springbloomDrainVeto`) i opcjonalnej
+   * Wspólny predykat (L41) dla rzutu (`springbloomFizzle`) i opcjonalnej
    * decyzji ETB (`resolve_springbloom`). W syntetycznych testach jednostkowych
    * bez talii (obie biblioteki puste i `ownDeck` nieznane — patrz A8) `resolve`
    * zachowuje bazowe porównanie straty lądów (`allowEmptyTestLibrary`).
@@ -5020,29 +5032,133 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     return false;
   }
 
-  function springbloomDrainVeto(view, cmd) {
+  // J2 (unifikacja): dawny `springbloomDrainVeto` — podłoga10 (PRE10)
+  // wchłonięta przez `libraryDrainVeto`; zostaje TYLKO fizzle tutora
+  // (właściciel 2026-11-08: <2 basic landów = marnotrawstwo many i lądu).
+  function springbloomFizzle(view, cmd) {
     if (!isLibraryDrainCastCommand(cmd)) return false;
     const karta = handCard(view, cmd.objectId) ?? zoneCard(view, cmd.objectId);
     if (!karta || springbloomEffects(karta).length === 0) return false;
-    return springbloomShouldDecline(view);
+    const cel = searchTargetsRemaining(view, { allTypes: ['Basic', 'Land'] });
+    return cel != null && cel < SPRINGBLOOM_BASIC_LANDS;
   }
 
   /**
-   * J (zgłoszenie właściciela 2026-11-23, Moldgraf Millipede): twarde weto
-   * rzutu karty z jednorazowym ETB-millem własnej biblioteki, gdy PO
-   * drenażu zostanie < 10 kart. Klasyfikacja po TYPIE EFEKTU (ADR 0002),
-   * nie po nazwie — obejmuje moldgraf-millipede, armored-skaab i całą
-   * rodzinę „mill N przy wejściu". Podatek `libraryDrainTax` z jednorazowego
-   * millu NIE jest już karany drabiną marginesu 20 (za ostra: 20 kart → 17
-   * po millu → właściciel rzuca); powtarzalne drenaże zostają na drabinie.
+   * J2 (zgłoszenie właściciela 2026-11-23 — „jedna wspólna funkcja"):
+   * NATYCHMIASTOWY drenaż własnej biblioteki komendy — ile kart znika
+   * z mojej biblioteki przy wykonaniu tej komendy (wszystko poza
+   * standardowym draw stepem). Wspólne źródło prawdy dla podłogi10:
+   *   • tap_for_mana — mielące tapnięcie płatności;
+   *   • resolve_springbloom — tutor po poświęceniu lądu (2);
+   *   • resolve_optional_trigger_choice (fire) — mayfire/cloak/selfMill
+   *     (selfMill = kwota z adnotacji, dedykowana wycena wyścigu M167
+   *     dostaje podłogę BEZ podwójnego podatku);
+   *   • activate_ability — efekty zdolności + płatność + tutor;
+   *   • declare_attackers — atak-triggered draw/mill po WSZYSTKICH;
+   *   • cast_* — efekty wybranego wariantu czaru (mode-aware) +
+   *     jednorazowe ETB/dies + tutor + springbloom(2) + płatność.
+   * Powtarzalne źródła (repeat) to PRZYSZŁOŚĆ — nimi zajmuje się
+   * drabina `libraryDrainTax`, nie ta podłoga.
    */
-  function selfMillFloorVeto(view, cmd) {
-    if (!isLibraryDrainCastCommand(cmd)) return false;
-    const karta = handCard(view, cmd.objectId) ?? zoneCard(view, cmd.objectId);
-    const def = karta?.cardId ? cardDef(karta.cardId) : undefined;
-    const mill = oneShotLibraryDrain(def, MILL_DRAIN_EFFECTS);
-    if (mill <= 0) return false;
-    return myLibraryCount(view) - mill < SELF_MILL_MIN_REMAINING;
+  function commandSelfDrain(view, cmd) {
+    if (!cmd) return 0;
+    // Własny drenaż = biblioteka maleje o `amount` (mill, draw, loot,
+    // symetryczny mill, cloak/manifest z biblioteki) i efekt dotyczy mojej
+    // strony (`drainsMyLibrary`). Union trzech zbiorów typów (L41).
+    const ownDrain = (eff) => Boolean(eff?.type) && drainsMyLibrary(eff)
+      && (LIBRARY_DRAIN_EFFECTS.has(eff.type)
+        || SYMMETRIC_DRAIN_EFFECTS.has(eff.type)
+        || FACE_DOWN_LIBRARY_EFFECT_TYPES.has(eff.type));
+    if (cmd.type === 'tap_for_mana') return tapLibraryLoss(view, cmd.objectId);
+    if (cmd.type === 'resolve_springbloom') {
+      return cmd.sacrificeLandId == null ? 0 : SPRINGBLOOM_DRAIN;
+    }
+    if (cmd.type === 'resolve_optional_trigger_choice') {
+      if (!cmd.fire) return 0;
+      if (Number.isInteger(cmd.selfMill)) return Math.max(0, cmd.selfMill);
+      let drain = 0;
+      for (const eff of pendingOptionalEffects(view)) {
+        if (ownDrain(eff)) drain += drainAmount(eff);
+      }
+      return drain;
+    }
+    if (cmd.type === 'activate_ability') {
+      let drain = paymentLibraryLoss(view, cmd) + searchLibraryLoss(view, cmd);
+      const object = objectOnBoard(view, cmd.objectId) ?? handCard(view, cmd.objectId) ?? zoneCard(view, cmd.objectId);
+      const abilities = object?.activatableAbilities
+        ?? (object?.cardId ? cardDef(object.cardId)?.abilities : undefined) ?? [];
+      const ability = abilities[cmd.abilityIndex ?? 0];
+      for (const eff of (Array.isArray(ability?.effect) ? ability.effect : [ability?.effect])) {
+        if (ownDrain(eff)) drain += drainAmount(eff);
+      }
+      return drain;
+    }
+    if (cmd.type === 'declare_attackers') {
+      let drain = 0;
+      for (const id of cmd.attackerIds ?? []) {
+        const attacker = objectOnBoard(view, id);
+        if (!attacker || attacker.controllerId !== view.playerId) continue;
+        for (const ability of cardDef(attacker.cardId)?.abilities ?? []) {
+          drain += drainEfekty(ability, 'attacks', drainsMyLibrary);
+        }
+      }
+      return drain;
+    }
+    if (isLibraryDrainCastCommand(cmd)) {
+      const karta = handCard(view, cmd.objectId) ?? zoneCard(view, cmd.objectId);
+      const def = karta?.cardId ? cardDef(karta.cardId) : undefined;
+      let drain = paymentLibraryLoss(view, cmd)
+        + searchLibraryLoss(view, cmd)
+        + oneShotLibraryDrain(def); // jednorazowe ETB/dies (mill+draw)
+      // Efekty samego czaru (mode-aware — jak searchLibraryLoss): mill,
+      // loot (draw_then_discard), draw, tutor ze spell.effects.
+      const spell = karta?.spell ?? def?.spell;
+      const mode = cmd.modeIndex != null ? spell?.modes?.[cmd.modeIndex] : null;
+      // Cel-gracz (tome-scour „Target player mills5"): stronę drenażu
+      // rozstrzyga wybrany cel OPCJI — mill na WROGA nie rusza mojej
+      // biblioteki (ta sama reguła strony co etbEnterBonusValue, L41).
+      const playerTargeted = (spell?.targets ?? []).some((t) => t?.type === 'player');
+      const targetId = cmd.targets?.[0] ?? cmd.targetId ?? null;
+      const targetIsFoe = playerTargeted && targetId != null && targetId !== view.playerId;
+      for (const eff of (mode?.effects ?? spell?.effects ?? [])) {
+        if (LIBRARY_INFLOW_EFFECTS.has(eff?.type)) {
+          drain -= ownGraveCreatures(view); // wkładamy na wierzch → biblioteka rośnie
+          continue;
+        }
+        if (!ownDrain(eff)) continue;
+        if (targetIsFoe && (eff.type === 'mill_cards' || eff.type === 'mill_from_bottom')) continue;
+        drain += drainAmount(eff);
+      }
+      if (springbloomEffects(karta).length > 0) drain += SPRINGBLOOM_DRAIN;
+      return drain;
+    }
+    return 0;
+  }
+
+  /**
+   * J2 (zgłoszenie właściciela 2026-11-23 — „po co wiele różnych
+   * blokerów? unifikować do jednej wspólnej funkcji"): JEDNA bramka
+   * drenażu biblioteki w `scoreCommand`. Podłoga10 PO drenażu obowiązuje
+   * KAŻDĄ komendę opróżniającą własną bibliotekę (patrz `commandSelfDrain`);
+   * pod nią zostają trzy reguły RODZINNE, które nie są podłogą:
+   *   • wyścig symetryczny (G 2026-10-15: własna < przeciwnika),
+   *   • fizzle tutora (Roiling 2026-11-08: <2 basic landów),
+   *   • loot bez „utkniętego" materiału / pasmo 11–20 z tyłu (2026-10-24).
+   * Standardowy draw STEP jest wyjątkiem (E2/K2/CR1: dobór bez kary
+   * cienkiej) — podłoga dotyczy drenażu ze SPELLI i zdolności.
+   */
+  function libraryDrainVeto(view, cmd) {
+    const myLib = myLibraryCount(view);
+    // A8/K2: pusta biblioteka = stan syntetyczny jednostkowych testów bez
+    // talii — podłoga nie wetuje (ta sama konwencja co libraryLossPenalty).
+    if (myLib > 0) {
+      const n = commandSelfDrain(view, cmd);
+      if (n > 0 && myLib - n < P.libraryDrainFloor) return true;
+    }
+    if (symmetricDrainRace(view, cmd)) return true;
+    if (springbloomFizzle(view, cmd)) return true;
+    if (lootCastVeto(view, cmd)) return true;
+    return false;
   }
 
   const libraryDrainTax = (view, cmd) => {
@@ -5121,7 +5237,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     // Repeat + payment: pełna drabina (thin 20) — powtarzalne źródła.
     // J (zgłoszenie właściciela 2026-11-23, Moldgraf Millipede + korekta
     // właściciela): jednorazowy MILL z ETB jest pilnowany TWARDEM wETem
-    // `selfMillFloorVeto` (zapas PO millu < 10), nie drabiną marginesu 20 —
+    // `libraryDrainVeto` (podłoga10 PO drenażu), nie drabiną marginesu 20 —
     // „przy 15 bym się zastanawiał, a przy 20 bym na pewno rzucał". Dobór
     // z ETB (Rager 1, CR1) ZOSTAJE przy progu deck-outu — świadoma decyzja
     // E2/K2/CR1 (2026-09-15), nie ruszamy.
@@ -12852,20 +12968,15 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     const finish = (score) => weightedScore(cmd.type, score - wardTax - libraryTax + (score > 0 ? surgeSaving * P.creatureManaCostWeight : 0));
     // G (uwagi właściciela 2026-10-15): weto symetrycznego drenażu bibliotek —
     // Pyxis / Ghoulcaller's Bell przy mniejszej bibliotece niż przeciwnik lub <10 kartach.
-    if (symmetricDrainVeto(view, cmd)) return finish(NEVER);
     // D (PR #171): odmowa rzutu permanentu z niekorzystnym triggerem
     // symetrycznego revealu na upkeepie (Duskmantle Seer i ta sama semantyka).
+    // To NIE jest drenaż biblioteki (life-loss), więc zostaje osobno.
     if (symmetricUpkeepRevealCastVeto(view, cmd)) return finish(NEVER);
-    // J (zgłoszenie właściciela 2026-10-24): weto wariantu lootu bez
-    // „utkniętego na pipach” materiału do odrzucenia albo przy cienkiej
-    // bibliotece (Izzet Charm — patrz `lootCastVeto`).
-    if (lootCastVeto(view, cmd)) return finish(NEVER);
-    // Zgłoszenie właściciela 2026-11-08 (Roiling Regrowth): tutor poświęcający
-    // ląd drenuje bibliotekę — przy <10 kartach nie rzucamy (jak loot).
-    if (springbloomDrainVeto(view, cmd)) return finish(NEVER);
-    // J (zgłoszenie właściciela 2026-11-23, Moldgraf Millipede): jednorazowy
-    // auto-mill przy rzucie — weto, gdy PO millu zostaje < 10 kart.
-    if (selfMillFloorVeto(view, cmd)) return finish(NEVER);
+    // J2 (zgłoszenie właściciela 2026-11-23): JEDNA bramka drenażu —
+    // podłoga10 PO drenażu dla każdej komendy + reguły rodzinne (wyścig
+    // symetryczny, fizzle tutora, loot). Zastępuje dawne: symmetricDrainVeto,
+    // lootCastVeto, springbloomDrainVeto, selfMillFloorVeto.
+    if (libraryDrainVeto(view, cmd)) return finish(NEVER);
     // M111: TRYB modalnego triggera („At the beginning of your upkeep,
     // choose one —" Etherwrought Page). Widok niesie tylko nazwy trybów,
     // więc treść bierzemy z rejestru po cardId (jak przy czarach) i wyceniamy

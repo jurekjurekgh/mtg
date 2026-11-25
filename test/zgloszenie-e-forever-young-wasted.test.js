@@ -102,8 +102,11 @@ test('E3: presja niskiego życia (życie 4 lub śmiertelny stół) przy 0 kreatu
     botLife: 6,
     enemyCreatures: ['fathom-fleet-cutthroat', 'fathom-fleet-cutthroat'], // 3/3 + 3/3 = 6 >= 6
   });
-  assert.equal(choose(lethalBoard).objectId, 'fy',
-    'pod śmiertelną presją na stole (6 dmg przy 6 życia) bot dobiera po ratunek nawet przy 3 kartach');
+  // KOREKTA WŁAŚCICIELA 2026-11-23 (uniwersalna podłoga10): draw1 przy
+  // lib3 → 2 < 10 = weto EVEN pod śmiertelną presją — wcześniejszy wyjątek
+  // „presja życia > cienka biblioteka" ustępuje nowszej regule „wszędzie".
+  assert.notEqual(choose(lethalBoard).objectId, 'fy',
+    'podłoga10 PO drenażu: draw przy lib3 → weto nawet pod śmiertelną presją');
 
   // Ostatnia karta w bibliotece (1) przy 0 kreaturach → dobranie zabija od razu (CR 704.5b) → NIE rzuca.
   const lastCard = scena({ graveyardCards: [], library: 1, botLife: 4 });

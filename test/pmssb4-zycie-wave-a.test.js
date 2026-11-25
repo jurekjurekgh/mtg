@@ -25,7 +25,9 @@ function setLife(s, me, foe = 20) {
   s.players.find((p) => p.id === 'p2').life = foe;
 }
 function fillLibrary(s) {
-  for (const [who, n] of [['p1', 10], ['p2', 10]]) for (let i = 0; i < n; i += 1) {
+  // KOREKTA 2026-11-23 (podłoga10): Scroll DOBIERA (draw1) → lib10
+  // (9 < 10) weto — 12 kart = bezpieczne dobranie (11 ≥ 10).
+  for (const [who, n] of [['p1', 12], ['p2', 12]]) for (let i = 0; i < n; i += 1) {
     addObject(s, {
       id: `lb${who}${i}`, instanceId: `i-lb${who}${i}`, cardId: `x-lb${who}${i}`,
       controllerId: who, zone: 'library', kind: 'creature', power: 0, toughness: 0,

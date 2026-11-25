@@ -212,9 +212,11 @@ test('PMSSB-59/kontrola F-B: Hawk przy bibliotece 19 = 12.3 (drabinka cienkiej b
   approx(castScore(hawkScene(19)).score, 12.3, 'hawk biblio 19 (F5: było 12.6)');
 });
 
-test('PMSSB-59/kontrola F-B: Hawk przy bibliotece 4 = -68.4 i pass (ten sam pin co Pilgrim\'s Eye C/5)', () => {
+test('PMSSB-59/kontrola F-B: Hawk przy bibliotece 4 = twarde weto i pass (korekta właściciela 2026-11-23)', () => {
+  // Tutor zabiera 1:4 − 1 = 3 < 10 → podłoga PO drenażu daje −∞ (stary pin
+  // −68.7 liczył skończoną karę drabiny przy braku weta).
   const { choice, score } = castScore(hawkScene(4));
-  approx(score, -68.7, 'hawk biblio 4 (F5: było -68.4)');
+  assert.equal(score, Number.NEGATIVE_INFINITY, 'hawk biblio 4: podłoga10 po drenażu');
   assert.deepEqual(choice, { type: 'pass_priority', playerId: 'p2' });
 });
 

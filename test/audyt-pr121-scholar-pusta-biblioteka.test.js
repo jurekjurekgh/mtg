@@ -76,7 +76,9 @@ test('SCHOLAR: biblioteka 1 — strefa krytyczna (C), aktywacja poniżej passa',
   assert.notEqual(cmd.type, 'activate_ability', `bot oszczędza ostatnią kartę (wybrał: ${JSON.stringify(cmd)})`);
 });
 
-test('SCHOLAR: zdrowa biblioteka (5) — anty-over-fix, loot ma wartość (4 = baza 2 + LOOT_NET 2, PMSSB-8)', () => {
-  const { score } = scholarOption(game(5));
+test('SCHOLAR: zdrowa biblioteka (12) — anty-over-fix, loot ma wartość (4 = baza 2 + LOOT_NET 2, PMSSB-8)', () => {
+  // KOREKTA 2026-11-23 (podłoga10): lib5 → 4 < 10 = weto aktywacji;
+  // 12 kart (11 ≥ 10) to najmniejsza „zdrowa" dla loot1.
+  const { score } = scholarOption(game(12));
   assert.ok(score >= 4, `przy zdrowej bibliotece wycena = baza 2 + LOOT_NET_VALUE 2, jest ${score}`);
 });

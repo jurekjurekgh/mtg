@@ -119,13 +119,14 @@ test('CR1: ETB destroy bez celu wroga ≈ zwykłe ciało (premia tylko przy celu
 
 test('CR1: Phyrexian Rager (ETB draw 1, lose 1) > bliźniak bez ETB', () => {
   const withEtb = game();
-  for (let i = 0; i < 10; i += 1) addRealCard(withEtb, `L${i}`, 'basic-forest', 'p1', 'library');
-  // PMSSB-3/F10: lib10 (lib3 to strefa cienka -66; intencja testu = wartosc ETB).
+  // Korekta właściciela 2026-11-23: podłoga PO drenażu (draw1 → lib12 − 1 =
+  // 11 ≥ 10) — przy lib10 oba warianty byłyby zawetowane (−∞ = −∞).
+  for (let i = 0; i < 12; i += 1) addRealCard(withEtb, `L${i}`, 'basic-forest', 'p1', 'library');
   addRealCard(withEtb, 'rager', 'phyrexian-rager', 'p1');
   const s1 = castScore(withEtb).score;
 
   const plain = game();
-  for (let i = 0; i < 10; i += 1) addRealCard(plain, `L${i}`, 'basic-forest', 'p1', 'library');
+  for (let i = 0; i < 12; i += 1) addRealCard(plain, `L${i}`, 'basic-forest', 'p1', 'library');
   addTwin(plain, 'twin', 'phyrexian-rager', 'p1');
   const s2 = castScore(plain).score;
 

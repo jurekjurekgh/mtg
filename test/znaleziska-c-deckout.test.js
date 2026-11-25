@@ -47,8 +47,11 @@ test('C: Reunion przy 3 kartach (dobranie do zera) ma wycenę samobójstwa', () 
   assert.notEqual(cmd.objectId, 're', `bot nie deck-outuje się czarem: ${cmd.type}`);
 });
 
-test('C: Reunion przy 7 kartach (7→4) wart rzucenia, ale rozwój (stwor) pierwszy (A4-4)', () => {
-  const { cmd, castScore } = scenario(7);
+test('C: Reunion przy 21 kartach (21→18) wart rzucenia, ale rozwój (stwor) pierwszy (A4-4)', () => {
+  // KOREKTA WŁAŚCICIELA 2026-11-23 (podłoga10 + pasmo draw): draw3 przy
+  // lib7 → 4 < 10 weto; lib11–20 w pasmie „za wrogiem" (foe30) — 21 kart:
+  // floor18 ≥ 10 i poza pasmem. Scenariusz sekwencji bez zmian.
+  const { cmd, castScore } = scenario(21);
   assert.ok(castScore > 0, `poza strefą krytyczną dodatnie: ${castScore}`);
   // A4-4 (isDrawOnly, klasa M146): draw-only startuje spod passu, więc Reunion
   // (17) wciąż bije pass, ale NIE bije rozwoju stworami (64.8): bot najpierw

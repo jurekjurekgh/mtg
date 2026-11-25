@@ -235,7 +235,9 @@ test('A–F/D: bot AKTYWUJE dobieranie, gdy biblioteka jest bezpieczna', () => {
   const state = game('p1');
   addMana(state, 'p1', 6, { colors: ['G'] });
   put(state, 'denizen', 'deepwood-denizen', 'p1');
-  for (let i = 1; i <= 5; i += 1) put(state, `l${i}`, 'highland-game', 'p1', 'library');
+  // KOREKTA 2026-11-23 (podłoga10):5 kart (4 < 10) wetowało aktywację;
+  // 12 kart = bezpieczne dobranie (11 ≥ 10).
+  for (let i = 1; i <= 12; i += 1) put(state, `l${i}`, 'highland-game', 'p1', 'library');
   const view = playerView(state, 'p1');
   const { chosen, options } = decide(view);
   const draw = scoreOf(options, 'activate_ability(denizen#0)');

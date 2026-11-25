@@ -304,7 +304,9 @@ function duelBoard({ botAttacks, botPower, botToughness, botKeywords = [], foePo
   // kartę" (Fleeting Distraction) przy pustej bibliotece wygląda jak deck-out
   // (CR 121.4/704.5b) — bot odmawiał rzutu debuffu, choć test sprawdza WYNIK
   // WALKI, nie bibliotekę. Kilka kart przywraca realne warunki.
-  for (let i = 0; i < 5; i += 1) {
+  // KOREKTA 2026-11-23 (podłoga10):5 kart (4 < 10) wetowało draw-rider;
+  // 12 kart = bezpieczne dobranie (11 ≥ 10).
+  for (let i = 0; i < 12; i += 1) {
     addObject(state, {
       id: `lib-${i}`, instanceId: `i-lib-${i}`, cardId: 'hill-giant', controllerId: 'p2', ownerId: 'p2',
       zone: 'library', kind: 'creature', power: 3, toughness: 3, manaCost: 4,

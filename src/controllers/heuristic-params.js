@@ -520,6 +520,7 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   // pod próg (jedyna realna strata to deck-out, CR 121.4).
   'cloakLibraryFloor',           // biblioteka < próg ⇒ „pass” (właściciel: 10)
   'cloakThinLibraryPenalty',     // kara za cloak przy cienkiej bibliotece (> 50 ⇒ schodzi pod „pass”)
+  'libraryDrainFloor',           // J2 (właściciel 2026-11-23): uniwersalna podłoga drenażu — PO drenażu ≥ próg (10)
   // M429 (zlecenie właściciela 2026-09-24e — karty batcha 59, „P1 Mutagen"):
   // rodzina „licznik na wskazanym celu". Dotąd licznik na WŁASNYM stworze był
   // wart płasko 8 + 4·amount w OBU bliźniaczych gałęziach (czar i aktywacja),
@@ -1301,6 +1302,10 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   disabledAttachTargetPenalty: 1000,
   cloakLibraryFloor: 10,
   cloakThinLibraryPenalty: 60,
+  // J2 (zgłoszenie właściciela 2026-11-23): „po wykonaniu czary library nie
+  // powinna spaść poniżej 10... wszędzie" — jedna podłoga dla wszystkich
+  // komend opróżniających bibliotekę (mill, tutor, płatność, doboru, aktywacje).
+  libraryDrainFloor: 10,
   // M429 „licznik na wskazanym celu" (P1 Mutagen, pomiar PRZED: remis 14/14/14).
   // Przemysłane wartości (nie tuner): patrz uzasadnienie przy HEURISTIC_PARAM_KEYS.
   counterBase: 2,

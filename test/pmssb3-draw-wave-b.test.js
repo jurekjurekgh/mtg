@@ -65,18 +65,18 @@ function scoreOf(state, substr) {
 }
 
 test('F1: Rager@lib10 = 68.4018 (ETB-draw 9 -> 6, dostarczane 5.4)', () => {
-  const s = newState(); fillLibrary(s, 10); addBasics(s, ['B'], 5); handCard(s, 'rager', 'phyrexian-rager');
+  const s = newState(); fillLibrary(s, 15); addBasics(s, ['B'], 5); handCard(s, 'rager', 'phyrexian-rager');
   assert.ok(Math.abs(scoreOf(s, 'cast_permanent(rager)') - 68.4018) < 0.001);
 });
 
 test('F2: inspiration-self na EOT wroga = 21 (11 + 10-okno)', () => {
-  const s = newState('end'); fillLibrary(s, 10); addBasics(s, ['U'], 6); handCard(s, 'in', 'inspiration');
+  const s = newState('end'); fillLibrary(s, 15); addBasics(s, ['U'], 6); handCard(s, 'in', 'inspiration');
   s.turn.activePlayerId = 'p2'; s.turn.priorityPlayerId = 'p1';
   assert.equal(scoreOf(s, 'cast_spell(in->p1)'), 21);
 });
 
 test('F2: inspiration-self w mainie = 11 (bez premii), foe na EOT = -13 (bez premii)', () => {
-  const s = newState(); fillLibrary(s, 10); addBasics(s, ['U'], 6); handCard(s, 'in', 'inspiration');
+  const s = newState(); fillLibrary(s, 15); addBasics(s, ['U'], 6); handCard(s, 'in', 'inspiration');
   assert.equal(scoreOf(s, 'cast_spell(in->p1)'), 11);
   const e = newState('end'); fillLibrary(e, 10); addBasics(e, ['U'], 6); handCard(e, 'in', 'inspiration');
   e.turn.activePlayerId = 'p2'; e.turn.priorityPlayerId = 'p1';
@@ -85,7 +85,7 @@ test('F2: inspiration-self w mainie = 11 (bez premii), foe na EOT = -13 (bez pre
 
 test('F3-flat: reunion main1 = main2 = 17 (sorcery-draw nie czeka)', () => {
   const mk = (step) => {
-    const s = newState(step); fillLibrary(s, 10); addBasics(s, ['R'], 4);
+    const s = newState(step); fillLibrary(s, 15); addBasics(s, ['R'], 4);
     handCard(s, 'reu', 'cathartic-reunion');
     for (const [id, p, t, c] of [['fA', 1, 1, 1], ['fB', 2, 2, 2], ['fC', 5, 5, 5]]) {
       addObject(s, { id, instanceId: `i-${id}`, cardId: `x-${id}`, controllerId: 'p1', zone: 'hand', kind: 'creature', power: p, toughness: t, manaCost: c, abilities: [], keywords: [], subtypes: [], types: ['Creature'], colors: [], cardName: id });
@@ -101,7 +101,7 @@ test('F3-flat: reunion main1 = main2 = 17 (sorcery-draw nie czeka)', () => {
 // wg PMSSB-8/F-L1b); pin pilnuje relacji, nie samej skali.
 test('F5: force-away z ferocious = 108 (+2-rider PMSSB-8/F-L1b), bez = 118 (0-rider)', () => {
   const mk = (fero) => {
-    const s = newState(); fillLibrary(s, 10); addBasics(s, ['U'], 4); handCard(s, 'fa', 'force-away');
+    const s = newState(); fillLibrary(s, 15); addBasics(s, ['U'], 4); handCard(s, 'fa', 'force-away');
     fieldCreature(s, 'cel', 'p2', 3, 3);
     if (fero) fieldCreature(s, 'big', 'p1', 4, 4);
     return s;
@@ -111,7 +111,7 @@ test('F5: force-away z ferocious = 108 (+2-rider PMSSB-8/F-L1b), bez = 118 (0-ri
 });
 
 test('F-temple: pakt = -1 (flip 62 -> trzymaj; noga-foe -12 + ramka -1)', () => {
-  const s = newState(); fillLibrary(s, 10); addBasics(s, ['W'], 5);
+  const s = newState(); fillLibrary(s, 15); addBasics(s, ['W'], 5);
   handCard(s, 'yt', 'your-temple-is-under-attack');
   fieldCreature(s, 'mine', 'p1', 2, 2); fieldCreature(s, 'yours', 'p2', 2, 2);
   assert.equal(scoreOf(s, 'cast_spell(yt->p2)'), -1);
@@ -119,14 +119,14 @@ test('F-temple: pakt = -1 (flip 62 -> trzymaj; noga-foe -12 + ramka -1)', () => 
 });
 
 test('F-scroll-sac: scroll-ability = 6 (8 − 1-sac-noncreature − 1 koszt many, PMSSB-34/B)', () => {
-  const s = newState(); fillLibrary(s, 10); addBasics(s, ['W', 'U', 'B', 'R', 'G'], 3);
+  const s = newState(); fillLibrary(s, 15); addBasics(s, ['W', 'U', 'B', 'R', 'G'], 3);
   fieldCard(s, 'scr', 'scroll-of-avacyn');
   assert.equal(scoreOf(s, 'activate_ability(scr'), 6);
 });
 
 test('F-envoy: unwrap ETB (bez-counter 72.9054, z-counter 73.8054)', () => {
   const mk = (ctr) => {
-    const s = newState(); fillLibrary(s, 10); addBasics(s, ['G'], 6); handCard(s, 'env', 'trade-route-envoy');
+    const s = newState(); fillLibrary(s, 15); addBasics(s, ['G'], 6); handCard(s, 'env', 'trade-route-envoy');
     fieldCreature(s, 'kolega', 'p1', 2, 2);
     if (ctr) addCounter(s, 'kolega', '+1/+1', 1);
     return s;
@@ -138,7 +138,7 @@ test('F-envoy: unwrap ETB (bez-counter 72.9054, z-counter 73.8054)', () => {
 
 test('F-mysteries: unwrap cast + landEntered (bez-ladu 62, z-ladem 68)', () => {
   const mk = (dropped) => {
-    const s = newState(); fillLibrary(s, 10); addBasics(s, ['U'], 7); handCard(s, 'mys', 'mysteries-of-the-deep');
+    const s = newState(); fillLibrary(s, 15); addBasics(s, ['U'], 7); handCard(s, 'mys', 'mysteries-of-the-deep');
     if (dropped) s.landEnteredThisTurn = { p1: 1 };
     return s;
   };

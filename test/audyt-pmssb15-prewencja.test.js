@@ -75,7 +75,9 @@ function botTurn() {
   state.turn.activePlayerId = 'p2';
   state.turn.priorityPlayerId = 'p2';
   addMana(state, 'p2', 12);
-  for (let i = 0; i < 8; i++) putSpell(state, `lib${i}`, 'highland-game', 'p2', 'library');
+  // Podłoga drenażu (J2): Withstand dobiera → lib8 (7 < 10) wetował;
+  // 15 kart = bezpieczne dobranie (14 ≥ 10).
+  for (let i = 0; i < 15; i++) putSpell(state, `lib${i}`, 'highland-game', 'p2', 'library');
   return state;
 }
 

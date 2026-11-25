@@ -41,7 +41,9 @@ function build({ withWitch = '2/2', ownAttacker = false } = {}) {
   }
   put('isl', 'basic-island', 'p2', 'battlefield');
   put('fd', 'fleeting-distraction', 'p2', 'hand');
-  for (let i = 0; i < 10; i += 1) {
+  // KOREKTA 2026-11-23 (podłoga10): draw-rider → lib10 (9 < 10) weto;
+  // 12 kart = bezpieczne dobranie (11 ≥ 10).
+  for (let i = 0; i < 12; i += 1) {
     addObject(state, { id: `lib${i}`, instanceId: `i-lib${i}`, cardId: `x-lib${i}`, controllerId: 'p2', zone: 'library', kind: 'creature', power: 0, toughness: 0, manaCost: 1, abilities: [], keywords: [], subtypes: [], types: ['Creature'], colors: [], cardName: `lib${i}` });
   }
   state.combat = {
@@ -115,7 +117,9 @@ test('J: bez combatu debuff poza walką — kara -75 bez save', () => {
   addObject(state, { id: 'fd', instanceId: 'i-fd', cardId: 'fleeting-distraction', controllerId: 'p2', zone: 'hand', ...gameObjectDataOf(def) });
   addObject(state, { id: 'butcher', instanceId: 'i-butcher', cardId: 'x-butcher', controllerId: 'p1', ownerId: 'p1', zone: 'battlefield', kind: 'creature', power: 3, toughness: 2, manaCost: 4, abilities: [], keywords: [], subtypes: [], types: ['Creature'], colors: [], cardName: 'butcher' });
   addObject(state, { id: 'isl', instanceId: 'i-isl', cardId: 'basic-island', controllerId: 'p2', zone: 'battlefield', ...gameObjectDataOf(REG.get('basic-island')) });
-  for (let i = 0; i < 10; i += 1) {
+  // KOREKTA 2026-11-23 (podłoga10): draw-rider → lib10 (9 < 10) weto;
+  // 12 kart = bezpieczne dobranie (11 ≥ 10).
+  for (let i = 0; i < 12; i += 1) {
     addObject(state, { id: `lib${i}`, instanceId: `i-lib${i}`, cardId: `x-lib${i}`, controllerId: 'p2', zone: 'library', kind: 'creature', power: 0, toughness: 0, manaCost: 1, abilities: [], keywords: [], subtypes: [], types: ['Creature'], colors: [], cardName: `lib${i}` });
   }
   addMana(state, 'p2', 9);

@@ -84,12 +84,14 @@ test('PMSSB-19/R2: Final Parting = 66 (było 50: 2-kartowy tutor warty 0)', () =
   assert.equal(optionScore(options, 'cast_spell(a->)'), 66);
 });
 
-test('PMSSB-19/R2-guard: cienka biblioteka (10) — kara 2 kart przebija zysk (−66)', () => {
+test('PMSSB-19/R2-guard: cienka biblioteka (10) — uniwersalna podłoga10 (−∞)', () => {
   const state = base(10);
   putSpell(state, 'a', 'final-parting', 'p2', 'hand');
   const { options } = decide(state);
-  // 50 + 16 (dwie karty) − 132 (thin: 60 + 12·6 przy margin 20) = −66.
-  assert.equal(optionScore(options, 'cast_spell(a->)'), -66);
+  // KOREKTA WŁAŚCICIELA 2026-11-23: search2 przy lib10 → PO8 < 10 → twarde
+  // weto `libraryDrainVeto` (−∞). Dawny pin −66 (drabina margin20) był
+  // węższy niż nowa podłoga — podłoga go poprzedza; wynik ten sam (nie rzuca).
+  assert.equal(optionScore(options, 'cast_spell(a->)'), Number.NEGATIVE_INFINITY);
 });
 
 test('PMSSB-19/pokrętło: searchTwoCardsValue:0 → Final Parting = 50 (baza)', () => {

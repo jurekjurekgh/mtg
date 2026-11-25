@@ -80,16 +80,17 @@ test('F1v2/1 (kontrakt widoku): decyzja cloak = { sourceCardId, effect, effects 
   assert.equal('ability' in pending, false, 'widok nie wystawia `ability` — wycena nie może go czytać');
 });
 
-test('F1v2/2 (granica progu): biblioteka 30 i 10 → „may”, 9 i 1 → odmowa', () => {
-  for (const lib of [30, 10]) {
+test('F1v2/2 (granica progu): biblioteka 30 → „may”, 10/9/1 → odmowa', () => {
+  // KOREKTA WŁAŚCICIELA 2026-11-23: cloak przenosi kartę z biblioteki na
+  // pole (−1), więc uniwersalna podłoga10 PO drenażu też go obejmuje —
+  // lib10 → 9 < 10 = odmowa (stary pin „10 → may” liczył próg cloaków PRE).
+  const { chosen: zdrowy, fire: f30, skip: s30 } = decyzjaBota(gra(30));
+  assert.ok(f30 > s30, `lib=30: fire=${f30} musi wygrać z pass=${s30}`);
+  assert.equal(zdrowy.type, 'resolve_optional_trigger_choice', 'lib=30: bot odpala cloak');
+  assert.equal(zdrowy.fire, true);
+  for (const lib of [10, 9, 1]) {
     const { chosen, fire, skip } = decyzjaBota(gra(lib));
-    assert.ok(fire > skip, `lib=${lib}: fire=${fire} musi wygrać z pass=${skip}`);
-    assert.equal(chosen.type, 'resolve_optional_trigger_choice', `lib=${lib}: bot odpala cloak`);
-    assert.equal(chosen.fire, true);
-  }
-  for (const lib of [9, 1]) {
-    const { chosen, fire, skip } = decyzjaBota(gra(lib));
-    assert.ok(fire < skip, `lib=${lib}: fire=${fire} musi przegrać z pass=${skip} (próg < 10)`);
+    assert.ok(fire < skip, `lib=${lib}: fire=${fire} musi przegrać z pass=${skip} (podłoga PO: 10 − 1 = 9 < 10)`);
     assert.equal(chosen.type, 'pass_priority', `lib=${lib}: odmowa = zwykły pass (F1)`);
     assert.notEqual(chosen.fire, true);
   }
@@ -97,9 +98,12 @@ test('F1v2/2 (granica progu): biblioteka 30 i 10 → „may”, 9 i 1 → odmowa
 
 test('F1v2/3 (L41): próg i kara to parametry — nadpisanie zmienia decyzję', () => {
   assert.equal(DEFAULT_HEURISTIC_PARAMS.cloakLibraryFloor, 10, 'próg właściciela: 10');
+  assert.equal(DEFAULT_HEURISTIC_PARAMS.libraryDrainFloor, 10, 'podłoga drenażu (J2, właściciel): 10');
   assert.ok(DEFAULT_HEURISTIC_PARAMS.cloakThinLibraryPenalty > 50,
     'kara musi schodzić pod bazowe „fire” (50), inaczej „pass” nie wygra');
-  const { chosen } = decyzjaBota(gra(9), { cloakLibraryFloor: 3 });
+  // Nadpisujemy OBA progi: cloak (kara) i uniwersalną podłogę drenażu —
+  // przy libraryDrainFloor: 3 cloak (9 − 1 = 8 ≥ 3) przechodzi.
+  const { chosen } = decyzjaBota(gra(9), { cloakLibraryFloor: 3, libraryDrainFloor: 3 });
   assert.equal(chosen.fire, true, 'z progiem 3 biblioteka 9 kart nie karze cloaka');
 });
 
