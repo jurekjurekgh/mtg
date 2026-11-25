@@ -12,12 +12,19 @@
 // Przy 5 kartach (zapas 2) obie strony milczały: score 99.9 przy KAŻDEJ
 // wielkości biblioteki (5/10/30 — identycznie).
 //
-// Kontrakt:
+// Kontrakt (korekta właściciela 2026-11-23 — próg 20 był za ostry):
+// > „&lt;20 kart to nie jest zbyt duży bloker? 5 kart oczywiście nie powinien
+// > rzucać, 10 też nie, ale przy 15 już bym się zastanawiał, a przy 20 bym
+// > na pewno rzucał. Ten bloker powinien raczej pilnować IMO czy po rzuceniu
+// > tej karty nie zejdziemy poniżej 10 kart."
 // 1. Wartość ETB-millu (niecelowanego = własna biblioteka, CR 701.17) idzie
 //    wspólną skalą `selfMillValue` — ta sama co czar/aktywacja (L41);
-// 2. Jednorazowy drenaż MILL z ETB wchodzi do pełnej drabiny
-//    `libraryLossPenalty` w `libraryDrainTax` (rodzina self-mill blokady);
-//    jednorazowe DOBRANIE z ETB (Rager/CR1) zostaje przy dawnym progu
+// 2. TWARDE WETO jednorazowego millu z ETB: mill po drenażu zostaje < 10
+//    kart → rzut nigdy (jak `springbloomDrainVeto`/`lootCastVeto`, ale
+//    liczymy ZAPAS PO millu, nie stan przed); przy ≥ 10 po millu podatek z
+//    jednorazowego millu wynosi 0 (drabina `libraryLossPenalty` z marginesem
+//    20 została przy powtarzalnych drenażach — za ostra dla jednorazówki);
+// 3. Jednorazowe DOBRANIE z ETB (Rager/CR1) zostaje przy dawnym progu
 //    deck-outu (świadoma decyzja E2/K2/CR1 z 2026-09-15 — nie ruszamy).
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -69,14 +76,32 @@ test('J/1: przy 5 kartach w bibliotece bot NIE rzuca auto-millu (samobójstwo)',
     `5 kart − 3 zmielone = 2 zapasu; rzut = auto-mill pod przepaścią; bot wybrał ${cmd.type}(${cmd.objectId ?? ''}) — ${JSON.stringify(options)}`);
 });
 
-test('J/2: przy 10 kartach (zapas 7 < librarySafeMargin 20) bot też nie rzuca — drabina cienkiej biblioteki', () => {
+test('J/2: przy 10 kartach bot nie rzuca — PO millu zostałoby 7 < 10 (weto właściciela)', () => {
   const { cmd, options } = pick(scene({ myLib: 10 }));
   assert.ok(!isMoldgrafCast(cmd),
-    `zapas 7 < 20 = rodzina cienkiej biblioteki; bot wybrał ${cmd.type}(${cmd.objectId ?? ''}) — ${JSON.stringify(options)}`);
+    `10 − 3 = 7 < 10; bot wybrał ${cmd.type}(${cmd.objectId ?? ''}) — ${JSON.stringify(options)}`);
 });
 
 test('J/3: przy zdrowej bibliotece (30 kart, zapas 27 ≥ 20) bot rzuca — brak over-blocku', () => {
   const { cmd, options } = pick(scene({ myLib: 30 }));
   assert.ok(isMoldgrafCast(cmd),
     `zdrowa biblioteka: mill nie blokuje rzutu; bot wybrał ${cmd.type}(${cmd.objectId ?? ''}) — ${JSON.stringify(options)}`);
+});
+
+test('J/4: przy 15 kartach bot rzuca — PO millu 12 ≥ 10 (właściciel: „przy 15 bym się zastanawiał", reguła = nie schodzimy poniżej 10)', () => {
+  const { cmd, options } = pick(scene({ myLib: 15 }));
+  assert.ok(isMoldgrafCast(cmd),
+    `15 − 3 = 12 ≥ 10 → brak weta; bot wybrał ${cmd.type}(${cmd.objectId ?? ''}) — ${JSON.stringify(options)}`);
+});
+
+test('J/5 (granica dół): 12 kart → PO millu 9 < 10 → weto', () => {
+  const { cmd, options } = pick(scene({ myLib: 12 }));
+  assert.ok(!isMoldgrafCast(cmd),
+    `12 − 3 = 9 < 10; bot wybrał ${cmd.type}(${cmd.objectId ?? ''}) — ${JSON.stringify(options)}`);
+});
+
+test('J/6 (granica góra): 13 kart → PO millu dokładnie 10 → rzut przechodzi', () => {
+  const { cmd, options } = pick(scene({ myLib: 13 }));
+  assert.ok(isMoldgrafCast(cmd),
+    `13 − 3 = 10 (>= 10, nie „poniżej 10"); bot wybrał ${cmd.type}(${cmd.objectId ?? ''}) — ${JSON.stringify(options)}`);
 });

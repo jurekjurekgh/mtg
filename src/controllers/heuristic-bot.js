@@ -4994,6 +4994,15 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
    */
   const SPRINGBLOOM_MIN_LIBRARY = 10;
   const SPRINGBLOOM_BASIC_LANDS = 2;
+  // J (zgłoszenie właściciela 2026-11-23, Moldgraf Millipede — korekta po
+  // wdrożeniu): poprzedni próg (drabina libraryLossPenalty, margines 20)
+  // był za ostry — właściciel: „przy 15 już bym się zastanawiał, a przy 20
+  // bym na pewno rzucał; bloker powinien pilnować, czy PO rzuceniu tej karty
+  // nie zejdziemy poniżej 10". Weto liczy ZAPAS PO jednorazowym millu
+  // (mill3: 13 → 10 OK, 12 → 9 weto) — jak rodzina próg-10
+  // (`springbloomDrainVeto` / `lootCastVeto` / `symmetricDrainVeto`),
+  // tylko przesunięte na stan PO drenażu.
+  const SELF_MILL_MIN_REMAINING = 10;
 
   /**
    * Wspólny predykat (L41) dla rzutu (`springbloomDrainVeto`) i opcjonalnej
@@ -5016,6 +5025,24 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     const karta = handCard(view, cmd.objectId) ?? zoneCard(view, cmd.objectId);
     if (!karta || springbloomEffects(karta).length === 0) return false;
     return springbloomShouldDecline(view);
+  }
+
+  /**
+   * J (zgłoszenie właściciela 2026-11-23, Moldgraf Millipede): twarde weto
+   * rzutu karty z jednorazowym ETB-millem własnej biblioteki, gdy PO
+   * drenażu zostanie < 10 kart. Klasyfikacja po TYPIE EFEKTU (ADR 0002),
+   * nie po nazwie — obejmuje moldgraf-millipede, armored-skaab i całą
+   * rodzinę „mill N przy wejściu". Podatek `libraryDrainTax` z jednorazowego
+   * millu NIE jest już karany drabiną marginesu 20 (za ostra: 20 kart → 17
+   * po millu → właściciel rzuca); powtarzalne drenaże zostają na drabinie.
+   */
+  function selfMillFloorVeto(view, cmd) {
+    if (!isLibraryDrainCastCommand(cmd)) return false;
+    const karta = handCard(view, cmd.objectId) ?? zoneCard(view, cmd.objectId);
+    const def = karta?.cardId ? cardDef(karta.cardId) : undefined;
+    const mill = oneShotLibraryDrain(def, MILL_DRAIN_EFFECTS);
+    if (mill <= 0) return false;
+    return myLibraryCount(view) - mill < SELF_MILL_MIN_REMAINING;
   }
 
   const libraryDrainTax = (view, cmd) => {
@@ -5089,20 +5116,20 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     const karta = handCard(view, cmd.objectId) ?? zoneCard(view, cmd.objectId);
     const def = karta?.cardId ? cardDef(karta.cardId) : undefined;
     const repeat = repeatLibraryDrain(def);
-    const oneShotMill = oneShotLibraryDrain(def, MILL_DRAIN_EFFECTS);
     const oneShotDraw = oneShotLibraryDrain(def, DRAW_DRAIN_EFFECTS);
     const payment = paymentLibraryLoss(view, cmd);
     // Repeat + payment: pełna drabina (thin 20) — powtarzalne źródła.
-    // J (zgłoszenie właściciela 2026-11-23, Moldgraf Millipede): jednorazowy
-    // MILL z ETB („auto-mill") też wchodzi do pełnej drabiny — przy 5 kartach
-    // (zapas 2) rzut był samobójstwem, a `oneShotDeckOutPenalty` milczało
-    // (zapas ≥ 0). Dobór z ETB (Rager 1, CR1) ZOSTAJE przy progu deck-outu —
-    // świadoma decyzja E2/K2/CR1 (2026-09-15), nie ruszamy.
+    // J (zgłoszenie właściciela 2026-11-23, Moldgraf Millipede + korekta
+    // właściciela): jednorazowy MILL z ETB jest pilnowany TWARDEM wETem
+    // `selfMillFloorVeto` (zapas PO millu < 10), nie drabiną marginesu 20 —
+    // „przy 15 bym się zastanawiał, a przy 20 bym na pewno rzucał". Dobór
+    // z ETB (Rager 1, CR1) ZOSTAJE przy progu deck-outu — świadoma decyzja
+    // E2/K2/CR1 (2026-09-15), nie ruszamy.
     // C (domknięcie rodziny, L41/L102): tutor z czaru (Caravan Vigil i
     // pokrewne) uszczupla bibliotekę tak samo jak wariant aktywowany.
     // I: jak wyżej — mieląca PŁATNOŚĆ na progu tapnięcia, reszta na ogólnym.
     return tapMillPenalty(view, payment)
-      + libraryLossPenalty(view, repeat + searchLibraryLoss(view, cmd) + oneShotMill)
+      + libraryLossPenalty(view, repeat + searchLibraryLoss(view, cmd))
       + oneShotDeckOutPenalty(view, oneShotDraw);
   };
   const myLandCount = (view) => view.zones.battlefield.filter((o) => o.controllerId === view.playerId && o.kind === 'land').length;
@@ -12836,6 +12863,9 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     // Zgłoszenie właściciela 2026-11-08 (Roiling Regrowth): tutor poświęcający
     // ląd drenuje bibliotekę — przy <10 kartach nie rzucamy (jak loot).
     if (springbloomDrainVeto(view, cmd)) return finish(NEVER);
+    // J (zgłoszenie właściciela 2026-11-23, Moldgraf Millipede): jednorazowy
+    // auto-mill przy rzucie — weto, gdy PO millu zostaje < 10 kart.
+    if (selfMillFloorVeto(view, cmd)) return finish(NEVER);
     // M111: TRYB modalnego triggera („At the beginning of your upkeep,
     // choose one —" Etherwrought Page). Widok niesie tylko nazwy trybów,
     // więc treść bierzemy z rejestru po cardId (jak przy czarach) i wyceniamy
