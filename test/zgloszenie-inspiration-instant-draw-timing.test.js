@@ -238,15 +238,17 @@ test('ID/14: zdolność aktywowana draw/loot poza klasą — Scholar main = 4, E
 });
 
 test('ID/16: pełny execute — upkeep pass, main1 Skaab, Inspiration zostaje w ręce', () => {
-  // J (zgłoszenie właściciela 2026-11-23, Moldgraf): przy własnych 20 kartach
-  // Skaab (ETB mill 4 → zapas 16 < librarySafeMargin 20) jest teraz SŁUSZNIE
-  // blokowany przez self-mill blokadę — scenę podnosimy do 30 (zdrowa
-  // biblioteka), a bibliotekę robimy z Force Away: dobro­wolny los (unknown-def
-  // syntetycznego stwora = 61.2) nie może wygrywać ze Skaabem, a ląd zmienia
-  // sekwencję na play_land. Force Away (target creature) bez stworów na stole
-  // nie jest w ogóle ofertą rzutu.
-  // Cel testu to draw-timing Inspiration w pełnym execute, nie cienka biblioteka.
-  const state = inspirationScene('upkeep', { ownLib: 30, ownLibCard: 'force-away' });
+  // J (zgłoszenie właściciela 2026-11-23, Moldgraf): korekta progu na
+  // twarde weto „PO millu < 10" (selfMillFloorVeto) — przy własnych 20
+  // kartach Skaab (mill 4 → 16 po millu ≥ 10) znów jest rzucalny, więc
+  // scenę zostawiamy na 20. Zostaje wymiana biblioteki na Force Away:
+  // dobro­wolny los (unknown-def syntetycznego stwora = 61.2) wygrywałby
+  // ze Skaabem (wartość self-mill ETB spadła o ~54 pkt: +29 → −25), a ląd
+  // zmienia sekwencję na play_land. Force Away (target creature) bez
+  // stworów na stole nie jest w ogóle ofertą rzutu.
+  // Cel testu to draw-timing Inspiration w pełnym execute, nie cienka
+  // biblioteka — decyzje self-mill pilnuje zgloszenie-j-moldgraf-selfmill.
+  const state = inspirationScene('upkeep', { ownLibCard: 'force-away' });
   put(state, 'big', 'armored-skaab', 'p1', 'hand');
   const bot = createHeuristicBot({ seed: 1108 });
 
