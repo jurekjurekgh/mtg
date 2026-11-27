@@ -1834,7 +1834,7 @@ export function attackerBlockPowerRestriction(state, attacker) {
  * restrykcję z widoku — ADR 0017; audyt Batch53/C wzorzec). */
 export function blockerBlockOnlyKeywordRestriction(state, blocker) {
   for (const ability of effectiveAbilities(blocker)) {
-    if (ability?.type === 'static' && Array.isArray(ability.canBlockOnlyKeywords)) {
+    if (staticAbilityIsActive(state, blocker, ability) && Array.isArray(ability.canBlockOnlyKeywords)) {
       return ability.canBlockOnlyKeywords;
     }
   }
