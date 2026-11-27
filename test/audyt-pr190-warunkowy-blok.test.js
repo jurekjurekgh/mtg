@@ -3,6 +3,8 @@ import assert from 'node:assert/strict';
 import { createGameState, addObject, execute, playerView } from '../src/engine/game-state.js';
 import { blockerDeclarationViolation } from '../src/engine/combat.js';
 import { jumpToStep } from '../src/engine/turn.js';
+import { attachAuraToCreature } from '../src/engine/attachments.js';
+import { moveObjectDirectly } from '../src/engine/objects.js';
 
 // Syntetyczna warunkowa wersja deskryptora z Vaporkina: rzeczywista karta
 // ma nieograniczoną w czasie restrykcję. Warunki statyczne są generyczne.
@@ -50,3 +52,37 @@ for (const active of [false, true]) {
     assert.equal(execute(state, { type: 'declare_blockers', playerId: 'p1', assignments }).ok, !active);
   });
 }
+
+function auraScene() {
+  const state = scene(false); // własna, nieaktywna zdolność nie może przesłonić grantu
+  addObject(state, {
+    id: 'aura', instanceId: 'i-aura', cardId: 'syntetyczna-aura', controllerId: 'p1', ownerId: 'p1',
+    zone: 'battlefield', kind: 'aura', types: ['Enchantment'], subtypes: ['Aura'],
+    aura: { target: 'creature', grantAbilities: [{ type: 'static', canBlockOnlyKeywords: ['flying'] }] },
+  });
+  attachAuraToCreature(state, 'aura', 'block');
+  return state;
+}
+
+test('Aura nadaje ograniczenie: publiczny widok', () => {
+  const view = playerView(auraScene(), 'p1');
+  assert.deepEqual(view.zones.battlefield.find(o => o.id === 'block').canBlockOnlyKeywords, ['flying']);
+});
+test('Aura nadaje ograniczenie: oferta pomija naziemny blok', () => {
+  const commands = playerView(auraScene(), 'p1').legalCommands.filter(c => c.type === 'declare_blockers');
+  assert.ok(!commands.some(c => (c.assignments.ground ?? []).includes('block')));
+});
+test('Aura nadaje ograniczenie: walidacja i wykonanie odrzucają blok', () => {
+  const state = auraScene();
+  const assignments = { ground: ['block'] };
+  assert.notEqual(blockerDeclarationViolation(state, 'p1', assignments), null);
+  assert.equal(execute(state, { type: 'declare_blockers', playerId: 'p1', assignments }).ok, false);
+});
+test('Odejście aury usuwa nadaną restrykcję', () => {
+  const state = auraScene();
+  moveObjectDirectly(state, 'aura', 'exile', 'exiled-aura');
+  const view = playerView(state, 'p1');
+  assert.equal(view.zones.battlefield.find(o => o.id === 'block').canBlockOnlyKeywords, undefined);
+  assert.ok(view.legalCommands.some(c => c.type === 'declare_blockers' && (c.assignments.ground ?? []).includes('block')));
+  assert.equal(execute(state, { type: 'declare_blockers', playerId: 'p1', assignments: { ground: ['block'] } }).ok, true);
+});

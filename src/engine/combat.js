@@ -1833,7 +1833,8 @@ export function attackerBlockPowerRestriction(state, attacker) {
  * BLOKERZE, a nie na atakującym. Eksportowane dla PlayerView (bot czyta
  * restrykcję z widoku — ADR 0017; audyt Batch53/C wzorzec). */
 export function blockerBlockOnlyKeywordRestriction(state, blocker) {
-  for (const ability of effectiveAbilities(blocker)) {
+  // Stan jest potrzebny również dla zdolności nadanych załącznikami.
+  for (const ability of effectiveAbilities(blocker, state)) {
     if (staticAbilityIsActive(state, blocker, ability) && Array.isArray(ability.canBlockOnlyKeywords)) {
       return ability.canBlockOnlyKeywords;
     }
