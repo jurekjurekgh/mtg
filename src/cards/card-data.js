@@ -15780,6 +15780,77 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     imageUri: 'https://cards.scryfall.io/large/front/6/b/6b8a810b-8538-41c3-a792-dbd1a1845faa.jpg?1783914994',
     support: { status: 'token', limitations: ['token — nie można umieścić w talii'] },
   }),
+
+  // ---- Batch 75 (kolekcja 666–675, właściciel 2026-11-27). Dane Oracle:
+  // docs/cards/scryfall-<slug>.json (pobrane 2026-11-27, `set=` — ADR 0010 §2a).
+  // Wchodzą falami B1–B3 wg planu docs/plans/PLAN_2026-11-27-batch75-kart.md.
+
+  // 666KHM Undersea Invader (KHM 78) {4}{U}{U} 5/6 Giant Rogue — flash;
+  //      wchodzi tapnięty (entersTappedNow czyta deskryptor, permanents.js).
+  defineCard({
+    id: 'undersea-invader', name: 'Undersea Invader', set: 'KHM',
+    types: ['Creature'], subtypes: ['Giant', 'Rogue'], colors: ['U'],
+    power: 5, toughness: 6, manaCost: 6, keywords: ['flash'],
+    oracleText: 'Flash (You may cast this spell any time you could cast an instant.)\nThis creature enters tapped.',
+    imageUri: 'https://cards.scryfall.io/large/front/5/5/550c745b-64e8-4d20-9cf0-024248ddbd57.jpg?1783928254',
+    entersTapped: true,
+    artId: 666, plan: 'Kaldheim',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 667FIN Gysahl Greens (FIN 190) {1}{G} Sorcery — token Bird 2/2 z
+  //      landfallowym +1/+0 (TEN SAM token_bird_chocobo co Call the Mountain
+  //      Chocobo, batch 45) + flashback {6}{G} (wzorzec Dream Twist).
+  defineCard({
+    id: 'gysahl-greens', name: 'Gysahl Greens', set: 'FIN',
+    types: ['Sorcery'], colors: ['G'], manaCost: 2,
+    oracleText: 'Create a 2/2 green Bird creature token with "Whenever a land you control enters, this token gets +1/+0 until end of turn."\nFlashback {6}{G} (You may cast this card from your graveyard for its flashback cost. Then exile it.)',
+    imageUri: 'https://cards.scryfall.io/large/front/0/2/020dee17-d85b-44c4-9faa-b1ef977956f4.jpg?1783906585',
+    spell: {
+      timing: 'sorcery',
+      targets: [],
+      effects: [
+        {
+          type: 'create_token', cardId: 'token_bird_chocobo', name: 'Bird',
+          kind: 'creature', power: 2, toughness: 2, colors: ['G'],
+          types: ['Creature'], subtypes: ['Bird'],
+          abilities: [
+            createAbility({
+              type: ABILITY_TYPE.triggered,
+              trigger: { event: 'land_entered_under_your_control' },
+              effect: [{ type: 'pump', power: 1, toughness: 0 }],
+            }),
+          ],
+        },
+      ],
+      flashback: { cost: 6, colors: ['G'] },
+    },
+    artId: 667, plan: 'Final Fantasy',
+    support: { status: 'supported', limitations: [] },
+    notes: ['token Bird pumpuje SAM SIEBIE przy wejściu landa kontrolera (landfall — trigger bez celu pumpuje źródło); ten sam token co Call the Mountain Chocobo'],
+  }),
+
+  // 668WWK Battle Hurda (WWK 4) {4}{W} 3/3 Giant — first strike.
+  defineCard({
+    id: 'battle-hurda', name: 'Battle Hurda', set: 'WWK',
+    types: ['Creature'], subtypes: ['Giant'], colors: ['W'],
+    power: 3, toughness: 3, manaCost: 5, keywords: ['first_strike'],
+    oracleText: 'First strike',
+    imageUri: 'https://cards.scryfall.io/large/front/2/f/2f540b83-67fd-4630-a461-69bc84b88ed3.jpg?1783942068',
+    artId: 668, plan: 'Zendikar',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 673M19 Hired Blade (M19 100) {2}{B} 3/2 Human Assassin — flash.
+  defineCard({
+    id: 'hired-blade', name: 'Hired Blade', set: 'M19',
+    types: ['Creature'], subtypes: ['Human', 'Assassin'], colors: ['B'],
+    power: 3, toughness: 2, manaCost: 3, keywords: ['flash'],
+    oracleText: 'Flash (You may cast this spell any time you could cast an instant.)',
+    imageUri: 'https://cards.scryfall.io/large/front/7/6/7624c9aa-2f47-4fcc-a9fe-cc843e8de053.jpg?1783934570',
+    artId: 673, plan: 'New Capenna',
+    support: { status: 'supported', limitations: [] },
+  }),
 ]);
 /**
  * M173/B (uwaga właściciela): druki Scryfalla dla TOKENÓW. Tokeny mają

@@ -1,0 +1,29 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Gysahl+Greens&set=fin&format=json",
+  "print": "fin",
+  "name": "Gysahl Greens",
+  "mana_cost": "{1}{G}",
+  "cmc": 2,
+  "type_line": "Sorcery",
+  "oracle_text": "Create a 2/2 green Bird creature token with \"Whenever a land you control enters, this token gets +1/+0 until end of turn.\"\nFlashback {6}{G} (You may cast this card from your graveyard for its flashback cost. Then exile it.)",
+  "power": null,
+  "toughness": null,
+  "colors": [
+    "G"
+  ],
+  "color_identity": [
+    "G"
+  ],
+  "keywords": [
+    "Flashback"
+  ],
+  "set": "fin",
+  "set_name": "Final Fantasy",
+  "collector_number": "190",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/0/2/020dee17-d85b-44c4-9faa-b1ef977956f4.jpg?1783906585",
+    "normal": "https://cards.scryfall.io/normal/front/0/2/020dee17-d85b-44c4-9faa-b1ef977956f4.jpg?1783906585"
+  },
+  "pobrano": "2026-11-27"
+}

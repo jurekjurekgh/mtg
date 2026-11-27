@@ -1,0 +1,29 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Hired+Blade&set=m19&format=json",
+  "print": "m19",
+  "name": "Hired Blade",
+  "mana_cost": "{2}{B}",
+  "cmc": 3,
+  "type_line": "Creature — Human Assassin",
+  "oracle_text": "Flash (You may cast this spell any time you could cast an instant.)",
+  "power": "3",
+  "toughness": "2",
+  "colors": [
+    "B"
+  ],
+  "color_identity": [
+    "B"
+  ],
+  "keywords": [
+    "Flash"
+  ],
+  "set": "m19",
+  "set_name": "Core Set 2019",
+  "collector_number": "100",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/7/6/7624c9aa-2f47-4fcc-a9fe-cc843e8de053.jpg?1783934570",
+    "normal": "https://cards.scryfall.io/normal/front/7/6/7624c9aa-2f47-4fcc-a9fe-cc843e8de053.jpg?1783934570"
+  },
+  "pobrano": "2026-11-27"
+}

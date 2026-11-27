@@ -714,4 +714,9 @@ export const MANA_COSTS = {
   "plummet": "{1}{G}",
   "river-herald-guide": "{2}{G}",
   "spring-loaded-sawblades": "{1}{W}",
+  // Batch 75 (kolekcja 666–675, fala B1: 666/667/668/673)
+  "undersea-invader": "{4}{U}{U}",
+  "gysahl-greens": "{1}{G}",
+  "battle-hurda": "{4}{W}",
+  "hired-blade": "{2}{B}",
 };
