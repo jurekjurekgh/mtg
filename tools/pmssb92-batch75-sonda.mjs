@@ -394,8 +394,8 @@ const SCENARIUSZE = [
     tytul: 'Atak 2/1 flying: wróg ma tylko GROUND blokery (nie może zablokować) vs ma lotnika 2/2',
     pro: 'Vaporkin bez lotnika po stronie wroga jest niemal niezniszczalny w walce — atakuj zawsze. Gdy wróg ma lotnika, atak = fair trade 2/2-za-2/1 (wymiana neutralna, ale aktywna).',
     warianty: [
-      { opis: 'wróg: dwa ground blokery 2/2 (nie zablokują)', poleWrog: [{ id: 'b1', karta: 'leafcrown-dryad' }, { id: 'b2', karta: 'leafcrown-dryad' }] },
-      { opis: 'wróg: lotnik 2/2 (może zablokować)', poleWrog: [{ id: 'lotnik', karta: 'fear-of-burning-alive' }] },
+      { opis: 'wróg: dwa ground blokery 2/2 bez reach (nie zablokują)', poleWrog: [{ id: 'b1', karta: 'phyrexian-rager' }, { id: 'b2', karta: 'phyrexian-rager' }] },
+      { opis: 'wróg: lotnik 2/2 (może zablokować)', poleWrog: [{ id: 'lotnik', karta: 'dementia-bat' }] },
     ],
     budowa: (w) => {
       const state = stan({

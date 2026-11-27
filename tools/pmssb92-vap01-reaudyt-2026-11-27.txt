@@ -1,0 +1,24 @@
+=== PMSSB-92 — POMIAR (batch 75: T=moment, C=cel, S=kontekst, K=koszt) ===
+
+
+--- vaporkin ---
+[VAP-01] (S) wróg: dwa ground blokery 2/2 bez reach (nie zablokują)
+    krok=declare_attackers aktywny=p1 priorytet=p1 tura=1
+    życie p1=20 p2=20 | mana p1=0 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false
+    stół p1: vap-bf:Vaporkin (2/1 flying)
+    stół p2: b1:Phyrexian Rager (2/2), b2:Phyrexian Rager (2/2)
+    ręka p1: — | ręka p2: 0 kart(y)
+    grób p1: 0 | grób p2: 0 | biblioteka p1: 20
+    BOT: attack[vap-bf]  score=8.00
+    alternatywy: attack[vap-bf]=8.00 | attack[]=0.00 | pass_priority=0.00 | concede=-Infinity
+[VAP-01] (S) wróg: lotnik 2/2 (może zablokować)
+    krok=declare_attackers aktywny=p1 priorytet=p1 tura=1
+    życie p1=20 p2=20 | mana p1=0 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false
+    stół p1: vap-bf:Vaporkin (2/1 flying)
+    stół p2: lotnik:Dementia Bat (2/2 flying)
+    ręka p1: — | ręka p2: 0 kart(y)
+    grób p1: 0 | grób p2: 0 | biblioteka p1: 20
+    BOT: attack[vap-bf]  score=1.00
+    alternatywy: attack[vap-bf]=1.00 | attack[]=0.00 | pass_priority=0.00 | concede=-Infinity
+
+=== scenariuszy: 2 (kart: 1) ===

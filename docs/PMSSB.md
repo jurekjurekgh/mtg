@@ -4601,7 +4601,7 @@ CR 508.2). Bez jawnego jump p1 nie dostaje komend `declare_blockers`.
 | GYS-02 K | idle: flashback 62,98 > pass; zdrowa ręka: Outcasts 68,41 > flashback 62,98 → **Outcasts wygrywa** | ✓ (patrz F-92/1) |
 | SPE-01 C | equip 4/4 → 21,00 > equip 1/1 → 15,00 (main1, mana 2) | ✓ trample +1/+0 na największego |
 | SPE-02 C | kill 3/3 33,00; lethal gracz (życie 3) 999,00; ściana 0/4 → pass (−61/−81) | ✓ |
-| VAP-01 C | atak vs ground 1,00, vs lotnik 8,00 | ✓ |
+| VAP-01 S | skorygowany pomiar: atak vs ground bez reach 8,00; vs lotnik 2/2 1,00 | ✓; pierwotny pomiar miał podmienione warunki — szczegóły w audycie PR #190 |
 | VAP-02 S | ground → blok NIEENUMEROWANY; lotnik 2/1 → block 7,00 | ✓ restrykcja blokera podana przez oferty |
 | CM-01 C | 4 stworów: destroy 84 / salwa-kill 33; 1 stwor: destroy 84, salwa ≤0 | ✓ (patrz F-92/2) |
 | CM-02 S | destroy m1 100 na Fear (enchantment creature — LEGALNY cel) | ✓ suspect „czar bez sensu" odwrócony: cel jest enchantmentem |
@@ -4667,3 +4667,7 @@ Z SONDY (import `SCENARIUSZE` + `stan`/`decyzja`) — zero duplikacji stanu
   REAUDYT-podłóg do ruszania).
 
 **Brama:** test:all **10 893/10 893** RC=0 (z nowymi pinami PMSSB-92).
+
+### Reaudyt PR #190 — VAP-01 (2026-11-27)
+
+Poprzedni pomiar VAP-01 w `tools/pmssb92-batch75-pomiar-po.txt` zachowany historycznie: „ground” używał dwóch Leafcrown Dryad 2/2 **reach** (mogą blokować lotnika), zaś „lotnik 2/2” używał Fear of Burning Alive 4/4 **bez flying** (nie może). Sonda teraz używa dwóch Phyrexian Rager 2/2 bez reach oraz Dementia Bat 2/2 flying, bez zmiany karty ocenianej. Walidacja bloku w teście dowodzi parowania (RED stare dane, GREEN nowe; osobna kontrola reach). Pomiar `tools/pmssb92-vap01-reaudyt-2026-11-27.txt`: atak 8,00 gdy nieblokowalny, 1,00 przy legalnym bloku; oba wyższe od passu 0. Poprzednie wnioski na podstawie etykiet były odwrotne i nie są dowodem tego kontrastu.

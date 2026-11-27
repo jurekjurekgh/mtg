@@ -22,6 +22,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { SCENARIUSZE, stan, decyzja } from '../tools/pmssb92-batch75-sonda.mjs';
+import { declareAttackers, blockerDeclarationViolation } from '../src/engine/combat.js';
 
 const scenariusz = (id) => {
   const s = SCENARIUSZE.find((x) => x.id === id);
@@ -100,6 +101,24 @@ test('HUR-02 (S): first strike blokuje 3/3 za darmo (14); 4/4 — Hurda ginie, b
   const mZla = mierz(zla);
   assert.equal(mZla.wybrano, 'block[]');
   assert.ok((score(mZla, 'block[atk-4-4<hurda-bf]') ?? 0) < 0, 'blok samobójczy ma być karany');
+});
+
+test('VAP-01: opisane stany to faktycznie nieblokowalny lotnik oraz legalny latający bloker', () => {
+  const [ground, flyer] = warianty('VAP-01');
+  const first = ground.scen.budowa(ground.w);
+  declareAttackers(first, 'p1', ['vap-bf']);
+  for (const blocker of ['b1', 'b2']) {
+    assert.ok(blockerDeclarationViolation(first, 'p2', { 'vap-bf': [blocker] }),
+      `${blocker} NIE może blokować Vaporkina`);
+  }
+  const second = flyer.scen.budowa(flyer.w);
+  declareAttackers(second, 'p1', ['vap-bf']);
+  assert.equal(blockerDeclarationViolation(second, 'p2', { 'vap-bf': ['lotnik'] }), null,
+    'latający bloker musi móc zablokować Vaporkina');
+  // Kontrola anty-over-fix: nielatająca Dryada ma reach i BLOKUJE lotnika.
+  const reach = ground.scen.budowa({ ...ground.w, poleWrog: [{ id: 'reach', karta: 'leafcrown-dryad' }] });
+  declareAttackers(reach, 'p1', ['vap-bf']);
+  assert.equal(blockerDeclarationViolation(reach, 'p2', { 'vap-bf': ['reach'] }), null);
 });
 
 test('VAP-02 (S): nielegalny blok ground NIE jest enumerowany; lotnik 2/1 — legalna wymiana', () => {
