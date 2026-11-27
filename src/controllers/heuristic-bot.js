@@ -74,9 +74,8 @@ import { normalizeHeuristicParams } from './heuristic-params.js';
  * premia wyścigu. Reguła generyczna po keywordach i `cantBeBlocked` z widoku.
  */
 function blockerAllowsAttackerKeywords(blocker, attacker) {
-  const groups = blocker?.canBlockOnlyKeywordGroups
-    ?? (blocker?.canBlockOnlyKeywords ? [blocker.canBlockOnlyKeywords] : []);
-  return groups.every((group) => group.some((keyword) => (attacker?.keywords ?? []).includes(keyword)));
+  const allowed = blocker?.canBlockOnlyKeywords;
+  return !allowed || allowed.some((keyword) => (attacker?.keywords ?? []).includes(keyword));
 }
 
 // Sprawdzenie pary bez menace: menace dotyczy liczby blokerów łącznie,
@@ -18197,7 +18196,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // przydzielonego blokera zachowuje priorytet kolejności zagrożeń.
         // Pozostałe uproszczenia modelu (m.in. menace) nie zmieniają się.
         const blokowalne = new Set();
-        const hasBlockerRestriction = blockers.some((blocker) => blocker.canBlockOnlyKeywords || blocker.canBlockOnlyKeywordGroups);
+        const hasBlockerRestriction = blockers.some((blocker) => blocker.canBlockOnlyKeywords);
         if (!hasBlockerRestriction) {
           for (const id of rankedByThreat.slice(0, blockers.length)) blokowalne.add(id);
         } else {

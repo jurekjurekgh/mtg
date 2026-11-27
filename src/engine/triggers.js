@@ -141,13 +141,14 @@ function conditionHolds(trigger, state, sourceObject = null, eventData = {}) {
   // „Whenever a player casts a WHITE spell" (Angel's Feather): trigger
   // `player_casts_spell` z warunkiem na kolorze rzucanego czaru — kolory
   // niosie samo zdarzenie (publiczne dane karty, ADR 0002).
-  // Dopasowanie jednego filtra nie kończy sprawdzania następnych: typ,
-  // kolor, wartość many i dalsze warunki mogą być użyte łącznie.
-  if (Array.isArray(condition.spellColorsInclude)
-    && !(eventData.colors ?? []).some((color) => condition.spellColorsInclude.includes(color))) return false;
+  if (Array.isArray(condition.spellColorsInclude)) {
+    return (eventData.colors ?? []).some((color) => condition.spellColorsInclude.includes(color));
+  }
   // „Whenever you cast a COLORLESS spell" (Molten Nursery, Devoid): kolory
   // rzucanego czaru są puste (Devoid i artefakty są bezbarwne).
-  if (condition.spellIsColorless && (eventData.colors ?? []).length !== 0) return false;
+  if (condition.spellIsColorless) {
+    return (eventData.colors ?? []).length === 0;
+  }
   // Batch 51 (Kulrath Mystic): „Whenever you cast a spell with MANA VALUE 4
   // or greater" (CR 202.3 — mana value to koszt many wydrukowany na karcie).
   // Źródłem wartości jest obiekt czaru na stosie (`eventData.object.manaCost`),
@@ -156,7 +157,8 @@ function conditionHolds(trigger, state, sourceObject = null, eventData = {}) {
   // taniego stwora rzuconego za {4} dzięki zniżce.
   if (condition.spellManaValueAtLeast != null) {
     const manaValue = eventData.manaValue ?? eventData.object?.manaCost ?? null;
-    if (manaValue == null || manaValue < condition.spellManaValueAtLeast) return false;
+    if (manaValue == null) return false;
+    return manaValue >= condition.spellManaValueAtLeast;
   }
   // „Whenever you cast an AURA or EQUIPMENT spell" (Mister Gutsy, batch 75):
   // warunek na RODZAJU rzucanego czaru — porównujemy unię TYPÓW i PODTYPÓW
@@ -167,7 +169,7 @@ function conditionHolds(trigger, state, sourceObject = null, eventData = {}) {
   if (Array.isArray(condition.spellTypesInclude)) {
     const castObject = eventData.object ?? {};
     const kinds = [...(castObject.types ?? []), ...(castObject.subtypes ?? [])];
-    if (!kinds.some((kind) => condition.spellTypesInclude.includes(kind))) return false;
+    return kinds.some((kind) => condition.spellTypesInclude.includes(kind));
   }
   // „If you descended this turn" (Canonized in Blood, CR 603.4 — intervening
   // if): permanent card wpadł do grobu kontrolera w bieżącej turze.

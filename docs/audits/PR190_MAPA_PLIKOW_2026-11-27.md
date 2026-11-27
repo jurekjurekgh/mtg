@@ -1,5 +1,7 @@
 # Mapa plików PR #190 — inwentarz roboczy (2026-11-27)
 
+> Stan końcowy: właściciel zakończył audyt bez pełnego E1; poniższe kierunki to historyczny inwentarz, nie zlecenie dalszej pętli. Zob. `PR190_PRZEGLAD_40_COMMITOW_2026-11-27.md`.
+
 Baza `dd1f587c3c053080bf32be19158fb55a4a461ffd`, head `7ea66dfefcafaf989194c5c658a2af3aaf8a8265`; różnice z dokładnych commitów PR, 71 plików. To inwentarz, **nie poświadczenie zakończonego audytu**: wszystkie wiersze wymagają dalszej weryfikacji do zamknięcia E1. Liczności +/− są względem oryginalnego PR, a nie późniejszych poprawek sesji #191. Wyniki i ograniczenia: `AUDYT_PR190_2026-11-27.md`.
 
 | Plik | +/− | Zakres dalszego przeglądu |

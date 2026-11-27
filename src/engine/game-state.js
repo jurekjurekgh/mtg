@@ -26,7 +26,7 @@ function hasColorForCardId(state, playerId, cardId, phyrexianPay = 0, purpose = 
   if (offerUnits != null) return canPayColoredCostForOffer(state, playerId, requirements, offerUnits, null, purpose);
   return canPayColoredCost(state, playerId, requirements, null, purpose);
 }
-import { attackerBlockPowerRestriction, blockerBlockOnlyKeywordRestrictions, blockCandidatePool, blockRequirementCountOf, blockSlotsFor, mustBlockHostCounts, cantBeBlockedFromEquipment, declareAttackers, declareBlockers, attackerSeedDeclarations, blockerSeedAssignments, combatDeclarationView, mandatoryAttackerIds, mandatoryBlockerIds, minimalMandatoryBlocks, rememberClosedCombat, resolveCombatDamage, buildDamageAssignmentView, buildDefaultDamageAssignments, validateDamageAssignment, validateBlockerDamageAssignment, staticAttackPreventionOf } from './combat.js';
+import { attackerBlockPowerRestriction, blockerBlockOnlyKeywordRestriction, blockCandidatePool, blockRequirementCountOf, blockSlotsFor, mustBlockHostCounts, cantBeBlockedFromEquipment, declareAttackers, declareBlockers, attackerSeedDeclarations, blockerSeedAssignments, combatDeclarationView, mandatoryAttackerIds, mandatoryBlockerIds, minimalMandatoryBlocks, rememberClosedCombat, resolveCombatDamage, buildDamageAssignmentView, buildDefaultDamageAssignments, validateDamageAssignment, validateBlockerDamageAssignment, staticAttackPreventionOf } from './combat.js';
 import { optionalSpellEffectChoices, castSpell, castCleave, legalSpellCasts, legalCleaveCasts, plotCard, suspendCard, warpCard, resolveTopOfStack, resolveRiotEntry, finishPendingSpell, resumeSuspendedSpell, castEscape, resolveEscapeExile, legalEscapeCasts, declareDelveCast, resolveDelveExile, delveExileLimit, affordableDelveCounts, castFlashback, legalFlashbackCasts, castAdventure, legalAdventureCasts, castAdventureCreature, legalAdventureCreatureCasts, effectiveSpellManaCost, legalTargetCandidates, validateTargets, castMadnessSpell, legalModeCasts, legalXCostCasts, legalFireballCasts, validateVariableTargets, validateFireballTargets, legalTargetCombos, validateDamageDivision, dividedDamageDivisions } from './spells.js';
 import { legalActivatedAbilities, legalManaAbilities, manualManaOfferUnits, activateAbility, performActivation } from './abilities.js';
 import { attachmentRestrictions, deathZoneFor, wardAmountOf, clearMarkedDamage, clearStatModifiers, creatureCantBlock, effectiveAbilities, effectiveKeywords, effectivePower, effectiveToughness, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, grantedStatBonus, hasTemporaryCantBlock, staticAbilityIsActive, markDamage, modifyStats, transformedCharacteristics, turnFaceUp, untapObject, activatableAbilities, entersTappedNow } from './permanents.js';
@@ -7693,13 +7693,8 @@ export function playerView(state, playerId) {
         // ją z widoku (ADR 0017), kafel może pokazać badge. Ten sam odczyt co
         // walidacja bloku (blockRestrictionError, M380).
         if (object.kind === 'creature' && !hiddenFromViewer) {
-          const groups = blockerBlockOnlyKeywordRestrictions(state, object);
-          if (groups.length > 0) {
-            // Historyczne pole opisuje pierwszą zdolność; konsument musi użyć
-            // grup, jeśli są obecne, by zachować koniunkcję wielu zdolności.
-            entry.canBlockOnlyKeywords = groups[0];
-            if (groups.length > 1) entry.canBlockOnlyKeywordGroups = groups;
-          }
+          const blockOnlyKeywords = blockerBlockOnlyKeywordRestriction(state, object);
+          if (blockOnlyKeywords != null) entry.canBlockOnlyKeywords = blockOnlyKeywords;
         }
         // M221/C (zgłoszenie właściciela, Benevolent Blessing): ochrona
         // permanentu (CR 702.16) jest informacją PUBLICZNĄ wydrukowaną skutkiem
@@ -8697,7 +8692,7 @@ export function playerView(state, playerId) {
     // kontr-płatności `producibleMana`); „nie płać” zawsze dostępne.
     const energyForPayer = state.players.find((player) => player.id === state.pendingOptionalPay.playerId)?.energy ?? 0;
     const optionalPips = (optionalPayTrigger.payColors ?? []).map(color => [color]);
-    const manualUnits = manualManaOfferUnits(state, playerId, optionalPayTrigger.payLife ?? 0);
+    const manualUnits = manualManaOfferUnits(state, playerId);
     const payerLife = state.players.find(player => player.id === playerId)?.life ?? 0;
     const counterCost = optionalPayTrigger.payCounter;
     const counterSource = state.objects.get(state.pendingOptionalPay.sourceId);

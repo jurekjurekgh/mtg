@@ -3,7 +3,6 @@ import assert from 'node:assert/strict';
 import { createGameState, addObject, execute, playerView } from '../src/engine/game-state.js';
 import { createCardRegistry } from '../src/cards/card-data.js';
 import { createCardDeck } from '../src/cards/materialize.js';
-import { moveObjectDirectly } from '../src/engine/objects.js';
 import { addCounter } from '../src/engine/counters.js';
 import { addMana } from '../src/engine/resources.js';
 import { jumpToStep } from '../src/engine/turn.js';
@@ -16,10 +15,10 @@ import { jumpToStep } from '../src/engine/turn.js';
 // of +1/+1 counters on it.” https://api.scryfall.com/cards/pip/136
 // Rulingi: https://api.scryfall.com/cards/pip/136/rulings (brak o LKI).
 const registry = createCardRegistry();
-function put(s, id, cardId) {
+function put(s, id, cardId, where = 'battlefield') {
   const [entry] = createCardDeck({ cardIds: [cardId], ownerId: 'p1', registry });
   const { id: _id, instanceId, cardId: _cardId, ownerId, controllerId, objectId, zone, ...rest } = entry;
-  addObject(s, { ...rest, id, instanceId: `i-${id}`, cardId, ownerId: 'p1', controllerId: 'p1', zone: 'battlefield' });
+  addObject(s, { ...rest, id, instanceId: `i-${id}`, cardId, ownerId: 'p1', controllerId: 'p1', zone: where });
 }
 function pass(s) {
   const cmd = playerView(s, s.turn.priorityPlayerId).legalCommands.find(c => c.type === 'pass_priority');
@@ -45,9 +44,18 @@ test('Mister Gutsy: po śmierci X liczników zachowane, nawet gdy karta opuści 
   const dead = [...s.objects.values()].find(o => o.cardId === 'mister-gutsy' && o.zone === 'graveyard');
   assert.ok(dead, 'Gutsy umiera od trzech obrażeń'); assert.equal(dead.formerCounters['+1/+1'], 2);
   assert.ok(s.zones.stack.some(id => s.objects.get(id)?.kind === 'trigger'));
-  // Odpowiedź przeciwnika na trigger przenosi kartę z grobu: nowy obiekt,
+  // Memory's Journey przenosi kartę z grobu przed rozstrzygnięciem: nowy obiekt,
   // źródło na stosie nadal ma znać liczniki z chwili śmierci.
-  moveObjectDirectly(s, dead.id, 'exile', 'exiled-gutsy');
+  put(s, 'mem', 'memory-s-journey', 'hand');
+  addMana(s, 'p1', 2, { colors: ['U'] });
+  for (let i = 0; i < 4 && s.turn.priorityPlayerId !== 'p1'; i++) pass(s);
+  const options = playerView(s, 'p1').legalCommands.filter(c => c.objectId === 'mem');
+  const cast = options.find(c => c.targets?.includes(dead.id));
+  assert.ok(cast); assert.equal(execute(s, cast).ok, true);
+  for (let i = 0; i < 12 && s.zones.stack.length > 1; i++) pass(s);
+  assert.ok([...s.objects.values()].some(o => o.cardId === 'mister-gutsy' && o.zone === 'library'));
+  assert.equal(s.zones.stack.length, 1, 'trigger śmierci wciąż oczekuje');
+
   for (let i = 0; i < 8 && s.zones.stack.length; i++) pass(s);
   assert.equal(s.zones.stack.length, 0);
   assert.equal([...s.objects.values()].filter(o => o.cardId === 'token_junk' && o.zone === 'battlefield').length, 2);

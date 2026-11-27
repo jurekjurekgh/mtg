@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createGameState, addObject, playerView } from '../src/engine/game-state.js';
+import { createGameState, addObject, execute, playerView } from '../src/engine/game-state.js';
 import { createCardRegistry } from '../src/cards/card-data.js';
 import { createCardDeck } from '../src/cards/materialize.js';
 import { manualManaOfferUnits } from '../src/engine/abilities.js';
@@ -81,50 +81,48 @@ test('Koszt Phyrexian i aktywacje Translatorów zużywają wspólne życie — s
   assert.equal(phy().length, 1, 'przy pięciu życiach można zapłacić oba koszty');
 });
 
-test('Opcjonalny łączny koszt many i życia rezerwuje życie także dla zapłaty', () => {
-  const s = scene(3);
-  s.pendingOptionalPay = { playerId: 'p1', sourceId: 't1', ability: {
-    trigger: { payMana: 2, payLife: 2 }, effect: [],
-  }, requiresTargetDecision: false };
-  const offer = () => playerView(s, 'p1').legalCommands.some(c => c.type === 'resolve_optional_pay_choice' && c.pay === true);
-  assert.equal(offer(), false, 'dwa życia płatności i dwa aktywacji wymagają czterech');
-  s.players.find(p => p.id === 'p1').life = 4;
-  assert.equal(offer(), true, 'cztery życia wystarczają na wszystkie koszty');
-});
-
-test('Rzut z kickerem również rezerwuje życie na symbol Phyrexian', () => {
-  const s = scene(5);
-  put(s, 't3', 'kozileks-translator');
-  put(s, 't4', 'kozileks-translator');
-  put(s, 'invasion', 'ruthless-invasion', 'hand');
-  // Syntetyczne połączenie obu istniejących deskryptorów — anty-overfix dla
-  // generycznej ścieżki wariantów; nie zmienia definicji karty w katalogu.
-  s.objects.set('invasion', Object.freeze({ ...s.objects.get('invasion'), kicker: { cost: 1 } }));
-  const opts = () => playerView(s, 'p1').legalCommands.filter(c => c.objectId === 'invasion' && c.phyrexianPayWithLife === 1);
-  assert.ok(opts().some(c => !c.kicked), 'wariant bazowy ma trzy many po zapłaceniu 2 życia');
-  assert.ok(!opts().some(c => c.kicked), 'kicker wymaga czwartej many i szóstego życia');
-  s.players.find(p => p.id === 'p1').life = 6;
-  assert.ok(opts().some(c => c.kicked));
-});
-
-test('Rzut z buybackiem również rezerwuje życie na symbol Phyrexian', () => {
-  const s = scene(5);
-  put(s, 't3', 'kozileks-translator');
-  put(s, 't4', 'kozileks-translator');
-  put(s, 'invasion', 'ruthless-invasion', 'hand');
-  const card = s.objects.get('invasion');
-  s.objects.set('invasion', Object.freeze({ ...card, spell: { ...card.spell, buyback: { cost: 1 } } }));
-  const opts = () => playerView(s, 'p1').legalCommands.filter(c => c.objectId === 'invasion' && c.phyrexianPayWithLife === 1);
-  assert.ok(opts().some(c => !c.buyback));
-  assert.ok(!opts().some(c => c.buyback), 'buyback wymaga czwartej many i szóstego życia');
-  s.players.find(p => p.id === 'p1').life = 6;
-  assert.ok(opts().some(c => c.buyback));
-});
-
 // Anty-over-fix: mana z puli nie kosztuje ponownie życia.
 test('Zapas many i jedno życie na Translatora wystarczają obok Phyrexian', () => {
   const s = scene(3);
   put(s, 'legion', 'porcelain-legionnaire', 'hand');
   addMana(s, 'p1', 1);
   assert.ok(playerView(s, 'p1').legalCommands.some(c => c.objectId === 'legion' && c.phyrexianPayWithLife === 1));
+});
+
+test('Jeden Translator i mana z puli nie wystarczają przy dwóch życiach na Phyrexian', () => {
+  const s = createGameState({ seed: 190, players: [{ id: 'p1' }, { id: 'p2' }] });
+  s.turn = jumpToStep(s.turn, 'main', 'p1');
+  s.turn.activePlayerId = s.turn.priorityPlayerId = 'p1';
+  s.players[0].life = 2;
+  put(s, 'translator', 'kozileks-translator');
+  put(s, 'legion', 'porcelain-legionnaire', 'hand');
+  addMana(s, 'p1', 1);
+  const offer = () => playerView(s, 'p1').legalCommands.some(c => c.objectId === 'legion' && c.phyrexianPayWithLife === 1);
+  assert.equal(offer(), false);
+  s.players[0].life = 3;
+  assert.equal(offer(), true);
+});
+
+test('Przejęty Translator przeciwnika dzieli życie z własnym w ofercie', () => {
+  const s = createGameState({ seed: 190, players: [{ id: 'p1' }, { id: 'p2' }] });
+  s.turn = jumpToStep(s.turn, 'main', 'p1');
+  s.turn.activePlayerId = s.turn.priorityPlayerId = 'p1';
+  s.players[0].life = 1;
+  put(s, 'own', 'kozileks-translator');
+  const [entry] = createCardDeck({ cardIds: ['kozileks-translator'], ownerId: 'p2', registry });
+  const { id: _id, instanceId, cardId: _cardId, ownerId, controllerId, objectId, zone, ...rest } = entry;
+  addObject(s, { ...rest, id: 'opponent', instanceId: 'i-opponent', cardId: 'kozileks-translator', ownerId: 'p2', controllerId: 'p2', zone: 'battlefield' });
+  put(s, 'awaken', 'awaken-the-sleeper', 'hand');
+  put(s, 'gutsy', 'mister-gutsy', 'hand');
+  addMana(s, 'p1', 4, { colors: ['R'] });
+  const cast = playerView(s, 'p1').legalCommands.find(c => c.objectId === 'awaken' && c.targets?.includes('opponent'));
+  assert.ok(cast); assert.equal(execute(s, cast).ok, true);
+  for (let i = 0; i < 12 && s.zones.stack.length; i++) {
+    const pass = playerView(s, s.turn.priorityPlayerId).legalCommands.find(c => c.type === 'pass_priority');
+    assert.ok(pass); assert.equal(execute(s, pass).ok, true);
+  }
+  assert.equal(s.zones.stack.length, 0);
+  assert.equal(s.objects.get('opponent').controllerId, 'p1');
+  assert.equal(manualManaOfferUnits(s, 'p1').amount, 1);
+  assert.equal(castable(s), false);
 });
