@@ -1223,7 +1223,16 @@ function ptPair(power, toughness) {
   const tDyn = typeof toughness === 'string' || isCountedEffectValue(toughness);
   const pSign = countedEffectSign(power) < 0 ? '-' : '+';
   const tSign = countedEffectSign(toughness) < 0 ? '-' : '+';
-  if (!pDyn && !tDyn) return `${p}/${t}`;
+  if (!pDyn && !tDyn) {
+    // Znak ZERA wg kierunku efektu (zwierciadło Oracle, oś 2 — żywy tester
+    // 2026-11-27, Saltfield Recluse): premie drukują „+X/+0”, kary „-X/-0”
+    // (Oracle karty: „Target creature gets -2/-0 until end of turn.” — kafel
+    // pokazywał „-2/+0”, co obiecywało WZMOCNIENIE obrony). Zero dziedziczy
+    // kierunek po drugiej wartości pary; (0/−2) → „+0/-2”.
+    const kara = power < 0 || toughness < 0;
+    const fmt = (v) => (v === 0 ? (kara ? '-0' : '+0') : signed(v));
+    return `${fmt(power)}/${fmt(toughness)}`;
+  }
   // M255/D (pętla jakości, Altar of the Goyf / Jyoti / Tarmogoyf): wartość
   // DYNAMICZNA (string) to DEFINICJA X, a nie liczba premii. Drukowanie jej
   // samej („Gdy atakuje samotnie: liczba typów kart w grobach do końca tury”)
