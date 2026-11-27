@@ -43,8 +43,8 @@ test('battle cry: excludeSource mówi „innym atakującym", bez flagi zostaje o
 // Żywy tester 2026-11-27 (partia worek-legend vs dominaria-brg, seed 9):
 // kafel Saltfield Recluse pokazywał „{T}: cel: stwór — -2/+0 do końca tury”,
 // a Oracle karty mówi „Target creature gets -2/-0 until end of turn.” —
-// „+0" obiecywało WZMOCNIENIE obrony, którego nie ma. Znak zera idzie po
-// KIERUNKU efektu: kary „-X/-0”, premie „+X/+0” (WotC drukuje oba).
+// „+0" i „-0" nie zmieniają obrony; chodzi o spójność prezentacji z Oracle.
+// Znak zera idzie po KIERUNKU efektu: kary „-X/-0”, premie „+X/+0”.
 test('pump karny -2/0 pokazuje „-2/-0”, nie „-2/+0” (Oracle Saltfield Recluse)', () => {
   const text = describeSpellEffects({
     effects: [{ type: 'pump', power: -2, toughness: 0 }],
