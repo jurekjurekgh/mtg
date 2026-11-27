@@ -1982,3 +1982,9 @@ najwyżej ZEROWAĆ składnik jako bramka pierwszeństwa (`lifeAfter >= 1`, M146)
 **Reguła:** pin porządku wymaga progu decyzji (Δ ≥ 1 pkt, cytat pełnej precyzji); nowa zmienna idzie jako wariant sondy (jedna na wariant); pin na kod przepisuj na licznik intencji (L186), a re-pin po zmianie skali sprawdza też `grep -rn "<karta>" test/`. **Strażnik:** `test/audyt-pmssb90-batch73.test.js` (10a/10b), `test/uwagi-tura9-bot-rowne-ciala-equip.test.js` T9/8.
 
 → narracja: `docs/LESSONS_PRZYPADKI.md` (L194)
+
+## L195 (2026-11-27) — wspólny helper kwoty musi mieć fallback obejmujący WSZYSTKIE dotychczasowe zbiory
+
+**Reguła:** wyodrębniając kwotę/wycenę z kilku zbiorów do jednego helpera, fallback dla efektów SPOZA nowej mapy musi odtwarzać dotychczasowe zachowanie DLA KAŻDEGO zbioru, z którego helper przejmuje wywołania — nie tylko głównego (przyjęcie `Set.has` głównego zbioru dało 0 zamiast 1 dla SYMMETRIC i FACE_DOWN: podłoga10 przestała wetować Ghoulcaller's Bell i Pyxis, kara cloaków zniknęła). Pełna suita po zmianie jest obowiązkowa nawet gdy nowy test jest zielony (L136). **Strażnik:** `test/zgloszenie-j2-jedna-bramka-drenazu.test.js` U/2, `test/uwagi-pyxis-biblioteka-2026-10-15.test.js` G/b1–b3, `test/uwaga-z-gry-2026-09-23d-veiled-ascension-cloak-may.test.js` F1v2/2.
+
+→ narracja: `docs/LESSONS_PRZYPADKI.md` (L195)
