@@ -50,3 +50,49 @@ test('Mister Gutsy: własny bestow to czar Aura; zwykły rzut Dryady nie jest Au
 test('Mister Gutsy: bestow przeciwnika nie uruchamia własnego wyzwalacza', () => {
   assert.equal(castAndResolve(scene('p2'), 'p2', true), 0);
 });
+
+test('Syntetyczny warunek typu czaru i descended: oba muszą być spełnione', () => {
+  for (const descended of [false, true]) {
+    const s = scene('p1');
+    const gutsy = s.objects.get('gutsy');
+    const abilities = gutsy.abilities.map(a => a.trigger?.condition?.spellTypesInclude
+      ? { ...a, trigger: { ...a.trigger, condition: { ...a.trigger.condition, descendedThisTurn: true } } } : a);
+    s.objects.set('gutsy', Object.freeze({ ...gutsy, abilities }));
+    s.descendedThisTurn = { ...s.descendedThisTurn, p1: descended };
+    assert.equal(castAndResolve(s, 'p1', true), descended ? 1 : 0,
+      `bestow jest Aurą, ale warunek descended ${descended ? 'spełniony' : 'niespełniony'}`);
+  }
+});
+
+test('Syntetyczny warunek kolor i typ: zielona Dryada tylko jako Aura', () => {
+  for (const bestow of [false, true]) {
+    const s = scene('p1');
+    const gutsy = s.objects.get('gutsy');
+    const abilities = gutsy.abilities.map(a => a.trigger?.condition?.spellTypesInclude
+      ? { ...a, trigger: { ...a.trigger, condition: { ...a.trigger.condition, spellColorsInclude: ['G'] } } } : a);
+    s.objects.set('gutsy', Object.freeze({ ...gutsy, abilities }));
+    assert.equal(castAndResolve(s, 'p1', bestow), bestow ? 1 : 0);
+  }
+});
+
+test('Syntetyczny warunek wartości many i typu: próg sprawdzany razem z Aurą', () => {
+  for (const [threshold, bestow] of [[2, false], [2, true], [3, true]]) {
+    const s = scene('p1');
+    const gutsy = s.objects.get('gutsy');
+    const abilities = gutsy.abilities.map(a => a.trigger?.condition?.spellTypesInclude
+      ? { ...a, trigger: { ...a.trigger, condition: { ...a.trigger.condition, spellManaValueAtLeast: threshold } } } : a);
+    s.objects.set('gutsy', Object.freeze({ ...gutsy, abilities }));
+    assert.equal(castAndResolve(s, 'p1', bestow), threshold === 2 && bestow ? 1 : 0);
+  }
+});
+
+test('Syntetyczny bezbarwny czar i typ: kolor oraz Aura kontrolowane niezależnie', () => {
+  for (const [colorless, bestow] of [[true, false], [true, true], [false, true]]) {
+    const s = scene('p1');
+    const gutsy = s.objects.get('gutsy');
+    s.objects.set('gutsy', Object.freeze({ ...gutsy, abilities: gutsy.abilities.map(a => a.trigger?.condition?.spellTypesInclude
+      ? { ...a, trigger: { ...a.trigger, condition: { ...a.trigger.condition, spellIsColorless: true } } } : a) }));
+    if (colorless) s.objects.set('dryad', Object.freeze({ ...s.objects.get('dryad'), colors: [] }));
+    assert.equal(castAndResolve(s, 'p1', bestow), colorless && bestow ? 1 : 0);
+  }
+});
