@@ -55,3 +55,36 @@ test('Mieszana obrona: Vaporkin nie dokłada obrażeń do bloku naziemnego Soulm
   const attack = m.opcje.find(o => o.cmd === 'attack[attacker]');
   assert.equal(attack?.score, -2, '0/4 zatrzymuje bez zabicia 1/1; Vaporkin nie może pomóc w bloku');
 });
+
+test('Dwa ataki naziemne: Vaporkin nie jest drugim slotem blokowania obok ściany', () => {
+  function measure(secondBlocker) {
+    const s = stan({ krok: 'declare_attackers', pole: [
+      { id: 'a1', karta: 'highland-game', gracz: 'p1' },
+      { id: 'a2', karta: 'soulmender', gracz: 'p1' },
+      { id: 'wall', karta: 'mnemonic-wall', gracz: 'p2' },
+      ...(secondBlocker ? [{ id: 'b2', karta: secondBlocker, gracz: 'p2' }] : []),
+    ] });
+    const m = decyzja(s);
+    return m.opcje.find(o => o.cmd === 'attack[a1,a2]')?.score;
+  }
+  assert.equal(measure(null), 2, 'jedna ściana zatrzyma tylko jednego atakującego');
+  assert.equal(measure('vaporkin'), 2, 'Vaporkin nie blokuje żadnego z naziemnych atakujących');
+  assert.ok(measure('highland-game') < 2, 'drugi zwykły bloker może zatrzymać drugiego atakującego');
+});
+
+test('Dopasowanie bloków: ściana musi ustąpić naziemnemu, a Vaporkin lotnikowi', () => {
+  for (const reverse of [false, true]) {
+    const blockers = [
+      { id: 'wall', karta: 'mnemonic-wall', gracz: 'p2' },
+      { id: 'vap', karta: 'vaporkin', gracz: 'p2' },
+    ];
+    if (reverse) blockers.reverse();
+    const m = decyzja(stan({ krok: 'declare_attackers', pole: [
+      { id: 'f', karta: 'dementia-bat', gracz: 'p1' },
+      { id: 'g', karta: 'soulmender', gracz: 'p1' },
+      ...blockers,
+    ] }));
+    assert.equal(m.opcje.find(o => o.cmd === 'attack[f,g]')?.score, -12,
+      'oba ataki mają blokera niezależnie od kolejności na stole');
+  }
+});

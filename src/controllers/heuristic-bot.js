@@ -18189,7 +18189,30 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             return proj && attackerCanBeBlocked(proj, blockers);
           })
           .sort((a, b) => faceDamageOf(projectedAttackerOf(b)) - faceDamageOf(projectedAttackerOf(a)));
-        const blokowalne = new Set(rankedByThreat.slice(0, blockers.length));
+        // Każdy slot musi pasować do atakującego: Vaporkin nie zajmuje
+        // slotu przeciw naziemnym. Dopasowanie z przełożeniem wcześniej
+        // przydzielonego blokera zachowuje priorytet kolejności zagrożeń.
+        // Pozostałe uproszczenia modelu (m.in. menace) nie zmieniają się.
+        const blokowalne = new Set();
+        if (blockers.every((blocker) => !blocker.canBlockOnlyKeywords)) {
+          for (const id of rankedByThreat.slice(0, blockers.length)) blokowalne.add(id);
+        } else {
+          const assigned = new Map();
+          const assign = (id, seen) => {
+            const attacker = projectedAttackerOf(id);
+            for (const blocker of blockers) {
+              if (seen.has(blocker.id) || !blockerAllowsAttackerKeywords(blocker, attacker)) continue;
+              seen.add(blocker.id);
+              const previous = assigned.get(blocker.id);
+              if (previous == null || assign(previous, seen)) {
+                assigned.set(blocker.id, id);
+                return true;
+              }
+            }
+            return false;
+          };
+          for (const id of rankedByThreat) if (assign(id, new Set())) blokowalne.add(id);
+        }
         for (const id of attackers) {
           const object = projectedAttackerOf(id);
           if (!object) continue;
