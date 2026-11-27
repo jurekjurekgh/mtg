@@ -541,7 +541,10 @@ export function detectNoResponseWindow(lines) {
     // Rozstrzygnięcie tego samego czaru bez śladu oddania priorytetu = brak okna.
     if (new RegExp(`${pending.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')} zostaje rozstrzygni`).test(seg.text)) {
       const windowConfirmed = pending.evidence || (hasBlocks && blockEvidence.has(seg.block));
-      if (!windowConfirmed && judged.get(pending.name) !== seg.block) {
+      // Pod --quiet nie ma echa snapshotów ani granic `--- krok`; blok 0
+      // oznacza całą partię, nie jedną instancję. Deduplikacja per nazwa/blok
+      // ukrywała kolejny rzut tego samego czaru (także po legalnym pierwszym).
+      if (!windowConfirmed && (!hasBlocks || judged.get(pending.name) !== seg.block)) {
         push(found, 'info', `Czar bota „${pending.name}" rzucony i rozstrzygnięty bez okna na odpowiedź gracza`, seg.line);
       }
       judged.set(pending.name, seg.block);
