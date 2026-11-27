@@ -3410,6 +3410,8 @@ export function legalSpellCasts(state, playerId, ofertaUnitsPodany = null) {
   // rachunek dawny (audyt/rodzice bez units). Płatność (castSpell/spendMana)
   // zostaje przy producibleMana — człowiek produkuje brak w kreatorze many.
   const ofertaUnits = ofertaUnitsPodany ?? { amount: 0, units: [] };
+  const unitsAfterPhyrexianLife = (k) => k && ofertaUnits.withReservedLife
+    ? ofertaUnits.withReservedLife(2 * k) : ofertaUnits;
   const manaAvailableForOffer = (forObject, reqs = null) => manaAvailable(forObject, reqs) + ofertaUnits.amount;
   const ids = [
     ...state.zones.hand,
@@ -3466,9 +3468,10 @@ export function legalSpellCasts(state, playerId, ofertaUnitsPodany = null) {
       // base - k many + 2k życia (dotąd base +(symbols-k) przy manaCost bez
       // symboli).
       for (let k = 0; k <= phyrexianSymbols; k += 1) {
-        if (base - k > manaAvailableForOffer(object, coloredPipsOf(object.cardId, k))) continue;
         if (2 * k > (player.life ?? 0)) continue;
-        if (!hasColorForSpell(state, playerId, object.cardId, k, spellManaPurpose(object), ofertaUnits.units)) continue;
+        const variantUnits = unitsAfterPhyrexianLife(k);
+        if (base - k > manaAvailable(object, coloredPipsOf(object.cardId, k)) + variantUnits.amount) continue;
+        if (!hasColorForSpell(state, playerId, object.cardId, k, spellManaPurpose(object), variantUnits.units)) continue;
         out.push(k);
       }
       return out;
@@ -3553,9 +3556,10 @@ export function legalSpellCasts(state, playerId, ofertaUnitsPodany = null) {
       for (const k of spellPhyrexianVariants) {
         // M259/B3: wariant phyrexianu płacony życiem obniża sumę o k.
         const pips = freeCast ? [] : coloredPipsOf(object.cardId, k ?? 0);
-        if (base + kickerCost - (k ?? 0) > manaAvailableForOffer(object, [...pips, ...kickerPips])) continue;
+        const variantUnits = unitsAfterPhyrexianLife(k);
+        if (base + kickerCost - (k ?? 0) > manaAvailable(object, [...pips, ...kickerPips]) + variantUnits.amount) continue;
         if (pips.length + kickerPips.length > 0
-          && !canPayColoredCostForOffer(state, playerId, [...pips, ...kickerPips], ofertaUnits.units)) continue;
+          && !canPayColoredCostForOffer(state, playerId, [...pips, ...kickerPips], variantUnits.units)) continue;
         for (const kickedBase of kickedBaseCasts) {
           for (const landId of landChoices) {
             const kickedCast = { ...kickedBase, kicked: true };
@@ -3691,7 +3695,8 @@ export function legalSpellCasts(state, playerId, ofertaUnitsPodany = null) {
           // M259/B3: manaCost zawiera symbole phyrexian — wariant k obniża
           // łączny koszt dokładnie o k jednostek (płacone życiem).
           const pipMana = k == null ? 0 : -k;
-          if (baseCost + bbCost + pipMana > manaAvailableForOffer(object, coloredPipsOf(object.cardId, k ?? 0))) continue;
+          const variantUnits = unitsAfterPhyrexianLife(k);
+          if (baseCost + bbCost + pipMana > manaAvailable(object, coloredPipsOf(object.cardId, k ?? 0)) + variantUnits.amount) continue;
           const cast2 = { objectId: id, targets: [], buyback: true };
           if (k != null) cast2.phyrexianPayWithLife = k;
           casts.push(cast2);

@@ -8692,7 +8692,7 @@ export function playerView(state, playerId) {
     // kontr-płatności `producibleMana`); „nie płać” zawsze dostępne.
     const energyForPayer = state.players.find((player) => player.id === state.pendingOptionalPay.playerId)?.energy ?? 0;
     const optionalPips = (optionalPayTrigger.payColors ?? []).map(color => [color]);
-    const manualUnits = manualManaOfferUnits(state, playerId);
+    const manualUnits = manualManaOfferUnits(state, playerId, optionalPayTrigger.payLife ?? 0);
     const payerLife = state.players.find(player => player.id === playerId)?.life ?? 0;
     const counterCost = optionalPayTrigger.payCounter;
     const counterSource = state.objects.get(state.pendingOptionalPay.sourceId);
@@ -9522,7 +9522,10 @@ export function playerView(state, playerId) {
       && !state.pendingRevealOrder && !state.pendingProliferate && !state.pendingModalTrigger && !state.pendingRiotChoice && !state.pendingLookTopN && !state.pendingSatyrLook && !state.pendingEpicExperiment && !state.pendingDamageTarget && !state.pendingRedirectChoice && !state.pendingFertileThicket && !state.pendingSpringbloom && !state.pendingIndex && !state.pendingOptionalDraw && !state.pendingDamageAssignment &&  state.pendingExploits.length === 0 && !state.pendingRevealExile && !state.pendingColorChoice && !state.pendingClash && !state.pendingSacrifice && !state.pendingDiscardChoice && !state.pendingHandTopChoice && !state.pendingLandTypeChoice && !state.pendingLibraryPlacement && !state.pendingSearchChoice && !state.pendingPayOrSacrifice && !state.pendingOptionalPay && !state.pendingCounterPay && !state.pendingWardPay && !triggerTargetsBlock && !state.pendingOptionalTrigger && !state.pendingMoonlitChoice && !state.pendingFoodChoice && !state.pendingAmass && !state.pendingDiscover && !state.pendingExplore && !state.pendingCraftExile && !state.pendingAuraHost && !state.pendingHandCreature && !roomTargetBlocks && !pendingBackup && !state.pendingGraveyardToTop && state.pendingDevours.length === 0 && state.pendingEndures.length === 0 && !deliriumBlocks && !mentorBlocks && !state.pendingLegendChoice && !state.pendingEnterAsCopy && !state.pendingDestroyEquipment && !state.pendingCopyTargets && !state.pendingOpponentTarget && !state.pendingSuspendCast && !state.pendingReboundCast && state.turn.priorityPlayerId === playerId && !state.pendingRevealChoice && !state.pendingMadnessCast && !state.pendingGraveFreeCast && !state.pendingExileCast && !state.pendingDamageDivision && !state.pendingEscapeExile && !state.pendingDelveExile && cleanupPriorityOpen(state)) {
     // M359 (CR 514.3, L48): w zamkniętym cleanupie brak ofert rzutów
     // i aktywacji (ten sam predykat co bramka w execute).
-    for (const cast of legalSpellCasts(state, playerId, ofertaUnitsUA)) {
+    for (const cast of legalSpellCasts(state, playerId, {
+      ...ofertaUnitsUA,
+      withReservedLife: (life) => manualManaOfferUnits(state, playerId, life),
+    })) {
       legalCommands.push(command('cast_spell', playerId, cast));
     }
     for (const cast of legalCleaveCasts(state, playerId, ofertaUnitsUA)) {
@@ -9743,8 +9746,10 @@ export function playerView(state, playerId) {
       // (A: budżet PER WARIANT (pip(y) po k opłaconych życiem) — joint (iv).)
       for (let k = 0; k <= symbols; k += 1) {
         const manaNeeded = (object.manaCost ?? 0) - k;
-        if (manaNeeded > manaAvailableForOffer(object, coloredPipsOf(object.cardId, k))) continue;
         if (2 * k > (player.life ?? 0)) continue;
+        // Życie na symbole Phyrexian i na źródła many to ta sama pula.
+        const manualUnits = k ? manualManaOfferUnits(state, playerId, 2 * k) : ofertaUnitsUA;
+        if (manaNeeded > manaAvailableFor(object, coloredPipsOf(object.cardId, k)) + manualUnits.amount) continue;
         out.push(k);
       }
       return out;
@@ -9877,7 +9882,8 @@ export function playerView(state, playerId) {
       const variants = phyrexianVariants(object);
       for (const k of variants) {
         const payWithLife = k === null ? 0 : k;
-        if (!hasColorForCardId(state, playerId, object.cardId, payWithLife, spellManaPurpose(object), ofertaUnitsUA.units)) continue;
+        const variantUnits = payWithLife ? manualManaOfferUnits(state, playerId, 2 * payWithLife) : ofertaUnitsUA;
+        if (!hasColorForCardId(state, playerId, object.cardId, payWithLife, spellManaPurpose(object), variantUnits.units)) continue;
         legalCommands.push(command('cast_permanent', playerId,
           k === null ? { objectId: id } : { objectId: id, phyrexianPayWithLife: k }));
       }

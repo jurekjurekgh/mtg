@@ -2221,7 +2221,7 @@ export function legalManaAbilities(state, playerId) {
  * Zwrot: { amount, units } — jednostki jako listy kolorów (jak w planie
  * płatności; pusta lista = bezbarwna, nie pokrywa pipa kolorowego, CR 106.1a).
  */
-export function manualManaOfferUnits(state, playerId) {
+export function manualManaOfferUnits(state, playerId, reservedLife = 0) {
   // Uwaga X (zgłoszenie właściciela 2026-10-26, Holdout Settlement + Warden of
   // Geometries): oferta rzutu obiecywała manę, której PŁATNOŚĆ nie znajdzie —
   // klik w czar kończył się `illegal_spell: Niewystarczająca mana` i nic się
@@ -2258,7 +2258,7 @@ export function manualManaOfferUnits(state, playerId) {
   // samego życia. Dzisiejsze źródła z kosztem życia dają po jednej {C} za 1
   // życie; strażnik katalogu sygnalizuje potrzebę planera wariantów, gdyby
   // pojawiły się różne koszty lub kolory tych źródeł.
-  let lifeRemaining = Math.max(0, state.players.find((p) => p.id === playerId)?.life ?? 0);
+  let lifeRemaining = Math.max(0, (state.players.find((p) => p.id === playerId)?.life ?? 0) - reservedLife);
   for (const [objectId, candidate] of best) {
     const already = ownManaProductionOf(state, playerId, objectId);
     const extra = Math.max(0, candidate.units.length - already);
