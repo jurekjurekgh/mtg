@@ -4647,6 +4647,58 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   /** `applyTo` = karty traci kontroler źródła (ja), a nie cel ani przeciwnik. */
   const drainsMyLibrary = (eff) => !eff?.applyTo
     || ['you', 'controller', 'source_controller'].includes(eff.applyTo);
+  /**
+   * E2 (pętla jakości 2026-11-27): rodzinny przegląd KATALOGU typów efektów
+   * (src/cards/card-data.js) wobec księgowości `commandSelfDrain` — pewne,
+   * natychmiastowe drenaże WŁASNEJ biblioteki, które omijały podłogę10, bo
+   * nie były w żadnym ze zbiorów. Kwoty deskryptorowe (ADR 0002); semantyka
+   * rozstrzygnięta w silniku (src/engine/effects.js):
+   *   • draw_cards_both_players — MOJA połowa paktu bezwarunkowa (silnik
+   *     dobiera dla kontrolera źródła PRZED gałęzią celu, L3450);
+   *   • manifest_dread — wierzch 2: jeden manifest opuszcza bibliotekę na
+   *     pole, drugi idzie do grobu (CR 701.62a; „as many as possible" przy
+   *     krótszej bibliotece — degenerat, jak w L144);
+   *   • exile_top_playable_until_next_turn — wygnanie `count` wierzchnich
+   *     (Gila Courser 1, Annie Flash 2, CR 601.2b);
+   *   • look_top_put_one_hand_rest_grave — jedna do ręki, reszta (n−1) do
+   *     grobu ZAWSZE — decyzja dotyczy tylko KTÓREJ karty;
+   *   • reveal_top_pick_land_rest_grave — reszta do grobu ZAWSZE, a pick
+   *     także opuszcza bibliotekę → kwota = n (Satyr Wayfinder);
+   *   • look_top_exile_one_face_down_rest_bottom — wygnanie zakryte
+   *     OBOWIĄZKOWE (ruling WotC 2020-08-07, Clone Shell) → 1;
+   *   • exile_top_of_player_library_and_may_cast — karta WYGNANA także gdy
+   *     „may cast" odrzucone → 1.
+   * Rodziny DECYZYJNE (surveil, ferocious_draw_discard, warianty
+   * „rest bottom", index_look — nic albo kwota zależna od wyboru gracza) i
+   * triggery z warunkiem zewnętrznym (Gila/Caves: attacks+saddled; spójnie
+   * z externalTriggerDrainScale ×0, M466) świadomie poza księgowością.
+   * `each_player_exiles_top_face_down` już jest w SYMMETRIC_DRAIN_EFFECTS.
+   */
+  const SURE_LIBRARY_DRAIN_AMOUNTS = new Map([
+    ['draw_cards_both_players', (e) => Math.max(1, Number.isInteger(e?.amount) ? e.amount : 1)],
+    ['manifest_dread', () => 2],
+    ['exile_top_playable_until_next_turn', (e) => Math.max(1, Number.isInteger(e?.count) ? e.count : 1)],
+    ['look_top_put_one_hand_rest_grave', (e) => Math.max(1, (Number.isInteger(e?.amount) ? e.amount : 4) - 1)],
+    ['reveal_top_pick_land_rest_grave', (e) => Math.max(1, Number.isInteger(e?.amount) ? e.amount : 4)],
+    ['look_top_exile_one_face_down_rest_bottom', () => 1],
+    ['exile_top_of_player_library_and_may_cast', () => 1],
+  ]);
+  /**
+   * Kwota drenażu WŁASNEJ biblioteki dla jednego efektu: pewne rodziny po
+   * deskryptorze, dotychczasowe zbiory (LIBRARY_DRAIN + SYMMETRIC +
+   * FACE_DOWN) po `drainAmount` — fallback MUSI obejmować wszystkie trzy,
+   * bo kwota 1 dla nich wynikała wcześniej z fallbacku `drainAmount`
+   * (regres Bell/Pyxis/Veiled po pierwszej wersji: SYMMETRIC i FACE_DOWN
+   * dawały 0 zamiast 1). JEDNO źródło kwoty (L41) — wywołujący pilnują
+   * strony (`drainsMyLibrary`) i przynależności efektu do księgowości.
+   */
+  const drainLossOf = (eff) => {
+    const pewna = eff?.type ? SURE_LIBRARY_DRAIN_AMOUNTS.get(eff.type) : null;
+    if (pewna) return pewna(eff);
+    return (LIBRARY_DRAIN_EFFECTS.has(eff?.type)
+      || SYMMETRIC_DRAIN_EFFECTS.has(eff?.type)
+      || FACE_DOWN_LIBRARY_EFFECT_TYPES.has(eff?.type)) ? drainAmount(eff) : 0;
+  };
   const drainEfekty = (ability, zdarzenie, mojaBiblioteka) => {
     if (ability?.trigger?.event !== zdarzenie) return 0;
     let razem = 0;
@@ -4727,14 +4779,15 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   // (enter_battlefield, dies) — np. Skaab „ETB mill 4", nie mnożymy przez
   // horyzont. Razem z repeat + payment daje pełny obraz ryzyka deck-outu
   // przy rzucie, zamiast per-karta patchy.
-  const oneShotLibraryDrain = (def, types = LIBRARY_DRAIN_EFFECTS) => {
+  const oneShotLibraryDrain = (def, types = LIBRARY_DRAIN_EFFECTS, extraTypes = null) => {
     let razem = 0;
     for (const ability of def?.abilities ?? []) {
       const ev = ability?.trigger?.event;
       if (!ev || !ONE_SHOT_DRAIN_EVENTS.has(ev)) continue;
       for (const eff of (Array.isArray(ability.effect) ? ability.effect : [ability.effect])) {
-        if (!eff?.type || !types.has(eff.type)) continue;
-        if (drainsMyLibrary(eff)) razem += drainAmount(eff);
+        if (!eff?.type) continue;
+        if (!types.has(eff.type) && !(extraTypes?.has(eff.type))) continue;
+        if (drainsMyLibrary(eff)) razem += drainLossOf(eff);
       }
     }
     return razem;
@@ -5068,7 +5121,8 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     const ownDrain = (eff) => Boolean(eff?.type) && drainsMyLibrary(eff)
       && (LIBRARY_DRAIN_EFFECTS.has(eff.type)
         || SYMMETRIC_DRAIN_EFFECTS.has(eff.type)
-        || FACE_DOWN_LIBRARY_EFFECT_TYPES.has(eff.type));
+        || FACE_DOWN_LIBRARY_EFFECT_TYPES.has(eff.type)
+        || SURE_LIBRARY_DRAIN_AMOUNTS.has(eff.type));
     if (cmd.type === 'tap_for_mana') return tapLibraryLoss(view, cmd.objectId);
     if (cmd.type === 'resolve_springbloom') {
       return cmd.sacrificeLandId == null ? 0 : SPRINGBLOOM_DRAIN;
@@ -5078,7 +5132,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       if (Number.isInteger(cmd.selfMill)) return Math.max(0, cmd.selfMill);
       let drain = 0;
       for (const eff of pendingOptionalEffects(view)) {
-        if (ownDrain(eff)) drain += drainAmount(eff);
+        if (ownDrain(eff)) drain += drainLossOf(eff);
       }
       return drain;
     }
@@ -5089,7 +5143,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         ?? (object?.cardId ? cardDef(object.cardId)?.abilities : undefined) ?? [];
       const ability = abilities[cmd.abilityIndex ?? 0];
       for (const eff of (Array.isArray(ability?.effect) ? ability.effect : [ability?.effect])) {
-        if (ownDrain(eff)) drain += drainAmount(eff);
+        if (ownDrain(eff)) drain += drainLossOf(eff);
       }
       return drain;
     }
@@ -5109,7 +5163,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       const def = karta?.cardId ? cardDef(karta.cardId) : undefined;
       let drain = paymentLibraryLoss(view, cmd)
         + searchLibraryLoss(view, cmd)
-        + oneShotLibraryDrain(def); // jednorazowe ETB/dies (mill+draw)
+        + oneShotLibraryDrain(def, LIBRARY_DRAIN_EFFECTS, SURE_LIBRARY_DRAIN_AMOUNTS); // jednorazowe ETB/dies (mill+draw)
       // Efekty samego czaru (mode-aware — jak searchLibraryLoss): mill,
       // loot (draw_then_discard), draw, tutor ze spell.effects.
       const spell = karta?.spell ?? def?.spell;
@@ -5127,7 +5181,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         }
         if (!ownDrain(eff)) continue;
         if (targetIsFoe && (eff.type === 'mill_cards' || eff.type === 'mill_from_bottom')) continue;
-        drain += drainAmount(eff);
+        drain += drainLossOf(eff);
       }
       if (springbloomEffects(karta).length > 0) drain += SPRINGBLOOM_DRAIN;
       return drain;
@@ -5222,8 +5276,9 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       const effects = pendingOptionalEffects(view);
       let drain = 0;
       for (const eff of effects) {
-        if (!eff?.type || !LIBRARY_DRAIN_EFFECTS.has(eff.type)) continue;
-        if (drainsMyLibrary(eff)) drain += drainAmount(eff);
+        if (!eff?.type) continue;
+        if (!LIBRARY_DRAIN_EFFECTS.has(eff.type) && !SURE_LIBRARY_DRAIN_AMOUNTS.has(eff.type)) continue;
+        if (drainsMyLibrary(eff)) drain += drainLossOf(eff);
       }
       if (drain > 0) return libraryLossPenalty(view, drain);
       return 0;
