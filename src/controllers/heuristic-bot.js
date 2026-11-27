@@ -16333,6 +16333,15 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           ? sacrificeSelfCostLoss(view, source, effects) : 0;
         const sacSelfBodyLoss = sacSelfIsManaSource ? 0 : sacSelfLoss;
         score -= sacSelfBodyLoss;
+        // Batch 75 (Malevolent Noble): koszt „poświęć stwora LUB artefakt"
+        // (pojedyncza ofiara w komendzie `sacrificeCreatureId`) — ta sama miara
+        // straty co sacrificeSelf/sacrificeCreaturesByColors (L41: jedna drabina
+        // poświęceń). Gałąź gain_life (m236 niżej) ma WŁASNĄ politykę
+        // ratunkową dla kosztu ofiary — tam podwójne liczenie nie jest wskazane.
+        const hasGainLifeEffect = effects.some((e) => e?.type === 'gain_life');
+        const singleSacrificeLoss = ability?.cost?.sacrificeCreature && cmd.sacrificeCreatureId && !hasGainLifeEffect
+          ? sacrificePermanentLoss(view, objectOnBoard(view, cmd.sacrificeCreatureId)) : 0;
+        score -= singleSacrificeLoss;
         const ownDrawOnly = effects.length > 0 && effects.every(e =>
           e?.type === 'draw_cards' || e?.type === 'draw_then_discard');
         if (ownDrawOnly && ((ability?.cost?.discardCard && P.abilityDiscardCostWeight > 0) || reserveLoss > 0)) {
