@@ -105,7 +105,7 @@
     grób p1: 0 | grób p2: 0 | biblioteka p1: 20
     BOT: cast_permanent(hurda-hand)  score=67.05
     alternatywy: cast_permanent(hurda-hand)=67.05 | pass_priority=0.00 | concede=-Infinity
-[HUR-01] (T) main1, mam już 4/4 i 2/2
+[HUR-01] (T) main1, mam już 4/4 i 1/1
     krok=main1 aktywny=p1 priorytet=p1 tura=1
     życie p1=20 p2=20 | mana p1=5 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false
     stół p1: duzy:Grizzled Outcasts (4/4 transform), maly:Soulmender (1/1)

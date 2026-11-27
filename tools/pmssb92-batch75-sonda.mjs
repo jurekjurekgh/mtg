@@ -298,7 +298,7 @@ const SCENARIUSZE = [
   // =========================================================================
   // 668. Battle Hurda ({4}{W} 3/3 first strike).
   // Pytanie: czy blok z first strike jest wyceniany wg PRAWdziwej wymiany
-  // (first strike zabija 4/4 bez śmierci własnej).
+  // (first strike zabija 3/3 przed ciosem, ale nie zabija 4/4).
   // =========================================================================
   {
     id: 'HUR-01', karta: 'battle-hurda', wymiar: 'T',
@@ -306,7 +306,7 @@ const SCENARIUSZE = [
     pro: '3/3 first strike za 5 to słaby koszt-tempo, gdy stół już trzyma; przy pustym stole to legitymny rozwój. Pro nie przepala 5 many na trzeciego stworora, gdy ręka ma lepsze ruchy.',
     warianty: [
       { opis: 'main1, pusty stół', mana: 5, pole: [] },
-      { opis: 'main1, mam już 4/4 i 2/2', mana: 5, pole: [{ id: 'duzy', karta: 'grizzled-outcasts' }, { id: 'maly', karta: 'soulmender' }] },
+      { opis: 'main1, mam już 4/4 i 1/1', mana: 5, pole: [{ id: 'duzy', karta: 'grizzled-outcasts' }, { id: 'maly', karta: 'soulmender' }] },
     ],
     budowa: (w) => stan({
       mana: { p1: w.mana },
@@ -316,8 +316,8 @@ const SCENARIUSZE = [
   },
   {
     id: 'HUR-02', karta: 'battle-hurda', wymiar: 'S',
-    tytul: 'Blok z first strike: 3/3 FS blokuje atakującego 4/4 — zabija bez śmierci własnej. Czy bot blokuje?',
-    pro: 'First strike: 3/3 zabija 4/4 zanim ten zdąży uderzyć — wymiana 0-za-1 to DARMOWE usunięcie 4/4. Pro blokuje zawsze, gdy stwór FS zabija atakującego i przeżywa.',
+    tytul: 'Blok 3/3 z first strike przeciw atakującemu 3/3 i 4/4 — czy bot odróżnia wymiany?',
+    pro: 'First strike: 3/3 zabija 3/3 zanim ten zdąży uderzyć, lecz 4/4 przeżywa 3 obrażenia i zabija Hurdę w normalnej turze obrażeń. Pro blokuje pierwszy przypadek, a w drugim zachowuje stwora, o ile nie wymaga tego sytuacja.',
     warianty: [
       { opis: 'wróg atakuje 3/3 (FS zabija, Hurda przeżywa)', poleWrog: [{ id: 'atk-3-3', karta: 'grollub' }] },
       { opis: 'wróg atakuje 4/4 (FS nie zabija — Hurda ginie)', poleWrog: [{ id: 'atk-4-4', karta: 'grizzled-outcasts' }] },

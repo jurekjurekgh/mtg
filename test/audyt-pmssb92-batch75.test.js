@@ -38,7 +38,7 @@ const score = (m, frag) => opcja(m, frag)?.score;
 // `creatures_you_control`; mutacyjna kotwica: bez gałęzi salwa była STAŁA).
 // ---------------------------------------------------------------------------
 
-test('CM-01 (C, F-92/2): przy 1 stworze salwa = zakaz (kwota z liczby stworów), bot niszczy enchantment', () => {
+test('CM-01 (C, F-92/2): przy 4 stworach salwa zabija, bot wybiera destroy enchantmentu', () => {
   const [w1] = warianty('CM-01');
   const m = mierz(w1);
   // 4 moje stworów: salwa 4 dmg = kill 2/2 reach (33,00), destroy = 84,00.
@@ -77,7 +77,7 @@ test('M431-suffix (mutacyjna kotwica): warianty trybów CM są rozróżnialne w 
 });
 
 // ---------------------------------------------------------------------------
-// 666MID Undersea Invader + 668THS Battle Hurda + 672THS Vaporkin —
+// 666KHM Undersea Invader + 668WWK Battle Hurda + 670THS Vaporkin —
 // harness blokowy (wzorzec pmssb91 G-02): deklaracja przy declare_attackers,
 // potem jump do declare_blockers; atakujący z katalogu (grollub 3/3,
 // grizzled 4/4, nefarious-imp 2/1 flying).
