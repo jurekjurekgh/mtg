@@ -312,7 +312,7 @@ test('Vaporkin: blokuje atakującego z lataniem, ODRZUCANY na nierojącym (M380)
   passUntilStep(state2, 'declare_blockers');
   const zly = execute(state2, { type: 'declare_blockers', playerId: 'p1', assignments: { ground: ['vap'] } });
   assert.equal(zly.ok, false, 'blok nierojącego ODRZUCANY');
-  assert.match(String(zly.reason), /can block only creatures/, 'komunikat M380 z nazwą reguły');
+  assert.match(String(zly.reason), /Bloker .*może blokować tylko atakujących/, 'komunikat opisuje ograniczenie BLOKERA, nie atakującego');
 });
 
 // ---------------------------------------------------------------------------
