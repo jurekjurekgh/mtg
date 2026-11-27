@@ -48,3 +48,28 @@ test('Coordinated Maneuver: cel planeswalker legalny, gracz nie, obrażenia zdej
   assert.equal(s.objects.get('pw').counters.loyalty, 4, 'jedna kontrolowana kreatura = jedna obrażenia');
   assert.equal(s.players.find(p => p.id === 'p2').life, 20);
 });
+
+test('Coordinated Maneuver: kontrolowane stwory są liczone przy rozstrzygnięciu, także creature land', async () => {
+  const { moveObjectDirectly } = await import('../src/engine/objects.js');
+  const s = createGameState({ seed: 190, players: [{ id: 'p1' }, { id: 'p2' }] });
+  s.turn = jumpToStep(s.turn, 'main', 'p1');
+  s.turn.activePlayerId = s.turn.priorityPlayerId = 'p1';
+  put(s, 'cm', 'coordinated-maneuver', 'hand');
+  put(s, 'own-a', 'grollub');
+  put(s, 'own-b', 'soulmender');
+  put(s, 'opponent', 'highland-game', 'battlefield', 'p2');
+  addObject(s, { id: 'pw', instanceId: 'i-pw', cardId: 'synthetic-pw', ownerId: 'p2', controllerId: 'p2',
+    zone: 'battlefield', kind: 'planeswalker', types: ['Planeswalker'] });
+  addCounter(s, 'pw', 'loyalty', 10);
+  addMana(s, 'p1', 2, { colors: ['W'] });
+  const cast = commands(s).find(c => c.type === 'cast_spell' && c.objectId === 'cm' && c.modeIndex === 0 && c.targets?.includes('pw'));
+  assert.ok(cast); assert.equal(execute(s, cast).ok, true);
+  // Syntetyczna zmiana stanu przed rozstrzygnięciem: z dwóch początkowych
+  // zostaje jeden, pojawiają się dwa kolejne, w tym ląd z typem Creature.
+  moveObjectDirectly(s, 'own-a', 'exile', 'exiled-own-a');
+  put(s, 'new', 'highland-game');
+  addObject(s, { id: 'animated-land', instanceId: 'i-animated-land', cardId: 'synthetic-creature-land',
+    ownerId: 'p1', controllerId: 'p1', zone: 'battlefield', kind: 'land', types: ['Land', 'Creature'], power: 2, toughness: 2 });
+  resolve(s);
+  assert.equal(s.objects.get('pw').counters.loyalty, 7, 'liczy 3 własne stwory po zmianie, nie 2 przy rzucie ani stwora przeciwnika');
+});

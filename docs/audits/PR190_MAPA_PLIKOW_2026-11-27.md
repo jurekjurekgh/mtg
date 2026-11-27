@@ -87,4 +87,4 @@ Baza `dd1f587c3c053080bf32be19158fb55a4a461ffd`, head `7ea66dfefcafaf989194c5c65
 
 **Otwarte:** dalsze badanie wskazanych plików, źródeł reguł i interakcji; dopiero po tym można oznaczyć E1 jako ukończone.
 
-- F-190/26: na czystym `b07d760` generator odtworzył wszystkie 32 talie bez różnic; dla 10 zmienionych talii policzono i porównano ręcznie liczności z README (10/10). Testy generatora/README i opisu P/T 57/57; osiem zmienionych plików strażników katalogu 41/41. To weryfikacja tych aspektów, nie dowód optymalności manabazy ani pełnego E1. W `render.js` i teście P/T skorygowano sprzeczne lub mylące komentarze, nie działanie.
+- F-190/26: na czystym `b07d760` generator odtworzył wszystkie 32 talie bez różnic; dla 10 zmienionych talii niezależny skrypt policzył i porównał liczności z README (10/10). Testy generatora/README i opisu P/T 57/57; osiem zmienionych plików strażników katalogu 41/41. To weryfikacja tych aspektów, nie dowód optymalności manabazy ani pełnego E1. W `render.js` i teście P/T skorygowano sprzeczne lub mylące komentarze, nie działanie.
