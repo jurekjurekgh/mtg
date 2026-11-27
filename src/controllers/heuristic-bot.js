@@ -4425,14 +4425,16 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   const myLibraryCount = (view) => view.zones.library.filter((o) => o.controllerId === view.playerId).length;
   /**
    * Zgłoszenie właściciela C (2026-09-10, Gurmag Drowner): ile kart trigger
-   * exploita źródła wrzuca do grobu. „Look at the top four cards… put one of
-   * them into your hand and the rest into your graveyard" = amount - 1.
+   * exploita źródła zabiera z biblioteki. „Look at the top four cards… put one of
+   * them into your hand and the rest into your graveyard" = amount: karta
+   * wzięta do ręki również opuszcza bibliotekę.
    * Czytane z DANYCH karty po typie efektu, nie po nazwie (ADR 0002):
    * Silumgar Butcher (exploit → pump -3/-3) nie miele nic, więc bramka
    * biblioteczna go nie dotyczy.
    */
+  const lookTopHandRestGraveDrain = (amount) => Math.max(0, Number.isInteger(amount) ? amount : 4);
   const EXPLOIT_LIBRARY_COST = new Map([
-    ['look_top_put_one_hand_rest_grave', (amount) => Math.max(0, (amount ?? 1) - 1)],
+    ['look_top_put_one_hand_rest_grave', lookTopHandRestGraveDrain],
   ]);
   /**
    * B (znalezisko właściciela 2026-09-17, Silumgar Butcher): trigger exploita
@@ -4684,8 +4686,8 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
    *     krótszej bibliotece — degenerat, jak w L144);
    *   • exile_top_playable_until_next_turn — wygnanie `count` wierzchnich
    *     (Gila Courser 1, Annie Flash 2, CR 601.2b);
-   *   • look_top_put_one_hand_rest_grave — jedna do ręki, reszta (n−1) do
-   *     grobu ZAWSZE — decyzja dotyczy tylko KTÓREJ karty;
+   *   • look_top_put_one_hand_rest_grave — jedna do ręki, reszta do grobu;
+   *     wszystkie n kart opuszczają bibliotekę niezależnie od wyboru;
    *   • reveal_top_pick_land_rest_grave — reszta do grobu ZAWSZE, a pick
    *     także opuszcza bibliotekę → kwota = n (Satyr Wayfinder);
    *   • look_top_exile_one_face_down_rest_bottom — wygnanie zakryte
@@ -4702,7 +4704,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     ['draw_cards_both_players', (e) => Math.max(1, Number.isInteger(e?.amount) ? e.amount : 1)],
     ['manifest_dread', () => 2],
     ['exile_top_playable_until_next_turn', (e) => Math.max(1, Number.isInteger(e?.count) ? e.count : 1)],
-    ['look_top_put_one_hand_rest_grave', (e) => Math.max(1, (Number.isInteger(e?.amount) ? e.amount : 4) - 1)],
+    ['look_top_put_one_hand_rest_grave', (e) => lookTopHandRestGraveDrain(e?.amount)],
     ['reveal_top_pick_land_rest_grave', (e) => Math.max(1, Number.isInteger(e?.amount) ? e.amount : 4)],
     ['look_top_exile_one_face_down_rest_bottom', () => 1],
     ['exile_top_of_player_library_and_may_cast', () => 1],
