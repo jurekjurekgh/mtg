@@ -2968,6 +2968,16 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     if (effect.amount === 'attacking_creatures_count') {
       amount = state.combat?.attackers?.length ?? 0;
     }
+    // Mister Gutsy (PIP, batch 75): „create X Junk tokens, where X is the
+    // number of +1/+1 counters on it" — liczba z LKI źródła (formerCounters,
+    // CR 603.10 — ta sama konwencja co transfer_counters_on_dies), z fallbackiem
+    // do liczników żywego obiektu (trigger może rozstrzygać się, gdy źródło
+    // żyje — np. wymuszone poświęcenie w oknie odpowiedzi).
+    if (effect.amount === 'counters_on_source') {
+      const counterName = effect.counter ?? '+1/+1';
+      amount = (sourceObject.formerCounters ?? {})[counterName]
+        ?? (sourceObject.counters ?? {})[counterName] ?? 0;
+    }
     // Fateful hour (Gather the Townsfolk): przy życiu ≤ N kontroler tworzy
     // inną (większą) liczbę tokenów. Deskryptor generyczny: warunek na życiu.
     if (effect.ifLifeAtMost && effect.amountIfCondition != null) {

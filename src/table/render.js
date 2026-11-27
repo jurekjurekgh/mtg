@@ -1113,6 +1113,9 @@ const DYNAMIC_AMOUNT_LABELS = Object.freeze({
   attacking_creatures_count: 'za każdego atakującego stwora',
   mana_from_treasure_spent: 'za wydaną manę ze Skarbów',
   commander_casts: 'za rzuty commandera',
+  // Mister Gutsy (batch 75): „create X Junk tokens, where X is the number of
+  // +1/+1 counters on it" — bez wpisu kafel pokazywał surowy slug (M122/#5).
+  counters_on_source: 'za każdy licznik +1/+1 na nim',
   source_power: 'moc źródła',
 });
 /** Rzeczownikowa fraza dla dynamicznej liczby obrażeń („tyle obrażeń, ile ..."). */
@@ -1808,7 +1811,8 @@ const NON_MANA_COST_LABELS = Object.freeze([
   // Batch 69 (Bloodfire Infusion): „Sacrifice enchanted creature" — koszt aury.
   ['sacrificeEnchantedHost', 'poświęć dołączonego stwora'],
   ['sacrificeLand', 'poświęć ląd'],
-  ['sacrificeCreature', (rule) => rule.another ? 'poświęć innego stwora' : 'poświęć stwora'],
+  ['sacrificeCreature', (rule) => rule.artifactOrAnother ? 'poświęć artefakt lub innego stwora'
+    : (rule.another ? 'poświęć innego stwora' : 'poświęć stwora')],
   ['tapCreature', 'tapnij swojego stwora'],
   ['tapOtherCreature', 'tapnij innego swojego stwora'],
   ['exileFromGraveyard', 'wygnaj tę kartę z grobu'],

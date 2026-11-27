@@ -8,6 +8,7 @@
 1x Open the Gates
 1x Dragon Fodder
 1x Kappa Tech-Wrecker
+1x Lightning Spear
 1x Memory's Journey
 1x Agate Assault
 1x Banishing Light
@@ -25,5 +26,5 @@
 3x Plains
 1x Island
 2x Swamp
-1x Mountain
+2x Mountain
 4x Forest

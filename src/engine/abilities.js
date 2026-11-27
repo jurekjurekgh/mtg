@@ -705,11 +705,18 @@ function crewVehiclePowerOf(state, id) {
 
 // CR 602.1a: poświęcenie stwora to koszt, NIE cel zdolności. „Another”
 // wyklucza źródło; tapped/choroba/hexproof nie wykluczają zapłaty.
+// Malevolent Noble (batch 75): `artifactOrAnother` — koszt „Sacrifice an
+// artifact or another creature”: kandydaci to stwory (bez źródła) ORAZ
+// artefakty (bez źródła — źródło-stwór i tak nie jest artefaktem).
 function sacrificeCreatureCandidates(state, playerId, source, cost) {
+  const artifactOrAnother = Boolean(cost.sacrificeCreature?.artifactOrAnother);
   return state.zones.battlefield.filter(id => {
     const o = state.objects.get(id);
-    return o?.controllerId === playerId && o.kind === 'creature'
-      && (!cost.sacrificeCreature?.another || id !== source.id);
+    if (o?.controllerId !== playerId || id === source.id) {
+      return false;
+    }
+    if (o.kind !== 'creature' && !(artifactOrAnother && o.kind === 'artifact')) return false;
+    return !cost.sacrificeCreature?.another || id !== source.id;
   });
 }
 

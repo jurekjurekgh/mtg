@@ -17,7 +17,7 @@ import { createCardRegistry } from '../src/cards/card-data.js';
 import { createCardDeck } from '../src/cards/materialize.js';
 import { jumpToStep } from '../src/engine/turn.js';
 import { addMana } from '../src/engine/resources.js';
-import { effectivePower } from '../src/engine/permanents.js';
+import { effectivePower, effectiveKeywords } from '../src/engine/permanents.js';
 
 const registry = createCardRegistry();
 const definition = (id) => registry.get(id);
@@ -123,7 +123,7 @@ test('Batch 75/B1+B2: siedem wpisów zgadza się ze snapshotami Oracle i arkusze
   }
 });
 
-test('Batch 75/B1+B2: koszty many w mana-costs-data są 1:1 ze snapshotami', async () => {
+test('Batch 75/B1+B2+C: koszty many w mana-costs-data są 1:1 ze snapshotami', async () => {
   const { MANA_COSTS } = await import('../src/cards/mana-costs-data.js');
   const expected = {
     'undersea-invader': '{4}{U}{U}',
@@ -133,6 +133,9 @@ test('Batch 75/B1+B2: koszty many w mana-costs-data są 1:1 ze snapshotami', asy
     'vaporkin': '{1}{U}',
     'coordinated-maneuver': '{1}{W}',
     'kozileks-translator': '{4}{B}',
+    'lightning-spear': '{1}{R}',
+    'malevolent-noble': '{1}{B}',
+    'mister-gutsy': '{2}',
   };
   for (const [id, cost] of Object.entries(expected)) {
     assert.equal(MANA_COSTS[id], cost, `${id}: koszt rzutu`);
@@ -408,4 +411,157 @@ test("Kozilek's Translator: aktywacja finansuje rzut {1}{B} (CR 605.3a) — Devo
   // Devoid: kolory druku PUSTE (guard snapshotów pinuje front bezbarwny).
   const def = definition('kozileks-translator');
   assert.deepEqual(def.colors, [], 'Devoid = colors: []');
+});
+
+// ---------------------------------------------------------------------------
+// 669. Lightning Spear — equipment (+1/+0 trample) i {2}{R}, sac → 3 obrażenia
+// ---------------------------------------------------------------------------
+
+test('Lightning Spear: equip {1} daje +1/+0 i trample; {2}{R} sac → 3 obrażenia any target', () => {
+  const state = game(75);
+  library(state, 'p1'); library(state, 'p2');
+  put(state, 'ls', 'lightning-spear', 'p1');
+  put(state, 'sol', 'grollub', 'p1'); // gospodarz 3/3
+  state.objects.set('sol', Object.freeze({ ...state.objects.get('sol'), summoningSickness: false }));
+  addMana(state, 'p1', 1, { colors: ['R'] });
+
+  const eq = commands(state, 'p1').find((c) => c.type === 'activate_ability' && c.objectId === 'ls' && c.targets?.[0] === 'sol');
+  assert.ok(eq, 'equip {1} oferowany');
+  assert.equal(execute(state, eq).ok, true, 'equip OK');
+  resolveStack(state);
+  assert.equal(effectivePower(state.objects.get('sol'), state), 4, '+1/+0 na wyposażonym');
+  assert.ok(effectiveKeywords(state.objects.get('sol'), state).includes('trample'), 'trample na wyposażonym');
+
+  // {2}{R}, Sacrifice: 3 obrażenia any target (gracz).
+  addMana(state, 'p1', 3, { colors: ['R', 'R'] });
+  const sac = commands(state, 'p1').find((c) => c.type === 'activate_ability' && c.objectId === 'ls' && c.targets?.includes('p2'));
+  assert.ok(sac, 'aktywacja sac oferowana (cel: gracz)');
+  assert.equal(execute(state, sac).ok, true, 'aktywacja OK');
+  resolveStack(state);
+  assert.equal(lifeOf(state, 'p2'), 17, '3 obrażenia do gracza (20−3)');
+  const lsPo = [...state.objects.values()].find((o) => o.cardId === 'lightning-spear');
+  assert.equal(lsPo?.zone, 'graveyard', 'sprzęt poświęcony (koszt)');
+});
+
+// ---------------------------------------------------------------------------
+// 672. Malevolent Noble — koszt „Sacrifice an artifact or another creature"
+// ---------------------------------------------------------------------------
+
+test('Malevolent Noble: {2} + poświęcenie artefaktu → licznik; SAM nie kandyduje (another)', () => {
+  const state = game(75);
+  library(state, 'p1'); library(state, 'p2');
+  put(state, 'noble', 'malevolent-noble', 'p1');
+  put(state, 'art', 'panic-spellbomb', 'p1'); // artefakt-kandydat
+  addMana(state, 'p1', 2);
+
+  const acts = commands(state, 'p1').filter((c) => c.type === 'activate_ability' && c.objectId === 'noble');
+  assert.ok(acts.length >= 1, 'aktywacja oferowana');
+  assert.ok(acts.some((c) => c.sacrificeCreatureId === 'art'), 'artefakt jest kandydatem kosztu');
+  assert.ok(!acts.some((c) => c.sacrificeCreatureId === 'noble'), '„another creature" — źródło nie kandyduje');
+
+  const act = acts.find((c) => c.sacrificeCreatureId === 'art');
+  assert.equal(execute(state, act).ok, true, 'aktywacja z poświęceniem artefaktu OK');
+  resolveStack(state);
+  assert.equal(state.objects.get('noble')?.counters?.['+1/+1'], 1, '+1/+1 counter na samym Noblu');
+  const artPo = [...state.objects.values()].find((o) => o.cardId === 'panic-spellbomb');
+  assert.equal(artPo?.zone, 'graveyard', 'artefakt poświęcony (koszt, CR 601.2h)');
+});
+
+// ---------------------------------------------------------------------------
+// 674. Mister Gutsy — wyzwalacz Aura/Equipment + X Junk po śmierci
+// ---------------------------------------------------------------------------
+
+test('Mister Gutsy: cast Equipment i Aurę → 2 liczniki; zwykły artefakt NIE liczy (warunek)', () => {
+  const state = game(75);
+  library(state, 'p1'); library(state, 'p2');
+  put(state, 'gutsy', 'mister-gutsy', 'p1');
+  put(state, 'host', 'grollub', 'p1'); // gospodarz aury
+  put(state, 'pl', 'basic-plains', 'p1');
+  put(state, 'sw', 'basic-swamp', 'p1');
+  put(state, 'mt', 'basic-mountain', 'p1');
+  put(state, 'ls', 'lightning-spear', 'p1', 'hand'); // Equipment {1}{R}
+  addMana(state, 'p1', 2, { colors: ['R'] });
+
+  const castEq = commands(state, 'p1').find((c) => c.type === 'cast_permanent' && c.objectId === 'ls');
+  assert.ok(castEq, 'Equipment rzucalny');
+  assert.equal(execute(state, castEq).ok, true, 'rzut Equipment OK');
+  resolveStack(state);
+  assert.equal(state.objects.get('gutsy')?.counters?.['+1/+1'], 1, 'licznik za Equipment spell');
+
+  put(state, 'au', 'hobble', 'p1', 'hand'); // Aura {2}{W}... koszt {W}{W}? hobble = {3}
+  addMana(state, 'p1', 4, { colors: ['W', 'W'] });
+  const castAu = commands(state, 'p1').find((c) => c.type === 'cast_permanent' && c.objectId === 'au' && c.targets?.[0] === 'host');
+  assert.ok(castAu, 'Aura rzucalna (cel: gospodarz)');
+  assert.equal(execute(state, castAu).ok, true, 'rzut Aury OK');
+  resolveStack(state);
+  assert.equal(state.objects.get('gutsy')?.counters?.['+1/+1'], 2, 'drugi licznik za Aura spell');
+});
+
+test('Mister Gutsy: śmierć z 2 licznikami → 2 Junki; Junk: sac → exile top „may play this turn"', () => {
+  const state = game(75);
+  library(state, 'p1'); library(state, 'p2');
+  put(state, 'gutsy', 'mister-gutsy', 'p1');
+  put(state, 'pl', 'basic-plains', 'p1');
+  put(state, 'mt', 'basic-mountain', 'p1');
+  // Dwa liczniki: cast Lightning Spear (Equipment).
+  put(state, 'ls', 'lightning-spear', 'p1', 'hand');
+  addMana(state, 'p1', 2, { colors: ['R'] });
+  const castEq = commands(state, 'p1').find((c) => c.type === 'cast_permanent' && c.objectId === 'ls');
+  assert.ok(castEq, 'Equipment rzucalny');
+  assert.equal(execute(state, castEq).ok, true);
+  resolveStack(state);
+  // Drugi licznik: sac spear → 3 obrażenia w Gutsy (1/1) — umiera z 1 licznikiem.
+  // Za mało: potrzebujemy DWA liczniki przed śmiercią — sac Spear oddaje 3
+  // obrażenia, ale to tylko jeden cast. Dodatkowy licznik przez drugi Equipment
+  // nie jest potrzebny — wystarczy sprawdzić X = liczba LICZNIKÓW: zdejmujemy
+  // więc drugi licznik castem aury z ręki? Za ciężkie — używamy dodatku bezpośrednio
+  // przez patch stanu (test liczy MECHANIKĘ kwoty, nie triggery — te są wyżej).
+  state.objects.set('gutsy', Object.freeze({
+    ...state.objects.get('gutsy'),
+    counters: { '+1/+1': 2 },
+  }));
+  // Sac spear → 3 obrażenia na Gutsy → umiera → trigger dies.
+  addMana(state, 'p1', 3, { colors: ['R', 'R'] });
+  const lsId = [...state.objects.values()].find((o) => o.cardId === 'lightning-spear' && o.zone === 'battlefield')?.id;
+  assert.ok(lsId, 'spear na polu bitwy');
+  // Index zdolności sac w definicji (equip = 0, sac = 1) — oferta equip też
+  // celuje w stworów, więc filtrujemy po INDEKSIE zdolności sacrificeSelf.
+  const sacIndex = definition('lightning-spear').abilities.findIndex((a) => a.cost?.sacrificeSelf);
+  const sac = commands(state, 'p1').find((c) => c.type === 'activate_ability'
+    && c.objectId === lsId && c.abilityIndex === sacIndex && c.targets?.includes('gutsy'));
+  assert.ok(sac, 'sac spear → 3 dmg any target oferowany');
+  assert.equal(execute(state, sac).ok, true, 'sac OK');
+  resolveStack(state);
+  const gutsyPo = [...state.objects.values()].find((o) => o.cardId === 'mister-gutsy');
+  assert.equal(gutsyPo?.zone, 'graveyard', 'Gutsy umiera od 3 obrażeń');
+  const junk = [...state.objects.values()].filter((o) => o.cardId === 'token_junk');
+  assert.equal(junk.length, 2, 'X = 2 liczniki → DWA tokeny Junk');
+  assert.ok(junk.every((j) => j.zone === 'battlefield' && j.kind === 'artifact'), 'Junki to artefakty na polu bitwy');
+
+  // Junk: {T}, Sacrifice → exile top, „you may play that card this turn".
+  const act = commands(state, 'p1').find((c) => c.type === 'activate_ability' && junk.some((j) => j.id === c.objectId));
+  assert.ok(act, 'aktywacja Junka oferowana (sorcery timing, własna main)');
+  assert.equal(execute(state, act).ok, true, 'aktywacja Junka OK');
+  resolveStack(state);
+  const exiled = [...state.objects.values()].find((o) => o.zone === 'exile' && o.playableUntilTurn != null);
+  assert.ok(exiled, 'wierzch biblioteki wygnany z oknem grywalności');
+  assert.equal(exiled.playableUntilTurn, state.turn.number, 'okno THIS turn (window: this_turn)');
+  const canPlay = commands(state, 'p1').some((c) => c.objectId === exiled.id && c.type === 'play_land');
+  assert.ok(canPlay, 'wygnany ląd jest zagrywalny w tej turze (may play)');
+});
+
+test('Mister Gutsy: kontrola ujemna — cast zwykłego artefaktu NIE daje licznika (warunek typów)', () => {
+  const state = game(75);
+  library(state, 'p1'); library(state, 'p2');
+  put(state, 'gutsy', 'mister-gutsy', 'p1');
+  put(state, 'pl', 'basic-plains', 'p1');
+  // Panic Spellbomb = zwykły artefakt (nie Equipment, nie Aura).
+  put(state, 'bomb', 'panic-spellbomb', 'p1', 'hand');
+  addMana(state, 'p1', 1);
+  const cast = commands(state, 'p1').find((c) => c.type === 'cast_permanent' && c.objectId === 'bomb');
+  assert.ok(cast, 'zwykły artefakt rzucalny');
+  assert.equal(execute(state, cast).ok, true, 'rzut OK');
+  resolveStack(state);
+  const gutsyPo = state.objects.get('gutsy');
+  assert.equal(gutsyPo?.counters?.['+1/+1'] ?? 0, 0, 'spellTypesInclude: brak licznika od zwykłego artefaktu');
 });

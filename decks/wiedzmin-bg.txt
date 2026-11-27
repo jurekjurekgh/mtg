@@ -7,6 +7,7 @@
 1x Cuombajj Witches
 1x Dawntreader Elk
 1x Leafcrown Dryad
+1x Malevolent Noble
 1x Battlefield Butcher
 1x Chittering Rats
 1x Dread Warlock
@@ -21,5 +22,5 @@
 1x Polluted Dead
 1x Segmented Krotiq
 1x Howl of the Night Pack
-6x Swamp
-5x Forest
+7x Swamp
+4x Forest

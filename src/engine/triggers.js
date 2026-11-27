@@ -160,6 +160,17 @@ function conditionHolds(trigger, state, sourceObject = null, eventData = {}) {
     if (manaValue == null) return false;
     return manaValue >= condition.spellManaValueAtLeast;
   }
+  // „Whenever you cast an AURA or EQUIPMENT spell" (Mister Gutsy, batch 75):
+  // warunek na RODZAJU rzucanego czaru — porównujemy unię TYPÓW i PODTYPÓW
+  // obiektu czaru (CR 205.2a/205.3i: Aura i Equipment są podtypami linii typów
+  // „Enchantment — Aura" / „Artifact — Equipment", więc sam typ nie rozróżnia
+  // zwykłego artefaktu od equipmentu). Zdarzenie niesie obiekt czaru na stosie
+  // (spell_cast/permanent_cast/aura_spell_cast — publiczne dane, ADR 0002).
+  if (Array.isArray(condition.spellTypesInclude)) {
+    const castObject = eventData.object ?? {};
+    const kinds = [...(castObject.types ?? []), ...(castObject.subtypes ?? [])];
+    return kinds.some((kind) => condition.spellTypesInclude.includes(kind));
+  }
   // „If you descended this turn" (Canonized in Blood, CR 603.4 — intervening
   // if): permanent card wpadł do grobu kontrolera w bieżącej turze.
   if (condition.descendedThisTurn) {

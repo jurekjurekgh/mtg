@@ -15781,9 +15781,32 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     support: { status: 'token', limitations: ['token — nie można umieścić w talii'] },
   }),
 
+  // Batch 75 (Mister Gutsy, PIP 136): token Junk — artefakt z „{T}, Sacrifice
+  // this token: Exile the top card of your library. You may play that card
+  // this turn. Activate only as a sorcery." Zdolność = impulse-exile z oknem
+  // THIS_TURN (`window: 'this_turn'`, wzorzec Caves of Chaos Adventurer);
+  // sorcery-timing aktywacji (Guidestone Compass). Grafika: druk tokenu PIP
+  // (Scryfall) — wpis bez imageUri dokłada grafikę przy pierwszym Żywym
+  // Testerze (konwencja TOKEN_IMAGES).
+  defineCard({
+    id: 'token_junk', name: 'Junk', set: null,
+    types: ['Artifact', 'Token'], subtypes: ['Junk'], colors: [], manaCost: 0,
+    oracleText: '{T}, Sacrifice this token: Exile the top card of your library. You may play that card this turn. Activate only as a sorcery.',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { tap: true, sacrificeSelf: true },
+        timing: 'sorcery',
+        effect: [{ type: 'exile_top_playable_until_next_turn', window: 'this_turn' }],
+      }),
+    ],
+    support: { status: 'token', limitations: ['token — nie można umieścić w talii; tworzony przez Mister Gutsy'] },
+  }),
+
   // ---- Batch 75 (kolekcja 666–675, właściciel 2026-11-27). Dane Oracle:
   // docs/cards/scryfall-<slug>.json (pobrane 2026-11-27, `set=` — ADR 0010 §2a).
-  // Wchodzą falami B1–B3 wg planu docs/plans/PLAN_2026-11-27-batch75-kart.md.
+  // Wchodzą grupami wg planu docs/plans/PLAN_2026-11-27-batch75-kart.md:
+  // B1 (666/667/668/673), B2 (670/671/675), C (669/672/674).
 
   // 666KHM Undersea Invader (KHM 78) {4}{U}{U} 5/6 Giant Rogue — flash;
   //      wchodzi tapnięty (entersTappedNow czyta deskryptor, permanents.js).
@@ -15928,6 +15951,104 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     artId: 675, plan: 'Zendikar',
     support: { status: 'supported', limitations: [] },
     notes: ['Devoid: kolory druku puste (colors: []); Add {C} = 1 bezbarwna many (add_mana bez colors — pula engine jest bezbarwna); koszt życia STAŁY w koszcie aktywacji; oncePerTurn na klucz id:indeks'],
+  }),
+
+  // 669MH2 Lightning Spear (MH2 134) {1}{R} Equipment — wyposażony +1/+0 i
+  //      trample (wzorzec sprzętów batchy 53/73); {2}{R}, poświęć: 3 obrażenia
+  //      any target (wzorzec Panic Spellbomb — sacrificeSelf + targets).
+  defineCard({
+    id: 'lightning-spear', name: 'Lightning Spear', set: 'MH2',
+    types: ['Artifact'], subtypes: ['Equipment'], colors: ['R'], manaCost: 2,
+    oracleText: 'Equipped creature gets +1/+0 and has trample.\n{2}{R}, Sacrifice this Equipment: It deals 3 damage to any target.\nEquip {1}',
+    imageUri: 'https://cards.scryfall.io/large/front/f/7/f72fcda4-feb4-46e4-87d9-88bd95474fe9.jpg?1783926842',
+    equipment: {
+      equip: 1,
+      pump: { power: 1, toughness: 0 },
+      keywords: ['trample'],
+    },
+    abilities: [
+      // Equip {1} — zdolność aktywowana (jak Brawler's Plate); koszt czyta
+      // deskryptor equipment (equip: 1) — jedno źródło dla oferty i buffu.
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        keyword: 'equip',
+        cost: { mana: 1 },
+      }),
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 2, colors: ['R'], sacrificeSelf: true },
+        targets: [{ type: 'any_target' }],
+        effect: { type: 'damage', amount: 3 },
+      }),
+    ],
+    artId: 669, plan: 'Kamigawa',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 672ELD Malevolent Noble (ELD 95) {1}{B} 2/2 Human Noble — {2}, Sacrifice
+  //      an artifact or another creature: +1/+1 counter. Koszt = rozszerzenie
+  //      OGÓLNE sacrificeCreature (`artifactOrAnother`, ADR 0002 — brak
+  //      istniejącego kształtu); licznik na SAMYM źródle (applyTo: 'self').
+  defineCard({
+    id: 'malevolent-noble', name: 'Malevolent Noble', set: 'ELD',
+    types: ['Creature'], subtypes: ['Human', 'Noble'], colors: ['B'],
+    power: 2, toughness: 2, manaCost: 2,
+    oracleText: '{2}, Sacrifice an artifact or another creature: Put a +1/+1 counter on this creature.',
+    imageUri: 'https://cards.scryfall.io/large/front/6/b/6bc7e996-151f-4d88-8e1e-91bb88f5db02.jpg?1783932637',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 2, sacrificeCreature: { artifactOrAnother: true } },
+        effect: { type: 'add_counter', counter: '+1/+1', amount: 1, applyTo: 'self' },
+      }),
+    ],
+    artId: 672, plan: 'Wiedźmin',
+    support: { status: 'supported', limitations: [] },
+    notes: ['koszt poświęcenia obejmuje ARTEFAKTY i inne stwory (sacrificeCreature.artifactOrAnother — ogólny kształt, nie warunek na kartę); licznik ląduje na źródle'],
+  }),
+
+  // 674PIP Mister Gutsy (PIP 136) {2} 1/1 Robot Soldier — wyzwalacz na rzut
+  //      aury/equipmentu (JEDNA zdolność, warunek OGÓLNY spellTypesInclude —
+  //      ADR 0002;Aura i Equipment to PODTYPY linii typów) + na śmierci X
+  //      tokenów Junk (X = liczniki; kwota `counters_on_source` z LKI).
+  defineCard({
+    id: 'mister-gutsy', name: 'Mister Gutsy', set: 'PIP',
+    types: ['Artifact', 'Creature'], subtypes: ['Robot', 'Soldier'], colors: [],
+    power: 1, toughness: 1, manaCost: 2,
+    oracleText: 'Whenever you cast an Aura or Equipment spell, put a +1/+1 counter on this creature.\nWhen this creature dies, create X Junk tokens, where X is the number of +1/+1 counters on it. (They\'re artifacts with "{T}, Sacrifice this token: Exile the top card of your library. You may play that card this turn. Activate only as a sorcery.")',
+    imageUri: 'https://cards.scryfall.io/large/front/9/f/9f09166a-78de-4136-8a3c-034e1ef73ede.jpg?1783912378',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'when_you_cast_spell', condition: { spellTypesInclude: ['Aura', 'Equipment'] } },
+        effect: { type: 'add_counter', counter: '+1/+1', amount: 1, applyTo: 'self' },
+      }),
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'dies' },
+        effect: [{
+          type: 'create_token', cardId: 'token_junk', name: 'Junk',
+          kind: 'artifact', power: null, toughness: null, colors: [],
+          types: ['Artifact'], subtypes: ['Junk'],
+          amount: 'counters_on_source',
+          // Zdolność tokenu inline w deskryptorze (konwencja M202/K + strażnik
+          // audyt-pr121): „{T}, Sacrifice this token: Exile the top card of
+          // your library. You may play that card this turn." — impulse z
+          // oknem THIS_TURN; sorcery-timing aktywacji (Guidestone Compass).
+          abilities: [
+            createAbility({
+              type: ABILITY_TYPE.activated,
+              cost: { tap: true, sacrificeSelf: true },
+              timing: 'sorcery',
+              effect: [{ type: 'exile_top_playable_until_next_turn', window: 'this_turn' }],
+            }),
+          ],
+        }],
+      }),
+    ],
+    artId: 674, plan: 'Star Wars',
+    support: { status: 'supported', limitations: [] },
+    notes: ['wyzwalacz = JEDNA zdolność z warunkiem spellTypesInclude (Aura/Equipment — podtypy linii typów); Junk = token_junk z katalogu; X z liczników źródła (LKI formerCounters przy śmierci)'],
   }),
 ]);
 /**
