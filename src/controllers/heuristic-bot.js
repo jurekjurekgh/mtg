@@ -73,6 +73,11 @@ import { normalizeHeuristicParams } from './heuristic-params.js';
  * (-10), choć nie może zostać zablokowany — a na plus wyciągała go dopiero
  * premia wyścigu. Reguła generyczna po keywordach i `cantBeBlocked` z widoku.
  */
+function blockerAllowsAttackerKeywords(blocker, attacker) {
+  const allowed = blocker?.canBlockOnlyKeywords;
+  return !allowed || allowed.some((keyword) => (attacker?.keywords ?? []).includes(keyword));
+}
+
 export function attackerCanBeBlocked(attacker, blockers) {
   if (!attacker) return false;
   if (attacker.cantBeBlocked === true) return false;
@@ -108,6 +113,7 @@ export function attackerCanBeBlocked(attacker, blockers) {
   const able = (blockers ?? []).filter((b) => {
     const kw = b?.keywords ?? [];
     if (flying && !kw.includes('flying') && !kw.includes('reach')) return false;
+    if (!blockerAllowsAttackerKeywords(b, attacker)) return false;
     if (powerCap != null && (b?.power ?? 0) <= powerCap) return false;
     if (bannedTypes.length > 0 && (b?.types ?? []).some((type) => bannedTypes.includes(type))) return false;
     return true;
@@ -1216,8 +1222,7 @@ function isSavageDefenseWindow(view, target) {
     // Batch 75 (Vaporkin): restrykcja strony BLOKERA „can block only creatures
     // with flying" — czytana z widoku (ADR 0017), ten sam odczyt co oferta
     // silnika (blockRestrictionError, M380).
-    const blockOnly = target.canBlockOnlyKeywords ?? null;
-    if (blockOnly && !blockOnly.some((kw) => attacker.keywords?.includes(kw))) return false;
+    if (!blockerAllowsAttackerKeywords(target, attacker)) return false;
     return true;
   };
   return combat.attackers.some((aid) => {
