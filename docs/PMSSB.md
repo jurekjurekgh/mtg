@@ -4600,13 +4600,13 @@ CR 508.2). Bez jawnego jump p1 nie dostaje komend `declare_blockers`.
 | GYS-01 T | cast 69,98 w każdym wariancie (ręka sporna: Shock nieprzydatny −109) | ✓ token 2/2 za 2, sporna mana nie ma kontrkandydata |
 | GYS-02 K | idle: flashback 62,98 > pass; zdrowa ręka: Outcasts 68,41 > flashback 62,98 → **Outcasts wygrywa** | ✓ (patrz F-92/1) |
 | SPE-01 C | equip 4/4 → 21,00 > equip 1/1 → 15,00 (main1, mana 2) | ✓ trample +1/+0 na największego |
-| SPE-02 C | kill 3/3 33,00; lethal gracz (życie 3) 999,00; ściana 0/4 → pass (−61/−81) | ✓ |
+| SPE-02 C | kill 2/2 33,00; lethal gracz (życie 3) 999,00; ściana 0/4 → pass (−61/−81) | ✓ |
 | VAP-01 S | skorygowany pomiar: atak vs ground bez reach 8,00; vs lotnik 2/2 1,00 | ✓; pierwotny pomiar miał podmienione warunki — szczegóły w audycie PR #190 |
 | VAP-02 S | ground → blok NIEENUMEROWANY; lotnik 2/1 → block 7,00 | ✓ restrykcja blokera podana przez oferty |
 | CM-01 C | 4 stworów: destroy 84 / salwa-kill 33; 1 stwor: destroy 84, salwa ≤0 | ✓ (patrz F-92/2) |
 | CM-02 S | destroy m1 100 na Fear (enchantment creature — LEGALNY cel) | ✓ suspect „czar bez sensu" odwrócony: cel jest enchantmentem |
 | NOB-01 C | pass 0,00; aktywacje z ofiarą −2/−18 (uniform dla foddera) | ✓ odmowa świadoma: {2}+ofiara za +1/+1 w main1 bez presji to strata |
-| NOB-02 K | kandydaci 2/1,4/3,artefakt — bot passuje wszystkie | ✓ ofiara 4/4 za licznik = katastrofa; Spellbomb w main1 za manę 2 — trzymaj |
+| NOB-02 K | kandydaci 2/1,4/4,artefakt — bot passuje wszystkie | ✓ ofiara 4/4 za licznik = katastrofa; Spellbomb w main1 za manę 2 — trzymaj |
 | GUT-01 C | premia Equipment przy Gutsym 55,80 z Gutsym / −7,20 bez | ✓ |
 | GUT-02 K | Junk impulse +2,00 (pusta ręka; Outcasts niezagrywalny przy mane 2) | ✓ |
 | TRA-01 K | mana 4+ręka → activate 4,00; mana 0 → pass (−5); życie 3 → pass (−74) | ✓ koszt życia czytany w decyzji |

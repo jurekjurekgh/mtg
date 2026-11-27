@@ -149,7 +149,7 @@ test('SPE-01 (C): equip {1} idzie na największego atakującego (4/4 → 21 > 1/
 });
 
 // ---------------------------------------------------------------------------
-// 672ELD Kozilek's Translator — koszt życia {1} (TRA-01, rozstrzygnięty):
+// 675OGW Kozilek's Translator — koszt życia {1} (TRA-01, rozstrzygnięty):
 // aktywacja z zyskiem (mana 4) vs odmowa przy marnowaniu many i niskim życiu.
 // ---------------------------------------------------------------------------
 
@@ -167,7 +167,7 @@ test('TRA-01 (K): {C} za 1 życia — dopłata przy mane 4; odmowa przy mane 0 i
 });
 
 // ---------------------------------------------------------------------------
-// 673ELD Malevolent Noble (NOB-01) + 674PIP Mister Gutsy (GUT-02, token
+// 672ELD Malevolent Noble (NOB-01) + 674PIP Mister Gutsy (GUT-02, token
 // Junk) — aktywacje z kosztem ofiary: odmowa świadoma vs impulse z zyskiem.
 // ---------------------------------------------------------------------------
 
