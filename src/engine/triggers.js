@@ -1215,6 +1215,9 @@ export function queueTriggerToStack(state, ability, source, targets, events, ext
     // czyta go, gdy źródło zniknęło z pola bitwy (ruling DSK 2024-09-20:
     // „use its tapped or untapped status as it last existed").
     tapped: source.tapped === true,
+    // Trigger śmierci zachowuje liczniki z chwili opuszczenia pola także
+    // wtedy, gdy nowy obiekt w grobie opuści tę strefę przed rozstrzygnięciem.
+    formerCounters: Object.freeze({ ...(source.formerCounters ?? {}) }),
   });
   // Audyt PR #96/F3: migawka cech źródła do efektów kopiujących
   // (create_offspring_token) — ruling Offspring (BLB): token powstaje także
@@ -1548,7 +1551,7 @@ export function resolveTriggerEntry(state, entry) {
     // LKI (wcześniej siedział tylko w zagnieżdżonym `lkiPrint` → cichy
     // no-op: „trigger się rozstrzyga (rozdział 1)” bez efektu).
     ...(printLki?.saga ? { saga: printLki.saga } : {}),
-    counters: {}, formerCounters: {}, keywords: [], abilities: [], types: [],
+    counters: {}, formerCounters: lki.formerCounters ?? {}, keywords: [], abilities: [], types: [],
   });
   // CR 109.5: zmiana kontrolera permanenta nie zmienia „you” na triggerze.
   const source = Object.freeze({ ...sourceCharacteristics, controllerId: entry.controllerId });
