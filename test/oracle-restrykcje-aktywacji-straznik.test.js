@@ -27,8 +27,8 @@ const tekst = (definition) => definition.oracleText ?? '';
 /**
  * Karty bez własnych zdolności aktywowanych: fraza należy do zdolności NADANEJ
  * (token/reminder text) i jest pilnowana przy wpisie nosiciela. Pomiar:
- * jedyny taki wpis to Slithering Cryptid (fraza opisuje token Mutagen), a
- * `token_mutagen` ma `timing: 'sorcery'` — asercja w teście STRZ-5.
+ * Slithering Cryptid i Mister Gutsy (frazy opisują odpowiednio tokeny Mutagen
+ * i Junk); obie zdolności tokenów mają `timing: 'sorcery'` — STRZ-5.
  */
 const bezWlasnychAktywowanych = (definition) => aktywowane(definition).length === 0;
 
@@ -101,6 +101,8 @@ test('STRZ-5: kotwice (L13) — pokrycie fraz i wyjątek karty bez własnych akt
   // Batch 75 (Mister Gutsy): „Activate only as a sorcery" jest w nawiasie
   // opisującym token Junk — nosiciel frazy to token_junk z deskryptorem
   // `timing: 'sorcery'` (wyjątek nie jest luką).
+  assert.equal(registry.get('token_mutagen').abilities.find((a) => a.type === 'activated').timing, 'sorcery',
+    'nosiciel frazy (token_mutagen) ma deskryptor — wyjątek nie jest luką');
   assert.equal(registry.get('token_junk').abilities.find((a) => a.type === 'activated').timing, 'sorcery',
     'nosiciel frazy (token_junk) ma deskryptor — wyjątek nie jest luką');
 });
