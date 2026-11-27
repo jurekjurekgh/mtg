@@ -4605,7 +4605,7 @@ CR 508.2). Bez jawnego jump p1 nie dostaje komend `declare_blockers`.
 | VAP-02 S | ground → blok NIEENUMEROWANY; lotnik 2/1 → block 7,00 | ✓ restrykcja blokera podana przez oferty |
 | CM-01 C | 4 stworów: destroy 84 / salwa-kill 33; 1 stwor: destroy 84, salwa ≤0 | ✓ (patrz F-92/2) |
 | CM-02 S | destroy m1 100 na Fear (enchantment creature — LEGALNY cel) | ✓ suspect „czar bez sensu" odwrócony: cel jest enchantmentem |
-| NOB-01 C | pass 0,00; aktywacje z ofiarą −2/−18 (uniform dla foddera) | ✓ odmowa świadoma: {2}+ofiara za +1/+1 w main1 bez presji to strata |
+| NOB-01 C | pass 0,00; każda aktywacja Nobla −2,00; Spellbomb −18,00 | ✓ odroczenie: clamp okna daje −2 niezależnie od ofiary; nie dowodzi braku jej wyceny (audyt PR #190 F-190/16) |
 | NOB-02 K | osobne warianty: artefakt albo 4/4 — bot passuje oba | ✓ ofiara 4/4 za licznik = katastrofa; Spellbomb w main1 za manę 2 — trzymaj |
 | GUT-01 C | premia Equipment przy Gutsym 55,80 z Gutsym / −7,20 bez | ✓ |
 | GUT-02 K | Junk impulse +2,00 (pusta ręka; Outcasts niezagrywalny przy mane 2) | ✓ |

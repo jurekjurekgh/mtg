@@ -474,7 +474,7 @@ test('Audyt #144/F2b: permanentDoomedThisTurn widzi zdolność na stosie (L72)',
     addObject(s, { ...dread, id: 'dread', instanceId: 'i-dread', controllerId: 'p2', zone: 'battlefield' });
     s.objects.set('dread', Object.freeze({ ...s.objects.get('dread'), summoningSickness: false, tapped: false }));
     if (ping) foePingOnStack(s, 'sac');
-    return optionScore(decide(s).options, 'activate_ability(dread#0)');
+    return optionScore(decide(s).options, 'activate_ability(dread#0+sac:sac)');
   };
   const clean = build(false);
   const pinged = build(true);

@@ -20733,6 +20733,11 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         manowa: manaOnlyAbility(zdolnosc) ? 1 : 0,
         cele: (cmd.targets ?? []).length,
         kosztem: zdolnosc.cost?.sacrificeSelf ? 1 : 0,
+        // Projekcja danych, nie werdykt: np. celowy clamp okna może
+        // sprowadzić różne straty do tego samego score poniżej passa.
+        ...(cmd.sacrificeCreatureId ? {
+          sacrificeLoss: sacrificePermanentLoss(view, objectOnBoard(view, cmd.sacrificeCreatureId)),
+        } : {}),
       };
     }
     if (cmd?.type === 'declare_blockers') {
@@ -21073,6 +21078,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       // (identyczne noty i nierozróżnialny wybór dla testu wyceny i audytu
       // remisów; ta sama lekcja M195/B co `tapCreatureId` wyżej).
       const celStation = cmd.tapOtherCreatureId ? `+station:${cmd.tapOtherCreatureId}` : '';
+      // Pojedyncza ofiara jest częścią kosztu i odróżnia wyceniane warianty.
+      // Bez niej ślad scala np. artefakt i dwa różne stwory w jedną etykietę,
+      // chociaż scoreCommand i wybrana komenda czytają sacrificeCreatureId.
+      const ofiara = cmd.sacrificeCreatureId ? `+sac:${cmd.sacrificeCreatureId}` : '';
       // H (zgłoszenie właściciela 2026-10-08, Krumar Initiate): warianty
       // zdolności {X} (manaX / payLifeX / maxPowerX) różnią się WYŁĄCZNIE
       // `xValue`, więc wszystkie streszczały się do tej samej etykiety —
@@ -21080,7 +21089,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       // klasa L34/L40 co M195/B / M203/2 / PMSSB-41/C wyżej). X w etykiecie
       // tylko gdy komenda go niesie, żeby nie ruszyć pinów zdolności bez {X}.
       const wariantX = cmd.xValue != null ? `,X=${cmd.xValue}` : '';
-      return `activate_ability(${cmd.objectId}#${cmd.abilityIndex ?? 0}${celTapniecia}${celStation}${wariantX}${(cmd.targets ?? []).length ? '->' + cmd.targets.join('+') : ''})`;
+      return `activate_ability(${cmd.objectId}#${cmd.abilityIndex ?? 0}${celTapniecia}${celStation}${ofiara}${wariantX}${(cmd.targets ?? []).length ? '->' + cmd.targets.join('+') : ''})`;
     }
     if (cmd.type === 'play_land') {
       // Ślad ma nazywać WARIANT (lekcja M195/B i M203/2, ta sama co wyżej): przy

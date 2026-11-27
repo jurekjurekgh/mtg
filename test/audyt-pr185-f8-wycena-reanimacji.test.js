@@ -89,7 +89,7 @@ function scena({ reanId, fodderId = 'river-herald-guide', seed = 880 }) {
   const scoreOf = (cmd) => wpis.options.find((o) => o.cmd === cmd)?.score;
   return {
     choice,
-    activate: scoreOf('activate_ability(rean#0)'),
+    activate: scoreOf('activate_ability(rean#0+sac:fodder)'),
     pass: scoreOf('pass_priority'),
   };
 }
@@ -181,7 +181,7 @@ test('F-8/6: gdy wpis grobu nie niesie P/T, wartość bierze się z definicji ka
   const bot = createHeuristicBot({ seed: 881, registry: REJESTR });
   bot.chooseCommand(widok, {});
   const opcje = bot.trace().at(-1).options;
-  const bezStatystyk = opcje.find((o) => o.cmd === 'activate_ability(rean#0)')?.score;
+  const bezStatystyk = opcje.find((o) => o.cmd === 'activate_ability(rean#0+sac:fodder)')?.score;
   assert.ok(Number.isFinite(bezStatystyk), 'aktywacja wyceniona mimo braku P/T w widoku');
   assert.equal(bezStatystyk, zStatystykami.activate,
     `zapas z definicji daje tę samą wartość co P/T z widoku (${bezStatystyk} vs ${zStatystykami.activate})`);

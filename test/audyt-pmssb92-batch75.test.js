@@ -24,6 +24,9 @@ import assert from 'node:assert/strict';
 import { SCENARIUSZE, stan, decyzja } from '../tools/pmssb92-batch75-sonda.mjs';
 import { execute, playerView } from '../src/engine/game-state.js';
 import { declareAttackers, blockerDeclarationViolation } from '../src/engine/combat.js';
+import { jumpToStep } from '../src/engine/turn.js';
+import { createHeuristicBot } from '../src/controllers/heuristic-bot.js';
+import { createCardRegistry } from '../src/cards/card-data.js';
 
 const scenariusz = (id) => {
   const s = SCENARIUSZE.find((x) => x.id === id);
@@ -179,6 +182,37 @@ test('NOB-01 (C): {2}+ofiara za +1/+1 w main1 — bot NIE aktywuje (pass 0 > akt
   const aktywacje = m.opcje.filter((o) => o.cmd.includes('noble-bf#0') || o.cmd.includes('kand-0#0'));
   assert.ok(aktywacje.length > 0, `aktywacje mają być W OFERCIE (sonda mierzy odmowę): ${JSON.stringify(m.opcje)}`);
   for (const o of aktywacje) assert.ok(o.score < 0, `${o.cmd}=${o.score} ma być odmową`);
+});
+
+test('NOB-01: ślad rozróżnia wycenę ofiar i wskazuje faktycznie wybraną w end stepie', () => {
+  const scen = scenariusz('NOB-01');
+  // Odwrotna kolejność niż preferencja: wybór nie może wynikać z enumeracji.
+  const state = scen.budowa({ kandydaci: ['grizzled-outcasts', 'highland-game', 'panic-spellbomb'] });
+  state.turn = jumpToStep(state.turn, 'end', 'p1');
+  state.turn.activePlayerId = 'p2';
+  state.turn.priorityPlayerId = 'p1';
+  const m = decyzja(state);
+  const labels = ['kand-0', 'kand-1', 'kand-2'].map(id => `activate_ability(noble-bf#0+sac:${id})`);
+  const values = labels.map(label => m.opcje.find(o => o.cmd === label)?.score);
+  assert.deepEqual(values, [8, 15, 18]);
+  assert.equal(m.cmd.sacrificeCreatureId, 'kand-2');
+  assert.equal(m.wybrano, labels[2]);
+});
+
+test('NOB-01: projekcja remisu pokazuje różne straty ofiar', () => {
+  const [w] = warianty('NOB-01');
+  const original = playerView(w.scen.budowa(w.w), 'p1');
+  // Syntetyczna oferta tylko Nobla: produkcyjny pass wygrywa z tym remisem −2.
+  const view = { ...original, legalCommands: original.legalCommands.filter(c => c.objectId === 'noble-bf') };
+  const bot = createHeuristicBot({ seed: 90, randomness: 0, lookahead: 0, registry: createCardRegistry() });
+  bot.chooseCommand(view, {});
+  const tie = bot.trace().at(-1).tie;
+  assert.equal(tie.length, 3);
+  assert.deepEqual(tie.map(t => [t.cmd, t.proj.sacrificeLoss]), [
+    ['activate_ability(noble-bf#0+sac:kand-0)', 2],
+    ['activate_ability(noble-bf#0+sac:kand-1)', 5],
+    ['activate_ability(noble-bf#0+sac:kand-2)', 12],
+  ]);
 });
 
 test('GUT-02 (K, token Junk): impulse aktywacja = jedyny ruch (+2) — też przy Outcasts w ręce', () => {
