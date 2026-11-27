@@ -1,0 +1,30 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Malevolent+Noble&set=eld&format=json",
+  "print": "eld",
+  "name": "Malevolent Noble",
+  "mana_cost": "{1}{B}",
+  "cmc": 2.0,
+  "type_line": "Creature — Human Noble",
+  "oracle_text": "{2}, Sacrifice an artifact or another creature: Put a +1/+1 counter on this creature.",
+  "power": "2",
+  "toughness": "2",
+  "colors": [
+    "B"
+  ],
+  "color_identity": [
+    "B"
+  ],
+  "keywords": [],
+  "set": "eld",
+  "set_name": "Throne of Eldraine",
+  "collector_number": "95",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/6/b/6bc7e996-151f-4d88-8e1e-91bb88f5db02.jpg?1783932637",
+    "normal": "https://cards.scryfall.io/normal/front/6/b/6bc7e996-151f-4d88-8e1e-91bb88f5db02.jpg?1783932637"
+  },
+  "pobrano": "2026-11-27",
+  "rulings": [],
+  "rulingsPobrano": "2026-11-27",
+  "rulingsSource": "https://api.scryfall.com/cards/eld/95/rulings"
+}

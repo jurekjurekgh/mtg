@@ -26,7 +26,7 @@ function hasColorForCardId(state, playerId, cardId, phyrexianPay = 0, purpose = 
   if (offerUnits != null) return canPayColoredCostForOffer(state, playerId, requirements, offerUnits, null, purpose);
   return canPayColoredCost(state, playerId, requirements, null, purpose);
 }
-import { attackerBlockPowerRestriction, blockCandidatePool, blockRequirementCountOf, blockSlotsFor, mustBlockHostCounts, cantBeBlockedFromEquipment, declareAttackers, declareBlockers, attackerSeedDeclarations, blockerSeedAssignments, combatDeclarationView, mandatoryAttackerIds, mandatoryBlockerIds, minimalMandatoryBlocks, rememberClosedCombat, resolveCombatDamage, buildDamageAssignmentView, buildDefaultDamageAssignments, validateDamageAssignment, validateBlockerDamageAssignment, staticAttackPreventionOf } from './combat.js';
+import { attackerBlockPowerRestriction, blockerBlockOnlyKeywordRestriction, blockCandidatePool, blockRequirementCountOf, blockSlotsFor, mustBlockHostCounts, cantBeBlockedFromEquipment, declareAttackers, declareBlockers, attackerSeedDeclarations, blockerSeedAssignments, combatDeclarationView, mandatoryAttackerIds, mandatoryBlockerIds, minimalMandatoryBlocks, rememberClosedCombat, resolveCombatDamage, buildDamageAssignmentView, buildDefaultDamageAssignments, validateDamageAssignment, validateBlockerDamageAssignment, staticAttackPreventionOf } from './combat.js';
 import { optionalSpellEffectChoices, castSpell, castCleave, legalSpellCasts, legalCleaveCasts, plotCard, suspendCard, warpCard, resolveTopOfStack, resolveRiotEntry, finishPendingSpell, resumeSuspendedSpell, castEscape, resolveEscapeExile, legalEscapeCasts, declareDelveCast, resolveDelveExile, delveExileLimit, affordableDelveCounts, castFlashback, legalFlashbackCasts, castAdventure, legalAdventureCasts, castAdventureCreature, legalAdventureCreatureCasts, effectiveSpellManaCost, legalTargetCandidates, validateTargets, castMadnessSpell, legalModeCasts, legalXCostCasts, legalFireballCasts, validateVariableTargets, validateFireballTargets, legalTargetCombos, validateDamageDivision, dividedDamageDivisions } from './spells.js';
 import { legalActivatedAbilities, legalManaAbilities, manualManaOfferUnits, activateAbility, performActivation } from './abilities.js';
 import { attachmentRestrictions, deathZoneFor, wardAmountOf, clearMarkedDamage, clearStatModifiers, creatureCantBlock, effectiveAbilities, effectiveKeywords, effectivePower, effectiveToughness, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, grantedStatBonus, hasTemporaryCantBlock, staticAbilityIsActive, markDamage, modifyStats, transformedCharacteristics, turnFaceUp, untapObject, activatableAbilities, entersTappedNow } from './permanents.js';
@@ -7687,6 +7687,14 @@ export function playerView(state, playerId) {
         if (object.kind === 'creature' && !hiddenFromViewer) {
           const blockPowerCap = attackerBlockPowerRestriction(state, object);
           if (blockPowerCap != null) entry.cantBeBlockedByPower = blockPowerCap;
+        }
+        // Batch 75 (Vaporkin): restrykcja strony BLOKERA „can block only
+        // creatures with flying" (CR 509.1b) jest publiczną statyką — bot czyta
+        // ją z widoku (ADR 0017), kafel może pokazać badge. Ten sam odczyt co
+        // walidacja bloku (blockRestrictionError, M380).
+        if (object.kind === 'creature' && !hiddenFromViewer) {
+          const blockOnlyKeywords = blockerBlockOnlyKeywordRestriction(state, object);
+          if (blockOnlyKeywords != null) entry.canBlockOnlyKeywords = blockOnlyKeywords;
         }
         // M221/C (zgłoszenie właściciela, Benevolent Blessing): ochrona
         // permanentu (CR 702.16) jest informacją PUBLICZNĄ wydrukowaną skutkiem

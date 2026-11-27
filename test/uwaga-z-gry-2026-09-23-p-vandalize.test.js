@@ -54,7 +54,9 @@ function scene() {
   const bot = createHeuristicBot({ seed: 5 });
   const chosen = bot.chooseCommand(view);
   const opts = bot.trace()[0].options;
-  const score = (frag) => opts.find((o) => o.cmd === `cast_spell(vand->${frag})`)?.score;
+  // M431-suffix: pełna etykieta LUB etykieta z sufiksem trybu `,m<N>`.
+  const score = (frag) => opts.find((o) => o.cmd === `cast_spell(vand->${frag})`
+    || o.cmd.startsWith(`cast_spell(vand->${frag},m`))?.score;
   return { chosen, score };
 }
 

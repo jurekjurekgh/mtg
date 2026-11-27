@@ -1113,6 +1113,9 @@ const DYNAMIC_AMOUNT_LABELS = Object.freeze({
   attacking_creatures_count: 'za każdego atakującego stwora',
   mana_from_treasure_spent: 'za wydaną manę ze Skarbów',
   commander_casts: 'za rzuty commandera',
+  // Mister Gutsy (batch 75): „create X Junk tokens, where X is the number of
+  // +1/+1 counters on it" — bez wpisu kafel pokazywał surowy slug (M122/#5).
+  counters_on_source: 'za każdy licznik +1/+1 na nim',
   source_power: 'moc źródła',
 });
 /** Rzeczownikowa fraza dla dynamicznej liczby obrażeń („tyle obrażeń, ile ..."). */
@@ -1130,6 +1133,10 @@ const DYNAMIC_AMOUNT_NOUNS = Object.freeze({
   // lands you control" — bez tego wpisu kafel drukował surowy slug
   // `lands_you_control` zamiast treści (klasa M122/#5).
   lands_you_control: 'kontrolujesz lądów',
+  // Batch 75 (Coordinated Maneuver): „deals damage ... equal to the number of
+  // creatures you control" — bez tego wpisu kafel drukował surowy slug
+  // `creatures_you_control` zamiast treści (klasa M122/#5, jak lands_you_control).
+  creatures_you_control: 'kontrolujesz stworów',
   // Batch 65 (Blitz of the Thunder-Raptor, IKO): „deals damage ... equal to the
   // number of instant and sorcery cards in your graveyard" — bez tego wpisu
   // kafel drukował surowy slug `instants_and_sorceries_in_your_graveyard`
@@ -1223,7 +1230,16 @@ function ptPair(power, toughness) {
   const tDyn = typeof toughness === 'string' || isCountedEffectValue(toughness);
   const pSign = countedEffectSign(power) < 0 ? '-' : '+';
   const tSign = countedEffectSign(toughness) < 0 ? '-' : '+';
-  if (!pDyn && !tDyn) return `${p}/${t}`;
+  if (!pDyn && !tDyn) {
+    // Znak ZERA wg kierunku efektu (zwierciadło Oracle, oś 2 — żywy tester
+    // 2026-11-27, Saltfield Recluse): premie drukują „+X/+0”, kary „-X/-0”
+    // (Oracle karty: „Target creature gets -2/-0 until end of turn.” — kafel
+    // pokazywał „-2/+0”, co obiecywało WZMOCNIENIE obrony). Zero dziedziczy
+    // kierunek po drugiej wartości pary; (0/−2) → „+0/-2”.
+    const kara = power < 0 || toughness < 0;
+    const fmt = (v) => (v === 0 ? (kara ? '-0' : '+0') : signed(v));
+    return `${fmt(power)}/${fmt(toughness)}`;
+  }
   // M255/D (pętla jakości, Altar of the Goyf / Jyoti / Tarmogoyf): wartość
   // DYNAMICZNA (string) to DEFINICJA X, a nie liczba premii. Drukowanie jej
   // samej („Gdy atakuje samotnie: liczba typów kart w grobach do końca tury”)
@@ -1795,12 +1811,17 @@ const NON_MANA_COST_LABELS = Object.freeze([
   // Batch 69 (Bloodfire Infusion): „Sacrifice enchanted creature" — koszt aury.
   ['sacrificeEnchantedHost', 'poświęć dołączonego stwora'],
   ['sacrificeLand', 'poświęć ląd'],
-  ['sacrificeCreature', (rule) => rule.another ? 'poświęć innego stwora' : 'poświęć stwora'],
+  ['sacrificeCreature', (rule) => rule.artifactOrAnother ? 'poświęć artefakt lub innego stwora'
+    : (rule.another ? 'poświęć innego stwora' : 'poświęć stwora')],
   ['tapCreature', 'tapnij swojego stwora'],
   ['tapOtherCreature', 'tapnij innego swojego stwora'],
   ['exileFromGraveyard', 'wygnaj tę kartę z grobu'],
   ['exileSelfFromHand', 'wygnaj tę kartę z ręki'],
   ['payLifeX', 'zapłać X życia'],
+  // Batch 75 (Kozilek's Translator): STAŁY koszt życia w aktywacji — bez
+  // tego wpisu kafel drukował „1, :” bez treści kosztu (klasa Batch 70
+  // Puzzle-Door: koszt musi się czytać na kafle).
+  ['life', (n) => `zapłać ${n} życia`],
   // M177/E (Merchant's Dockhand): koszt „Tap X untapped artifacts you control”.
   ['tapXArtifacts', 'tapnij X swoich nietapniętych artefaktów'],
   // Batch 73 (Bladewheel Chariot, audyt PR #185 F-6): „Tap two other untapped
@@ -2123,6 +2144,9 @@ function triggerConditionClause(trigger) {
   if (cond.spellManaValueAtLeast != null) czlony.push(`rzucany czar ma koszt ≥ ${cond.spellManaValueAtLeast}`);
   if (cond.spellIsColorless) czlony.push('rzucany czar jest bezbarwny');
   if (cond.spellColorsInclude) czlony.push(`rzucany czar jest koloru ${cond.spellColorsInclude.join('/')}`);
+  // Batch 75 (Mister Gutsy): unia typów i PODTYPÓW rzucanego czaru (CR 205.3i
+  // — Aura/Equipment to podtypy; semantyka w conditionHolds, triggers.js).
+  if (cond.spellTypesInclude) czlony.push(`rzucany czar jest typu ${cond.spellTypesInclude.join('/')}`);
   if (cond.noMinusCountersWhenDied) czlony.push('nie miał liczników -1/-1 (persist)');
   if (cond.enteredUntapped) czlony.push('wszedł nietapnięty');
   // Batch 61 (Gryffwing Cavalry): Training — „attacks with another creature

@@ -1,0 +1,32 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Undersea+Invader&set=khm&format=json",
+  "print": "khm",
+  "name": "Undersea Invader",
+  "mana_cost": "{4}{U}{U}",
+  "cmc": 6,
+  "type_line": "Creature — Giant Rogue",
+  "oracle_text": "Flash (You may cast this spell any time you could cast an instant.)\nThis creature enters tapped.",
+  "power": "5",
+  "toughness": "6",
+  "colors": [
+    "U"
+  ],
+  "color_identity": [
+    "U"
+  ],
+  "keywords": [
+    "Flash"
+  ],
+  "set": "khm",
+  "set_name": "Kaldheim",
+  "collector_number": "78",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/5/5/550c745b-64e8-4d20-9cf0-024248ddbd57.jpg?1783928254",
+    "normal": "https://cards.scryfall.io/normal/front/5/5/550c745b-64e8-4d20-9cf0-024248ddbd57.jpg?1783928254"
+  },
+  "pobrano": "2026-11-27",
+  "rulings": [],
+  "rulingsPobrano": "2026-11-27",
+  "rulingsSource": "https://api.scryfall.com/cards/khm/78/rulings"
+}

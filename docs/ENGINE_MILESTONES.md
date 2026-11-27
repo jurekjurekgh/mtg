@@ -9509,3 +9509,128 @@ RC=0 (79 modules / 5978.8 kB), golden-master **4/4 without regeneration**
 branches), tie-audit **12 ties before and 12 after** (10 `block`, 2 `play_land`,
 none of them ours), mirror-eval candidate-vs-off 6:6 / 6:6 / 7:5 on
 `srodziemie`, `warhammer-ub`, `worek-dziki`.
+
+## M467 — Owner reports: Kuhn matching, grouped Lash wizard, unified library-drain floor, turn-boundary pause (2026-11-21→25, PR #189 phase 2)
+
+**Scope:** seven owner reports fixed at root cause, all descriptor-based (ADR 0002),
+each with a knob restoring the pre-change behaviour (M429): F3 — `matchColorRequirements`
+(`src/engine/mana-cost.js`) rewritten from permutation backtracking (13! hang on X
+spells like Consume Spirit) to Kuhn's augmenting-path matching; F1 — mixed
+sacrifice-or-pay-{4} groups (Lash of the Balrog) go through the GROUP wizard, and
+`assertNoCombinationRows` now rejects any full scalar cross-product (fail-closed,
+only the M300 cast window is exempt); F2 — the mana wizard pays the FULL alt-cost
+amount (base + {N} from `additionalCost.orPayMana`, CR 601.2h); G — never sacrifice
+a healthy permanent for a counter reflex (Glorifier of Suffering); H — penalty for
+two removals from Epic Experiment aimed at the same stack object (CR 608.2b fizzle);
+J — never buff/attach onto a creature disabled by a hostile aura (Containment
+Membrane, `disabledAttachTargetPenalty`); J-Moldgraf — self-mill ETB valued through
+the shared `selfMillValue` scale with a hard veto "library AFTER mill < 10" (owner
+correction of the first ladder draft); J2 — owner mandate "one library-drain gate
+everywhere": `commandSelfDrain` + `libraryDrainVeto` (`libraryDrainFloor: 10` AFTER
+drain) absorb `selfMillFloorVeto`, `symmetricDrainVeto`, `springbloomDrainVeto`
+floor and the loot floor; 79892 — the opponent-turn pause was eaten by gesture
+splinters on "Rozumiem"/X (`MODAL_OPEN_GUARD_MS` on both buttons) and by
+`recheckAutoPass` (no-op while `awaitingBotAck`). Verification in the audit session
+(PR #190): differential probe Kuhn vs old backtracking (202k + 2k cases, 0
+mismatches), RED→GREEN mutations (F3 RED = >180 s hang; J2 5/8; J 5/7; 79892
+splinter), quick benchmark 90.0% (605/672) matching the PR report. Full documentation
+of this milestone lives in the PR #189 body and `docs/PROJECT_HISTORY.md`
+(2026-11-27 entry) — W1 repair.
+
+## M468 — Batch 75: ten real cards 666–675, generic spell-type trigger conditions, source-counter token amounts, artifact-or-another sacrifice costs (2026-11-27, PR #190)
+
+**Scope:** owner collection list (ADR 0029), ten cards 666–675 plus the Junk
+token, in three mechanical groups (B1: 666/667/668/673 — `d55d2b3`; B2: 670/
+671/675 — `cfa62cc`; C: 669/672/674 + token_junk — `b75921f`). Plan:
+`docs/plans/PLAN_2026-11-27-batch75-kart.md`. All definitions `supported`
+with Oracle snapshots `docs/cards/scryfall-*.json` (ADR 0010 §2a); every new
+rule landed as a GENERIC engine rule before the card (ADR 0002).
+
+**Three new descriptors (ADR 0002).**
+
+1. **Trigger condition `spellTypesInclude`** (triggers.js): matches the UNION
+   of an object's types and subtypes on the stack. Mister Gutsy's
+   „Whenever you cast an Aura or Equipment spell" must key off *subtypes*
+   (CR 205.3i) — Aura/Equipment are not card types; matching `types` alone
+   would miss them and would also need a bogus type list. Generic: any future
+   „cast an X or Y spell" trigger uses it. Negative control (plain artifact
+   cast → no counter) pinned in `test/real-cards-batch75.test.js`.
+2. **Token amount `counters_on_source`** (effects.js): create_token amount
+   keyed on the LKI formerCounters of the dying source (CR 603.10 — same
+   convention as transfer_counters_on_dies), fallback to live counters when
+   the trigger resolves while the source is still on the battlefield
+   (e.g. forced sacrifice in a response window). Mister Gutsy: „create X
+   Junk tokens, X = number of +1/+1 counters".
+3. **Sacrifice-cost variant `sacrificeCreature.artifactOrAnother`**
+   (abilities.js + render.js): „Sacrifice an artifact or another creature"
+   — candidate set = artifacts plus creatures minus the source itself;
+   cost label „poświęć artefakt lub innego stwora". Malevolent Noble {1}{B}.
+
+**Token with inline abilities (M202/K + audyt-pr121 convention).** token_junk
+carries its activated ability INSIDE the create_token descriptor of Gutsy's
+dies trigger — synthetic token objects are built from the descriptor, not from
+`cardDef(cardId)`, so a catalog-level ability entry alone would produce a
+dead token (found by probe: `activate_ability` offers empty for both Junk
+tokens). Ability: „{T}, Sacrifice this token: Exile the top card of your
+library. You may play that card this turn" — exile_top_playable_until_next_turn
+with `window:'this_turn'`, sorcery timing (Guidestone Compass window rules).
+
+**PMSSB (one ladder, no new knobs — M429).** Two generic valuation hooks:
+single-victim sacrifice costs (`sacrificeCreature` with a concrete
+`sacrificeCreatureId`) now charge `sacrificePermanentLoss` — the same ladder
+as sacrificeSelf/sacrificeCreaturesByColors; the gain_life branch keeps its
+own rescue policy (no double charge). `counters_on_source` token amounts read
+the source's live counters in tokenBodyValue (fallback 1 undercounted a
+countered source). Trigger counters, Junk tokens, equip and the {2}{R} sac
+bolt needed zero card-specific valuation. Benchmark quick (ADR 0018) after
+valuation changes: 672 matches, **0 unfinished**, heuristic 90.6% vs aggro /
+97.0% vs random — no regression; report `tools/quick-2026-11-27-b75c.txt`
+(rerun after the data-cost fixes below: 90.5% / 97.0%, 0 unfinished).
+
+**Decks:** generator RC=0; Batch 75 cards reached wiedzmin-bg, worek-basni,
+worek-legend, final-fantasy (Gysahl Greens → BENCH deck, so the quick
+benchmark run is mandatory per the plan) plus the per-plan decks. AUTO-AWANS
+×9 lines in generator output are idempotent (present before the change too).
+
+**Guards:** catalog 737 definitions / 672 snapshots / 671 pairs; 66 without
+snapshot (BEZ_SNAPSHOTU += token_junk — tokens have no Oracle entry by ADR
+0022); OSIEROCONE = ['undercity'] (transferred to Batch 76 backlog).
+
+**Tests:** `test/real-cards-batch75.test.js` 18/18 (data guards 10 + 10
+MANA_COSTS + per-card positive/negative e2e: equip→buff+trample→sac bolt;
+Noble artifact-candidate/self-excluded/counter-on-source; Gutsy Equipment
+and Aura counters, plain-artifact negative control, two-counters death → two
+Junks, Junk sac → exile-top playable this turn). Wide suite 112/112.
+
+**Cost-shape fixes caught by the full gate (test:all), fixed before B5.**
+The wide suite did not include the catalog-wide guards; `npm run test:all`
+was run at B5 and red-pointed real data bugs: Lightning Spear's {2}{R} bolt
+and Gysahl Greens' {6}{G} flashback were defined with `cost.mana` = GENERIC
+part instead of the TOTAL cost (CR 202.1 convention — `{6}{G}` = 7 total with
+one G pip), both fixed; Necrosavant's graveyard-reanimate activations needed
+the generic `isGraveyardReanimate` exemption from the new single-sacrifice
+charge (pin F-8/3 audytu PR #185); ten Batch 75 snapshots lacked the F-18
+rulings trace (`rulings` + `rulingsSource` + `rulingsPobrano`, fetched
+2026-11-27 — Mister Gutsy carries 3 real rulings, Gysahl Greens 6 flashback
+rulings); token_junk lacked `imageUri` (tpip 15, Fallout Tokens); README
+numbers (669 supported / 58 tokens) and ten deck-count rows refreshed;
+pins bumped with measurement: tokens-without-plan 57→58, collection
+dictionary 664→674 entries / 661→671 names, L13 target descriptors 278→281,
+modal inventory +coordinated-maneuver (class B, both modes single-target),
+Zendikar split plan 30→32 (Battle Hurda → WU, Kozilek's Translator → RG),
+combat-tie floor 4→3 measured per pair (srodziemie|theros −4 and
+kaladesh|zendikar-wu −2 from deck-composition trajectories — weights proven
+innocent: old decks with old and new weights give identical 8 action ties;
+wiedzmin-bg|tarkir-bg +1 block, same policy class A);
+`triggerConditionClause` gained the `spellTypesInclude` branch.
+
+**Final gates:** `npm run test:all` **10 893 / 10 893, fail 0, 0 skipped**,
+`npm run build` **79 modules / 6043.4 kB**, `node tools/cr-numery.mjs` OK,
+benchmark quick RC=0 (0 unfinished), live tester 8/8 clean.
+
+**Live tester (B4):** 8 games on decks carrying the batch (wiedzmin-bg,
+worek-basni, worek-legend, final-fantasy, theros) — **0 detector reports**;
+on-table coverage: Lightning Spear cast+equipped, Vaporkin, Gysahl Greens,
+Malevolent Noble cast + activated-with-sacrifice + lethal attack, Mister
+Gutsy cast+resolve+block+die with X=0 trigger (correctly empty), Junk label
+rendered in hand tooltip.

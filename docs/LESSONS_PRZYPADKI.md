@@ -4058,3 +4058,23 @@ nie) została przedstawiona właścicielowi zamiast być rozstrzygnięta jednost
 `test/uwagi-tura9-bot-rowne-ciala-equip.test.js` T9/8, warianty KF-06/M-04 w
 `tools/pmssb90-batch73-petla-sonda.mjs`; raport `docs/PMSSB.md` §PMSSB-90 i kamień
 **M465** w `docs/ENGINE_MILESTONES.md`.
+
+## L195 (2026-11-27) — helper kwoty drenażu: fallback bez SYMMETRIC/FACE_DOWN uśpił podłogę10
+
+W trakcie E2 (kompletność `commandSelfDrain`, PR #190) wyodrębniłem kwotę
+drenażu do wspólnego helpera `drainLossOf`. Nowa mapa pewnych rodzin
+(`SURE_LIBRARY_DRAIN_AMOUNTS`) dostała fallback tylko na główny zbiór
+`LIBRARY_DRAIN_EFFECTS` — a helper przejął wywołania ze ścieżek, które
+wcześniej formatowały kwotę dla KAŻDEGO efektu, który przeszedł filtr
+`ownDrain` (czyli także SYMMETRIC i FACE_DOWN). Efekt: kwota 1 spadła do 0
+dla `mill_both_players` (Ghoulcaller's Bell), `each_player_exiles_top_face_down`
+(Pyxis of Pandemonium) i `cloak` (Veiled Ascension) — pełna suita pokazała
+5 faili w testach J2/Pyxis/Veiled, choć nowy test kompletności był zielony.
+Naprawa: fallback obejmuje wszystkie trzy dotychczasowe zbiory; sekęncja
+RED→GREEN nowego testu + pełna suita po KAŻDEJ zmianie helpera (nie tylko
+po zmianie map). Ta sama pułapka czeka każdą unifikację „wiele zbiorów →
+jeden helper” (J2, M429 — anty-over-fix ma też stronę odwrotną: pod-fix).
+
+Pełna sekwencja: fix E2-1 (commit `4781be8`), regresja 5 faili, poprawka
+fallbacku przed pushem; testy strażników: `zgloszenie-j2` U/2,
+`uwagi-pyxis` G/b1–b3, `veiled-ascension-cloak-may` F1v2/2.

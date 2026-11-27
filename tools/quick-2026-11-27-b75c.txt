@@ -1,0 +1,74 @@
+[0.1%] 1/672 | 0s | ~460.6 ms/mecz | ETA 5m 09s | ostatni 460 ms | heuristic:random | alara vs alara | seed 2026
+[14.9%] 100/672 | 33s | ~329.5 ms/mecz | ETA 3m 08s | ostatni 162 ms | heuristic:random | dominaria-brg vs dominaria-brg | seed 2027
+[29.8%] 200/672 | 52s | ~260.6 ms/mecz | ETA 2m 03s | ostatni 173 ms | heuristic:random | dominaria-wu vs eldraine | seed 2029
+[44.6%] 300/672 | 75s | ~249.3 ms/mecz | ETA 1m 33s | ostatni 92 ms | heuristic:random | final-fantasy vs final-fantasy | seed 2031
+[59.5%] 400/672 | 1m 39s | ~248.5 ms/mecz | ETA 68s | ostatni 176 ms | aggro:heuristic | alara vs eldraine | seed 2033
+[74.4%] 500/672 | 2m 02s | ~243.6 ms/mecz | ETA 42s | ostatni 190 ms | aggro:heuristic | dominaria-brg vs forgotten-realms-br | seed 2027
+[89.3%] 600/672 | 2m 28s | ~246.3 ms/mecz | ETA 18s | ostatni 257 ms | aggro:heuristic | eldraine vs final-fantasy | seed 2029
+[100.0%] 672/672 | 2m 44s | ~244.4 ms/mecz | ETA 0s | ostatni — | koniec
+
+Benchmark botów (B0) — deterministyczny, ADR 0005
+boty: aggro, heuristic, random | talie: 6 | seedy: 8 (baza 2026) | limit komend: 8000
+
+== aggro vs heuristic ==
+  aggro 16.1% (54/336) | heuristic 83.9% (282/336)
+  niedokończone: 0 | śr. 16.69 tury | śr. 414.5 komend
+    alara | alara                                 aggro 37.5% (6/16) | heuristic 62.5% (10/16)
+    alara | dominaria-brg                         aggro 6.3% (1/16) | heuristic 93.8% (15/16)
+    alara | dominaria-wu                          aggro 6.3% (1/16) | heuristic 93.8% (15/16)
+    alara | eldraine                              aggro 18.8% (3/16) | heuristic 81.3% (13/16)
+    alara | final-fantasy                         aggro 0.0% (0/16) | heuristic 100.0% (16/16)
+    alara | forgotten-realms-br                   aggro 0.0% (0/16) | heuristic 100.0% (16/16)
+    dominaria-brg | dominaria-brg                 aggro 6.3% (1/16) | heuristic 93.8% (15/16)
+    dominaria-brg | dominaria-wu                  aggro 0.0% (0/16) | heuristic 100.0% (16/16)
+    dominaria-brg | eldraine                      aggro 37.5% (6/16) | heuristic 62.5% (10/16)
+    dominaria-brg | final-fantasy                 aggro 0.0% (0/16) | heuristic 100.0% (16/16)
+    dominaria-brg | forgotten-realms-br           aggro 0.0% (0/16) | heuristic 100.0% (16/16)
+    dominaria-wu | dominaria-wu                   aggro 6.3% (1/16) | heuristic 93.8% (15/16)
+    dominaria-wu | eldraine                       aggro 31.3% (5/16) | heuristic 68.8% (11/16)
+    dominaria-wu | final-fantasy                  aggro 12.5% (2/16) | heuristic 87.5% (14/16)
+    dominaria-wu | forgotten-realms-br            aggro 6.3% (1/16) | heuristic 93.8% (15/16)
+    eldraine | eldraine                           aggro 68.8% (11/16) | heuristic 31.3% (5/16)
+    eldraine | final-fantasy                      aggro 12.5% (2/16) | heuristic 87.5% (14/16)
+    eldraine | forgotten-realms-br                aggro 31.3% (5/16) | heuristic 68.8% (11/16)
+    final-fantasy | final-fantasy                 aggro 12.5% (2/16) | heuristic 87.5% (14/16)
+    final-fantasy | forgotten-realms-br           aggro 12.5% (2/16) | heuristic 87.5% (14/16)
+    forgotten-realms-br | forgotten-realms-br     aggro 31.3% (5/16) | heuristic 68.8% (11/16)
+
+== heuristic vs random ==
+  heuristic 97.0% (326/336) | random 3.0% (10/336)
+  niedokończone: 0 | śr. 17.07 tury | śr. 421.4 komend
+    alara | alara                                 heuristic 100.0% (16/16) | random 0.0% (0/16)
+    alara | dominaria-brg                         heuristic 87.5% (14/16) | random 12.5% (2/16)
+    alara | dominaria-wu                          heuristic 93.8% (15/16) | random 6.3% (1/16)
+    alara | eldraine                              heuristic 100.0% (16/16) | random 0.0% (0/16)
+    alara | final-fantasy                         heuristic 87.5% (14/16) | random 12.5% (2/16)
+    alara | forgotten-realms-br                   heuristic 87.5% (14/16) | random 12.5% (2/16)
+    dominaria-brg | dominaria-brg                 heuristic 100.0% (16/16) | random 0.0% (0/16)
+    dominaria-brg | dominaria-wu                  heuristic 100.0% (16/16) | random 0.0% (0/16)
+    dominaria-brg | eldraine                      heuristic 100.0% (16/16) | random 0.0% (0/16)
+    dominaria-brg | final-fantasy                 heuristic 100.0% (16/16) | random 0.0% (0/16)
+    dominaria-brg | forgotten-realms-br           heuristic 100.0% (16/16) | random 0.0% (0/16)
+    dominaria-wu | dominaria-wu                   heuristic 100.0% (16/16) | random 0.0% (0/16)
+    dominaria-wu | eldraine                       heuristic 100.0% (16/16) | random 0.0% (0/16)
+    dominaria-wu | final-fantasy                  heuristic 100.0% (16/16) | random 0.0% (0/16)
+    dominaria-wu | forgotten-realms-br            heuristic 100.0% (16/16) | random 0.0% (0/16)
+    eldraine | eldraine                           heuristic 93.8% (15/16) | random 6.3% (1/16)
+    eldraine | final-fantasy                      heuristic 93.8% (15/16) | random 6.3% (1/16)
+    eldraine | forgotten-realms-br                heuristic 93.8% (15/16) | random 6.3% (1/16)
+    final-fantasy | final-fantasy                 heuristic 100.0% (16/16) | random 0.0% (0/16)
+    final-fantasy | forgotten-realms-br           heuristic 100.0% (16/16) | random 0.0% (0/16)
+    forgotten-realms-br | forgotten-realms-br     heuristic 100.0% (16/16) | random 0.0% (0/16)
+
+Macierz win-rate (wiersz wygrywa z kolumną):
+                aggro heuristic    random
+  aggro             —     16.1%         —
+  heuristic     83.9%         —     97.0%
+  random            —      3.0%         —
+
+Razem (wszystkie pary):
+  aggro     16.1% zwycięstw (54/336)
+  heuristic 90.5% zwycięstw (608/672)
+  random    3.0% zwycięstw (10/336)
+
+Rozegrano 672 meczów w 164.3 s (~244.4 ms/mecz).

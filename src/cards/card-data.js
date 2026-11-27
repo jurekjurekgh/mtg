@@ -15780,6 +15780,279 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     imageUri: 'https://cards.scryfall.io/large/front/6/b/6b8a810b-8538-41c3-a792-dbd1a1845faa.jpg?1783914994',
     support: { status: 'token', limitations: ['token — nie można umieścić w talii'] },
   }),
+
+  // Batch 75 (Mister Gutsy, PIP 136): token Junk — artefakt z „{T}, Sacrifice
+  // this token: Exile the top card of your library. You may play that card
+  // this turn. Activate only as a sorcery." Zdolność = impulse-exile z oknem
+  // THIS_TURN (`window: 'this_turn'`, wzorzec Caves of Chaos Adventurer);
+  // sorcery-timing aktywacji (Guidestone Compass). Grafika: druk tokenu PIP
+  // (Scryfall) — wpis bez imageUri dokłada grafikę przy pierwszym Żywym
+  // Testerze (konwencja TOKEN_IMAGES).
+  defineCard({
+    id: 'token_junk', name: 'Junk', set: null,
+    types: ['Artifact', 'Token'], subtypes: ['Junk'], colors: [], manaCost: 0,
+    // Grafika: token tpip 15 (Fallout Tokens, Justine Cruz) — strażnik M202/K.
+    imageUri: 'https://cards.scryfall.io/large/front/6/2/62c4a6f6-6425-4c0c-b35a-880fcab42aad.jpg?1783912041',
+    oracleText: '{T}, Sacrifice this token: Exile the top card of your library. You may play that card this turn. Activate only as a sorcery.',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { tap: true, sacrificeSelf: true },
+        timing: 'sorcery',
+        effect: [{ type: 'exile_top_playable_until_next_turn', window: 'this_turn' }],
+      }),
+    ],
+    support: { status: 'token', limitations: ['token — nie można umieścić w talii; tworzony przez Mister Gutsy'] },
+  }),
+
+  // ---- Batch 75 (kolekcja 666–675, właściciel 2026-11-27). Dane Oracle:
+  // docs/cards/scryfall-<slug>.json (pobrane 2026-11-27, `set=` — ADR 0010 §2a).
+  // Wchodzą grupami wg planu docs/plans/PLAN_2026-11-27-batch75-kart.md:
+  // B1 (666/667/668/673), B2 (670/671/675), C (669/672/674).
+
+  // 666KHM Undersea Invader (KHM 78) {4}{U}{U} 5/6 Giant Rogue — flash;
+  //      wchodzi tapnięty (entersTappedNow czyta deskryptor, permanents.js).
+  defineCard({
+    id: 'undersea-invader', name: 'Undersea Invader', set: 'KHM',
+    types: ['Creature'], subtypes: ['Giant', 'Rogue'], colors: ['U'],
+    power: 5, toughness: 6, manaCost: 6, keywords: ['flash'],
+    oracleText: 'Flash (You may cast this spell any time you could cast an instant.)\nThis creature enters tapped.',
+    imageUri: 'https://cards.scryfall.io/large/front/5/5/550c745b-64e8-4d20-9cf0-024248ddbd57.jpg?1783928254',
+    entersTapped: true,
+    artId: 666, plan: 'Kaldheim',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 667FIN Gysahl Greens (FIN 190) {1}{G} Sorcery — token Bird 2/2 z
+  //      landfallowym +1/+0 (TEN SAM token_bird_chocobo co Call the Mountain
+  //      Chocobo, batch 45) + flashback {6}{G} (wzorzec Dream Twist).
+  defineCard({
+    id: 'gysahl-greens', name: 'Gysahl Greens', set: 'FIN',
+    types: ['Sorcery'], colors: ['G'], manaCost: 2,
+    oracleText: 'Create a 2/2 green Bird creature token with "Whenever a land you control enters, this token gets +1/+0 until end of turn."\nFlashback {6}{G} (You may cast this card from your graveyard for its flashback cost. Then exile it.)',
+    imageUri: 'https://cards.scryfall.io/large/front/0/2/020dee17-d85b-44c4-9faa-b1ef977956f4.jpg?1783906585',
+    spell: {
+      timing: 'sorcery',
+      targets: [],
+      effects: [
+        {
+          type: 'create_token', cardId: 'token_bird_chocobo', name: 'Bird',
+          kind: 'creature', power: 2, toughness: 2, colors: ['G'],
+          types: ['Creature'], subtypes: ['Bird'],
+          abilities: [
+            createAbility({
+              type: ABILITY_TYPE.triggered,
+              trigger: { event: 'land_entered_under_your_control' },
+              effect: [{ type: 'pump', power: 1, toughness: 0 }],
+            }),
+          ],
+        },
+      ],
+      // {6}{G} — `cost` to ŁĄCZNY koszt (konwencja M428: „{3}{U}" = 4).
+      flashback: { cost: 7, colors: ['G'] },
+    },
+    artId: 667, plan: 'Final Fantasy',
+    support: { status: 'supported', limitations: [] },
+    notes: ['token Bird pumpuje SAM SIEBIE przy wejściu landa kontrolera (landfall — trigger bez celu pumpuje źródło); ten sam token co Call the Mountain Chocobo'],
+  }),
+
+  // 668WWK Battle Hurda (WWK 4) {4}{W} 3/3 Giant — first strike.
+  defineCard({
+    id: 'battle-hurda', name: 'Battle Hurda', set: 'WWK',
+    types: ['Creature'], subtypes: ['Giant'], colors: ['W'],
+    power: 3, toughness: 3, manaCost: 5, keywords: ['first_strike'],
+    oracleText: 'First strike',
+    imageUri: 'https://cards.scryfall.io/large/front/2/f/2f540b83-67fd-4630-a461-69bc84b88ed3.jpg?1783942068',
+    artId: 668, plan: 'Zendikar',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 673M19 Hired Blade (M19 100) {2}{B} 3/2 Human Assassin — flash.
+  defineCard({
+    id: 'hired-blade', name: 'Hired Blade', set: 'M19',
+    types: ['Creature'], subtypes: ['Human', 'Assassin'], colors: ['B'],
+    power: 3, toughness: 2, manaCost: 3, keywords: ['flash'],
+    oracleText: 'Flash (You may cast this spell any time you could cast an instant.)',
+    imageUri: 'https://cards.scryfall.io/large/front/7/6/7624c9aa-2f47-4fcc-a9fe-cc843e8de053.jpg?1783934570',
+    artId: 673, plan: 'New Capenna',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 670THS Vaporkin (THS 72) {1}{U} 2/1 Elemental — flying + „can block only
+  // creatures with flying": restrykcja STRONY BLOKERA (nowa ogólna reguła
+  // silnika `canBlockOnlyKeywords`, ADR 0002 — odwrotność rodziny
+  // cantBeBlockedByKeywords z Skyscythe Engulfer).
+  defineCard({
+    id: 'vaporkin', name: 'Vaporkin', set: 'THS',
+    types: ['Creature'], subtypes: ['Elemental'], colors: ['U'],
+    power: 2, toughness: 1, manaCost: 2, keywords: ['flying'],
+    oracleText: 'Flying\nThis creature can block only creatures with flying.',
+    imageUri: 'https://cards.scryfall.io/large/front/0/9/09b661a5-359b-4f21-b1b6-aa0988810b4d.jpg?1783939788',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.static,
+        canBlockOnlyKeywords: ['flying'],
+      }),
+    ],
+    artId: 670, plan: 'Theros',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 671TDM Coordinated Maneuver (TDM 6) {1}{W} Instant — modal „Choose one":
+  // A = obrażenia = liczba twoich stworów (slug `creatures_you_control`,
+  // liczzone przy rozstrzyganiu — CR 608.2h); B = destroy enchantment
+  // (wzorzec Trybu B Aerith Rescue Mission / modalnych batchy 45/47).
+  defineCard({
+    id: 'coordinated-maneuver', name: 'Coordinated Maneuver', set: 'TDM',
+    types: ['Instant'], colors: ['W'], manaCost: 2,
+    oracleText: 'Choose one —\n• Coordinated Maneuver deals damage equal to the number of creatures you control to target creature or planeswalker.\n• Destroy target enchantment.',
+    imageUri: 'https://cards.scryfall.io/large/front/c/6/c6569487-53c5-4b91-877d-e4e31bfa90c0.jpg?1783907419',
+    spell: {
+      timing: 'instant',
+      modes: [
+        // Tryb A (Salwa): obrażenia = liczba twoich stworów.
+        {
+          name: 'Salwa',
+          targets: [{ type: 'creature' }],
+          effects: [{ type: 'damage', amount: 'creatures_you_control' }],
+        },
+        // Tryb B (Zniszczenie): destroy enchantment.
+        {
+          name: 'Zniszczenie',
+          targets: [{ type: 'enchantment' }],
+          effects: [{ type: 'destroy_permanent' }],
+        },
+      ],
+    },
+    artId: 671, plan: 'Tarkir',
+    support: {
+      status: 'supported',
+      limitations: ['tryb A: celem nie może być planeswalker — typ nie istnieje w silniku (tylko stwór)'],
+    },
+  }),
+
+  // 675OGW Kozilek's Translator (OGW 74) {4}{B} 3/5 Eldrazi Drone — Devoid
+  // (kolory druku puste, wzorzec Scion Summoner) + „Pay 1 life: Add {C}.
+  // Activate only once each turn": STAŁY koszt życia w aktywacji (nowy klucz
+  // `life` — ADR 0002, bliźniak payLifeX z Krumar Initiate) + produkcja
+  // bezbarwna (add_mana bez colors = {C}; deskryptor, NIE MANA_SOURCE_MAP —
+  // strażnik M200/N1) + oncePerTurn (istniejący zapis Snarling Wolf).
+  defineCard({
+    id: 'kozileks-translator', name: "Kozilek's Translator", set: 'OGW',
+    types: ['Creature'], subtypes: ['Eldrazi', 'Drone'], colors: [],
+    power: 3, toughness: 5, manaCost: 5,
+    oracleText: "Devoid (This card has no color.)\nPay 1 life: Add {C}. Activate only once each turn. ({C} represents colorless mana.)",
+    imageUri: 'https://cards.scryfall.io/large/front/d/8/d80665ae-fcb2-48fd-95be-8768293bcef7.jpg?1783937915',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { life: 1 },
+        oncePerTurn: true,
+        effect: { type: 'add_mana', amount: 1 },
+      }),
+    ],
+    artId: 675, plan: 'Zendikar',
+    support: { status: 'supported', limitations: [] },
+    notes: ['Devoid: kolory druku puste (colors: []); Add {C} = 1 bezbarwna many (add_mana bez colors — pula engine jest bezbarwna); koszt życia STAŁY w koszcie aktywacji; oncePerTurn na klucz id:indeks'],
+  }),
+
+  // 669MH2 Lightning Spear (MH2 134) {1}{R} Equipment — wyposażony +1/+0 i
+  //      trample (wzorzec sprzętów batchy 53/73); {2}{R}, poświęć: 3 obrażenia
+  //      any target (wzorzec Panic Spellbomb — sacrificeSelf + targets).
+  defineCard({
+    id: 'lightning-spear', name: 'Lightning Spear', set: 'MH2',
+    types: ['Artifact'], subtypes: ['Equipment'], colors: ['R'], manaCost: 2,
+    oracleText: 'Equipped creature gets +1/+0 and has trample.\n{2}{R}, Sacrifice this Equipment: It deals 3 damage to any target.\nEquip {1}',
+    imageUri: 'https://cards.scryfall.io/large/front/f/7/f72fcda4-feb4-46e4-87d9-88bd95474fe9.jpg?1783926842',
+    equipment: {
+      equip: 1,
+      pump: { power: 1, toughness: 0 },
+      keywords: ['trample'],
+    },
+    abilities: [
+      // Equip {1} — zdolność aktywowana (jak Brawler's Plate); koszt czyta
+      // deskryptor equipment (equip: 1) — jedno źródło dla oferty i buffu.
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        keyword: 'equip',
+        cost: { mana: 1 },
+      }),
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 3, colors: ['R'], sacrificeSelf: true },
+        targets: [{ type: 'any_target' }],
+        effect: { type: 'damage', amount: 3 },
+      }),
+    ],
+    artId: 669, plan: 'Kamigawa',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 672ELD Malevolent Noble (ELD 95) {1}{B} 2/2 Human Noble — {2}, Sacrifice
+  //      an artifact or another creature: +1/+1 counter. Koszt = rozszerzenie
+  //      OGÓLNE sacrificeCreature (`artifactOrAnother`, ADR 0002 — brak
+  //      istniejącego kształtu); licznik na SAMYM źródle (applyTo: 'self').
+  defineCard({
+    id: 'malevolent-noble', name: 'Malevolent Noble', set: 'ELD',
+    types: ['Creature'], subtypes: ['Human', 'Noble'], colors: ['B'],
+    power: 2, toughness: 2, manaCost: 2,
+    oracleText: '{2}, Sacrifice an artifact or another creature: Put a +1/+1 counter on this creature.',
+    imageUri: 'https://cards.scryfall.io/large/front/6/b/6bc7e996-151f-4d88-8e1e-91bb88f5db02.jpg?1783932637',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 2, sacrificeCreature: { artifactOrAnother: true } },
+        effect: { type: 'add_counter', counter: '+1/+1', amount: 1, applyTo: 'self' },
+      }),
+    ],
+    artId: 672, plan: 'Wiedźmin',
+    support: { status: 'supported', limitations: [] },
+    notes: ['koszt poświęcenia obejmuje ARTEFAKTY i inne stwory (sacrificeCreature.artifactOrAnother — ogólny kształt, nie warunek na kartę); licznik ląduje na źródle'],
+  }),
+
+  // 674PIP Mister Gutsy (PIP 136) {2} 1/1 Robot Soldier — wyzwalacz na rzut
+  //      aury/equipmentu (JEDNA zdolność, warunek OGÓLNY spellTypesInclude —
+  //      ADR 0002;Aura i Equipment to PODTYPY linii typów) + na śmierci X
+  //      tokenów Junk (X = liczniki; kwota `counters_on_source` z LKI).
+  defineCard({
+    id: 'mister-gutsy', name: 'Mister Gutsy', set: 'PIP',
+    types: ['Artifact', 'Creature'], subtypes: ['Robot', 'Soldier'], colors: [],
+    power: 1, toughness: 1, manaCost: 2,
+    oracleText: 'Whenever you cast an Aura or Equipment spell, put a +1/+1 counter on this creature.\nWhen this creature dies, create X Junk tokens, where X is the number of +1/+1 counters on it. (They\'re artifacts with "{T}, Sacrifice this token: Exile the top card of your library. You may play that card this turn. Activate only as a sorcery.")',
+    imageUri: 'https://cards.scryfall.io/large/front/9/f/9f09166a-78de-4136-8a3c-034e1ef73ede.jpg?1783912378',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'when_you_cast_spell', condition: { spellTypesInclude: ['Aura', 'Equipment'] } },
+        effect: { type: 'add_counter', counter: '+1/+1', amount: 1, applyTo: 'self' },
+      }),
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'dies' },
+        effect: [{
+          type: 'create_token', cardId: 'token_junk', name: 'Junk',
+          kind: 'artifact', power: null, toughness: null, colors: [],
+          types: ['Artifact'], subtypes: ['Junk'],
+          amount: 'counters_on_source',
+          // Zdolność tokenu inline w deskryptorze (konwencja M202/K + strażnik
+          // audyt-pr121): „{T}, Sacrifice this token: Exile the top card of
+          // your library. You may play that card this turn." — impulse z
+          // oknem THIS_TURN; sorcery-timing aktywacji (Guidestone Compass).
+          abilities: [
+            createAbility({
+              type: ABILITY_TYPE.activated,
+              cost: { tap: true, sacrificeSelf: true },
+              timing: 'sorcery',
+              effect: [{ type: 'exile_top_playable_until_next_turn', window: 'this_turn' }],
+            }),
+          ],
+        }],
+      }),
+    ],
+    artId: 674, plan: 'Star Wars',
+    support: { status: 'supported', limitations: [] },
+    notes: ['wyzwalacz = JEDNA zdolność z warunkiem spellTypesInclude (Aura/Equipment — podtypy linii typów); Junk = token_junk z katalogu; X z liczników źródła (LKI formerCounters przy śmierci)'],
+  }),
 ]);
 /**
  * M173/B (uwaga właściciela): druki Scryfalla dla TOKENÓW. Tokeny mają

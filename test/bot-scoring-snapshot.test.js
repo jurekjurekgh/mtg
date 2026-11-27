@@ -181,6 +181,17 @@ import {
  *     została odwrócona. Jakość: benchmark quick heuristic 90.5% (608/672)
  *     bez zmian względem 90.5% (608/672) sprzed batcha. Świadoma
  *     regeneracja.
+ *   - 09e4e0fd… → e299939c… (PMSSB-92, batch 75, 2026-11-27): zmiana
+ *     ETYKIET wariantów modalnych w śladzie (M431/L34-L40: „Choose one"
+ *     dostało `,m<N>` w summarize cast_spell — warianty trybów są teraz
+ *     rozróżnialne w śladzie) + generyczna gałąź kwoty obrażeń
+ *     `creatures_you_control` w łańcuchu wyceny czarów (F-92/2: silnik
+ *     rozwiązywał kwotę, wycena bota nie — Coordinated Maneuver). Pomiar:
+ *     WSZYSTKIE sześć partii bitowo identyczne w decisions/scoreSum/
+ *     chosenKinds (255/2685.4063, 293/1892.2411, 232/2969.1501,
+ *     197/2857.8925, 151/1442.0099, 164/2544.1099) — zmieniły się wyłącznie
+ *     etykiety NIEWYBRANYCH wariantów w pełnych śladach. Żadna decyzja nie
+ *     została odwrócona. Świadoma regeneracja.
  */
 
 test('golden-master: ślad bota == zamrożony fixture (bit w bit)', () => {

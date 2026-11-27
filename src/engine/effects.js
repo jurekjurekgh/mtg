@@ -535,6 +535,23 @@ export function landsControlledBy(state, playerId) {
   return count;
 }
 
+/**
+ * Batch 75 (Coordinated Maneuver): liczba STWORÓW pod kontrolą gracza — jedno
+ * źródło (L41) dla rozstrzygania efektu (`resolveDamageAmount`) i dla wyceny
+ * bota (`creaturesControlledInView`; L41: jedna reguła, dwie strony).
+ * Creature-land liczy się jako stwór (typ z linii typów, jak w `landsControlledBy`).
+ */
+export function creaturesControlledBy(state, playerId) {
+  if (!state || playerId == null) return 0;
+  let count = 0;
+  for (const id of state.zones.battlefield) {
+    const object = state.objects.get(id);
+    if (!object || object.zone !== 'battlefield' || object.controllerId !== playerId) continue;
+    if (object.kind === 'creature' || (object.types ?? []).includes('Creature')) count += 1;
+  }
+  return count;
+}
+
 export function resolveDamageAmount(state, effect, sourceObject, targetId = null, context = null) {
   // Batch 70 (Magma Pummeler): „it deals that much damage” — kwota z KONTEKSTU
   // zdarzenia (ile liczników zdjęto), nie z pola karty. Ten sam mechanizm co
@@ -559,6 +576,12 @@ export function resolveDamageAmount(state, effect, sourceObject, targetId = null
   // `landsControlledBy`, eksportowany niżej).
   if (amount === 'lands_you_control') {
     amount = landsControlledBy(state, sourceObject?.controllerId);
+  }
+  // Batch 75 (Coordinated Maneuver): „deals damage equal to the number of
+  // creatures you control" — liczba z chwili ROZSTRZYGANIA (CR 608.2h), ta
+  // sama funkcja, którą czyta oferta/wycena bota (L41: `creaturesControlledBy`).
+  if (amount === 'creatures_you_control') {
+    amount = creaturesControlledBy(state, sourceObject?.controllerId);
   }
   // Batch65 (Blitz of the Thunder-Raptor): „deals damage ... equal to the
   // number of instant and sorcery cards in your graveyard" — kwota liczona
@@ -2944,6 +2967,16 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     // rozstrzyganiu czaru, jak X z planszy).
     if (effect.amount === 'attacking_creatures_count') {
       amount = state.combat?.attackers?.length ?? 0;
+    }
+    // Mister Gutsy (PIP, batch 75): „create X Junk tokens, where X is the
+    // number of +1/+1 counters on it" — liczba z LKI źródła (formerCounters,
+    // CR 603.10 — ta sama konwencja co transfer_counters_on_dies), z fallbackiem
+    // do liczników żywego obiektu (trigger może rozstrzygać się, gdy źródło
+    // żyje — np. wymuszone poświęcenie w oknie odpowiedzi).
+    if (effect.amount === 'counters_on_source') {
+      const counterName = effect.counter ?? '+1/+1';
+      amount = (sourceObject.formerCounters ?? {})[counterName]
+        ?? (sourceObject.counters ?? {})[counterName] ?? 0;
     }
     // Fateful hour (Gather the Townsfolk): przy życiu ≤ N kontroler tworzy
     // inną (większą) liczbę tokenów. Deskryptor generyczny: warunek na życiu.

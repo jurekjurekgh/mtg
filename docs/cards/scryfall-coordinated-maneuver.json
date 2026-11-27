@@ -1,0 +1,31 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Coordinated+Maneuver&set=tdm&format=json",
+  "print": "tdm",
+  "name": "Coordinated Maneuver",
+  "mana_cost": "{1}{W}",
+  "cmc": 2.0,
+  "type_line": "Instant",
+  "oracle_text": "Choose one —\n• Coordinated Maneuver deals damage equal to the number of creatures you control to target creature or planeswalker.\n• Destroy target enchantment.",
+  "power": null,
+  "toughness": null,
+  "colors": [
+    "W"
+  ],
+  "color_identity": [
+    "W"
+  ],
+  "keywords": [],
+  "set": "tdm",
+  "set_name": "Tarkir: Dragonstorm",
+  "collector_number": "6",
+  "rarity": "common",
+  "image_status": "lowres",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/c/6/c6569487-53c5-4b91-877d-e4e31bfa90c0.jpg?1783907419",
+    "normal": "https://cards.scryfall.io/normal/front/c/6/c6569487-53c5-4b91-877d-e4e31bfa90c0.jpg?1783907419"
+  },
+  "pobrano": "2026-11-27",
+  "rulings": [],
+  "rulingsPobrano": "2026-11-27",
+  "rulingsSource": "https://api.scryfall.com/cards/tdm/6/rulings"
+}

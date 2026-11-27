@@ -1,0 +1,33 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Kozilek%27s+Translator&set=ogw&format=json",
+  "print": "ogw",
+  "name": "Kozilek's Translator",
+  "mana_cost": "{4}{B}",
+  "cmc": 5.0,
+  "type_line": "Creature — Eldrazi Drone",
+  "oracle_text": "Devoid (This card has no color.)\nPay 1 life: Add {C}. Activate only once each turn. ({C} represents colorless mana.)",
+  "power": "3",
+  "toughness": "5",
+  "colors": [],
+  "color_identity": [
+    "B"
+  ],
+  "keywords": [
+    "Devoid"
+  ],
+  "produced_mana": [
+    "C"
+  ],
+  "set": "ogw",
+  "set_name": "Oath of the Gatewatch",
+  "collector_number": "74",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/d/8/d80665ae-fcb2-48fd-95be-8768293bcef7.jpg?1783937915",
+    "normal": "https://cards.scryfall.io/normal/front/d/8/d80665ae-fcb2-48fd-95be-8768293bcef7.jpg?1783937915"
+  },
+  "pobrano": "2026-11-27",
+  "rulings": [],
+  "rulingsPobrano": "2026-11-27",
+  "rulingsSource": "https://api.scryfall.com/cards/ogw/74/rulings"
+}

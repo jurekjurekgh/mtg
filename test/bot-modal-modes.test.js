@@ -166,8 +166,9 @@ test('L: sabotaż KONTRUJE groźny czar artefaktu zamiast odbijać drobiazg', ()
   assert.deepEqual(chosen.targets, ['foe']);
   const opts = bot.trace().at(-1).options.filter((o) => o.cmd.includes('cast_spell(sb'));
   assert.equal(opts.length, 2);
-  const counter = opts.find((o) => o.cmd.endsWith('->foe)'));
-  const bounce = opts.find((o) => o.cmd.endsWith('->art)'));
+  // M431-suffix: pełna etykieta LUB etykieta z sufiksem trybu `,m<N>`.
+  const counter = opts.find((o) => o.cmd.endsWith('->foe)') || o.cmd.includes('->foe,m'));
+  const bounce = opts.find((o) => o.cmd.endsWith('->art)') || o.cmd.includes('->art,m'));
   assert.equal(counter.score, 102);
   assert.ok(bounce.score < counter.score, `bounce (${bounce.score}) ma przegrywać z kontrą (102)`);
 });
@@ -206,7 +207,7 @@ test('L: modalna kontra drugiego czaru też skaluje (izzet-charm vs howl MV7)', 
   assert.equal(chosen.modeIndex, 0, `bot ma kontrować howla, wybrał: ${JSON.stringify(chosen)}`);
   assert.deepEqual(chosen.targets, ['howl']);
   const opts = bot.trace().at(-1).options.filter((o) => o.cmd.includes('cast_spell(iz'));
-  const counter = opts.find((o) => o.cmd.endsWith('->howl)'));
+  const counter = opts.find((o) => o.cmd.endsWith('->howl)') || o.cmd.includes('->howl,m'));
   assert.equal(counter.score, 142);
   for (const other of opts.filter((o) => o !== counter)) {
     assert.ok(other.score < counter.score, `tryb ${other.cmd} (${other.score}) ma przegrywać z kontrą (142)`);
@@ -228,7 +229,8 @@ test('L: kontra celuje w groźniejszy czar — stwór 7/7 bije stwora 2/2', () =
   assert.equal(chosen.type, 'cast_spell');
   assert.deepEqual(chosen.targets, ['big'], `bot ma kontrować grubasa: ${JSON.stringify(chosen)}`);
   const opts = bot.trace().at(-1).options.filter((o) => o.cmd.includes('cast_spell(st'));
-  const byTarget = Object.fromEntries(opts.map((o) => [o.cmd, o.score]));
-  assert.equal(byTarget['cast_spell(st->big)'], 150);
-  assert.equal(byTarget['cast_spell(st->sml)'], 110);
+  // M431-suffix: pełna etykieta LUB etykieta z sufiksem trybu `,m<N>`.
+  const byPrefix = (frag) => opts.find((o) => o.cmd === frag || o.cmd.startsWith(frag.slice(0, -1) + ',m'))?.score;
+  assert.equal(byPrefix('cast_spell(st->big)'), 150);
+  assert.equal(byPrefix('cast_spell(st->sml)'), 110);
 });

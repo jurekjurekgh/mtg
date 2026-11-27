@@ -39,3 +39,30 @@ test('battle cry: excludeSource mówi „innym atakującym", bez flagi zostaje o
   assert.ok(thunderstaff.includes('dla atakujących stworów') && !thunderstaff.includes('innych'),
     `bład: "${thunderstaff}"`);
 });
+
+// Żywy tester 2026-11-27 (partia worek-legend vs dominaria-brg, seed 9):
+// kafel Saltfield Recluse pokazywał „{T}: cel: stwór — -2/+0 do końca tury”,
+// a Oracle karty mówi „Target creature gets -2/-0 until end of turn.” —
+// „+0" obiecywało WZMOCNIENIE obrony, którego nie ma. Znak zera idzie po
+// KIERUNKU efektu: kary „-X/-0”, premie „+X/+0” (WotC drukuje oba).
+test('pump karny -2/0 pokazuje „-2/-0”, nie „-2/+0” (Oracle Saltfield Recluse)', () => {
+  const text = describeSpellEffects({
+    effects: [{ type: 'pump', power: -2, toughness: 0 }],
+  });
+  assert.ok(text.includes('-2/-0'), `błąd: "${text}"`);
+  assert.ok(!text.includes('-2/+0'), `błąd: "${text}"`);
+});
+
+test('pump premia +1/+0 zostaje „+1/+0” (konwencja WotC dla premii)', () => {
+  const text = describeSpellEffects({
+    effects: [{ type: 'pump', power: 1, toughness: 0 }],
+  });
+  assert.ok(text.includes('+1/+0'), `błąd: "${text}"`);
+});
+
+test('pump (0/-2) pokazuje „-0/-2” — znak zera idzie po kierunku efektu (kara)', () => {
+  const text = describeSpellEffects({
+    effects: [{ type: 'pump', power: 0, toughness: -2 }],
+  });
+  assert.ok(text.includes('-0/-2'), `błąd: "${text}"`);
+});

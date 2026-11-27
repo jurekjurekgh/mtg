@@ -768,6 +768,16 @@ function landsControlledInView(view, controllerId) {
     && (object.kind === 'land' || (object.types ?? []).includes('Land'))).length;
 }
 
+/**
+ * Batch 75 (Coordinated Maneuver): liczba stworów gracza widziana z PlayerView —
+ * lustrzany odczyt silnika (`creaturesControlledBy`, effects.js; L41: jedna
+ * reguła, dwie strony), jak landsControlledInView dla batcha 71.
+ */
+function creaturesControlledInView(view, controllerId) {
+  return (view.zones?.battlefield ?? []).filter((object) => object.controllerId === controllerId
+    && (object.kind === 'creature' || (object.types ?? []).includes('Creature'))).length;
+}
+
 function permanentMaterialValue(object) {
   return 2 * (object?.power ?? 0) + (object?.toughness ?? 0) + (object?.manaCost ?? 0);
 }
@@ -1203,6 +1213,11 @@ function isSavageDefenseWindow(view, target) {
   const canBlockAttacker = (attacker) => {
     if (!attacker) return false;
     if (attacker.keywords?.includes('flying') && !hasFlying(target) && !hasReach(target)) return false;
+    // Batch 75 (Vaporkin): restrykcja strony BLOKERA „can block only creatures
+    // with flying" — czytana z widoku (ADR 0017), ten sam odczyt co oferta
+    // silnika (blockRestrictionError, M380).
+    const blockOnly = target.canBlockOnlyKeywords ?? null;
+    if (blockOnly && !blockOnly.some((kw) => attacker.keywords?.includes(kw))) return false;
     return true;
   };
   return combat.attackers.some((aid) => {
@@ -2680,6 +2695,15 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     let count = Number.isInteger(effect.amount)
       ? effect.amount
       : dynamicTokenCount(view, effect.amount, effect);
+    // Batch 75 (Mister Gutsy): „stwórz X Junków, X = liczba liczników +1/+1
+    // na źródle" — fallback dynamicTokenCount = 1 zaniżał wycenę źródła
+    // z wieloma licznikami. Źródło liczników to obiekt UMIERAJĄCY (trigger
+    // dies, LKI), więc liczymy liczniki z widoku — ta sama miara co
+    // counterValue (PMSSB-77) z tolerancją braku liczników.
+    if (effect.amount === 'counters_on_source') {
+      const live = Number(source?.counters?.[effect.counter ?? '+1/+1'] ?? 0);
+      count = live;
+    }
     if (effect.ifLifeAtMost != null && myLife(view) <= effect.ifLifeAtMost) {
       count = effect.amountIfCondition ?? count;
     }
@@ -4647,6 +4671,58 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   /** `applyTo` = karty traci kontroler źródła (ja), a nie cel ani przeciwnik. */
   const drainsMyLibrary = (eff) => !eff?.applyTo
     || ['you', 'controller', 'source_controller'].includes(eff.applyTo);
+  /**
+   * E2 (pętla jakości 2026-11-27): rodzinny przegląd KATALOGU typów efektów
+   * (src/cards/card-data.js) wobec księgowości `commandSelfDrain` — pewne,
+   * natychmiastowe drenaże WŁASNEJ biblioteki, które omijały podłogę10, bo
+   * nie były w żadnym ze zbiorów. Kwoty deskryptorowe (ADR 0002); semantyka
+   * rozstrzygnięta w silniku (src/engine/effects.js):
+   *   • draw_cards_both_players — MOJA połowa paktu bezwarunkowa (silnik
+   *     dobiera dla kontrolera źródła PRZED gałęzią celu, L3450);
+   *   • manifest_dread — wierzch 2: jeden manifest opuszcza bibliotekę na
+   *     pole, drugi idzie do grobu (CR 701.62a; „as many as possible" przy
+   *     krótszej bibliotece — degenerat, jak w L144);
+   *   • exile_top_playable_until_next_turn — wygnanie `count` wierzchnich
+   *     (Gila Courser 1, Annie Flash 2, CR 601.2b);
+   *   • look_top_put_one_hand_rest_grave — jedna do ręki, reszta (n−1) do
+   *     grobu ZAWSZE — decyzja dotyczy tylko KTÓREJ karty;
+   *   • reveal_top_pick_land_rest_grave — reszta do grobu ZAWSZE, a pick
+   *     także opuszcza bibliotekę → kwota = n (Satyr Wayfinder);
+   *   • look_top_exile_one_face_down_rest_bottom — wygnanie zakryte
+   *     OBOWIĄZKOWE (ruling WotC 2020-08-07, Clone Shell) → 1;
+   *   • exile_top_of_player_library_and_may_cast — karta WYGNANA także gdy
+   *     „may cast" odrzucone → 1.
+   * Rodziny DECYZYJNE (surveil, ferocious_draw_discard, warianty
+   * „rest bottom", index_look — nic albo kwota zależna od wyboru gracza) i
+   * triggery z warunkiem zewnętrznym (Gila/Caves: attacks+saddled; spójnie
+   * z externalTriggerDrainScale ×0, M466) świadomie poza księgowością.
+   * `each_player_exiles_top_face_down` już jest w SYMMETRIC_DRAIN_EFFECTS.
+   */
+  const SURE_LIBRARY_DRAIN_AMOUNTS = new Map([
+    ['draw_cards_both_players', (e) => Math.max(1, Number.isInteger(e?.amount) ? e.amount : 1)],
+    ['manifest_dread', () => 2],
+    ['exile_top_playable_until_next_turn', (e) => Math.max(1, Number.isInteger(e?.count) ? e.count : 1)],
+    ['look_top_put_one_hand_rest_grave', (e) => Math.max(1, (Number.isInteger(e?.amount) ? e.amount : 4) - 1)],
+    ['reveal_top_pick_land_rest_grave', (e) => Math.max(1, Number.isInteger(e?.amount) ? e.amount : 4)],
+    ['look_top_exile_one_face_down_rest_bottom', () => 1],
+    ['exile_top_of_player_library_and_may_cast', () => 1],
+  ]);
+  /**
+   * Kwota drenażu WŁASNEJ biblioteki dla jednego efektu: pewne rodziny po
+   * deskryptorze, dotychczasowe zbiory (LIBRARY_DRAIN + SYMMETRIC +
+   * FACE_DOWN) po `drainAmount` — fallback MUSI obejmować wszystkie trzy,
+   * bo kwota 1 dla nich wynikała wcześniej z fallbacku `drainAmount`
+   * (regres Bell/Pyxis/Veiled po pierwszej wersji: SYMMETRIC i FACE_DOWN
+   * dawały 0 zamiast 1). JEDNO źródło kwoty (L41) — wywołujący pilnują
+   * strony (`drainsMyLibrary`) i przynależności efektu do księgowości.
+   */
+  const drainLossOf = (eff) => {
+    const pewna = eff?.type ? SURE_LIBRARY_DRAIN_AMOUNTS.get(eff.type) : null;
+    if (pewna) return pewna(eff);
+    return (LIBRARY_DRAIN_EFFECTS.has(eff?.type)
+      || SYMMETRIC_DRAIN_EFFECTS.has(eff?.type)
+      || FACE_DOWN_LIBRARY_EFFECT_TYPES.has(eff?.type)) ? drainAmount(eff) : 0;
+  };
   const drainEfekty = (ability, zdarzenie, mojaBiblioteka) => {
     if (ability?.trigger?.event !== zdarzenie) return 0;
     let razem = 0;
@@ -4727,14 +4803,15 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   // (enter_battlefield, dies) — np. Skaab „ETB mill 4", nie mnożymy przez
   // horyzont. Razem z repeat + payment daje pełny obraz ryzyka deck-outu
   // przy rzucie, zamiast per-karta patchy.
-  const oneShotLibraryDrain = (def, types = LIBRARY_DRAIN_EFFECTS) => {
+  const oneShotLibraryDrain = (def, types = LIBRARY_DRAIN_EFFECTS, extraTypes = null) => {
     let razem = 0;
     for (const ability of def?.abilities ?? []) {
       const ev = ability?.trigger?.event;
       if (!ev || !ONE_SHOT_DRAIN_EVENTS.has(ev)) continue;
       for (const eff of (Array.isArray(ability.effect) ? ability.effect : [ability.effect])) {
-        if (!eff?.type || !types.has(eff.type)) continue;
-        if (drainsMyLibrary(eff)) razem += drainAmount(eff);
+        if (!eff?.type) continue;
+        if (!types.has(eff.type) && !(extraTypes?.has(eff.type))) continue;
+        if (drainsMyLibrary(eff)) razem += drainLossOf(eff);
       }
     }
     return razem;
@@ -5068,7 +5145,8 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     const ownDrain = (eff) => Boolean(eff?.type) && drainsMyLibrary(eff)
       && (LIBRARY_DRAIN_EFFECTS.has(eff.type)
         || SYMMETRIC_DRAIN_EFFECTS.has(eff.type)
-        || FACE_DOWN_LIBRARY_EFFECT_TYPES.has(eff.type));
+        || FACE_DOWN_LIBRARY_EFFECT_TYPES.has(eff.type)
+        || SURE_LIBRARY_DRAIN_AMOUNTS.has(eff.type));
     if (cmd.type === 'tap_for_mana') return tapLibraryLoss(view, cmd.objectId);
     if (cmd.type === 'resolve_springbloom') {
       return cmd.sacrificeLandId == null ? 0 : SPRINGBLOOM_DRAIN;
@@ -5078,7 +5156,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       if (Number.isInteger(cmd.selfMill)) return Math.max(0, cmd.selfMill);
       let drain = 0;
       for (const eff of pendingOptionalEffects(view)) {
-        if (ownDrain(eff)) drain += drainAmount(eff);
+        if (ownDrain(eff)) drain += drainLossOf(eff);
       }
       return drain;
     }
@@ -5089,7 +5167,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         ?? (object?.cardId ? cardDef(object.cardId)?.abilities : undefined) ?? [];
       const ability = abilities[cmd.abilityIndex ?? 0];
       for (const eff of (Array.isArray(ability?.effect) ? ability.effect : [ability?.effect])) {
-        if (ownDrain(eff)) drain += drainAmount(eff);
+        if (ownDrain(eff)) drain += drainLossOf(eff);
       }
       return drain;
     }
@@ -5109,7 +5187,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       const def = karta?.cardId ? cardDef(karta.cardId) : undefined;
       let drain = paymentLibraryLoss(view, cmd)
         + searchLibraryLoss(view, cmd)
-        + oneShotLibraryDrain(def); // jednorazowe ETB/dies (mill+draw)
+        + oneShotLibraryDrain(def, LIBRARY_DRAIN_EFFECTS, SURE_LIBRARY_DRAIN_AMOUNTS); // jednorazowe ETB/dies (mill+draw)
       // Efekty samego czaru (mode-aware — jak searchLibraryLoss): mill,
       // loot (draw_then_discard), draw, tutor ze spell.effects.
       const spell = karta?.spell ?? def?.spell;
@@ -5127,7 +5205,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         }
         if (!ownDrain(eff)) continue;
         if (targetIsFoe && (eff.type === 'mill_cards' || eff.type === 'mill_from_bottom')) continue;
-        drain += drainAmount(eff);
+        drain += drainLossOf(eff);
       }
       if (springbloomEffects(karta).length > 0) drain += SPRINGBLOOM_DRAIN;
       return drain;
@@ -5222,8 +5300,9 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       const effects = pendingOptionalEffects(view);
       let drain = 0;
       for (const eff of effects) {
-        if (!eff?.type || !LIBRARY_DRAIN_EFFECTS.has(eff.type)) continue;
-        if (drainsMyLibrary(eff)) drain += drainAmount(eff);
+        if (!eff?.type) continue;
+        if (!LIBRARY_DRAIN_EFFECTS.has(eff.type) && !SURE_LIBRARY_DRAIN_AMOUNTS.has(eff.type)) continue;
+        if (drainsMyLibrary(eff)) drain += drainLossOf(eff);
       }
       if (drain > 0) return libraryLossPenalty(view, drain);
       return 0;
@@ -8392,6 +8471,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     } else if (amount === 'lands_you_control') {
       // Batch 71 (Rumbling Rockslide): kwota z lądów — wspólny odczyt z silnikiem.
       amount = landsControlledInView(view, entry?.controllerId);
+    } else if (amount === 'creatures_you_control') {
+      // Batch 75 (Coordinated Maneuver): kwota ze stworów — lustrzany odczyt
+      // silnika (`creaturesControlledBy`, effects.js; L41: jedna reguła, dwie strony).
+      amount = creaturesControlledInView(view, entry?.controllerId);
     }
     const counterBonus = effect?.amountIfTargetHasCounter;
     if (counterBonus && (target?.counters?.[counterBonus.counter] ?? 0) > 0) amount = counterBonus.amount;
@@ -15005,7 +15088,18 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
                   // czar bez obrażeń.
                   : effect.amount === 'lands_you_control'
                     ? landsControlledInView(view, view.playerId)
-                    : Number.isInteger(effect.amount) ? effect.amount : 0;
+                    // PMSSB-92/F-92-2 (Batch 75, Coordinated Maneuver):
+                    // „damage equal to the number of creatures you control"
+                    // — kwota z tego samego lustrzanego odczytu co silnik
+                    // (effects.js `resolveDamageAmount` → `creaturesControlledBy`;
+                    // L41: jedna reguła, dwie strony). Wcześniej string wpadał
+                    // w `: 0` — wycena trybu salwy nie reagowała na liczbę
+                    // własnych stworów (pomiar PRZED: 84,00 stałe niezależnie
+                    // od 0/1/2/4/6 stworów), więc bot nie widział przewagi
+                    // salwy nad destroy przy pełnym stole.
+                    : effect.amount === 'creatures_you_control'
+                      ? creaturesControlledInView(view, view.playerId)
+                      : Number.isInteger(effect.amount) ? effect.amount : 0;
             // Batch60 (Addendum, CR 207.2c — lustro migawki castSpell,
             // spells.js:871): rzut we WŁASNEJ fazie głównej (stan stosu bez
             // znaczenia) podbija obrażenia do amountIfAddendum. Bez tego bot
@@ -16259,6 +16353,23 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           ? sacrificeSelfCostLoss(view, source, effects) : 0;
         const sacSelfBodyLoss = sacSelfIsManaSource ? 0 : sacSelfLoss;
         score -= sacSelfBodyLoss;
+        // Batch 75 (Malevolent Noble): koszt „poświęć stwora LUB artefakt"
+        // (pojedyncza ofiara w komendzie `sacrificeCreatureId`) — ta sama miara
+        // straty co sacrificeSelf/sacrificeCreaturesByColors (L41: jedna drabina
+        // poświęceń). Gałąź gain_life (m236 niżej) ma WŁASNĄ politykę
+        // ratunkową dla kosztu ofiary — tam podwójne liczenie nie jest wskazane.
+        const hasGainLifeEffect = effects.some((e) => e?.type === 'gain_life');
+        // Wyjątek reanimacji z grobu (ten sam deskryptor co `isGraveyardReanimate`
+        // wyżej — Necrosavant, pin F-8/3 audytu PR #185): wymiana ciało-za-ciało
+        // to cały sens karty, zysk z reanimacji jest już wyceniony efektem.
+        const isGraveyardReanimateSingle = isGraveyardReanimate
+          || (ability?.fromGraveyard === true
+            && abilityEffectTypes.includes('reanimate_under_your_control')
+            && ability?.cost?.sacrificeCreature === true);
+        const singleSacrificeLoss = isGraveyardReanimateSingle ? 0
+          : (ability?.cost?.sacrificeCreature && cmd.sacrificeCreatureId && !hasGainLifeEffect
+          ? sacrificePermanentLoss(view, objectOnBoard(view, cmd.sacrificeCreatureId)) : 0);
+        score -= singleSacrificeLoss;
         const ownDrawOnly = effects.length > 0 && effects.every(e =>
           e?.type === 'draw_cards' || e?.type === 'draw_then_discard');
         if (ownDrawOnly && ((ability?.cost?.discardCard && P.abilityDiscardCostWeight > 0) || reserveLoss > 0)) {
@@ -17656,6 +17767,13 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           const x = cmd.xValue ?? 0;
           score -= selfLifeLossPenalty(view, x);
           score -= Math.max(0, x - lifePayThreshold(view)) * P.payLifeXOverThresholdPenalty;
+        }
+        // Batch 75 (Kozilek's Translator): STAŁY koszt życia w aktywacji
+        // („Pay 1 life: Add {C}") — ta sama drabina samouszkodzenia co
+        // payLifeX (PMSSB-36, L41): kwota stała, nie z xValue.
+        if (ability?.cost?.life) {
+          score -= selfLifeLossPenalty(view, ability.cost.life);
+          score -= Math.max(0, ability.cost.life - lifePayThreshold(view)) * P.payLifeXOverThresholdPenalty;
         }
         if (cmd.xValue != null) score -= Math.min(cmd.xValue ?? 0, 2) * 0.5; // koszt {X} — drobna kara
         // Equip: załączenie na własnym stworze jest tym lepsze, im większy
@@ -20930,7 +21048,13 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     // czego parować. Suffix tylko gdy komenda niesie X (piny bez {X} bez zmian).
     if (cmd.type === 'cast_spell' || cmd.type === 'cast_cleave' || cmd.type === 'cast_permanent' || cmd.type === 'cast_adventure' || cmd.type === 'cast_adventure_creature') {
       const wariantX = cmd.xValue != null ? `,X=${cmd.xValue}` : '';
-      return `${cmd.type}(${cmd.objectId}${cmd.targets ? '->' + cmd.targets.join('+') : ''}${wariantX})`;
+      // M431 (L34/L40, ta sama lekcja co resolve_scry/warianty X): warianty
+      // modalnego czaru („Choose one", CM tryby A/B) różnią się `modeIndex`,
+      // a ślad pokazywał DWA identyczne `cast_spell(id->cel)` — audyt remisów
+      // i piny wycen parowały po indeksie sortowania. Sufiks trybu jest
+      // jednoznaczny i nie dotyka czarów niemodalnych.
+      const wariantTrybu = cmd.modeIndex != null ? `,m${cmd.modeIndex}` : '';
+      return `${cmd.type}(${cmd.objectId}${cmd.targets ? '->' + cmd.targets.join('+') : ''}${wariantX}${wariantTrybu})`;
     }
     // M195/B: aktywacja zdolności bez ŹRÓDŁA i CELU była w śladzie nieczytelna
     // („activate_ability" × N) — nie dało się odróżnić buffu sojusznika od

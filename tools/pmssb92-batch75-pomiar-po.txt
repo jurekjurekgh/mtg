@@ -1,0 +1,386 @@
+=== PMSSB-92 — POMIAR (batch 75: T=moment, C=cel, S=kontekst, K=koszt) ===
+
+
+--- undersea-invader ---
+[INV-01] (T) main1 własna tura, pusty stół
+    krok=main1 aktywny=p1 priorytet=p1 tura=1
+    życie p1=20 p2=20 | mana p1=6 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false
+    stół p1: —
+    stół p2: —
+    ręka p1: inv-hand:Undersea Invader (5/6 flash) | ręka p2: 0 kart(y)
+    grób p1: 0 | grób p2: 0 | biblioteka p1: 20
+    BOT: cast_permanent(inv-hand)  score=70.21
+    alternatywy: cast_permanent(inv-hand)=70.21 | pass_priority=0.00 | concede=-Infinity
+[INV-01] (T) end step PRZECIWNIKA (priorytet p1)
+    krok=end aktywny=p2 priorytet=p1 tura=1
+    życie p1=20 p2=20 | mana p1=6 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false
+    stół p1: —
+    stół p2: —
+    ręka p1: inv-hand:Undersea Invader (5/6 flash) | ręka p2: 0 kart(y)
+    grób p1: 0 | grób p2: 0 | biblioteka p1: 20
+    BOT: cast_permanent(inv-hand)  score=70.21
+    alternatywy: cast_permanent(inv-hand)=70.21 | pass_priority=0.00 | concede=-Infinity
+[INV-01] (T) main1 własna tura, wróg ma 2/2 i 2/2
+    krok=main1 aktywny=p1 priorytet=p1 tura=1
+    życie p1=20 p2=20 | mana p1=6 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false
+    stół p1: —
+    stół p2: w1:Leafcrown Dryad (2/2 reach), w2:Soulmender (1/1)
+    ręka p1: inv-hand:Undersea Invader (5/6 flash) | ręka p2: 0 kart(y)
+    grób p1: 0 | grób p2: 0 | biblioteka p1: 20
+    BOT: cast_permanent(inv-hand)  score=73.81
+    alternatywy: cast_permanent(inv-hand)=73.81 | pass_priority=0.00 | concede=-Infinity
+[INV-02] (S) wróg atakuje 3/3, Invader wszedł w TEJ turze (tap)
+    krok=declare_blockers aktywny=p2 priorytet=p1 tura=1
+    życie p1=20 p2=20 | mana p1=0 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false
+    stół p1: inv-bf:Undersea Invader (TAP 5/6 flash)
+    stół p2: atk-3-3:Grollub (TAP 3/3)
+    ręka p1: — | ręka p2: 0 kart(y)
+    grób p1: 0 | grób p2: 0 | biblioteka p1: 20
+    BOT: block[]  score=0.00
+    alternatywy: block[]=0.00 | pass_priority=0.00 | concede=-Infinity
+[INV-02] (S) wróg atakuje 3/3, Invader nietapnięty (kontrola)
+    krok=declare_blockers aktywny=p2 priorytet=p1 tura=1
+    życie p1=20 p2=20 | mana p1=0 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false
+    stół p1: inv-bf:Undersea Invader (5/6 flash)
+    stół p2: atk-3-3:Grollub (TAP 3/3)
+    ręka p1: — | ręka p2: 0 kart(y)
+    grób p1: 0 | grób p2: 0 | biblioteka p1: 20
+    BOT: block[atk-3-3<inv-bf]  score=14.00
+    alternatywy: block[atk-3-3<inv-bf]=14.00 | block[]=0.00 | pass_priority=0.00 | concede=-Infinity
+
+--- gysahl-greens ---
+[GYS-01] (T) main1, pusty stół, ręka = sam Greens
+    krok=main1 aktywny=p1 priorytet=p1 tura=1
+    życie p1=20 p2=20 | mana p1=2 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false
+    stół p1: —
+    stół p2: —
+    ręka p1: hand-gysahl-greens:Gysahl Greens | ręka p2: 0 kart(y)
+    grób p1: 0 | grób p2: 0 | biblioteka p1: 20
+    BOT: cast_spell(hand-gysahl-greens->)  score=69.98
+    alternatywy: cast_spell(hand-gysahl-greens->)=69.98 | pass_priority=0.00 | concede=-Infinity
+[GYS-01] (T) main1, pusty stół, ręka = Greens + Shock + Outcasts (sporna mana 2)
+    krok=main1 aktywny=p1 priorytet=p1 tura=1
+    życie p1=20 p2=20 | mana p1=2 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false
+    stół p1: —
+    stół p2: —
+    ręka p1: hand-gysahl-greens:Gysahl Greens, hand-shock:Shock, hand-grizzled-outcasts:Grizzled Outcasts (4/4 transform) | ręka p2: 0 kart(y)
+    grób p1: 0 | grób p2: 0 | biblioteka p1: 20
+    BOT: cast_spell(hand-gysahl-greens->)  score=69.98
+    alternatywy: cast_spell(hand-gysahl-greens->)=69.98 | pass_priority=0.00 | cast_spell(hand-shock->p1)=-109.00 | cast_spell(hand-shock->p2)=-111.00 | concede=-Infinity
+[GYS-01] (T) main2 (po walce), ręka = sam Greens
+    krok=main2 aktywny=p1 priorytet=p1 tura=1
+    życie p1=20 p2=20 | mana p1=2 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false
+    stół p1: —
+    stół p2: —
+    ręka p1: hand-gysahl-greens:Gysahl Greens | ręka p2: 0 kart(y)
+    grób p1: 0 | grób p2: 0 | biblioteka p1: 20
+    BOT: cast_spell(hand-gysahl-greens->)  score=69.98
+    alternatywy: cast_spell(hand-gysahl-greens->)=69.98 | pass_priority=0.00 | concede=-Infinity
+[GYS-02] (K) main2, grób: Greens, ręka PUSTA, mana 7 (idle)
+    krok=main2 aktywny=p1 priorytet=p1 tura=1
+    życie p1=20 p2=20 | mana p1=7 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false
+    stół p1: —
+    stół p2: —
+    ręka p1: — | ręka p2: 0 kart(y)
+    grób p1: 1 | grób p2: 0 | biblioteka p1: 20
+    BOT: cast_flashback(k-1->)  score=69.98
+    alternatywy: cast_flashback(k-1->)=69.98 | pass_priority=0.00 | concede=-Infinity
+[GYS-02] (K) main1, grób: Greens, ręka: Outcasts (zdrowa ręka)
+    krok=main1 aktywny=p1 priorytet=p1 tura=1
+    życie p1=20 p2=20 | mana p1=7 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false
+    stół p1: —
+    stół p2: —
+    ręka p1: hand-grizzled-outcasts:Grizzled Outcasts (4/4 transform) | ręka p2: 0 kart(y)
+    grób p1: 1 | grób p2: 0 | biblioteka p1: 20
+    BOT: cast_flashback(k-2->)  score=69.98
+    alternatywy: cast_flashback(k-2->)=69.98 | cast_permanent(hand-grizzled-outcasts)=68.41 | pass_priority=0.00 | concede=-Infinity
+
+--- battle-hurda ---
+[HUR-01] (T) main1, pusty stół
+    krok=main1 aktywny=p1 priorytet=p1 tura=1
+    życie p1=20 p2=20 | mana p1=5 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false
+    stół p1: —
+    stół p2: —
+    ręka p1: hurda-hand:Battle Hurda (3/3 first_strike) | ręka p2: 0 kart(y)
+    grób p1: 0 | grób p2: 0 | biblioteka p1: 20
+    BOT: cast_permanent(hurda-hand)  score=67.05
+    alternatywy: cast_permanent(hurda-hand)=67.05 | pass_priority=0.00 | concede=-Infinity
+[HUR-01] (T) main1, mam już 4/4 i 2/2
+    krok=main1 aktywny=p1 priorytet=p1 tura=1
+    życie p1=20 p2=20 | mana p1=5 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false
+    stół p1: duzy:Grizzled Outcasts (4/4 transform), maly:Soulmender (1/1)
+    stół p2: —
+    ręka p1: hurda-hand:Battle Hurda (3/3 first_strike) | ręka p2: 0 kart(y)
+    grób p1: 0 | grób p2: 0 | biblioteka p1: 20
+    BOT: cast_permanent(hurda-hand)  score=67.05
+    alternatywy: cast_permanent(hurda-hand)=67.05 | activate_ability(maly#0)=3.00 | pass_priority=0.00 | concede=-Infinity
+[HUR-02] (S) wróg atakuje 3/3 (FS zabija, Hurda przeżywa)
+    krok=declare_blockers aktywny=p2 priorytet=p1 tura=1
+    życie p1=20 p2=20 | mana p1=0 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false
+    stół p1: hurda-bf:Battle Hurda (3/3 first_strike)
+    stół p2: atk-3-3:Grollub (TAP 3/3)
+    ręka p1: — | ręka p2: 0 kart(y)
+    grób p1: 0 | grób p2: 0 | biblioteka p1: 20
+    BOT: block[atk-3-3<hurda-bf]  score=14.00
+    alternatywy: block[atk-3-3<hurda-bf]=14.00 | block[]=0.00 | pass_priority=0.00 | concede=-Infinity
+[HUR-02] (S) wróg atakuje 4/4 (FS nie zabija — Hurda ginie)
+    krok=declare_blockers aktywny=p2 priorytet=p1 tura=1
+    życie p1=20 p2=20 | mana p1=0 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false
+    stół p1: hurda-bf:Battle Hurda (3/3 first_strike)
+    stół p2: atk-4-4:Grizzled Outcasts (TAP 4/4 transform)
+    ręka p1: — | ręka p2: 0 kart(y)
+    grób p1: 0 | grób p2: 0 | biblioteka p1: 20
+    BOT: block[]  score=0.00
+    alternatywy: block[]=0.00 | pass_priority=0.00 | block[atk-4-4<hurda-bf]=-3.00 | concede=-Infinity
+
+--- lightning-spear ---
+[SPE-01] (C) mam 4/4 i 1/1, equip przed walką
+    krok=main1 aktywny=p1 priorytet=p1 tura=1
+    życie p1=20 p2=20 | mana p1=2 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false
+    stół p1: duzy:Grizzled Outcasts (4/4 transform), maly:Soulmender (1/1), spear-bf:Lightning Spear
+    stół p2: —
+    ręka p1: — | ręka p2: 0 kart(y)
+    grób p1: 0 | grób p2: 0 | biblioteka p1: 20
+    BOT: activate_ability(spear-bf#0->duzy)  score=21.00
+    alternatywy: activate_ability(spear-bf#0->duzy)=21.00 | activate_ability(spear-bf#0->maly)=15.00 | activate_ability(maly#0)=3.00 | pass_priority=0.00 | concede=-Infinity
+[SPE-01] (C) mam tylko 1/1 (kontrola)
+    krok=main1 aktywny=p1 priorytet=p1 tura=1
+    życie p1=20 p2=20 | mana p1=2 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false
+    stół p1: maly:Soulmender (1/1), spear-bf:Lightning Spear
+    stół p2: —
+    ręka p1: — | ręka p2: 0 kart(y)
+    grób p1: 0 | grób p2: 0 | biblioteka p1: 20
+    BOT: activate_ability(spear-bf#0->maly)  score=15.00
+    alternatywy: activate_ability(spear-bf#0->maly)=15.00 | activate_ability(maly#0)=3.00 | pass_priority=0.00 | concede=-Infinity
+[SPE-02] (C) wróg ma 3/3; życie wroga 20 (kill stwora)
+    krok=main1 aktywny=p1 priorytet=p1 tura=1
+    życie p1=20 p2=20 | mana p1=3 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false
+    stół p1: spear-bf:Lightning Spear
+    stół p2: wrog-3-3:Leafcrown Dryad (2/2 reach)
+    ręka p1: — | ręka p2: 0 kart(y)
+    grób p1: 0 | grób p2: 0 | biblioteka p1: 20
+    BOT: activate_ability(spear-bf#1->wrog-3-3)  score=33.00
+    alternatywy: activate_ability(spear-bf#1->wrog-3-3)=33.00 | pass_priority=0.00 | activate_ability(spear-bf#1->p2)=-61.00 | activate_ability(spear-bf#1->p1)=-113.00 | concede=-Infinity
+[SPE-02] (C) wróg ma 3/3; życie wroga 3 (LETHAL w gracza)
+    krok=main1 aktywny=p1 priorytet=p1 tura=1
+    życie p1=20 p2=3 | mana p1=3 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false
+    stół p1: spear-bf:Lightning Spear
+    stół p2: wrog-3-3:Leafcrown Dryad (2/2 reach)
+    ręka p1: — | ręka p2: 0 kart(y)
+    grób p1: 0 | grób p2: 0 | biblioteka p1: 20
+    BOT: activate_ability(spear-bf#1->p2)  score=999.00
+    alternatywy: activate_ability(spear-bf#1->p2)=999.00 | activate_ability(spear-bf#1->wrog-3-3)=33.00 | pass_priority=0.00 | activate_ability(spear-bf#1->p1)=-113.00 | concede=-Infinity
+[SPE-02] (C) wróg ma tylko ścianę 0/4 (strzał nie zabija)
+    krok=main1 aktywny=p1 priorytet=p1 tura=1
+    życie p1=20 p2=20 | mana p1=3 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false
+    stół p1: spear-bf:Lightning Spear
+    stół p2: sciana:Mnemonic Wall (0/4 defender)
+    ręka p1: — | ręka p2: 0 kart(y)
+    grób p1: 0 | grób p2: 0 | biblioteka p1: 20
+    BOT: pass_priority  score=0.00
+    alternatywy: pass_priority=0.00 | activate_ability(spear-bf#1->p2)=-61.00 | activate_ability(spear-bf#1->sciana)=-81.00 | activate_ability(spear-bf#1->p1)=-113.00 | concede=-Infinity
+
+--- vaporkin ---
+[VAP-01] (S) wróg: dwa ground blokery 2/2 (nie zablokują)
+    krok=declare_attackers aktywny=p1 priorytet=p1 tura=1
+    życie p1=20 p2=20 | mana p1=0 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false
+    stół p1: vap-bf:Vaporkin (2/1 flying)
+    stół p2: b1:Leafcrown Dryad (2/2 reach), b2:Leafcrown Dryad (2/2 reach)
+    ręka p1: — | ręka p2: 0 kart(y)
+    grób p1: 0 | grób p2: 0 | biblioteka p1: 20
+    BOT: attack[vap-bf]  score=1.00
+    alternatywy: attack[vap-bf]=1.00 | attack[]=0.00 | pass_priority=0.00 | concede=-Infinity
+[VAP-01] (S) wróg: lotnik 2/2 (może zablokować)
+    krok=declare_attackers aktywny=p1 priorytet=p1 tura=1
+    życie p1=20 p2=20 | mana p1=0 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false
+    stół p1: vap-bf:Vaporkin (2/1 flying)
+    stół p2: lotnik:Fear of Burning Alive (4/4)
+    ręka p1: — | ręka p2: 0 kart(y)
+    grób p1: 0 | grób p2: 0 | biblioteka p1: 20
+    BOT: attack[vap-bf]  score=8.00
+    alternatywy: attack[vap-bf]=8.00 | attack[]=0.00 | pass_priority=0.00 | concede=-Infinity
+[VAP-02] (S) wróg atakuje ground 3/3 (nieblokowalne)
+    krok=declare_blockers aktywny=p2 priorytet=p1 tura=1
+    życie p1=20 p2=20 | mana p1=0 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false
+    stół p1: vap-bf:Vaporkin (2/1 flying)
+    stół p2: ground:Grollub (TAP 3/3)
+    ręka p1: — | ręka p2: 0 kart(y)
+    grób p1: 0 | grób p2: 0 | biblioteka p1: 20
+    BOT: block[]  score=0.00
+    alternatywy: block[]=0.00 | pass_priority=0.00 | concede=-Infinity
+[VAP-02] (S) wróg atakuje lotnika 2/1 (blok legalny)
+    krok=declare_blockers aktywny=p2 priorytet=p1 tura=1
+    życie p1=20 p2=20 | mana p1=0 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false
+    stół p1: vap-bf:Vaporkin (2/1 flying)
+    stół p2: flyer:Nefarious Imp (TAP 2/1 flying)
+    ręka p1: — | ręka p2: 0 kart(y)
+    grób p1: 0 | grób p2: 0 | biblioteka p1: 20
+    BOT: block[flyer<vap-bf]  score=7.00
+    alternatywy: block[flyer<vap-bf]=7.00 | block[]=0.00 | pass_priority=0.00 | concede=-Infinity
+
+--- coordinated-maneuver ---
+[CM-01] (C) 4 moje stworów + wrogie enchantmenty + wrogi 3/3
+    krok=main1 aktywny=p1 priorytet=p1 tura=1
+    życie p1=20 p2=20 | mana p1=2 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false
+    stół p1: moj-0:Soulmender (1/1), moj-1:Soulmender (1/1), moj-2:Soulmender (1/1), moj-3:Soulmender (1/1)
+    stół p2: zacz:Clawing Torment, wrog-3-3:Leafcrown Dryad (2/2 reach)
+    ręka p1: cm-hand:Coordinated Maneuver | ręka p2: 0 kart(y)
+    grób p1: 0 | grób p2: 0 | biblioteka p1: 20
+    BOT: cast_spell(cm-hand->wrog-3-3,m1)  score=84.00
+    alternatywy: cast_spell(cm-hand->wrog-3-3,m1)=84.00 | cast_spell(cm-hand->zacz,m1)=74.00 | cast_spell(cm-hand->wrog-3-3,m0)=33.00 | pass_priority=0.00 | activate_ability(moj-0#0)=-6.00
+[CM-01] (C) 1 mój stwór + wrogie enchantmenty + wrogi 3/3
+    krok=main1 aktywny=p1 priorytet=p1 tura=1
+    życie p1=20 p2=20 | mana p1=2 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false
+    stół p1: moj-0:Soulmender (1/1)
+    stół p2: zacz:Clawing Torment, wrog-3-3:Leafcrown Dryad (2/2 reach)
+    ręka p1: cm-hand:Coordinated Maneuver | ręka p2: 0 kart(y)
+    grób p1: 0 | grób p2: 0 | biblioteka p1: 20
+    BOT: cast_spell(cm-hand->wrog-3-3,m1)  score=84.00
+    alternatywy: cast_spell(cm-hand->wrog-3-3,m1)=84.00 | cast_spell(cm-hand->zacz,m1)=74.00 | pass_priority=0.00 | activate_ability(moj-0#0)=-6.00 | cast_spell(cm-hand->wrog-3-3,m0)=-81.00
+[CM-02] (S) 1 mój stwór, wróg ma 6/6 (salwa nie zabija), brak enchantmentów
+    krok=main1 aktywny=p1 priorytet=p1 tura=1
+    życie p1=20 p2=20 | mana p1=2 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false
+    stół p1: moj-0:Soulmender (1/1)
+    stół p2: duzy:Fear of Burning Alive (4/4)
+    ręka p1: cm-hand:Coordinated Maneuver | ręka p2: 0 kart(y)
+    grób p1: 0 | grób p2: 0 | biblioteka p1: 20
+    BOT: cast_spell(cm-hand->duzy,m1)  score=100.00
+    alternatywy: cast_spell(cm-hand->duzy,m1)=100.00 | pass_priority=0.00 | activate_ability(moj-0#0)=-6.00 | cast_spell(cm-hand->duzy,m0)=-81.00 | cast_spell(cm-hand->moj-0,m0)=-153.00
+
+--- malevolent-noble ---
+[NOB-01] (C) kandydaci: artefakt 1, 2/1, 4/3
+    krok=main1 aktywny=p1 priorytet=p1 tura=1
+    życie p1=20 p2=20 | mana p1=2 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false
+    stół p1: noble-bf:Malevolent Noble (2/2), kand-0:Panic Spellbomb, kand-1:Highland Game (2/1), kand-2:Grizzled Outcasts (4/4 transform)
+    stół p2: —
+    ręka p1: — | ręka p2: 0 kart(y)
+    grób p1: 0 | grób p2: 0 | biblioteka p1: 20
+    BOT: pass_priority  score=0.00
+    alternatywy: pass_priority=0.00 | activate_ability(noble-bf#0)=-2.00 | activate_ability(noble-bf#0)=-2.00 | activate_ability(noble-bf#0)=-2.00 | activate_ability(kand-0#0->noble-bf)=-18.00
+[NOB-01] (C) kandydaci: tylko 2/1 i 4/3 (bez artefaktu)
+    krok=main1 aktywny=p1 priorytet=p1 tura=1
+    życie p1=20 p2=20 | mana p1=2 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false
+    stół p1: noble-bf:Malevolent Noble (2/2), kand-0:Highland Game (2/1), kand-1:Grizzled Outcasts (4/4 transform)
+    stół p2: —
+    ręka p1: — | ręka p2: 0 kart(y)
+    grób p1: 0 | grób p2: 0 | biblioteka p1: 20
+    BOT: pass_priority  score=0.00
+    alternatywy: pass_priority=0.00 | activate_ability(noble-bf#0)=-2.00 | activate_ability(noble-bf#0)=-2.00 | concede=-Infinity
+[NOB-02] (K) fodder: artefakt 1-mana
+    krok=main1 aktywny=p1 priorytet=p1 tura=1
+    życie p1=20 p2=20 | mana p1=2 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false
+    stół p1: noble-bf:Malevolent Noble (2/2), kand-0:Panic Spellbomb
+    stół p2: —
+    ręka p1: — | ręka p2: 0 kart(y)
+    grób p1: 0 | grób p2: 0 | biblioteka p1: 20
+    BOT: pass_priority  score=0.00
+    alternatywy: pass_priority=0.00 | activate_ability(noble-bf#0)=-2.00 | activate_ability(kand-0#0->noble-bf)=-18.00 | concede=-Infinity
+[NOB-02] (K) fodder: tylko 4/3
+    krok=main1 aktywny=p1 priorytet=p1 tura=1
+    życie p1=20 p2=20 | mana p1=2 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false
+    stół p1: noble-bf:Malevolent Noble (2/2), kand-0:Grizzled Outcasts (4/4 transform)
+    stół p2: —
+    ręka p1: — | ręka p2: 0 kart(y)
+    grób p1: 0 | grób p2: 0 | biblioteka p1: 20
+    BOT: pass_priority  score=0.00
+    alternatywy: pass_priority=0.00 | activate_ability(noble-bf#0)=-2.00 | concede=-Infinity
+
+--- hired-blade ---
+[HIR-01] (T) main1 własna tura, pusty stół
+    krok=main1 aktywny=p1 priorytet=p1 tura=1
+    życie p1=20 p2=20 | mana p1=3 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false
+    stół p1: —
+    stół p2: —
+    ręka p1: blade-hand:Hired Blade (3/2 flash) | ręka p2: 0 kart(y)
+    grób p1: 0 | grób p2: 0 | biblioteka p1: 20
+    BOT: cast_permanent(blade-hand)  score=66.60
+    alternatywy: cast_permanent(blade-hand)=66.60 | pass_priority=0.00 | concede=-Infinity
+[HIR-01] (T) end step PRZECIWNIKA
+    krok=end aktywny=p2 priorytet=p1 tura=1
+    życie p1=20 p2=20 | mana p1=3 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false
+    stół p1: —
+    stół p2: —
+    ręka p1: blade-hand:Hired Blade (3/2 flash) | ręka p2: 0 kart(y)
+    grób p1: 0 | grób p2: 0 | biblioteka p1: 20
+    BOT: cast_permanent(blade-hand)  score=66.60
+    alternatywy: cast_permanent(blade-hand)=66.60 | pass_priority=0.00 | concede=-Infinity
+[HIR-01] (T) main1, wróg ma 2/2 (blokera nie ominie)
+    krok=main1 aktywny=p1 priorytet=p1 tura=1
+    życie p1=20 p2=20 | mana p1=3 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false
+    stół p1: —
+    stół p2: w1:Leafcrown Dryad (2/2 reach)
+    ręka p1: blade-hand:Hired Blade (3/2 flash) | ręka p2: 0 kart(y)
+    grób p1: 0 | grób p2: 0 | biblioteka p1: 20
+    BOT: cast_permanent(blade-hand)  score=70.20
+    alternatywy: cast_permanent(blade-hand)=70.20 | pass_priority=0.00 | concede=-Infinity
+
+--- mister-gutsy ---
+[GUT-01] (T) Gutsy na stole, Spear w ręce, mana 2R
+    krok=main1 aktywny=p1 priorytet=p1 tura=1
+    życie p1=20 p2=20 | mana p1=4 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false
+    stół p1: gutsy-bf:Mister Gutsy (1/1)
+    stół p2: —
+    ręka p1: spear-hand:Lightning Spear | ręka p2: 0 kart(y)
+    grób p1: 0 | grób p2: 0 | biblioteka p1: 20
+    BOT: cast_permanent(spear-hand)  score=55.80
+    alternatywy: cast_permanent(spear-hand)=55.80 | pass_priority=0.00 | concede=-Infinity
+[GUT-01] (T) BEZ Gutsiego, Spear w ręce (kontrola zwykłego rzutu)
+    krok=main1 aktywny=p1 priorytet=p1 tura=1
+    życie p1=20 p2=20 | mana p1=4 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false
+    stół p1: —
+    stół p2: —
+    ręka p1: spear-hand:Lightning Spear | ręka p2: 0 kart(y)
+    grób p1: 0 | grób p2: 0 | biblioteka p1: 20
+    BOT: pass_priority  score=0.00
+    alternatywy: pass_priority=0.00 | cast_permanent(spear-hand)=-7.20 | concede=-Infinity
+
+--- token_junk ---
+[GUT-02] (K) main2, ręka PUSTA (impulse = jedyny ruch)
+    krok=main2 aktywny=p1 priorytet=p1 tura=1
+    życie p1=20 p2=20 | mana p1=2 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false
+    stół p1: junk-bf:Junk
+    stół p2: —
+    ręka p1: — | ręka p2: 0 kart(y)
+    grób p1: 0 | grób p2: 0 | biblioteka p1: 20
+    BOT: activate_ability(junk-bf#0)  score=2.00
+    alternatywy: activate_ability(junk-bf#0)=2.00 | pass_priority=0.00 | concede=-Infinity
+[GUT-02] (K) main2, ręka: Outcasts 4/4 za 5 (impulse może przynieść 5+ many — zagrywalny land)
+    krok=main2 aktywny=p1 priorytet=p1 tura=1
+    życie p1=20 p2=20 | mana p1=2 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false
+    stół p1: junk-bf:Junk
+    stół p2: —
+    ręka p1: hand-grizzled-outcasts:Grizzled Outcasts (4/4 transform) | ręka p2: 0 kart(y)
+    grób p1: 0 | grób p2: 0 | biblioteka p1: 20
+    BOT: activate_ability(junk-bf#0)  score=2.00
+    alternatywy: activate_ability(junk-bf#0)=2.00 | pass_priority=0.00 | concede=-Infinity
+
+--- kozileks-translator ---
+[TRA-01] (K) życie 20, ręka: Outcasts (5) — {C} dopełnia
+    krok=main1 aktywny=p1 priorytet=p1 tura=1
+    życie p1=20 p2=20 | mana p1=4 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false
+    stół p1: tra-bf:Kozilek's Translator (3/5)
+    stół p2: —
+    ręka p1: hand-grizzled-outcasts:Grizzled Outcasts (4/4 transform) | ręka p2: 0 kart(y)
+    grób p1: 0 | grób p2: 0 | biblioteka p1: 20
+    BOT: activate_ability(tra-bf#0)  score=4.00
+    alternatywy: activate_ability(tra-bf#0)=4.00 | pass_priority=0.00 | concede=-Infinity
+[TRA-01] (K) życie 20, ręka PUSTA (mana-marnotrawstwo)
+    krok=main1 aktywny=p1 priorytet=p1 tura=1
+    życie p1=20 p2=20 | mana p1=0 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false
+    stół p1: tra-bf:Kozilek's Translator (3/5)
+    stół p2: —
+    ręka p1: — | ręka p2: 0 kart(y)
+    grób p1: 0 | grób p2: 0 | biblioteka p1: 20
+    BOT: pass_priority  score=0.00
+    alternatywy: pass_priority=0.00 | activate_ability(tra-bf#0)=-5.00 | concede=-Infinity
+[TRA-01] (K) życie 3, ręka: Outcasts (koszt życia krytyczny)
+    krok=main1 aktywny=p1 priorytet=p1 tura=1
+    życie p1=3 p2=20 | mana p1=4 p2=0 | rad p1=0 p2=0 | attackedThisTurn p1=false p2=false
+    stół p1: tra-bf:Kozilek's Translator (3/5)
+    stół p2: —
+    ręka p1: hand-grizzled-outcasts:Grizzled Outcasts (4/4 transform) | ręka p2: 0 kart(y)
+    grób p1: 0 | grób p2: 0 | biblioteka p1: 20
+    BOT: pass_priority  score=0.00
+    alternatywy: pass_priority=0.00 | activate_ability(tra-bf#0)=-74.00 | concede=-Infinity
+
+=== scenariuszy: 40 (kart: 11) ===
