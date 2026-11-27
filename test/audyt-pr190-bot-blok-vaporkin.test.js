@@ -72,10 +72,10 @@ test('Dwa ataki naziemne: Vaporkin nie jest drugim slotem blokowania obok ścian
   assert.ok(measure('highland-game') < 2, 'drugi zwykły bloker może zatrzymać drugiego atakującego');
 });
 
-test('Dopasowanie bloków: ściana musi ustąpić naziemnemu, a Vaporkin lotnikowi', () => {
+test('Dopasowanie bloków: Dryad z reach musi ustąpić naziemnemu, a Vaporkin lotnikowi', () => {
   for (const reverse of [false, true]) {
     const blockers = [
-      { id: 'wall', karta: 'mnemonic-wall', gracz: 'p2' },
+      { id: 'wall', karta: 'leafcrown-dryad', gracz: 'p2' },
       { id: 'vap', karta: 'vaporkin', gracz: 'p2' },
     ];
     if (reverse) blockers.reverse();
@@ -84,7 +84,25 @@ test('Dopasowanie bloków: ściana musi ustąpić naziemnemu, a Vaporkin lotniko
       { id: 'g', karta: 'soulmender', gracz: 'p1' },
       ...blockers,
     ] }));
-    assert.equal(m.opcje.find(o => o.cmd === 'attack[f,g]')?.score, -12,
+    assert.equal(m.opcje.find(o => o.cmd === 'attack[f,g]')?.score, -9,
       'oba ataki mają blokera niezależnie od kolejności na stole');
   }
+});
+
+test('Dwa lotniki: naziemny Soulmender nie zajmuje slotu obok Vaporkina', () => {
+  function measure(withGround) {
+    const s = stan({ krok: 'declare_attackers', pole: [
+      { id: 'a1', karta: 'vaporkin', gracz: 'p1' },
+      { id: 'a2', karta: 'dementia-bat', gracz: 'p1' },
+      { id: 'vap', karta: 'vaporkin', gracz: 'p2' },
+      ...(withGround ? [{ id: 'ground', karta: 'soulmender', gracz: 'p2' }] : []),
+    ] });
+    const m = decyzja(s);
+    declareAttackers(s, 'p1', ['a1', 'a2']);
+    assert.equal(blockerDeclarationViolation(s, 'p2', { a1: ['vap'] }), null);
+    if (withGround) assert.notEqual(blockerDeclarationViolation(s, 'p2', { a2: ['ground'] }), null);
+    return m.opcje.find(o => o.cmd === 'attack[a1,a2]')?.score;
+  }
+  assert.equal(measure(false), 6);
+  assert.equal(measure(true), 6, 'drugi lotnik przechodzi obok naziemnego blokera bez reach');
 });

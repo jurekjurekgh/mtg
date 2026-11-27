@@ -79,11 +79,22 @@ function blockerAllowsAttackerKeywords(blocker, attacker) {
   return groups.every((group) => group.some((keyword) => (attacker?.keywords ?? []).includes(keyword)));
 }
 
+// Sprawdzenie pary bez menace: menace dotyczy liczby blokerów łącznie,
+// a pojedynczego kandydata nie wolno z tego powodu odrzucać w dopasowaniu.
+function blockerFitsAttackEstimate(attacker, blocker) {
+  const keywords = attacker?.keywords ?? [];
+  const blockKeywords = blocker?.keywords ?? [];
+  if (keywords.includes('flying') && !blockKeywords.includes('flying') && !blockKeywords.includes('reach')) return false;
+  if (!blockerAllowsAttackerKeywords(blocker, attacker)) return false;
+  if (attacker?.cantBeBlockedByPower != null && (blocker?.power ?? 0) <= attacker.cantBeBlockedByPower) return false;
+  const banned = Array.isArray(attacker?.cantBeBlockedByTypes) ? attacker.cantBeBlockedByTypes : [];
+  return !banned.some((type) => (blocker?.types ?? []).includes(type));
+}
+
 export function attackerCanBeBlocked(attacker, blockers) {
   if (!attacker) return false;
   if (attacker.cantBeBlocked === true) return false;
   const keywords = attacker.keywords ?? [];
-  const flying = keywords.includes('flying');
   // Audyt Batch53/C (Rust-Shield Rampager): ewazja mocowa („can't be blocked
   // by creatures with power N or less") — blokerzy o mocy ≤ progu nie liczą
   // się do obrony. Próg z PlayerView (efektywna statyka, ADR 0017).
@@ -102,7 +113,6 @@ export function attackerCanBeBlocked(attacker, blockers) {
   // test/audyt-pr135-2026-09-24-moc-efektywna.test.js.
   // Próg dotyczy MOCY, nie obrażeń bojowych, więc celowo NIE `combatPower`
   // (ten zwraca wytrzymałość przy `combatDamageByToughness`).
-  const powerCap = attacker.cantBeBlockedByPower;
   // PMSSB-79 (batch 70, Fen Hauler): „can't be blocked by [typ] creatures” —
   // ten predykat jest JEDNYM źródłem odpowiedzi „czy tego atakującego da się
   // w ogóle zablokować” dla wyceny deklaracji ataku (`rankedByThreat`),
@@ -110,15 +120,7 @@ export function attackerCanBeBlocked(attacker, blockers) {
   // prywatna kopia w `canIndividuallyBlockCrackback` (L41 — dwie odpowiedzi na
   // to samo pytanie), więc bot wyceniał Fen Haulera jak zwykłe 5/5 nawet
   // naprzeciw samych artefaktów-stworów.
-  const bannedTypes = Array.isArray(attacker.cantBeBlockedByTypes) ? attacker.cantBeBlockedByTypes : [];
-  const able = (blockers ?? []).filter((b) => {
-    const kw = b?.keywords ?? [];
-    if (flying && !kw.includes('flying') && !kw.includes('reach')) return false;
-    if (!blockerAllowsAttackerKeywords(b, attacker)) return false;
-    if (powerCap != null && (b?.power ?? 0) <= powerCap) return false;
-    if (bannedTypes.length > 0 && (b?.types ?? []).some((type) => bannedTypes.includes(type))) return false;
-    return true;
-  });
+  const able = (blockers ?? []).filter((b) => blockerFitsAttackEstimate(attacker, b));
   if (keywords.includes('menace') && able.length < 2) return false;
   return able.length > 0;
 }
@@ -18195,14 +18197,15 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // przydzielonego blokera zachowuje priorytet kolejności zagrożeń.
         // Pozostałe uproszczenia modelu (m.in. menace) nie zmieniają się.
         const blokowalne = new Set();
-        if (blockers.every((blocker) => !blocker.canBlockOnlyKeywords)) {
+        const hasBlockerRestriction = blockers.some((blocker) => blocker.canBlockOnlyKeywords || blocker.canBlockOnlyKeywordGroups);
+        if (!hasBlockerRestriction) {
           for (const id of rankedByThreat.slice(0, blockers.length)) blokowalne.add(id);
         } else {
           const assigned = new Map();
           const assign = (id, seen) => {
             const attacker = projectedAttackerOf(id);
             for (const blocker of blockers) {
-              if (seen.has(blocker.id) || !blockerAllowsAttackerKeywords(blocker, attacker)) continue;
+              if (seen.has(blocker.id) || !blockerFitsAttackEstimate(attacker, blocker)) continue;
               seen.add(blocker.id);
               const previous = assigned.get(blocker.id);
               if (previous == null || assign(previous, seen)) {
@@ -18226,7 +18229,9 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           // nie może blokować (np. Vaporkin naprzeciw naziemnego stwora).
           // Nie dodajemy jego mocy ani wytrzymałości do symulowanej walki.
           const effectiveBlockers = blokowalne.has(id)
-            ? blockers.filter((blocker) => blockerAllowsAttackerKeywords(blocker, object)) : [];
+            ? blockers.filter((blocker) => hasBlockerRestriction
+              ? blockerFitsAttackEstimate(object, blocker)
+              : blockerAllowsAttackerKeywords(blocker, object)) : [];
           const candidates = effectiveBlockers.map(blocker => afterBlockTriggers(view, blocker, [object]));
           const strongestBlockerPower = candidates.reduce((max, o) => Math.max(max, combatPower(o)), 0);
           const strongestBlockerToughness = candidates.reduce((max, o) => Math.max(max, o.toughness ?? 0), 0);
