@@ -18198,7 +18198,11 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           // Używamy WŁASNEGO braku blokera (`[]`), a nie zmiennej `blockers`:
           // pojemność blokowania jest już rozliczona przez `blokowalne`, więc
           // nie wolno liczyć tych samych blokerów drugi raz.
-          const effectiveBlockers = blokowalne.has(id) ? blockers : [];
+          // Obok legalnego blokera może stać drugi, który tego atakującego
+          // nie może blokować (np. Vaporkin naprzeciw naziemnego stwora).
+          // Nie dodajemy jego mocy ani wytrzymałości do symulowanej walki.
+          const effectiveBlockers = blokowalne.has(id)
+            ? blockers.filter((blocker) => blockerAllowsAttackerKeywords(blocker, object)) : [];
           const candidates = effectiveBlockers.map(blocker => afterBlockTriggers(view, blocker, [object]));
           const strongestBlockerPower = candidates.reduce((max, o) => Math.max(max, combatPower(o)), 0);
           const strongestBlockerToughness = candidates.reduce((max, o) => Math.max(max, o.toughness ?? 0), 0);

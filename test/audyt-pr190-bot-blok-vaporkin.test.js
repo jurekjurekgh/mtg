@@ -41,3 +41,17 @@ test('Decyzja ataku: Soulmender atakuje, gdy jedyny bloker to Vaporkin', () => {
   assert.ok(attack && wait && attack.score > wait.score, `ataki: ${JSON.stringify(m.opcje)}`);
   assert.deepEqual(m.cmd.attackerIds, ['attacker']);
 });
+
+test('Mieszana obrona: Vaporkin nie dokłada obrażeń do bloku naziemnego Soulmendera przez ścianę', () => {
+  const state = stan({ krok: 'declare_attackers', pole: [
+    { id: 'attacker', karta: 'soulmender', gracz: 'p1' },
+    { id: 'wall', karta: 'mnemonic-wall', gracz: 'p2' },
+    { id: 'vap', karta: 'vaporkin', gracz: 'p2' },
+  ] });
+  const m = decyzja(state);
+  declareAttackers(state, 'p1', ['attacker']);
+  assert.equal(blockerDeclarationViolation(state, 'p2', { attacker: ['wall'] }), null);
+  assert.notEqual(blockerDeclarationViolation(state, 'p2', { attacker: ['vap'] }), null);
+  const attack = m.opcje.find(o => o.cmd === 'attack[attacker]');
+  assert.equal(attack?.score, -2, '0/4 zatrzymuje bez zabicia 1/1; Vaporkin nie może pomóc w bloku');
+});
