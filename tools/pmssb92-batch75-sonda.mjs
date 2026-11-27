@@ -556,7 +556,7 @@ const SCENARIUSZE = [
     pro: 'Junk bez innych użyć (nie atakuje, nie blokuje) to darmowy impulse: aktywacja nic nie kosztuje poza tokenem. Pro aktywuje w main2, gdy ręka jest słaba albo ma co dograć; gdy ręka pełna mocnych kart, token może poczekać (sac = strata „przyszłej" aktywacji).',
     warianty: [
       { opis: 'main2, ręka PUSTA (impulse = jedyny ruch)', krok: 'main2', reka: [] },
-      { opis: 'main2, ręka: Outcasts 4/4 za 5 (impulse może przynieść 5+ many — zagrywalny land)', krok: 'main2', reka: ['grizzled-outcasts'] },
+      { opis: 'main2, ręka: Outcasts 4/4 za 5 (impulse daje zagrywalny land, ale 2 + 1 to za mało na Outcasts)', krok: 'main2', reka: ['grizzled-outcasts'] },
     ],
     budowa: (w) => {
       const state = stan({
@@ -571,7 +571,7 @@ const SCENARIUSZE = [
         id: 'junk-bf', instanceId: 'instance-junk-bf', cardId: 'token_junk',
         controllerId: 'p1', ownerId: 'p1', zone: 'battlefield',
         name: 'Junk', kind: 'artifact', types: ['Artifact', 'Token'], subtypes: ['Junk'],
-        colors: [], manaCost: 0, tapped: false, summoningSickness: false,
+        colors: [], manaCost: 0,
         abilities: REGISTRY.get('token_junk').abilities,
       });
       return state;
@@ -586,7 +586,7 @@ const SCENARIUSZE = [
   {
     id: 'TRA-01', karta: 'kozileks-translator', wymiar: 'K',
     tytul: '„Pay 1 life: Add {C}": ręka z drogi czarem (potrzeba many) vs PUSTA ręka vs życie 3',
-    pro: 'Rozgrywaj tylko wtedy, gdy mana PRZEWIDZIANA na coś się przyda: ręka z 6-mana czarem = tak; pusta ręka = mana wyparuje (nie rób); życie 3 = koszt życia pod presją to ryzyko śmierci — trzymaj, chyba że mana kończy partię.',
+    pro: 'Rozgrywaj tylko wtedy, gdy mana PRZEWIDZIANA na coś się przyda: ręka z 5-mana czarem przy 4 manach = tak; pusta ręka = mana wyparuje (nie rób); życie 3 = koszt życia pod presją to ryzyko śmierci — trzymaj, chyba że mana kończy partię.',
     warianty: [
       { opis: 'życie 20, ręka: Outcasts (5) — {C} dopełnia', zycie: 20, reka: ['grizzled-outcasts'], mana: 4 },
       { opis: 'życie 20, ręka PUSTA (mana-marnotrawstwo)', zycie: 20, reka: [], mana: 0 },

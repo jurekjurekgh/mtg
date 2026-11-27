@@ -22,6 +22,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { SCENARIUSZE, stan, decyzja } from '../tools/pmssb92-batch75-sonda.mjs';
+import { execute, playerView } from '../src/engine/game-state.js';
 import { declareAttackers, blockerDeclarationViolation } from '../src/engine/combat.js';
 
 const scenariusz = (id) => {
@@ -188,8 +189,31 @@ test('GUT-02 (K, token Junk): impulse aktywacja = jedyny ruch (+2) — też przy
   }
 });
 
+// GUT-02: dodatkowa kontrola stanu, nie wnioskujemy z samej etykiety.
+test('GUT-02: ląd z Junk jest dostępny, lecz nie dopłaca Outcasts z dwóch many', () => {
+  const [, w] = warianty('GUT-02');
+  const state = w.scen.budowa(w.w);
+  const commands = (p) => playerView(state, p).legalCommands;
+  const junk = commands('p1').find(c => c.type === 'activate_ability' && c.objectId === 'junk-bf');
+  assert.ok(junk);
+  assert.equal(execute(state, junk).ok, true);
+  for (let i = 0; i < 2; i += 1) {
+    const p = state.turn.priorityPlayerId;
+    const pass = commands(p).find(c => c.type === 'pass_priority');
+    assert.ok(pass);
+    assert.equal(execute(state, pass).ok, true);
+  }
+  const exiled = state.zones.exile.find(id => state.objects.get(id)?.cardId === 'basic-forest');
+  assert.ok(exiled, 'wierzch biblioteki to Forest');
+  const land = commands('p1').find(c => c.type === 'play_land' && c.objectId === exiled);
+  assert.ok(land, 'Forest z wygnania można zagrać');
+  assert.equal(execute(state, land).ok, true);
+  assert.ok(!commands('p1').some(c => c.type === 'cast_permanent' && c.objectId === 'hand-grizzled-outcasts'),
+    'dwie many i jeden zagrany ląd nie wystarczają na koszt pięć');
+});
+
 // ---------------------------------------------------------------------------
-// 675FIN Gysahl Greens (GYS-02, F-92/1 rozstrzygnięty): oferta flashback
+// 667FIN Gysahl Greens (GYS-02, F-92/1 rozstrzygnięty): oferta flashback
 // istnieje; idle 7 many = jedyny ruch; spójność ręka/flashback (kotwica 58/C32).
 // ---------------------------------------------------------------------------
 
