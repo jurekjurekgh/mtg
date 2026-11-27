@@ -56,8 +56,10 @@ test('A33: rzeczywisty dodatni licznik z Fleeting Flight nadal zwiększa wartoś
  act(s,view(s).legalCommands.find(c=>c.type==='cast_spell'&&c.objectId==='flight'&&c.targets?.includes('enemy0')));pass(s);pass(s);
  assert.equal(s.objects.get('enemy0').counters?.['+1/+1'],1);
  const {chosen,trace}=botChoice(s);assert.ok(chosen.targets.includes('enemy0'),JSON.stringify(chosen));
- const single=trace.options.find(o=>o.cmd==='cast_spell(scorn->enemy0)');
- const baseline=trace.options.find(o=>o.cmd==='cast_spell(scorn->enemy1)');
+ // M431-suffix: pełna etykieta LUB etykieta z sufiksem trybu `,m<N>`.
+ const opt=(t,f)=>t.options.find(o=>o.cmd===f||o.cmd.startsWith(f.slice(0,-1)+',m'));
+ const single=opt(trace,'cast_spell(scorn->enemy0)');
+ const baseline=opt(trace,'cast_spell(scorn->enemy1)');
  assert.ok(single.score-baseline.score>=10,'licznik daje wycenie dodaną wartość');
 });
 
@@ -79,8 +81,10 @@ test('A33: finality z realnej Zoraline nie jest inwestycją przeciwnika wartą p
  act(s,target?.targetIds?{...target,targetId:'dead'}:target);pass(s);pass(s);
  const returned=[...s.objects.values()].find(o=>o.instanceId==='i-dead'&&o.zone==='battlefield');assert.equal(returned?.counters?.finality,1);
  s.turn=jumpToStep(s.turn,'main','p1');s.turn.activePlayerId=s.turn.priorityPlayerId='p1';
- const {trace}=botChoice(s);const finality=trace.options.find(o=>o.cmd===`cast_spell(scorn->${returned.id})`);
- const plain=trace.options.find(o=>o.cmd==='cast_spell(scorn->enemy0)');assert.ok(finality&&plain);
+ const {trace}=botChoice(s);
+ const opt=(t,f)=>t.options.find(o=>o.cmd===f||o.cmd.startsWith(f.slice(0,-1)+',m'));
+ const finality=opt(trace,`cast_spell(scorn->${returned.id})`);
+ const plain=opt(trace,'cast_spell(scorn->enemy0)');assert.ok(finality&&plain);
  assert.ok(finality.score<=plain.score,`finality ${finality.score}, bez licznika ${plain.score}`);
 });
 
@@ -99,6 +103,7 @@ test('A33: własna aura przeciwnika Curiosity podnosi wartość jego rzeczywiste
  assert.ok([...s.objects.values()].some(o=>o.cardId==='curiosity'&&o.zone==='battlefield'&&o.attachedTo==='enemy0'&&o.controllerId==='p2'));
  s.turn=jumpToStep(s.turn,'main','p1');s.turn.activePlayerId=s.turn.priorityPlayerId='p1';
  const {chosen,trace}=botChoice(s);assert.ok(chosen.targets.includes('enemy0'));
- const buff=trace.options.find(o=>o.cmd==='cast_spell(scorn->enemy0)');const plain=trace.options.find(o=>o.cmd==='cast_spell(scorn->enemy1)');
+ const opt=(t,f)=>t.options.find(o=>o.cmd===f||o.cmd.startsWith(f.slice(0,-1)+',m'));
+ const buff=opt(trace,'cast_spell(scorn->enemy0)');const plain=opt(trace,'cast_spell(scorn->enemy1)');
  assert.ok(buff.score>plain.score,`aura przeciwnika: ${buff.score} vs ${plain.score}`);
 });

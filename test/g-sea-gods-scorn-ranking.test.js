@@ -75,7 +75,7 @@ function targetScores(state) {
   const entry = trace[trace.length - 1];
   const scores = new Map();
   for (const option of entry.options) {
-    const match = /^cast_spell\(scorn->([^+]+)\)$/.exec(option.cmd);
+    const match = /^cast_spell\(scorn->([^+,]+)(?:,m\d+)?\)$/.exec(option.cmd);
     if (match) scores.set(match[1], option.score);
   }
   return { chosen, targets: chosen.targets ?? [], scores, view };

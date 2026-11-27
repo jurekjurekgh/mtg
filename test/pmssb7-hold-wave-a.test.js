@@ -26,7 +26,14 @@ const decide = (s) => {
   const ch = b.chooseCommand(v);
   return { ch, opts: b.trace().at(-1).options };
 };
-const scoreOf = (opts, frag) => opts.find((o) => o.cmd.includes(frag))?.score;
+// M431-suffix: pełna etykieta LUB etykieta z sufiksem trybu `,m<N>`;
+// fragment bez „)" (np. „cast_spell(fl") = includes jak przed sufiksem.
+const scoreOf = (opts, frag) => {
+  const bezNawiasu = frag.endsWith(')') ? frag.slice(0, -1) : null;
+  return opts.find((o) => o.cmd === frag
+    || (bezNawiasu != null && o.cmd.startsWith(bezNawiasu + ',m'))
+    || (bezNawiasu == null && o.cmd.includes(frag)))?.score;
+};
 
 describe('PMSSB-7 Wave-A: hold-closure', () => {
   it('F-H1: divest-self+2friends = -5 (flip z +3, trzyma)', () => {

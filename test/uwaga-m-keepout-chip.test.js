@@ -61,28 +61,34 @@ function decide(state) {
   const bot = createHeuristicBot({ seed: 9 });
   const chosen = bot.chooseCommand(playerView(state, 'p2'));
   const opts = bot.trace().at(-1).options.filter((o) => o.cmd.includes('cast_spell(ko'));
-  return { chosen, opts, scoreOf: (t) => opts.find((o) => o.cmd === `cast_spell(ko->${t})`)?.score };
+  // M431-suffix: pełna etykieta LUB etykieta z sufiksem trybu `,m<N>`.
+  const scoreOf = (frag) => {
+    const bezNawiasu = frag.endsWith(')') ? frag.slice(0, -1) : null;
+    return opts.find((o) => o.cmd === frag
+      || (bezNawiasu != null && o.cmd.startsWith(bezNawiasu + ',m')))?.score;
+  };
+  return { chosen, opts, scoreOf };
 }
 
 test('M: bez blokerów bot TRZYMA Keep Out (chip 4 w 4/5 nic nie daje)', () => {
   const { chosen, scoreOf } = decide(build({ attacker: [4, 5] }));
   // isDamageOnly: start −1; chip bez możliwości dobicia = 0 → −1 poniżej passu.
-  assert.equal(scoreOf('big'), -1);
+  assert.equal(scoreOf('cast_spell(ko->big)'), -1);
   assert.notEqual(chosen.type, 'cast_spell', `bot ma pasować, wybrał: ${JSON.stringify(chosen)}`);
 });
 
 test('M anti-over-fix: z blokerem 1/1 chip 4 + blok 1 = kill 4/5 — bot rzuca', () => {
   const { chosen, scoreOf } = decide(build({ attacker: [4, 5], blocker: [1, 1] }));
   // −1 + lethalEnemyCreatureValue(4/5): 22 + 2×9 + 2×5(TMC) = 50 → 49.
-  assert.equal(scoreOf('big'), 49);
+  assert.equal(scoreOf('cast_spell(ko->big)'), 49);
   assert.equal(chosen.type, 'cast_spell');
   assert.deepEqual(chosen.targets, ['big']);
 });
 
 test('M: wróg ma enchantment — bot wybiera tryb „destroy”, nie chip', () => {
   const { chosen, scoreOf } = decide(build({ attacker: [4, 5], foeEnchant: true }));
-  assert.equal(scoreOf('enc'), 76);
-  assert.equal(scoreOf('big'), -1);
+  assert.equal(scoreOf('cast_spell(ko->enc)'), 76);
+  assert.equal(scoreOf('cast_spell(ko->big)'), -1);
   assert.equal(chosen.type, 'cast_spell');
   assert.deepEqual(chosen.targets, ['enc']);
 });
@@ -90,7 +96,7 @@ test('M: wróg ma enchantment — bot wybiera tryb „destroy”, nie chip', () 
 test('M: lethal (4 dmg w 4/4) — bot rzuca czysto-ofensywny czar mimo startu −1', () => {
   const { chosen, scoreOf } = decide(build({ attacker: [4, 4] }));
   // −1 + lethalEnemyCreatureValue(4/4 MV5): 22 + 2×8 + 2×5 = 48 → 47.
-  assert.equal(scoreOf('big'), 47);
+  assert.equal(scoreOf('cast_spell(ko->big)'), 47);
   assert.equal(chosen.type, 'cast_spell');
   assert.deepEqual(chosen.targets, ['big']);
 });
@@ -113,7 +119,7 @@ test('M kontrola: czysto-ofensywny czar w TWARZ (Shock, 2/20 życia) — bot TRZ
   const bot = createHeuristicBot({ seed: 9 });
   const chosen = bot.chooseCommand(playerView(state, 'p2'));
   const opts = bot.trace().at(-1).options.filter((o) => o.cmd.includes('cast_spell(sh'));
-  const face = opts.find((o) => o.cmd === 'cast_spell(sh->p1)');
+  const face = opts.find((o) => o.cmd === 'cast_spell(sh->p1)' || o.cmd.startsWith('cast_spell(sh->p1,m'));
   assert.equal(face?.score, -111, '9 (dawna wartość twarzy) − 120 kary trzymania D');
   assert.notEqual(chosen.type, 'cast_spell');
 });
@@ -136,6 +142,6 @@ test('M kontrola: chip poza walką — zakaz bez zmian (Keep Out w main vs 4/5)'
   const chosen = bot.chooseCommand(playerView(state, 'p2'));
   const opts = bot.trace().at(-1).options.filter((o) => o.cmd.includes('cast_spell(ko'));
   // −1 (isDamageOnly) − 80 (chip poza walką) = −81 — trzymaj.
-  assert.equal(opts.find((o) => o.cmd === 'cast_spell(ko->big)')?.score, -81);
+  assert.equal(opts.find((o) => o.cmd === 'cast_spell(ko->big)' || o.cmd.startsWith('cast_spell(ko->big,m'))?.score, -81);
   assert.notEqual(chosen.type, 'cast_spell');
 });

@@ -17,14 +17,17 @@ function find(s,id){return [...s.objects.values()].find(o=>o.instanceId===`i-${i
 function game(){const s=createGameState({seed:17770,players:[{id:'p1'},{id:'p2'}]});s.turn=jumpToStep(s.turn,'main1','p2');s.turn.activePlayerId=s.turn.priorityPlayerId='p2';put(s,'host','highland-game','battlefield','p2');return s;}
 function switchToScorn(s){s.turn=jumpToStep(s.turn,'main1','p1');s.turn.activePlayerId=s.turn.priorityPlayerId='p1';put(s,'scorn','sea-gods-scorn');addMana(s,'p1',6,{colors:['U']});}
 function bot(s,params){const b=createHeuristicBot({seed:7,randomness:0,lookahead:0,registry:reg,...(params?{params}:{})});const c=b.chooseCommand(view(s));return {c,rows:b.trace().at(-1).options};}
-function score(rows,target){return rows.find(o=>o.cmd===`cast_spell(scorn->${target})`)?.score;}
+// M431-suffix: pełna etykieta LUB etykieta z sufiksem trybu `,m<N>`.
+function score(rows,target){return rows.find(o=>o.cmd===`cast_spell(scorn->${target})`
+  ||o.cmd.startsWith(`cast_spell(scorn->${target},m`))?.score;}
 function cast(s,c){act(s,c);until(s,()=>s.zones.stack.length===0);}
 
 test('A70: bot odbija hosta z Curiosity i dwóch innych, nie marnuje celu na aurę',()=>{
  const s=game();put(s,'aura','curiosity','hand','p2');addMana(s,'p2',1,{colors:['U']});cast(s,view(s).legalCommands.find(c=>c.type==='cast_permanent'&&c.objectId==='aura'&&c.targets?.includes('host')));
  const aura=find(s,'aura');for(let i=1;i<=3;i++)put(s,`foe${i}`,'highland-game','battlefield','p2');switchToScorn(s);
  const {c,rows}=bot(s);assert.equal(c.objectId,'scorn');assert.ok(c.targets.includes('host'));assert.ok(!c.targets.includes(aura.id));assert.equal(c.targets.length,3);
- const variant=rows.find(o=>o.cmd.includes(`host+${aura.id}+foe1`));assert.ok(variant);assert.ok(variant.score<rows.find(o=>o.cmd===`cast_spell(scorn->${c.targets.join('+')})`).score);
+ const variant=rows.find(o=>o.cmd.includes(`host+${aura.id}+foe1`));assert.ok(variant);assert.ok(variant.score<rows.find(o=>o.cmd===`cast_spell(scorn->${c.targets.join('+')})`
+  ||o.cmd.startsWith(`cast_spell(scorn->${c.targets.join('+')},m`)).score);
  cast(s,c);assert.equal(find(s,'host').zone,'hand');assert.equal(find(s,'aura').zone,'graveyard');assert.equal(['foe1','foe2','foe3'].filter(id=>find(s,id).zone==='hand').length,2);
 });
 

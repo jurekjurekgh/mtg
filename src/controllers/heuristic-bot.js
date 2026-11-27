@@ -15088,7 +15088,18 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
                   // czar bez obrażeń.
                   : effect.amount === 'lands_you_control'
                     ? landsControlledInView(view, view.playerId)
-                    : Number.isInteger(effect.amount) ? effect.amount : 0;
+                    // PMSSB-92/F-92-2 (Batch 75, Coordinated Maneuver):
+                    // „damage equal to the number of creatures you control"
+                    // — kwota z tego samego lustrzanego odczytu co silnik
+                    // (effects.js `resolveDamageAmount` → `creaturesControlledBy`;
+                    // L41: jedna reguła, dwie strony). Wcześniej string wpadał
+                    // w `: 0` — wycena trybu salwy nie reagowała na liczbę
+                    // własnych stworów (pomiar PRZED: 84,00 stałe niezależnie
+                    // od 0/1/2/4/6 stworów), więc bot nie widział przewagi
+                    // salwy nad destroy przy pełnym stole.
+                    : effect.amount === 'creatures_you_control'
+                      ? creaturesControlledInView(view, view.playerId)
+                      : Number.isInteger(effect.amount) ? effect.amount : 0;
             // Batch60 (Addendum, CR 207.2c — lustro migawki castSpell,
             // spells.js:871): rzut we WŁASNEJ fazie głównej (stan stosu bez
             // znaczenia) podbija obrażenia do amountIfAddendum. Bez tego bot
@@ -21037,7 +21048,13 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     // czego parować. Suffix tylko gdy komenda niesie X (piny bez {X} bez zmian).
     if (cmd.type === 'cast_spell' || cmd.type === 'cast_cleave' || cmd.type === 'cast_permanent' || cmd.type === 'cast_adventure' || cmd.type === 'cast_adventure_creature') {
       const wariantX = cmd.xValue != null ? `,X=${cmd.xValue}` : '';
-      return `${cmd.type}(${cmd.objectId}${cmd.targets ? '->' + cmd.targets.join('+') : ''}${wariantX})`;
+      // M431 (L34/L40, ta sama lekcja co resolve_scry/warianty X): warianty
+      // modalnego czaru („Choose one", CM tryby A/B) różnią się `modeIndex`,
+      // a ślad pokazywał DWA identyczne `cast_spell(id->cel)` — audyt remisów
+      // i piny wycen parowały po indeksie sortowania. Sufiks trybu jest
+      // jednoznaczny i nie dotyka czarów niemodalnych.
+      const wariantTrybu = cmd.modeIndex != null ? `,m${cmd.modeIndex}` : '';
+      return `${cmd.type}(${cmd.objectId}${cmd.targets ? '->' + cmd.targets.join('+') : ''}${wariantX}${wariantTrybu})`;
     }
     // M195/B: aktywacja zdolności bez ŹRÓDŁA i CELU była w śladzie nieczytelna
     // („activate_ability" × N) — nie dało się odróżnić buffu sojusznika od

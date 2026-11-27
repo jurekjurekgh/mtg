@@ -4564,3 +4564,106 @@ Lightning Spear (rzut+equip), Vaporkin, Gysahl Greens, Malevolent Noble
 (rzut + aktywacja z poświęceniem artefaktu → licznik → atak zabijający),
 Mister Gutsy (rzut → resolve → blok → śmierć → trigger z X=0 poprawnie pusty),
 token Junk renderowany w tooltipie ręki. Zestaw testów 112/112 zielony.
+
+### PMSSB-92/B — PEŁNA PĘTLA strojenia wg §PMSSB-90/91 (2026-11-27, nadrobiona po korekcie właściciela)
+
+Właściciel słusznie zakwestionował pierwszą deklarację „DONE": tabela wyżej
+rozlicza MECHANIKI batcha, nie pętlę strojenia. Poniżej pełny przebieg wg
+§PMSSB-90 — sonda pomiarowa, pomiar PRZED/PO, audyt macierzowy z werdyktami
+pro, findingi F-92/x, naprawy generyczne (ADR 0002 + M429), piny z sondy,
+dowód mutacyjny, kontrole L41/S11/M429.
+
+**Sonda i pomiar:** `tools/pmssb92-batch75-sonda.mjs` (harness wzorca
+pmssb91: ROZMIAR_BIBLIOTEKI=20, odsiew nielegalnych ataków, `--scen=`/`--json`)
+— **40 scenariuszy / 11 kart** (10 kart batcha + token Junk) w wymiarach
+T=timing, C=cel, S=kontekst stanu, K=koszt/okazja. Pomiar PO (po naprawach):
+`tools/pmssb92-batch75-pomiar-po.txt` (40 rekordów, RC=0). Token Junk poza
+`createCardDeck`: addObject ręczny z `abilities: REGISTRY.get('token_junk').abilities`.
+
+**Naprawa harnessa blokowego (F-92/3):** INV-02/HUR-02/VAP-02 PRZED miały
+pusty pomiar (pass 0,00 bez ofert block) — deklaracja ataku przy kroku
+`declare_blockers` jest nielegalna, a atakujący weren't na stole. PO (wzorzec
+pmssb91 G-02): krok `declare_attackers`, wrogowie w `pole` z KATALOGU
+(grollub 3/3, grizzled-outcasts 4/4, nefarious-imp 2/1 flying — poprzednie
+etykiety „3/3"/„6/6"/„lotnik" nie zgadzały się z katalogiem), potem
+`jumpToStep(state.turn, 'declare_blockers', 'p1')` (jak silnik, game-state.js
+CR 508.2). Bez jawnego jump p1 nie dostaje komend `declare_blockers`.
+
+**Audyt macierzowy — werdykty pro (pomiar PO):**
+
+| Kart × wymiar | Pomiar PO | Werdykt pro |
+|---|---|---|
+| INV-01 T | cast 70,21 main1 = 70,21 end step wroga; 73,81 przy blokerach | ✓ flash bez premii okna; rzut wcześniej niż end step |
+| INV-02 S | tap → `block[]` 0,00; nietapnięty → block 14,00 | ✓ tapnięty nie blokuje, kontrola blokuje |
+| HUR-01 T | 67,05 pusty stół = 67,05 pełny; HIR-01 66,60=66,60, 70,20 przy blokerze | ✓ |
+| HUR-02 S | FS blokuje 3/3 → 14,00; 4/4 → `block[]`, oferta bloku −3,00 | ✓ darmowe usunięcie vs śmierć bez zysku |
+| GYS-01 T | cast 69,98 w każdym wariancie (ręka sporna: Shock nieprzydatny −109) | ✓ token 2/2 za 2, sporna mana nie ma kontrkandydata |
+| GYS-02 K | idle: flashback 62,98 > pass; zdrowa ręka: Outcasts 68,41 > flashback 62,98 → **Outcasts wygrywa** | ✓ (patrz F-92/1) |
+| SPE-01 C | equip 4/4 → 21,00 > equip 1/1 → 15,00 (main1, mana 2) | ✓ trample +1/+0 na największego |
+| SPE-02 C | kill 3/3 33,00; lethal gracz (życie 3) 999,00; ściana 0/4 → pass (−61/−81) | ✓ |
+| VAP-01 C | atak vs ground 1,00, vs lotnik 8,00 | ✓ |
+| VAP-02 S | ground → blok NIEENUMEROWANY; lotnik 2/1 → block 7,00 | ✓ restrykcja blokera podana przez oferty |
+| CM-01 C | 4 stworów: destroy 84 / salwa-kill 33; 1 stwor: destroy 84, salwa ≤0 | ✓ (patrz F-92/2) |
+| CM-02 S | destroy m1 100 na Fear (enchantment creature — LEGALNY cel) | ✓ suspect „czar bez sensu" odwrócony: cel jest enchantmentem |
+| NOB-01 C | pass 0,00; aktywacje z ofiarą −2/−18 (uniform dla foddera) | ✓ odmowa świadoma: {2}+ofiara za +1/+1 w main1 bez presji to strata |
+| NOB-02 K | kandydaci 2/1,4/3,artefakt — bot passuje wszystkie | ✓ ofiara 4/4 za licznik = katastrofa; Spellbomb w main1 za manę 2 — trzymaj |
+| GUT-01 C | premia Equipment przy Gutsym 55,80 z Gutsym / −7,20 bez | ✓ |
+| GUT-02 K | Junk impulse +2,00 (pusta ręka; Outcasts niezagrywalny przy mane 2) | ✓ |
+| TRA-01 K | mana 4+ręka → activate 4,00; mana 0 → pass (−5); życie 3 → pass (−74) | ✓ koszt życia czytany w decyzji |
+
+**Findingi F-92/x:**
+
+- **F-92/1 (Gysahl flashback a koszt many, K)** — SUSPECT NIEROZSTRZYGNIĘTY
+  JAKO BUG: ścieżka `cast_flashback` współdzieli wycenę cast_spell bez
+  odjęcia kosztu many (7 za 2/2). Naprawa (odjęcie `spell.flashback.cost` ×
+  waga 1) przebudowała pomiar PO poprawnie (zdrowa ręka → Outcasts 68,41 >
+  flashback 62,98), ale **łamała kotwicę 58/C32** (`audyt-pmssb58-kombinacje`:
+  ręka i flashback TEJ SAMEJ wypłaty mają IDENTYCZNĄ cenę — koszt many
+  celowo niewyceniany; RED 73≠72). **M429: cofnięta.** Rozstrzygnięcie:
+  akceptowalne — przy idle 7 many alternatywny koszt flashbacku = 0 (2 many
+  i tak przepadają po Outcasts), a podłoga „flashback ≥ 60 przy pustej ręce"
+  jest pinowana. Cost-shape ({6}{G} łącznie) rozliczony w B3 benchmarkiem.
+- **F-92/2 (CM salwa, C)** — POTWIERDZONY I NAPRAWIONY GENERYZNIE: łańcuch
+  kwot obrażeń w wycenie cast_spell (heuristic-bot, gałąź `damage`) nie
+  czytał `amount:'creatures_you_control'` — string wpadał w `: 0` (pomiar
+  PRZED: salwa 84,00 STAŁE niezależnie od 0/1/2/4/6 własnych stworów,
+  instrumentacja DBG). Naprawa: gałąź z lustrzanym odczytem
+  `creaturesControlledInView(view, view.playerId)` (helper L41, jedno źródło
+  z silnikiem `creaturesControlledBy`, effects.js). PO: salwa reaguje na N
+  (−80 zakaz przy 1 stworze, kill 33 przy 2, plateau klampem overkillu).
+- **F-92/3 (harness blokowy)** — NAPRAWIONY: patrz wyżej.
+- **M431-suffix (etykiety wariantów modalnych)** — warianty trybów „Choose
+  one" były w śladzie nierozróżnialne (dwa identyczne
+  `cast_spell(cm-hand->cel)`); klasa L34/L40. `summarize` castów dopisuje
+  teraz `,m<N>` gdy `cmd.modeIndex != null`. Po stronie testów 10 plików
+  zaktualizowane na parowanie pełnej etykiety LUB sufiksu trybu (dual-match);
+  golden-master fixture regenerowany ŚWIADOMIE: wszystkie 6 partii bitowo
+  identyczne w decisions/scoreSum/chosenKinds (zmieniły się wyłącznie
+  etykiety NIEWYBRANYCH wariantów), rejestr regeneracji w
+  `test/bot-scoring-snapshot.test.js`.
+
+**Dowód mutacyjny** (mutacje na kopii z `finally`-restore, sha256 restore
+bit w bit): MUT-1 bez gałęzi `creatures_you_control` → 1 pin RED (CM-01);
+MUT-2 bez sufiksu `,m<N>` → 4 pins RED; MUT-3 harness bez `jumpToStep`
+declare_blockers → 3 pins RED. Po restore 13/13 GREEN.
+
+**Piny:** `test/audyt-pmssb92-batch75.test.js` (13 testów) budują scenariusze
+Z SONDY (import `SCENARIUSZE` + `stan`/`decyzja`) — zero duplikacji stanu
+(L41).
+
+**Kontrole obowiązkowe:**
+
+- **L41** — kwota `creatures_you_control` liczona helperem lustrzanym
+  (`creaturesControlledInView`), nie własną kopią reguły; salwa bota zgadza
+  się z rozliczeniem silnika (`resolveDamageAmount`) dla 0/1/2/4/6 stworów.
+- **M429** — anty-over-fix zadziałał: odjęcie kosztu many flashbacku zostało
+  cofnięte po RED kotwicy 58/C32; waga kosztu many pozostaje niewyceniana
+  świadomie; `heuristic-params.js` NIEDOTKNIĘTY (zero nowych pokręteł).
+- **S11** — ślad globalny: golden-master 6/6 partii bez odwróconej decyzji
+  (agregaty identyczne); benchmark quick PO naprawach:
+  heuristic **90,5%** (608/672), vs aggro **83,9%** (54/336), vs random
+  **97,0%** (326/336), **niedokończone: 0** — bez zmian względem b75c
+  (raport `tools/quick-2026-11-27-pmssb92.txt`, pomiar niezmieniony = nie ma
+  REAUDYT-podłóg do ruszania).
+
+**Brama:** test:all **10 893/10 893** RC=0 (z nowymi pinami PMSSB-92).

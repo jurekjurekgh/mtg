@@ -126,7 +126,10 @@ function decyzja(s, seed = 5) {
   for (const o of bot.trace().at(-1)?.options ?? []) scores[o.cmd] = o.score;
   return { cmd, scores };
 }
-const scoreCast = (scores, targets) => scores[`cast_spell(wif->${targets.join('+')})`];
+// M431-suffix: pełna etykieta LUB etykieta z sufiksem trybu `,m<N>`.
+const scoreCast = (scores, targets) => (Object.entries(scores)
+  .find(([k]) => k === `cast_spell(wif->${targets.join('+')})`
+    || k.startsWith(`cast_spell(wif->${targets.join('+')},m`)) ?? [])[1];
 const passScore = (scores) => scores.pass_priority ?? 0;
 
 /** Rozstrzyga stos do końca (rzut → efekt) pasami obu graczy. */

@@ -61,7 +61,14 @@ function scoreOf(state, substr) {
   const bot = createHeuristicBot({ seed: 9 });
   bot.chooseCommand(view);
   const entry = bot.trace().at(-1);
-  return entry.options.find((o) => o.cmd.includes(substr))?.score;
+  // M431-suffix: warianty modalne niosą `,m<N>` w etykiecie śladu — paruj
+  // pełną etykietę LUB etykietę z sufiksem trybu (etykieta nazywa wariant).
+  // Fragment bez nawiasu domykającego (np. „cast_spell(reu") = includes jak
+  // przed sufiksem; pełna etykieta z „)" porównuje też kształt z `,m<N>`.
+  const bezNawiasu = substr.endsWith(')') ? substr.slice(0, -1) : null;
+  return entry.options.find((o) => o.cmd === substr
+    || (bezNawiasu != null && o.cmd.startsWith(bezNawiasu + ',m'))
+    || (bezNawiasu == null && o.cmd.includes(substr)))?.score;
 }
 
 test('F1: Rager@lib10 = 68.4018 (ETB-draw 9 -> 6, dostarczane 5.4)', () => {

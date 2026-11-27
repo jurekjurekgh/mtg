@@ -94,7 +94,7 @@ test('M247/3 (anti-overfix): Vandalize w trybie „Zniszcz ląd" NIE jest karany
   const state = game(['vandalize'], ['basic-mountain'],
     { botLands: ['basic-mountain', 'basic-mountain', 'basic-mountain', 'basic-mountain', 'basic-mountain'] });
   const { pick } = optsFor(state);
-  assert.equal(pick, 'cast_spell(h0->e0)', 'tryb zaprojektowany pod lądy dostaje normalną wycenę (+72)');
+  assert.ok(pick.startsWith('cast_spell(h0->e0'), 'tryb zaprojektowany pod lądy dostaje normalną wycenę (+72)');
 });
 
 test('M247/4: modalny bounce_permanent (Steel Sabotage „Zwrot do ręki") w czysty ląd schodzi poniżej passu', () => {
