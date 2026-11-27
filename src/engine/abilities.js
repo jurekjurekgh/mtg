@@ -424,6 +424,23 @@ function manaForActivation(state, playerId, object, ability, selfAbilityKey = nu
   return baseMana;
 }
 
+/** Walidacja całego zmiennego kosztu przed dowolną mutacją i po wznowieniu. */
+function validateVariableAbilityCost(state, playerId, object, ability, abilityIndex, xValue) {
+  const cost = ability.cost ?? {};
+  if (!cost.manaX && !cost.payLifeX) return;
+  const x = xValue ?? 0;
+  if (!Number.isSafeInteger(x) || x < 0) throw new Error('X musi być nieujemną liczbą całkowitą');
+  if (cost.manaX) {
+    const selfKey = ability.oncePerTurn ? `${object.id}:${abilityIndex}` : null;
+    if (x + (cost.mana ?? 0) > manaForActivation(state, playerId, object, ability, selfKey)) {
+      throw new Error('Niewystarczająca mana');
+    }
+  }
+  const lifeDue = (cost.life ?? 0) + (cost.payLifeX ? x : 0);
+  const life = state.players.find((entry) => entry.id === playerId)?.life ?? 0;
+  if (lifeDue > life) throw new Error('Za mało życia na koszt');
+}
+
 /**
  * Kolorowe wymagania kosztu zdolności aktywowanej (CR 118.2/601.2f): deskryptor
  * `cost.colors` niesie pipy kolorów (Boros Challenger {2}{R}{W} → ['R','W']).
@@ -1160,7 +1177,7 @@ export function legalActivatedAbilities(state, playerId) {
       if (targetSpec.length === 0 && ability.cost?.manaX && ability.cost?.payLifeX) {
         const fixed = ability.cost.mana ?? 0;
         const life = state.players.find((entry) => entry.id === playerId)?.life ?? 0;
-        const maxX = Math.min(Math.max(0, mana - fixed), life, 20);
+        const maxX = Math.min(Math.max(0, mana - fixed), Math.max(0, life - (ability.cost.life ?? 0)), 20);
         if (!canPayColoredCost(state, playerId, colorRequirementsOf(ability.cost), colorExcludeId, manaPurposeForAbility(ability))) continue;
         for (let x = 1; x <= maxX; x += 1) {
           out.push({ objectId: id, abilityIndex: index, ability, xValue: x });
@@ -1606,7 +1623,10 @@ export function activateAbility(state, playerId, objectId, abilityIndex, attacke
   // WSZYSTKICH części, dopiero potem mutujemy stan. Bez tego nieudana
   // aktywacja (np. brak many na {U}) zostawiała permanent tapnięty.
   const effManaPreview = effectiveAbilityManaCost(state, playerId, ability, object);
-  const manaCostPreview = cost.manaX ? (xValue ?? 0) : effManaPreview;
+  // Część stała {X}{B} i wspólny koszt życia muszą być sprawdzone przed
+  // odrzuceniem karty, wyborem celu przeciwnika lub tapnięciem źródła.
+  validateVariableAbilityCost(state, playerId, object, ability, abilityIndex, xValue);
+  const manaCostPreview = cost.manaX ? (xValue ?? 0) + (cost.mana ?? 0) : effManaPreview;
   const player = state.players.find((entry) => entry.id === playerId);
   // Opłacalność po manie produkowalnej (z wyłączeniem źródła przy koszcie {T}
   // — jak w ofercie) — spendMana sam do-tapuje pozostałe landy.
@@ -1754,6 +1774,9 @@ export function performActivation(state, ctx) {
     throw new Error('Zdolność wymaga permanenta na polu bitwy');
   }
   const cost = ability.cost ?? {};
+  // Wznowienie po decyzji może dostać inny stan niż pierwotna walidacja.
+  // Sprawdź zmienne koszty ponownie, zanim pobierzemy dowolną ich część.
+  validateVariableAbilityCost(state, playerId, object, ability, abilityIndex, xValue);
   // Wznowienie po decyzji discard/opponent target czyta stan ŚWIEŻO. Także
   // gdy aktywacja przeszła wcześniej przez activateAbility, gospodarz mógł
   // odejść — odmowa musi nastąpić przed wydaniem jakiegokolwiek kosztu.
