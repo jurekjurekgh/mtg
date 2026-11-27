@@ -24,5 +24,24 @@
     "large": "https://cards.scryfall.io/large/front/9/f/9f09166a-78de-4136-8a3c-034e1ef73ede.jpg?1783912378",
     "normal": "https://cards.scryfall.io/normal/front/9/f/9f09166a-78de-4136-8a3c-034e1ef73ede.jpg?1783912378"
   },
-  "pobrano": "2026-11-27"
+  "pobrano": "2026-11-27",
+  "rulings": [
+    {
+      "date": "2024-03-08",
+      "source": "wotc",
+      "comment": "You can't sacrifice a Junk token to pay multiple costs. For example, you can't sacrifice a Junk token to activate its own ability and also to activate the second ability of Junk Jet."
+    },
+    {
+      "date": "2024-03-08",
+      "source": "wotc",
+      "comment": "You pay all costs and follow all normal timing rules for the card played from exile with a Junk token's ability. For example, if the exiled card is a land card, you may play it only during your main phase while the stack is empty."
+    },
+    {
+      "date": "2024-03-08",
+      "source": "wotc",
+      "comment": "Some spells and abilities that create Junk tokens may require targets. If each target chosen is illegal as that spell or ability tries to resolve, it won't resolve and none of its effects happen. You won't create any Junk tokens."
+    }
+  ],
+  "rulingsPobrano": "2026-11-27",
+  "rulingsSource": "https://api.scryfall.com/cards/pip/136/rulings"
 }

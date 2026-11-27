@@ -265,6 +265,17 @@ test('grzechotka audytu: remisy rozstrzygalne nie rosną ponad stan przejrzany',
   // talia): pozostałe 6 par IDENTYCZNE (atak 2, blok 1), projekcja działa
   // (test „projekcja walki istnieje" zielony), jedyne roz=1 to stara pozycja
   // tarkir (klasa polityki, sufit 7 trzyma). Podłoga idzie 6 → 4 ŚWIADOMIE.
-  assert.ok(atak.akcyjne + blok.akcyjne >= 4,
+  // REAUDYT 2026-11-27 (Batch 75, karty 666–675 w 10 taliach): podłoga 4 → 3.
+  // Pomiar per para (audytRemisow, gry=1, NAJPIERW stara talia dd1f587 z NOWYMI
+  // wagami, potem nowa talia z tymi samymi wagami — ZMIANY WAG są czyste:
+  // PMSSB-92, obie konfiguracje dają identyczne 8 akcyjnych na starych taliach):
+  //   srodziemie|theros   atak 2→0, blok 2→0 (theros +Vaporkin),
+  //   kaladesh|zendikar-wu atak 1→0, blok 1→0 (zendikar-wu: Invader/Hurda/Translator),
+  //   wiedzmin-bg|tarkir-bg blok 0→1 (+Noble; pozycja przeglądana: block[] ex
+  //     aequo z wymianą bez presji śmiertelnej — klasa A „POLITYKA" wyżej).
+  // Pozostałe 4 pary IDENTYCZNE (ravnica-wur|innistrad-wu blok 1, tarkir-bg|
+  // warhammer-ub atak 1 = stara klasa polityki, reszta 0). Suma akcyjnych
+  // 8 → 3 wyłącznie od składu talii; projekcja działa (test zielony poniżej).
+  assert.ok(atak.akcyjne + blok.akcyjne >= 3,
     `remisy akcyjne w walce zniknęły (${atak.akcyjne}/${blok.akcyjne}) — sprawdź, czy projekcja nie przestała działać`);
 });

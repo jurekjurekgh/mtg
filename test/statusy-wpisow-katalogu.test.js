@@ -52,7 +52,8 @@ test('M419/B: każdy wpis katalogu ma status supported, token albo back', () => 
   // Batch 71 (Ambassador Oak): +token_elf_warrior (1/1 Elf Warrior) → 53.
   // Batch 72 (Living History): +token_spirit_red_white (2/2 RW Spirit) → 54.
   // Batch 74 (Gylwain): +token_royal_role, +token_sorcerer_role, +token_monster_role → 57.
-  assert.equal(tokeny, 57, 'tyle tokenów zna katalog (stan po Batchu 74)');
+  // Batch 75 (Mister Gutsy): +token_junk (tpip 15, Fallout Tokens) → 58.
+  assert.equal(tokeny, 58, 'tyle tokenów zna katalog (stan po Batchu 75)');
   // Batch 59 (Bird Admirer // Wing Shredder): +wing-shredder (127 MID) → 9.
   // Batch 73: +bladewheel-chariot (LCI TDFC tył) → 10.
   assert.equal(tyly, 10, 'tyle tylnych stron DFC zna katalog (stan po M419 + Batch 59)');

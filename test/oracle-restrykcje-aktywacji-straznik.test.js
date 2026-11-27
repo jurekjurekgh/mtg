@@ -96,10 +96,13 @@ test('STRZ-5: kotwice (L13) — pokrycie fraz i wyjątek karty bez własnych akt
   assert.equal(registry.get('piercing-rays').abilities.find((a) => a.type === 'activated').forecast, true);
 
   const bezAktywacji = karty.filter((d) => /Activate only as a sorcery/i.test(tekst(d)) && bezWlasnychAktywowanych(d));
-  assert.deepEqual(bezAktywacji.map((d) => d.id), ['slithering-cryptid'],
-    'jedyny wyjątek: fraza opisuje token Mutagen, nie zdolność samej karty');
-  assert.equal(registry.get('token_mutagen').abilities.find((a) => a.type === 'activated').timing, 'sorcery',
-    'nosiciel frazy (token) ma deskryptor — wyjątek nie jest luką');
+  assert.deepEqual(bezAktywacji.map((d) => d.id), ['slithering-cryptid', 'mister-gutsy'],
+    'wyjątki: fraza opisuje zdolność TOKENU, nie zdolność samej karty');
+  // Batch 75 (Mister Gutsy): „Activate only as a sorcery" jest w nawiasie
+  // opisującym token Junk — nosiciel frazy to token_junk z deskryptorem
+  // `timing: 'sorcery'` (wyjątek nie jest luką).
+  assert.equal(registry.get('token_junk').abilities.find((a) => a.type === 'activated').timing, 'sorcery',
+    'nosiciel frazy (token_junk) ma deskryptor — wyjątek nie jest luką');
 });
 
 test('STRZ-6: mutacja — detektor widzi restrykcję bez deskryptora (dowód działania)', () => {

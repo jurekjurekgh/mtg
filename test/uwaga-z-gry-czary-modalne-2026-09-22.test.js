@@ -170,7 +170,9 @@ test('CM/2 inwentarz katalogu: każdy czar modalny = klasa A/B/C (strażnik „p
   //   B — same tryby 1-celowe (gniazdo na tryb, jeden modal) — piny CM/1;
   //   C — mieszane/0-celowe/varTV (krok 1 = nazwy trybów, krok 2 = picker).
   const KLASA_A = ['vandalize'];
-  const KLASA_B = ['agate-assault', 'keep-out', 'steel-sabotage'];
+  // Batch 75 (Coordinated Maneuver, TDM): dwa tryby 1-celowe (obrażenia w
+  // stwora/planeswalkera + zniszczenie enchantmentu) — klasa B (piny CM/1).
+  const KLASA_B = ['agate-assault', 'coordinated-maneuver', 'keep-out', 'steel-sabotage'];
   // Batch 61/174: Izzet Charm = kontra warunkowa (1 cel) + obrażenia (1 cel)
   // + „Dobierz 2, odrzuć 2" (0 celów) — mieszanka 1-celowych z 0-celowym,
   // więc kaskada jak dla Selesnya Charm (krok 1 = nazwy trybów).

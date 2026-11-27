@@ -145,6 +145,7 @@ teraz obowiązkowy, a nie zalecany.
 | Batch 73 — 11 new cards (Plummet, Get the Point, Messenger's Speed, Might Beyond Reason, River Herald Guide, Seton's Desire, Spring-Loaded Sawblades/Bladewheel Chariot DFC, Leonin Lightbringer, Necrosavant, Kessig Flamebreather) | 11 | **DONE (2026-11-11)** | §PMSSB-89; `tools/pmssb89-batch73-scoring-sonda.mjs`; `test/audyt-pmssb89-batch73.test.js` (12 piny: 7 Wave A + 3 Wave B + 2 Wave C); probe sonda; Żywy Tester 3 partie × 400 kroków, 0 zgłoszeń detektorów, 0 niewycenionych ruchów; pokrętła bez nowych kluczy (wszystko w istniejących ścieżkach: tapTargetValue, damageTargetValue, tapBodyCost, sacrificePermanentLoss, return_permanent_from_graveyard); ADR 0002 — rozpoznawanie po deskryptorach (efekt, koszt, fromGraveyard, sacrificeCreature), nie po cardId; **SPROSTOWANE 2026-11-15 (audyt PR #185, F-16/F-20):** Leonin Lightbringer i Kessig Flamebreather NIE mają zdolności aktywowanych (Oracle: ward {2} + pump statyczny / trigger `you_cast_noncreature_spell`), więc pokrętła `tapTargetValue`/`damageTargetValue`/`tapBodyCost` nie były dla nich użyte — opis dotyczył fabrykowanych zdolności usuniętych w ostatnim commicie PR #185; sonda `tools/pmssb89-batch73-scoring-sonda.mjs` miała MARTWY blok main (pusty stdout, kod 0) i etykiety sprzeczne z Oracle; piny `test/real-cards-batch73.test.js` (F-10) i `test/audyt-pr185-f20-sonda-pmssb89.test.js`; szczegóły w §PMSSB-89 |
 | Batch 73 — pętla RĘCZNA (PMSSB-90): timing (tura/faza/krok) × cel × kontekst stanu gry (stół, ręka, biblioteka, grób, mana, próg) dla 11 kart realnych 645–655 | 11 | **DONE (2026-11-16)** | §PMSSB-90; `tools/pmssb90-batch73-petla-sonda.mjs` (53 scenariusze / 189 rekordów, wymiary S/C/T/K, harness H-1…H-7); `test/audyt-pmssb90-batch73.test.js` (46 pinów RED→GREEN + 3 kotwice); NAPRAWIONE: F-90/1 (silnik: oferta aktywacji z grobu bez `sacrificeCreatureId` — `session.js` przerywała partię), F-90/2 (`craft_transform` bez wyceny), F-90/3 (warunek ETB `tapped_creature`+`opponentControls`), F-90/4 (Threshold `must_block_enchanted`), F-90/5 (explore = wspólna skala z surveil), F-90/7+8 (equip: treść triggera sprzętu i statyka hosta `condition.equipped`), F-90/9 (`damage_each_opponent` → `opponentLifeEffectValue`), F-90/11 (haste: choroba hosta + okno `precombat_main`), F-90/12 (w PR #187: `hasPendingAbilityTwin`); ZAMKNIĘTE DECYZJĄ WŁAŚCICIELA (2026-11-16, usunięte z backlogu): F-90/5b+F-90/6 (bez nowego modelu progów; synergia grobowa przy ≥25 kartach w bibliotece), F-90/10 (paliwo triggera trwałego zostaje jak jest), `declare_attackers` vs CR 508.1 (zostaje jak jest); 26 mutacji (3 udokumentowane PRZEŻYŁE); pokrętła ×0; snapshot 4/4 bez regeneracji; tie-audit RC=0; Żywy Tester 3 partie × 400 kroków — 0 detektorów, 0 niewycenionych; bramy 10 437 fast / 10 719 all / build 5920,2 kB |
 | Batch 74 — pętla RĘCZNA (PMSSB-91): timing (tura/faza/krok) × cel × kontekst stanu gry (stół, ręka, biblioteka, grób, mana) dla 10 kart realnych 656–665 | 10 | **DONE (2026-11-16)** | §PMSSB-91; `tools/pmssb91-batch74-petla-sonda.mjs` (23 scenariusze / 96 rekordów, wymiary T/C/S/K, harness H-1…H-7 + `deklarujAtak`); `test/audyt-pmssb91-batch74.test.js` (23 piny RED→GREEN); NAPRAWIONE: F-91/1 (cap mocy debuffu — `negativePumpPowerCap`), F-91/2 (bramka ewazji dla samo-celu `cant_be_blocked` — `selfEvasionWastedPenalty`, rozjazd L41 z gałęzią ETB), F-91/3 (hold-for-Raid — `raidHoldBonus`), F-91/5 (trigger o warunku zewnętrznym nie jest powtarzalnym źródłem doboru — `externalTriggerDrainScale`); ZMIERZONE I UDOKUMENTOWANE (pin, bez zmiany kodu): F-91/4 (rad płaski), F-91/6 (sac-draw: end rywala 18,00/14,00 > main1 8,00/4,00), F-91/7 (tryby Roli bez modelu trample); ZWERYFIKOWANE: F-91/8 (battle cry), F-91/9 (Grollub), F-91/10 (Harrier), F-91/11 (deck-out); 4 mutacje (każda zabija własne piny); pokrętła ×0 odtwarzają PRZED; snapshot 4/4 bez regeneracji (`27a4e7b5…`); tie-audit 12/12; lustro 6:6, 6:6, 7:5; bramy 10 532 fast / 282 slow / build 5978,8 kB |
+| Batch 75 — wyceny nowych mechanik (spellTypesInclude, counters_on_source, artifactOrAnother) bez nowych pokręteł dla 10 kart realnych 666–675 + token Junk | 10 | **DONE (2026-11-27)** | §PMSSB-92 niżej; `test/real-cards-batch75.test.js` (18); benchmark quick 672 meczów (0 niedokończonych, 90,6%/97,0%); Żywy Tester 8 partii (0 detektorów) |
 | bounce (`bounce_*`, `owner_library_top_or_bottom`) | 8+3 trig | DONE (2026-09-25) | §PMSSB-1 niżej; `test/audyt-pmssb1-bounce.test.js` (29); `bounce*` (10) |
 | tokeny (`create_token`) | 46 | DONE (2026-09-26) | §PMSSB-2 niżej; `test/audyt-pmssb2-tokeny.test.js` (28); `token*` (3) |
 | dobieranie (`draw_cards*`, `draw_then_discard`) | 45 | DONE (2026-09-26) | §PMSSB-3 niżej; `test/pmssb3-draw-wave-a+b.test.js` (15); `instantDrawFoeEndBonus`, `ferociousLootExpected` (2) |
@@ -4532,3 +4533,34 @@ kosztem), `uwagi-z-gry-2026-09-22-cde` C/0 (Sequestered Stash — próg 5 źród
 zmierzonej siatki + 6a/6b/6c/6d strażnicze, nowe D2, D3, D3b, D3c).
 **Bramy:** `fast` **10 539 / 10 539** (0 fail). Commity: `001ebb5` (D1+D4),
 `8ac81b1` (D3+D2).
+
+## PMSSB-92 — wyceny bota dla mechanik Batcha 75 (10 kart realnych 666–675 + token Junk) (2026-11-27) — DONE
+
+**Zakres (plan `PLAN_2026-11-27-batch75-kart.md`, krok B3):** wzorzec
+PMSSB-90/91 — RĘCZNA pętla, bez pełnego B0 i bez maszynowego tuningu; celem
+było pokrycie wyceną mechanik wprowadzonych przez batch, nie strojenie
+istniejących wag. `src/controllers/heuristic-params.js` **NIEDOTKNIĘTY**
+(zero nowych pokręteł — M429 nie ma tu czego zerować).
+
+**Inwentaryzacja mechanik → wyceny:**
+
+| Mechanika | Wycena | Zmiana |
+|---|---|---|
+| trigger `when_you_cast_spell` + `spellTypesInclude` (Gutsy) | `add_counter` — wspólna ścieżka liczników | 0 |
+| dies → `create_token` `amount:'counters_on_source'` (Junk) | `tokenBodyValue` | **POPRAWKA**: kwota z liczników źródła zamiast fallbacku 1 (kandydat: przyszła zdolność „sacrifice: create X Junk" — trigger dies jest bez wyboru) |
+| koszt `sacrificeCreature.artifactOrAnother` (Noble) | wycena aktywacji | **POPRAWKA**: pojedyncza ofiara z `sacrificeCreatureId` dolicza `sacrificePermanentLoss` — luka ogólna (istniała też dla Necrosavanta); gałąź gain_life (M236) ma własną politykę ratunkową — bez podwójnego liczenia |
+| equip {1} + pump/trample (Lightning Spear) | rodzina equip (`equipValuation`, M202/K) | 0 |
+| {2}{R}, sac → 3 dmg any target (Lightning Spear) | `damageTargetValue` + koszt `sacrificeSelf` (istniejąca drabina) | 0 |
+| Junk {T}, sac → exile top „may play this turn" | token GrantedMana/rola — token artefaktowy bez ciała | 0 |
+
+**Dowód:** benchmark quick (ADR 0018, 672 meczów) po zmianach wycen — RC=0,
+**niedokończone: 0**, heuristic **90,5%** vs aggro (54/336), **97,0%** vs
+random (326/336), śr. ~17 tur / ~421 komend (rerun po poprawkach kształtu
+kosztów: {2}{R} speara i {6}{G} flashbacku Gysahla były liczone z generykiem
+zamiast kosztem ŁĄCZNYM, CR 202.1); raport
+`tools/quick-2026-11-27-b75c.txt`. Żywy Tester (B4): 8 partii na taliach
+z kartami batcha — **0 zgłoszeń detektorów**, 0 `[STOP]`; pokrycie na stole:
+Lightning Spear (rzut+equip), Vaporkin, Gysahl Greens, Malevolent Noble
+(rzut + aktywacja z poświęceniem artefaktu → licznik → atak zabijający),
+Mister Gutsy (rzut → resolve → blok → śmierć → trigger z X=0 poprawnie pusty),
+token Junk renderowany w tooltipie ręki. Zestaw testów 112/112 zielony.

@@ -2695,6 +2695,15 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     let count = Number.isInteger(effect.amount)
       ? effect.amount
       : dynamicTokenCount(view, effect.amount, effect);
+    // Batch 75 (Mister Gutsy): „stwórz X Junków, X = liczba liczników +1/+1
+    // na źródle" — fallback dynamicTokenCount = 1 zaniżał wycenę źródła
+    // z wieloma licznikami. Źródło liczników to obiekt UMIERAJĄCY (trigger
+    // dies, LKI), więc liczymy liczniki z widoku — ta sama miara co
+    // counterValue (PMSSB-77) z tolerancją braku liczników.
+    if (effect.amount === 'counters_on_source') {
+      const live = Number(source?.counters?.[effect.counter ?? '+1/+1'] ?? 0);
+      count = live;
+    }
     if (effect.ifLifeAtMost != null && myLife(view) <= effect.ifLifeAtMost) {
       count = effect.amountIfCondition ?? count;
     }
@@ -16339,8 +16348,16 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // poświęceń). Gałąź gain_life (m236 niżej) ma WŁASNĄ politykę
         // ratunkową dla kosztu ofiary — tam podwójne liczenie nie jest wskazane.
         const hasGainLifeEffect = effects.some((e) => e?.type === 'gain_life');
-        const singleSacrificeLoss = ability?.cost?.sacrificeCreature && cmd.sacrificeCreatureId && !hasGainLifeEffect
-          ? sacrificePermanentLoss(view, objectOnBoard(view, cmd.sacrificeCreatureId)) : 0;
+        // Wyjątek reanimacji z grobu (ten sam deskryptor co `isGraveyardReanimate`
+        // wyżej — Necrosavant, pin F-8/3 audytu PR #185): wymiana ciało-za-ciało
+        // to cały sens karty, zysk z reanimacji jest już wyceniony efektem.
+        const isGraveyardReanimateSingle = isGraveyardReanimate
+          || (ability?.fromGraveyard === true
+            && abilityEffectTypes.includes('reanimate_under_your_control')
+            && ability?.cost?.sacrificeCreature === true);
+        const singleSacrificeLoss = isGraveyardReanimateSingle ? 0
+          : (ability?.cost?.sacrificeCreature && cmd.sacrificeCreatureId && !hasGainLifeEffect
+          ? sacrificePermanentLoss(view, objectOnBoard(view, cmd.sacrificeCreatureId)) : 0);
         score -= singleSacrificeLoss;
         const ownDrawOnly = effects.length > 0 && effects.every(e =>
           e?.type === 'draw_cards' || e?.type === 'draw_then_discard');

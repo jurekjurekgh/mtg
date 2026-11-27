@@ -15791,6 +15791,8 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
   defineCard({
     id: 'token_junk', name: 'Junk', set: null,
     types: ['Artifact', 'Token'], subtypes: ['Junk'], colors: [], manaCost: 0,
+    // Grafika: token tpip 15 (Fallout Tokens, Justine Cruz) — strażnik M202/K.
+    imageUri: 'https://cards.scryfall.io/large/front/6/2/62c4a6f6-6425-4c0c-b35a-880fcab42aad.jpg?1783912041',
     oracleText: '{T}, Sacrifice this token: Exile the top card of your library. You may play that card this turn. Activate only as a sorcery.',
     abilities: [
       createAbility({
@@ -15846,7 +15848,8 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
           ],
         },
       ],
-      flashback: { cost: 6, colors: ['G'] },
+      // {6}{G} — `cost` to ŁĄCZNY koszt (konwencja M428: „{3}{U}" = 4).
+      flashback: { cost: 7, colors: ['G'] },
     },
     artId: 667, plan: 'Final Fantasy',
     support: { status: 'supported', limitations: [] },
@@ -15976,7 +15979,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
       }),
       createAbility({
         type: ABILITY_TYPE.activated,
-        cost: { mana: 2, colors: ['R'], sacrificeSelf: true },
+        cost: { mana: 3, colors: ['R'], sacrificeSelf: true },
         targets: [{ type: 'any_target' }],
         effect: { type: 'damage', amount: 3 },
       }),

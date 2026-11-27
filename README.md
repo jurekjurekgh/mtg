@@ -1,8 +1,8 @@
 # MTG Engine
 
 Silnik i stół do gry w **Magic: The Gathering** — partia człowiek contra bot
-w przeglądarce albo bez interfejsu, z jawnym, testowanym zbiorem kart: 659 kart
-obsługiwanych, 57 tokenów i 10 tylnych stron kart dwustronnych
+w przeglądarce albo bez interfejsu, z jawnym, testowanym zbiorem kart: 669 kart
+obsługiwanych, 58 tokenów i 10 tylnych stron kart dwustronnych
 (rośnie tylko o karty z kolekcji właściciela, [ADR 0029](docs/decisions/0029-catalog-grows-only-from-owner-collection.md)).
 
 Silnik jest autorytatywnym źródłem stanu: kontroler i stół wysyłają wyłącznie
@@ -74,14 +74,14 @@ zgodnie z konwencją generatora i strażnika liczności.
 | `dominaria-brg` | Dominaria (BRG) | BRG | 38 | 13 | 25 |
 | `dominaria-wu` | Dominaria (WU) | WUB | 33 | 11 | 22 |
 | `eldraine` | Eldraine | WUBRG | 29 | 10 | 19 |
-| `final-fantasy` | Final Fantasy | WUBRG | 29 | 10 | 19 |
+| `final-fantasy` | Final Fantasy | WUBRG | 30 | 10 | 20 |
 | `forgotten-realms-br` | Forgotten Realms (BR) | BR | 24 | 8 | 16 |
 | `forgotten-realms-wug` | Forgotten Realms (WUG) | WUG | 24 | 8 | 16 |
 | `innistrad-brg` | Innistrad (BRG) | BRG | 33 | 11 | 22 |
 | `innistrad-wu` | Innistrad (WU) | WU | 35 | 12 | 23 |
 | `ixalan` | Ixalan | WUBRG | 32 | 11 | 21 |
 | `kaladesh` | Kaladesh | WUBRG | 32 | 11 | 21 |
-| `kaldheim` | Kaldheim | WUBRG | 23 | 8 | 15 |
+| `kaldheim` | Kaldheim | WUBRG | 24 | 8 | 16 |
 | `lorwyn` | Lorwyn | WUBRG | 23 | 8 | 15 |
 | `mirrodin-brg` | Mirrodin (BRG) | BRG | 39 | 13 | 26 |
 | `mirrodin-wu` | Mirrodin (WU) | WU | 35 | 12 | 23 |
@@ -89,23 +89,23 @@ zgodnie z konwencją generatora i strażnika liczności.
 | `ravnica-wur` | Ravnica (WUR) | WUR | 27 | 9 | 18 |
 | `srodziemie` | Śródziemie | WUBRG | 33 | 11 | 22 |
 | `tarkir-bg` | Tarkir (BG) | UBG | 41 | 14 | 27 |
-| `tarkir-wur` | Tarkir (WUR) | WUR | 42 | 14 | 28 |
+| `tarkir-wur` | Tarkir (WUR) | WUR | 44 | 15 | 29 |
 | `the-edge` | The Edge | WUBRG | 24 | 8 | 16 |
-| `theros` | Theros | WUBRG | 32 | 11 | 21 |
+| `theros` | Theros | WUBRG | 33 | 11 | 22 |
 | `warhammer-ub` | Warhammer Fantasy (UB) | UBR | 35 | 12 | 23 |
 | `warhammer-wrg` | Warhammer Fantasy (WRG) | WRG | 35 | 12 | 23 |
-| `wiedzmin-bg` | Wiedźmin (BG) | BG | 32 | 11 | 21 |
+| `wiedzmin-bg` | Wiedźmin (BG) | BG | 33 | 11 | 22 |
 | `wiedzmin-wur` | Wiedźmin (WUR) | WUR | 29 | 10 | 19 |
-| `zendikar-rg` | Zendikar (RG) | RG | 23 | 8 | 15 |
-| `zendikar-wu` | Zendikar (WU) | WU | 23 | 8 | 15 |
+| `zendikar-rg` | Zendikar (RG) | RG | 24 | 8 | 16 |
+| `zendikar-wu` | Zendikar (WU) | WU | 24 | 8 | 16 |
 
 ### Worki (małe plany — przejściowe, ADR 0023)
 
 | Plik | Nazwa | Kolory | Kart łącznie | w tym basic-lądy | pozostałych (nie-basic) |
-| `worek-basni` | Worek: Baśnie | WUBRG | 33 | 11 | 22 |
+| `worek-basni` | Worek: Baśnie | WUBRG | 35 | 12 | 23 |
 | `worek-dziki` | Worek: Dzikie Światy | WUBRG | 26 | 9 | 17 |
-| `worek-legend` | Worek: Legendy | WUBRG | 36 | 12 | 24 |
-| `worek-mroczny` | Worek: Mroczne Światy | WUBRG | 26 | 9 | 17 |
+| `worek-legend` | Worek: Legendy | WUBRG | 38 | 13 | 25 |
+| `worek-mroczny` | Worek: Mroczne Światy | WUBRG | 27 | 9 | 18 |
 
 Szczegóły formatu i manabazy: [`decks/README.md`](decks/README.md).
 

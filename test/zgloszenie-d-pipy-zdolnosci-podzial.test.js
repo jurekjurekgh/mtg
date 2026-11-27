@@ -110,8 +110,9 @@ test('Scion Summoner: koszt rzucenia {G} kieruje bezkolorowy wypełniacz do Zend
   const rgIds = nonlands(zendikarRg);
   assert.ok(wuIds.length >= MIN_NONLAND && rgIds.length >= MIN_NONLAND,
     `obie strony zachowują minimum ${MIN_NONLAND} kart nielądowych`);
-  assert.equal(wuIds.length + rgIds.length, 30, 'żadna z 30 kart planu nie znika');
-  assert.equal(new Set([...wuIds, ...rgIds]).size, 30, 'każda karta planu pozostaje singletonem');
+  // Batch 75: plan Zendikar +2 (Battle Hurda → WU, Kozilek's Translator → RG) → 32.
+  assert.equal(wuIds.length + rgIds.length, 32, 'żadna z 32 kart planu nie znika');
+  assert.equal(new Set([...wuIds, ...rgIds]).size, 32, 'każda karta planu pozostaje singletonem');
 });
 
 /**

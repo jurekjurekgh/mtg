@@ -26,5 +26,8 @@
     "large": "https://cards.scryfall.io/large/front/d/8/d80665ae-fcb2-48fd-95be-8768293bcef7.jpg?1783937915",
     "normal": "https://cards.scryfall.io/normal/front/d/8/d80665ae-fcb2-48fd-95be-8768293bcef7.jpg?1783937915"
   },
-  "pobrano": "2026-11-27"
+  "pobrano": "2026-11-27",
+  "rulings": [],
+  "rulingsPobrano": "2026-11-27",
+  "rulingsSource": "https://api.scryfall.com/cards/ogw/74/rulings"
 }

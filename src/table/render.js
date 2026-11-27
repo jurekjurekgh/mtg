@@ -2144,6 +2144,9 @@ function triggerConditionClause(trigger) {
   if (cond.spellManaValueAtLeast != null) czlony.push(`rzucany czar ma koszt ≥ ${cond.spellManaValueAtLeast}`);
   if (cond.spellIsColorless) czlony.push('rzucany czar jest bezbarwny');
   if (cond.spellColorsInclude) czlony.push(`rzucany czar jest koloru ${cond.spellColorsInclude.join('/')}`);
+  // Batch 75 (Mister Gutsy): unia typów i PODTYPÓW rzucanego czaru (CR 205.3i
+  // — Aura/Equipment to podtypy; semantyka w conditionHolds, triggers.js).
+  if (cond.spellTypesInclude) czlony.push(`rzucany czar jest typu ${cond.spellTypesInclude.join('/')}`);
   if (cond.noMinusCountersWhenDied) czlony.push('nie miał liczników -1/-1 (persist)');
   if (cond.enteredUntapped) czlony.push('wszedł nietapnięty');
   // Batch 61 (Gryffwing Cavalry): Training — „attacks with another creature
