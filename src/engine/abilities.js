@@ -2245,14 +2245,26 @@ export function manualManaOfferUnits(state, playerId) {
   for (const entry of legalManaAbilities(state, playerId)) {
     if (!entry.ability || !manaAbilityHasManualCost(entry.ability)) continue;
     const units = netManualManaUnits(state, playerId, entry);
+    const life = Math.max(0, entry.ability.cost?.life ?? 0);
     const current = best.get(entry.objectId);
-    if (!current || units.length > current.length) best.set(entry.objectId, units);
+    if (!current || units.length > current.units.length
+      || (units.length === current.units.length && life < current.life)) {
+      best.set(entry.objectId, { units, life });
+    }
   }
   const units = [];
-  for (const [objectId, produced] of best) {
+  // Koszty życia różnych źródeł płaci TEN SAM gracz. Oferty poszczególnych
+  // Translatorów są legalne osobno, ale suma nie może wielokrotnie wydać tego
+  // samego życia. Dzisiejsze źródła z kosztem życia dają po jednej {C} za 1
+  // życie; strażnik katalogu sygnalizuje potrzebę planera wariantów, gdyby
+  // pojawiły się różne koszty lub kolory tych źródeł.
+  let lifeRemaining = Math.max(0, state.players.find((p) => p.id === playerId)?.life ?? 0);
+  for (const [objectId, candidate] of best) {
     const already = ownManaProductionOf(state, playerId, objectId);
-    const extra = Math.max(0, produced.length - already);
-    for (let i = 0; i < extra; i += 1) units.push(produced[i]);
+    const extra = Math.max(0, candidate.units.length - already);
+    if (extra === 0 || candidate.life > lifeRemaining) continue;
+    lifeRemaining -= candidate.life;
+    for (let i = 0; i < extra; i += 1) units.push(candidate.units[i]);
   }
   return { amount: units.length, units };
 }
