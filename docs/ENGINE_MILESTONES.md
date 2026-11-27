@@ -9583,9 +9583,9 @@ own rescue policy (no double charge). `counters_on_source` token amounts read
 the source's live counters in tokenBodyValue (fallback 1 undercounted a
 countered source). Trigger counters, Junk tokens, equip and the {2}{R} sac
 bolt needed zero card-specific valuation. Benchmark quick (ADR 0018) after
-valuation changes: 672 matches, **0 unfinished**, heuristic 90.6% vs aggro /
-97.0% vs random — no regression; report `tools/quick-2026-11-27-b75c.txt`
-(rerun after the data-cost fixes below: 90.5% / 97.0%, 0 unfinished).
+valuation changes: 672 matches, **0 unfinished**, heuristic 90.5% overall (608/672), 83.9% vs aggro (282/336) /
+97.0% vs random (326/336); report `tools/quick-2026-11-27-b75c.txt`
+(rerun after the data-cost fixes below, 0 unfinished).
 
 **Decks:** generator RC=0; Batch 75 cards reached wiedzmin-bg, worek-basni,
 worek-legend, final-fantasy (Gysahl Greens → BENCH deck, so the quick
