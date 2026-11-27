@@ -61,7 +61,9 @@ function setup({ enemyCreature, combat = false }) {
   // „Dobierz kartę” (Fleeting Distraction) wyglądał jak deck-out (CR 121.4/
   // 704.5b) i bot odmawiał rzutu debuffu — test sprawdza KIEROWANIE debuffu,
   // nie bibliotekę. Kilka kart modeluje prawdziwą grę.
-  for (let i = 0; i < 5; i += 1) {
+  // KOREKTA 2026-11-23 (podłoga10):5 kart (4 < 10) wetowało draw-rider;
+  // 12 kart = bezpieczne dobranie (11 ≥ 10).
+  for (let i = 0; i < 12; i += 1) {
     addObject(state, {
       id: `lib-${i}`, instanceId: `i-lib-${i}`, cardId: 'hill-giant', controllerId: 'p1', ownerId: 'p1',
       zone: 'library', kind: 'creature', power: 3, toughness: 3, manaCost: 4,

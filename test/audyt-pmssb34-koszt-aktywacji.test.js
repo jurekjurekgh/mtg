@@ -222,7 +222,9 @@ test('PMSSB-34/F (anty-over-fix): zdolność za sam {T} bez zmian (koszt 0 → k
   // wymiar nie ma czego pomniejszać; pin zgodny z PMSSB-8.
   const zbuduj = () => {
     const state = game(20);
-    biblioteka(state, 10);
+    // Podłoga drenażu (J2) + pasmo lootu: lib10 (9 < 10) wetował, lib11–19
+    // leży w pasmie „za wrogiem" — 25 kart: floor24 ≥ 10, poza pasmem.
+    biblioteka(state, 25);
     creature(state, 'sc', 'civilized-scholar');
     return state;
   };

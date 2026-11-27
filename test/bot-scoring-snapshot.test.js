@@ -164,6 +164,23 @@ import {
  *     @1001 164→164, 2503.0099→2544.1099 (warhammer UBR→UB to inny werk).
  *     Żadna decyzja nie została odwrócona przez zmianę WYCENY — fixture
  *     odzwierciedla nowe talie. Świadoma regeneracja.
+ *   - 27a4e7b5… → 09e4e0fd… (PR #189, zgłoszenia G+H+J, 2026-11-23): trzy
+ *     świadome zmiany scoringu bot-owych bramek celu/ofiary: G —
+ *     `counterReflexSacrificeGuard` (zakaz poświęcania zdrowych permanentów
+ *     dla refleksu), H — `stackRemovalDuplicationPenalty` (dwa removaly
+ *     z Epic Experiment na dwa różne cele; lejek `freeCastTargetPenalty`),
+ *     J — `disabledAttachTargetPenalty` (aury/liczniki/equip nie idą na
+ *     gospodarza unieruchomionego wrogą aurą; `attachTargetDisabled` w
+ *     czterech ścieżkach). Zmierzona różnica: DWIE partie z hashem —
+ *     ravnica-wur|innistrad-wu@1000 (269 decyzji, scoreSum 2983.109 — BEZ
+ *     ZMIAN) i @1001 (293, 1892.2411 — BEZ ZMIAN); pozostałe cztery partie
+ *     bitowo identyczne. Liczba decyzji, scoreSum i chosenKinds WYBRANYCH
+ *     komend są identyczne we WSZYSTKICH sześciu partiach — zmieniły się
+ *     wyłącznie wyceny NIEWYBRANYCH wariantów (kary G/H/J dolatują do
+ *     odrzuconych opcji, których bot i tak nie wybierał). Żadna decyzja nie
+ *     została odwrócona. Jakość: benchmark quick heuristic 90.5% (608/672)
+ *     bez zmian względem 90.5% (608/672) sprzed batcha. Świadoma
+ *     regeneracja.
  */
 
 test('golden-master: ślad bota == zamrożony fixture (bit w bit)', () => {

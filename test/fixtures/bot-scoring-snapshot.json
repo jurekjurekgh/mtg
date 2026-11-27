@@ -1,33 +1,32 @@
 {
   "version": 1,
-  "overallHash": "27a4e7b51fa5314468a7bd787971b4e4cc3ef2fab7f2b0f1758737ef20cfdec1",
+  "overallHash": "344b34f00b54f60a76c6bb116565f0b0690c6a5194153f3565ca995f4bb39e95",
   "matches": [
     {
       "pair": "ravnica-wur|innistrad-wu",
       "seed": 1000,
-      "hash": "e044b672c6bc9154c259d7924423ad6c8030420fd4ed9c0bd8881e126e4092cf",
-      "decisions": 269,
-      "scoreSum": 2983.109,
+      "hash": "8a5cd09a31ae4acc479927506ea4d587e76075b909c67568b4ee71cae6fef032",
+      "decisions": 255,
+      "scoreSum": 2685.4063,
       "chosenKinds": {
-        "activate_ability": 4,
+        "activate_ability": 2,
         "attack": 8,
         "block": 10,
-        "cast_permanent": 6,
-        "cast_spell": 3,
-        "pass_priority": 214,
+        "cast_permanent": 5,
+        "cast_spell": 2,
+        "pass_priority": 207,
         "play_land": 4,
         "resolve_combat": 10,
         "resolve_discard_choice": 1,
-        "resolve_mentor_target": 1,
         "resolve_mulligan_choice": 1,
         "resolve_scry": 1,
-        "resolve_trigger_target": 6
+        "resolve_trigger_target": 4
       }
     },
     {
       "pair": "ravnica-wur|innistrad-wu",
       "seed": 1001,
-      "hash": "3f9fb082173b8340fb4025c296ab8f59c9e67d4ae498c19e6d5b2dce17a0c809",
+      "hash": "7d46f04fbc5454357af3e61a73ad68702a21bd613fefafcc71fc25fe2f6c02a8",
       "decisions": 293,
       "scoreSum": 1892.2411,
       "chosenKinds": {

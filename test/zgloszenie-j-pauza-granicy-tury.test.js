@@ -136,3 +136,22 @@ test('J/2: zamknięcie warstwy grafik NIE zjada pauzy granicy tury (jedno klikni
   const ack = sess.continueBotPlay();
   assert.equal(ack.ok, true);
 });
+
+test('J/3: pauza BEZ nagłówka w buferze (mid-turn, art-close) też przeżywa continueArtPlay', () => {
+  // Regresja 2026-11-25 (właściciel): advance() kasuje awaitingBotAck na
+  // wejściu — stary J-fix (warunek `some(turn_started)`) przepuszczał do
+  // advance sytuacje, w których pauza istniała bez nagłówka tury w buforze
+  // (pauza po rzucie bota przerwanym warstwą grafik) — pożarcie = reszta
+  // tury bota bez „Rozgrywka”. Pauza PRZED WSZYSTKIM.
+  const sess = makeSession();
+  sess.apply({ type: 'pass_priority', playerId: HUMAN_ID }); // J/1: pauza + art uzbrojone
+  // Gracz zamyka warstwę — pauza granicy MA przeżyć (J/2 i J/3).
+  const result = sess.continueArtPlay();
+  assert.equal(result.ok, true, JSON.stringify(result));
+  assert.equal(result.botPause, true, 'continueArtPlay zjadł pauzę (J/3)');
+  assert.ok(sess.botPausePending, 'pauza nie jest już aktywna po J/3');
+  assert.ok(
+    (sess.botMoves ?? []).some((m) => (m.text ?? '').startsWith('Tura 2 — Nieprzyjaciel')),
+    'nagłówek tury zniknął z bufora modala',
+  );
+});

@@ -75,10 +75,13 @@ test('S05: self-mill pod reanimację w ręce — przy ≥25 kartach w bibliotece
   assert.equal(tomeScourScores({ foeLib: 30, myLib: 24, reanimate: true }).self, -65);
 });
 
-test('S06: self-mill przy cienkiej własnej bibliotece — drabina deck-outu działa (−85)', () => {
-  // 6 kart, mill 5 → 1 na zapasie = deckOutRisk −20 (dawniej flat −80 bez
-  // stopniowania — celował siebie tuż nad przepaścią tak samo jak przy 30).
-  assert.equal(tomeScourScores({ foeLib: 30, myLib: 6 }).self, -85);
+test('S06: self-mill przy cienkiej własnej bibliotece — uniwersalna podłoga10 (−∞)', () => {
+  // KOREKTA WŁAŚCICIELA 2026-11-23 (unifikacja): 6 kart, mill5 → PO drenażu
+  // 1 < 10 → twarde weto `libraryDrainVeto` (−∞). Dawny pin −85 (drabina
+  // deck-outu w value) był już niedosiężny przez punktację komendy — strefa
+  // ryzyka (zapas ≤ 8) zawsze leży w post < 10, więc podłoga ją poprzedza;
+  // drabina pozostaje aktywna dla powtarzalnych drenaży (B/2) i wyceny ETB.
+  assert.equal(tomeScourScores({ foeLib: 30, myLib: 6 }).self, Number.NEGATIVE_INFINITY);
 });
 
 test('Audyt #144/F3: Grave Exchange (return_creature_card_to_hand) to też reanimacja w ręce przy ≥25 kartach (−50)', () => {

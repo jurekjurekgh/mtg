@@ -20,14 +20,21 @@ import { createHeuristicBot } from '../src/controllers/heuristic-bot.js';
 
 const REGISTRY = createCardRegistry();
 
-function fillLibrary(state, n, controllerId = 'p1') {
+function fillLibrary(state, n, controllerId = 'p1', libCardId = null) {
+  // `libCardId` — realna karta zamiast syntetycznego stwora (ID/16: dobro­wolny
+  // los z unknown-def dostaje 61.2 i wygrywa ze Skaabem; Force Away bez celu
+  // na pustym stole nie jest w ogóle ofertą rzutu).
+  const def = libCardId ? REGISTRY.get(libCardId) : null;
   for (let i = 0; i < n; i += 1) {
     addObject(state, {
       id: `lib-${controllerId}-${i}`, instanceId: `i-lib-${controllerId}-${i}`,
-      cardId: `x-lib-${controllerId}-${i}`, controllerId, ownerId: controllerId, zone: 'library',
-      kind: 'creature', power: 0, toughness: 0, manaCost: 2,
-      abilities: [], keywords: [], subtypes: [], types: ['Creature'], colors: [],
-      cardName: `lib-${controllerId}-${i}`,
+      cardId: libCardId ?? `x-lib-${controllerId}-${i}`,
+      controllerId, ownerId: controllerId, zone: 'library',
+      kind: def ? (def.types.includes('Land') ? 'land' : def.types.includes('Creature') ? 'creature' : 'spell') : 'creature',
+      power: def?.power ?? 0, toughness: def?.toughness ?? 0, manaCost: def?.manaCost ?? 2,
+      abilities: [], keywords: [], subtypes: [],
+      types: def?.types ?? ['Creature'], colors: def?.colors ?? [],
+      cardName: def?.name ?? `lib-${controllerId}-${i}`,
     });
   }
 }
@@ -50,13 +57,13 @@ function lands(state, count, cardId = 'basic-island', controllerId = 'p1') {
   for (let i = 0; i < count; i += 1) put(state, `land-${controllerId}-${i}`, cardId, controllerId, 'battlefield');
 }
 
-function scene(step, { active = 'p1', priority = 'p1', ownLib = 20, foeLib = 20, islandCount = 4 } = {}) {
+function scene(step, { active = 'p1', priority = 'p1', ownLib = 20, foeLib = 20, islandCount = 4, ownLibCard = null } = {}) {
   const state = createGameState({ seed: 1108, players: [{ id: 'p1' }, { id: 'p2' }] });
   state.turn = jumpToStep(state.turn, step, active);
   state.turn.activePlayerId = active;
   state.turn.priorityPlayerId = priority;
   state.turn.number = 6;
-  fillLibrary(state, ownLib, 'p1');
+  fillLibrary(state, ownLib, 'p1', ownLibCard);
   fillLibrary(state, foeLib, 'p2');
   lands(state, islandCount);
   return state;
@@ -231,7 +238,17 @@ test('ID/14: zdolność aktywowana draw/loot poza klasą — Scholar main = 4, E
 });
 
 test('ID/16: pełny execute — upkeep pass, main1 Skaab, Inspiration zostaje w ręce', () => {
-  const state = inspirationScene('upkeep');
+  // J (zgłoszenie właściciela 2026-11-23, Moldgraf): korekta progu na
+  // twarde weto „PO millu < 10" (selfMillFloorVeto) — przy własnych 20
+  // kartach Skaab (mill 4 → 16 po millu ≥ 10) znów jest rzucalny, więc
+  // scenę zostawiamy na 20. Zostaje wymiana biblioteki na Force Away:
+  // dobro­wolny los (unknown-def syntetycznego stwora = 61.2) wygrywałby
+  // ze Skaabem (wartość self-mill ETB spadła o ~54 pkt: +29 → −25), a ląd
+  // zmienia sekwencję na play_land. Force Away (target creature) bez
+  // stworów na stole nie jest w ogóle ofertą rzutu.
+  // Cel testu to draw-timing Inspiration w pełnym execute, nie cienka
+  // biblioteka — decyzje self-mill pilnuje zgloszenie-j-moldgraf-selfmill.
+  const state = inspirationScene('upkeep', { ownLibCard: 'force-away' });
   put(state, 'big', 'armored-skaab', 'p1', 'hand');
   const bot = createHeuristicBot({ seed: 1108 });
 

@@ -38,8 +38,10 @@ function game(playerId = 'p1', step = 'main1') {
   state.turn.activePlayerId = playerId;
   state.turn = jumpToStep(state.turn, step, playerId);
   // Zdrowa biblioteka (strażnik deck-outu karze dobieranie przy ≤3 kartach).
+  // KOREKTA 2026-11-23 (podłoga10): lib10 (np. draw4 Trigona → 6 < 10)
+  // wetował cantripy — 16 kart (12 ≥ 10) dla najgrubszego drawu w pliku.
   for (const pid of ['p1', 'p2']) {
-    for (let i = 0; i < 10; i++) {
+    for (let i = 0; i < 16; i++) {
       addObject(state, {
         id: `lib-${pid}-${i}`, instanceId: `ilib-${pid}-${i}`, cardId: `test-lib-${pid}-${i}`,
         controllerId: pid, ownerId: pid, zone: 'library', kind: 'spell', manaCost: 2,

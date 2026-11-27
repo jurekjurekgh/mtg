@@ -59,7 +59,9 @@ function botTurn() {
   state.turn.activePlayerId = 'p2';
   state.turn.priorityPlayerId = 'p2';
   addMana(state, 'p2', 10);
-  for (let i = 0; i < 10; i++) putSpell(state, `lib${i}`, 'highland-game', 'p2', 'library');
+  // KOREKTA 2026-11-23 (podłoga10): Withstand dobiera → lib10 (9 < 10) weto;
+  // 12 kart = bezpieczne dobranie (11 ≥ 10).
+  for (let i = 0; i < 12; i++) putSpell(state, `lib${i}`, 'highland-game', 'p2', 'library');
   return state;
 }
 

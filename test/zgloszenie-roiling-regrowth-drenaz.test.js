@@ -54,11 +54,25 @@ test('R/1: przy 9 kartach w bibliotece rzut jest WETOWANY (twarde weto drenażu)
   assert.notEqual(cmd.type, 'cast_spell', `bot nie rzuca: wybrał ${entry.chosen}`);
 });
 
-test('R/2: przy 10 kartach weto NIE działa (granica właściciela, nie „poniżej 11”)', () => {
+test('R/2: przy 10 kartach weto DZIAŁA (korekta właściciela 2026-11-23 — podłoga PO drenażu)', () => {
+  // Właściciel: „Skoro uznaliśmy, że po wykonaniu czary library nie powinna
+  // spaść poniżej 10, to wszędzie powinno to być respektowane. Jak jakiś
+  // test liczy to inaczej, to trzeba zmienić test." — Roiling zabiera 2,
+  // więc 10 → 8 < 10 = weto (stary pin „dokładnie 10 przechodzi" liczyl
+  // stan PRZED drenażem).
   const s = scena({ bibliotekaLadow: 3, bibliotekaInnych: 7 }); // 10 kart razem
+  const { cmd, scores } = decide(s);
+  const klucz = [...scores.keys()].find((k) => ETYKIETA_RE.test(k));
+  assert.ok(klucz, `oferta rzutu istnieje (harness): ${JSON.stringify([...scores])}`);
+  assert.ok(scores.get(klucz) < 0, `weto:10 − 2 = 8 < 10, jest ${scores.get(klucz)}`);
+  assert.notEqual(cmd.type, 'cast_spell', `bot nie rzuca: wybrał ${cmd.type}`);
+});
+
+test('R/2b (granica góra): przy 12 kartach (12 − 2 = 10) weto NIE działa', () => {
+  const s = scena({ bibliotekaLadow: 3, bibliotekaInnych: 9 }); // 12 kart razem
   const wynik = ocena(s);
   assert.ok(wynik > 0,
-    `10 kart to jeszcze nie drenaż — rzut ma być opłacalny, jest ${wynik}`);
+    `12 − 2 = 10 (>= 10) — rzut ma być opłacalny, jest ${wynik}`);
 });
 
 test('R/3: 0 lądów w bibliotece ⇒ wartość 0 (sama strata many i poświęcanego lądu)', () => {

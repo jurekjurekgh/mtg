@@ -63,7 +63,9 @@ function setup({ step = 'main1', myTapped = false, enemyBlockers = 1 }) {
   }
   // C (znalezisko testera): Enigma dobiera — biblioteka musi istnieć, żeby
   // guard deck-outu nie wetował (setup wcześniej miał 0 kart).
-  for (let i = 0; i < 10; i += 1) {
+  // KOREKTA 2026-11-23 (podłoga10):10 kart (9 < 10) wetowało draw-rider;
+  // 12 kart = bezpieczne dobranie (11 ≥ 10).
+  for (let i = 0; i < 12; i += 1) {
     addObject(state, {
       id: `lib-${i}`, instanceId: `i-lib-${i}`, cardId: 'x-test', controllerId: 'p2',
       ownerId: 'p2', zone: 'library', kind: 'creature', power: 1, toughness: 1,

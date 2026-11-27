@@ -139,8 +139,17 @@ test('J/5: pasmo biblioteki 11–20 — mniejsza od przeciwnika wetuje, większa
   // 25 vs 30: poza pasmem → wolno mimo mniejszej biblioteki.
   const poza = scena({ hand, myLib: 25, oppLib: 30 });
   assert.equal(botChoice(poza).objectId, 'charm');
-  // Dokładnie 10 kart przechodzi (właściciel: „<10” i pasmo 11–20) — jawny
-  // pin krawędzi, żeby nikt jej po cichu nie przesunął.
+  // Korekta właściciela 2026-11-23 (podłoga PO drenażu): loot dobiera 2,
+  // więc 10 → 8 < 10 = weto (stary pin „dokładnie 10 przechodzi" liczył
+  // stan PRZED). Granica: 11 → 9 weto, 12 → 10 przechodzi (przeciwnik
+  // z przodu, żeby pasmo 11–20 nie mieszało — band tylko gdy MY z tyłu).
   const dziesiec = scena({ hand, myLib: 10, oppLib: 30 });
-  assert.equal(botChoice(dziesiec).objectId, 'charm');
+  assert.notEqual(botChoice(dziesiec).objectId, 'charm',
+    '10 − 2 = 8 < 10 — weto podłogi');
+  const jedenaście = scena({ hand, myLib: 11, oppLib: 10 });
+  assert.notEqual(botChoice(jedenaście).objectId, 'charm',
+    '11 − 2 = 9 < 10 — weto podłogi (band nie obowiązuje: 11 > 10)');
+  const dwanaście = scena({ hand, myLib: 12, oppLib: 10 });
+  assert.equal(botChoice(dwanaście).objectId, 'charm',
+    '12 − 2 = 10 — granica właściciela, rzut przechodzi');
 });

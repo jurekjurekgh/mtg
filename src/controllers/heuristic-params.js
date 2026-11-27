@@ -490,6 +490,29 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   // PRZED deklaracją ataku, pali wariant „5 zamiast 4" na zawsze. Wzorzec
   // `holdForAddendum` (M139/Addendum) — ta sama klasa: niższa liczba obrażeń.
   'raidHoldBonus',               // kara-dopłata za rzut bez Raidu, gdy atak jest jeszcze możliwy
+  // G (zgłoszenie właściciela 2026-11-21, Glorifier of Suffering): refleks
+  // „poświęć stwora/artefakt → +1/+1 na dwóch celów" nie jest wart ZDROWEGO
+  // permanentu — bot palił super fajny artefakt za 4 many dla marnej
+  // licznikowej zapłaty. Strażnik nakłada ujemny wynik na zdrowych
+  // kandydatów (wyjątki właściciela: obca aura, TMC ≤ 1, token 1/1 bez
+  // zdolności); 0 = dawne `40 − strata` dla każdego (anti-over-fix M429).
+  'counterReflexSacrificeGuard', // 1 = zakaz poświęcania zdrowych permanentów (0 = po staremu)
+  // H (zgłoszenie właściciela 2026-11-21, Epic Experiment): dwa removaly
+  // celowane w TEN SAM obiekt — czar rzucony wcześniej leży na dole stosu
+  // i rozstrzyga się PO drugim; zabójstwo drugim unieważnia jego cel
+  // (CR 608.2b) i pierwszy fizzluje (log: Summary Judgment zabija Pilgrim's
+  // Eye → Piercing Rays „cel nielegalny — bez efektu"). Kara za zdublowany
+  // cel usuwania MOJEGO stosu przechyla remis wariantów na drugą istotę
+  // („zamiast w dwie różne"); 0 = dawne „pierwszy z listy" (anti-over-fix).
+  'stackRemovalDuplicationPenalty', // kara za cel zajęty przez mój czar na stosie (0 = po staremu)
+  // J (zgłoszenie właściciela 2026-11-21, Containment Membrane): wroga aura
+  // unieruchamiająca (doesntUntap/cantAttack/pompa ujemna…) na MOIM stworze
+  // czyni gospodarza NIEPEŁNOSPRAWNYM — buforowanie go aurą lub equipmentem
+  // to marnowanie karty („sprawdzać czy cel jest pełnosprawny, a jeśli ma
+  // wrogą aurę to nie powinien go wyposażyć"). Kara w ścieżce wyboru
+  // gospodarza (cast_permanent dla aury + equip w activate_ability);
+  // 0 = dawne zachowanie (wycena gospodarza po P+T).
+  'disabledAttachTargetPenalty', // kara za gospodarza z wrogą aurą (0 = po staremu)
   // F1 v2 (uwaga właściciela 2026-09-23d, Veiled Ascension): efekt zakrywający
   // kartę z biblioteki (cloak — CR 701.58a) ZAMIENIA ją na permanenta 2/2
   // z wardem, a nie marnuje jak mill czy dobranie — więc „you may” jest
@@ -497,6 +520,7 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   // pod próg (jedyna realna strata to deck-out, CR 121.4).
   'cloakLibraryFloor',           // biblioteka < próg ⇒ „pass” (właściciel: 10)
   'cloakThinLibraryPenalty',     // kara za cloak przy cienkiej bibliotece (> 50 ⇒ schodzi pod „pass”)
+  'libraryDrainFloor',           // J2 (właściciel 2026-11-23): uniwersalna podłoga drenażu — PO drenażu ≥ próg (10)
   // M429 (zlecenie właściciela 2026-09-24e — karty batcha 59, „P1 Mutagen"):
   // rodzina „licznik na wskazanym celu". Dotąd licznik na WŁASNYM stworze był
   // wart płasko 8 + 4·amount w OBU bliźniaczych gałęziach (czar i aktywacja),
@@ -1273,8 +1297,15 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   selfEvasionWastedPenalty: 18,
   negativePumpPowerCap: 1,
   raidHoldBonus: 45,
+  counterReflexSacrificeGuard: 1,
+  stackRemovalDuplicationPenalty: 20,
+  disabledAttachTargetPenalty: 1000,
   cloakLibraryFloor: 10,
   cloakThinLibraryPenalty: 60,
+  // J2 (zgłoszenie właściciela 2026-11-23): „po wykonaniu czary library nie
+  // powinna spaść poniżej 10... wszędzie" — jedna podłoga dla wszystkich
+  // komend opróżniających bibliotekę (mill, tutor, płatność, doboru, aktywacje).
+  libraryDrainFloor: 10,
   // M429 „licznik na wskazanym celu" (P1 Mutagen, pomiar PRZED: remis 14/14/14).
   // Przemysłane wartości (nie tuner): patrz uzasadnienie przy HEURISTIC_PARAM_KEYS.
   counterBase: 2,

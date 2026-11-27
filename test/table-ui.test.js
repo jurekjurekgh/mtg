@@ -265,6 +265,28 @@ function restart(seed = '13') {
   dom.get('new-game').click();
 }
 
+/**
+ * Świadomy klik „Rozumiem" przez bramkę odprysku (MODAL_OPEN_GUARD_MS,
+ * Zgłoszenie właściciela 2026-11-25 — seed 79892). Sterownik klika
+ * synchronicznie po otwarciu modala, więc przesuwamy zegar Date POZA okno
+ * guard tylko na czas kliknięcia (wzorzec z testów bug A: enable → setTime →
+ * reset — po resecie Date wraca do realu i testy gestów mogą włączyć własny
+ * mock).
+ */
+// Narastający offset: showModal zapisuje modalOpenedAt podczas okna mocka
+// (przyszły realny znacznik) — kolejne ack muszą kliknąć POZA 450 ms od
+// tamtego znacznika, więc przeskok rośnie o 500 ms na ack (diff klik–otwarcie
+// stale ~500 ms, a wiek nigdy nie ujemny względem realnego zegara po resecie).
+let ackOffset = 0;
+function ackBotMove() {
+  ackOffset += 500;
+  const realNow = Date.now();
+  mock.timers.enable({ apis: ['Date'] });
+  mock.timers.setTime(realNow + ackOffset);
+  dom.get('bot-move-ok').click();
+  mock.timers.reset();
+}
+
 test('strona stołu przechodzi self-test i startuje partię na pierwszej decyzji', () => {
   restart();
   assert.match(textOf(dom.get('selftest')), /✓ Headless engine/, 'self-test nie przeszedł');
@@ -313,7 +335,7 @@ test('gracz klika się przez całą partię do baneru końca gry', () => {
     if (dom.get('bot-move').className === 'modal active') {
       botPauses += 1;
       assert.ok(textOf(dom.get('bot-move-body')).length > 0, 'modal ruchu bota jest pusty');
-      dom.get('bot-move-ok').click();
+      ackBotMove();
       continue;
     }
     const button = pickActionButton(dom.get('actions'));
@@ -324,6 +346,48 @@ test('gracz klika się przez całą partię do baneru końca gry', () => {
   assert.match(textOf(log), /Tura gracza/, 'log nie opisuje tur');
   assert.ok(botPauses > 0, 'partia z botem powinna mieć pauzy po istotnych zagraniach bota');
   assert.doesNotMatch(dom.get('notice').className, /active/, textOf(dom.get('notice-body')));
+});
+
+test('odprysk gestu: klik w Rozumiem tuż po otwarciu modala pauzy NIE wznawia gry', () => {
+  // Zgłoszenie właściciela 2026-11-25 (seed 79892): brak stopu na początku
+  // Tur 12/20. Mechanizm: drugi klik dwukliku / „odprysk" gestu, który
+  // zamknął planszę graficzny karty, trafia w WŁAŚNIE otwarty modal pauzy —
+  // przed bramką klik w „Rozumiem" uznawał pauzę w tym samym geście, w którym
+  // gracz dopiero co zobaczył (albo nie zdążył zobaczyć) nagłówek tury, i
+  // tura bota jechała dalej. Bramka = ten sam MODAL_OPEN_GUARD_MS co tło.
+  mock.timers.enable({ apis: ['Date'] });
+  try {
+    restart('13');
+    for (let i = 0; i < 900; i += 1) {
+      if (dom.get('bot-move').className === 'modal active') {
+        if (globalThis.window.__mtgDebug.botPausePending()) break;
+        mock.timers.tick(500);
+        dom.get('bot-move-ok').click();
+        continue;
+      }
+      const button = pickActionButton(dom.get('actions'));
+      if (!button) break;
+      button.click();
+    }
+    assert.ok(globalThis.window.__mtgDebug.botPausePending(),
+      'sterownik nie dotarł do pauzy ruchu bota');
+    assert.ok(textOf(dom.get('bot-move-body')).length > 0, 'modal pauzy jest pusty');
+    // ODRYSK: klik w „Rozumiem" w tym samym takcie co otwarcie modala.
+    const przed = JSON.stringify(globalThis.window.__mtgDebug.botMovesSnapshot());
+    dom.get('bot-move-ok').click();
+    assert.equal(globalThis.window.__mtgDebug.botPausePending(), true,
+      'klik-odprysk tuż po otwarciu modala nie może wznawiać gry');
+    assert.equal(JSON.stringify(globalThis.window.__mtgDebug.botMovesSnapshot()), przed,
+      'klik-odprysk nie może konsumować bufora pauzy');
+    // Świadomy klik po oknie guard — gra wznawia się (bufor rusza dalej:
+    // konsumpcja + następne znaczące zdarzenie bota albo okno decyzji).
+    mock.timers.tick(500);
+    dom.get('bot-move-ok').click();
+    assert.notEqual(JSON.stringify(globalThis.window.__mtgDebug.botMovesSnapshot()), przed,
+      'świadomy klik Rozumiem po oknie guard wznawia grę');
+  } finally {
+    mock.timers.reset();
+  }
 });
 
 test('eksport i import zapisu partii działają przez przyciski strony', () => {
@@ -580,7 +644,7 @@ test('uwagi A+D (2026-08-10): etykiety akcji w jednym span.action-label, grupa a
 function driveToManaWizard(maxClicks = 300) {
   for (let i = 0; i < maxClicks; i += 1) {
     if (dom.get('bot-move').className === 'modal active') {
-      dom.get('bot-move-ok').click();
+      ackBotMove();
       continue;
     }
     if (dom.get('mana-wizard').className === 'modal active') return 'wizard';
@@ -663,7 +727,7 @@ test('C2 RED: Hooting Mandrills jest oferowany i płaci maną + Delve w jednym M
   let mandrillsOffer = null;
   for (let i = 0; i < 500 && !mandrillsOffer; i += 1) {
     if (dom.get('bot-move').className === 'modal active') {
-      dom.get('bot-move-ok').click();
+      ackBotMove();
       continue;
     }
     if (dom.get('choice-request').className === 'modal active') {
@@ -791,7 +855,7 @@ test('kreator many (zgłoszenie G): {1}{B} przy czterech lądach domyka się w D
   let rekaPrzed = null;
   for (let i = 0; i < 400; i += 1) {
     if (dom.get('bot-move').className === 'modal active') {
-      dom.get('bot-move-ok').click();
+      ackBotMove();
       continue;
     }
     if (dom.get('mana-wizard').className === 'modal active') {

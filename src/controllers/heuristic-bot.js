@@ -3272,7 +3272,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       + (o.power ?? 0) * P.creaturePowerWeight + (o.toughness ?? 0) * P.creatureToughnessWeight));
   };
 
-  const etbEnterBonusValue = (view, def, { kicked = false, offspring = false, reservedMana = 0 } = {}) => {
+  const etbEnterBonusValue = (view, def, { kicked = false, offspring = false, reservedMana = 0, miller = 'mine' } = {}) => {
     if (!def) return 0;
     let total = 0;
     // Riot (CR 702.136a) nie jest triggerem. Ta sama miara co przy wyborze
@@ -3306,6 +3306,22 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       // Jednostka: wspolna drabina selfLifeLossPenalty (L48), bez nowej skali.
       let sub = 0;
       for (const e of effs) {
+        // J (zgłoszenie właściciela 2026-11-23, Moldgraf Millipede): ETB
+        // `mill_cards` był wyceniany jak mill WROGA (tabela +20+3n = +29),
+        // więc auto-mill własnej biblioteki był PREMIĄ przy dowolnym stanie
+        // biblioteki (mierzone: 99.9 przy 5/10/30 kartach). Niecelowany mill
+        // (CR 701.17) mili BIBLIOTEKĘ MILERA: wspólna skala `selfMillValue`
+        // dla mojej karty (L41 — ta sama co czar/aktywacja), `foeMillValue`
+        // gdy mill jest cudzym (analiza odbicia wroga, `miller: 'foe'`).
+        // Cel-gracz (requiresTarget player) odwraca stronę z milerem: mój
+        // czar celuje we wroga, jego trigger — we mnie (konserwatywnie).
+        if (e?.type === 'mill_cards' || e?.type === 'mill_from_bottom') {
+          const n = Math.max(1, Number.isInteger(e.amount) ? e.amount : 1);
+          const targetedPlayer = req?.type === 'player';
+          const millsMine = targetedPlayer ? miller !== 'mine' : miller === 'mine';
+          sub += millsMine ? selfMillValue(view, n) : foeMillValue(view, n);
+          continue;
+        }
         const fn = e?.type ? ETB_EFFECT_BONUS[e.type] : null;
         if (!fn) continue;
         sub += fn(e, view, req, def);
@@ -4711,15 +4727,22 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   // (enter_battlefield, dies) — np. Skaab „ETB mill 4", nie mnożymy przez
   // horyzont. Razem z repeat + payment daje pełny obraz ryzyka deck-outu
   // przy rzucie, zamiast per-karta patchy.
-  const oneShotLibraryDrain = (def) => {
+  const oneShotLibraryDrain = (def, types = LIBRARY_DRAIN_EFFECTS) => {
     let razem = 0;
     for (const ability of def?.abilities ?? []) {
       const ev = ability?.trigger?.event;
       if (!ev || !ONE_SHOT_DRAIN_EVENTS.has(ev)) continue;
-      razem += drainEfekty(ability, ev, drainsMyLibrary);
+      for (const eff of (Array.isArray(ability.effect) ? ability.effect : [ability.effect])) {
+        if (!eff?.type || !types.has(eff.type)) continue;
+        if (drainsMyLibrary(eff)) razem += drainAmount(eff);
+      }
     }
     return razem;
   };
+  // J (Moldgraf): rodziny drenażu jednorazowego ETB — mill wchodzi do pełnej
+  // drabiny cienkiej biblioteki, dobór zostaje przy progu deck-outu (E2/K2/CR1).
+  const MILL_DRAIN_EFFECTS = new Set(['mill_cards', 'mill_from_bottom']);
+  const DRAW_DRAIN_EFFECTS = new Set(['draw_cards', 'draw_then_discard']);
   /**
    * B/1b — ile kart WŁASNEJ biblioteki zje PŁATNOŚĆ za wariant. Auto-tap
    * (`spendMana`) do-tapuje brakujące źródła, a silnik odkłada mielące na koniec
@@ -4813,8 +4836,11 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
    * Klasa po typie efektu (ADR 0002), nie po nazwie karty. Zwraca true = weto.
    */
   const SYMMETRIC_DRAIN_EFFECTS = new Set(['each_player_exiles_top_face_down', 'mill_both_players']);
-  const SYMMETRIC_DRAIN_MIN_LIBRARY = 10;
-  const symmetricDrainVeto = (view, cmd) => {
+  // J2 (unifikacja 2026-11-23): dawny `symmetricDrainVeto` — podłoga10
+  // POchodzi z `libraryDrainVeto`; zostaje TYLKO reguła wyścigu (G,
+  // właściciel 2026-10-15): symetryczny mill przy własnej bibliotece
+  // mniejszej niż przeciwnika to prowadzenie się do zguby.
+  const symmetricDrainRace = (view, cmd) => {
     if (cmd?.type !== 'activate_ability') return false;
     const object = objectOnBoard(view, cmd.objectId) ?? handCard(view, cmd.objectId) ?? zoneCard(view, cmd.objectId);
     const abilities = object?.activatableAbilities
@@ -4824,7 +4850,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     if (!effects.some((eff) => SYMMETRIC_DRAIN_EFFECTS.has(eff?.type))) return false;
     const mojaBiblioteka = myLibraryCount(view);
     const bibliotekaPrzeciwnika = view.zones.library.filter((o) => o.controllerId !== view.playerId).length;
-    return mojaBiblioteka < bibliotekaPrzeciwnika || mojaBiblioteka < SYMMETRIC_DRAIN_MIN_LIBRARY;
+    return mojaBiblioteka < bibliotekaPrzeciwnika;
   };
 
   // D (PR #171): gdy rzut permanentu niesie na własnym upkeepie symetryczny
@@ -4927,8 +4953,9 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         .some((unit) => !unit.some((color) => untappedLandColors.has(color)));
     }).length;
     if (strandedCount < discardTotal) return true;
+    // J2 (unifikacja): próg LOOT_MIN_LIBRARY (PRE10) wchłonięty przez
+    // uniwersalną podłogę `libraryDrainVeto` (loot dobiera → PO drenażu).
     const myLibrary = myLibraryCount(view);
-    if (myLibrary < LOOT_MIN_LIBRARY) return true;
     if (myLibrary > LOOT_MIN_LIBRARY && myLibrary <= LOOT_BEHIND_BAND_MAX) {
       const enemyLibrary = (view.zones.library ?? [])
         .filter((o) => o.controllerId !== view.playerId).length;
@@ -4971,9 +4998,26 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
    */
   const SPRINGBLOOM_MIN_LIBRARY = 10;
   const SPRINGBLOOM_BASIC_LANDS = 2;
+  // J2 (zgłoszenie właściciela 2026-11-23, unifikacja): JEDNA podłoga
+  // drenażu biblioteki dla WSZYSTKICH komend — „po wykonaniu czary library
+  // nie powinna spaść poniżej 10... wszędzie; test liczy inaczej → zmienić
+  // test". Weto liczy ZAPAS PO drenażu (mill3: 13 → 10 OK, 12 → 9 weto);
+  // absorbuje dawne progi: springbloomDrainVeto (PRE10), symmetricDrainVeto
+  // (PRE10), lootCastVeto (LOOT_MIN_LIBRARY), selfMillFloorVeto (POST10
+  // tylko mill). Standardowy draw STEP jest wyjątkiem (E2/K2/CR1).
+  // Próg: `P.libraryDrainFloor` (parametr — nadpisanie przepływa, L429).
+  // Springbloom/Roiling zabiera do 2 basic landów (konsertywne 2 dla podłogi).
+  const SPRINGBLOOM_DRAIN = 2;
+  // J2 (E5, właściciel): efekty WKŁADAJĄCE karty do biblioteki (Forever Young
+  // „creatures on top, then draw" = NET +1 przy2 kreaturach w grobie) —
+  // podłoga liczy bilans, nie sam odpływ. Ilość: bot przy resolve wybiera
+  // kandydatów z grobu — konsertywnie WSZYSTKIE własne kreatury w grobie.
+  const LIBRARY_INFLOW_EFFECTS = new Set(['graveyard_creatures_to_library_top_choice']);
+  const ownGraveCreatures = (view) => (view.zones.graveyard ?? [])
+    .filter((o) => o.controllerId === view.playerId && (o.types ?? []).includes('Creature')).length;
 
   /**
-   * Wspólny predykat (L41) dla rzutu (`springbloomDrainVeto`) i opcjonalnej
+   * Wspólny predykat (L41) dla rzutu (`springbloomFizzle`) i opcjonalnej
    * decyzji ETB (`resolve_springbloom`). W syntetycznych testach jednostkowych
    * bez talii (obie biblioteki puste i `ownDeck` nieznane — patrz A8) `resolve`
    * zachowuje bazowe porównanie straty lądów (`allowEmptyTestLibrary`).
@@ -4988,11 +5032,133 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     return false;
   }
 
-  function springbloomDrainVeto(view, cmd) {
+  // J2 (unifikacja): dawny `springbloomDrainVeto` — podłoga10 (PRE10)
+  // wchłonięta przez `libraryDrainVeto`; zostaje TYLKO fizzle tutora
+  // (właściciel 2026-11-08: <2 basic landów = marnotrawstwo many i lądu).
+  function springbloomFizzle(view, cmd) {
     if (!isLibraryDrainCastCommand(cmd)) return false;
     const karta = handCard(view, cmd.objectId) ?? zoneCard(view, cmd.objectId);
     if (!karta || springbloomEffects(karta).length === 0) return false;
-    return springbloomShouldDecline(view);
+    const cel = searchTargetsRemaining(view, { allTypes: ['Basic', 'Land'] });
+    return cel != null && cel < SPRINGBLOOM_BASIC_LANDS;
+  }
+
+  /**
+   * J2 (zgłoszenie właściciela 2026-11-23 — „jedna wspólna funkcja"):
+   * NATYCHMIASTOWY drenaż własnej biblioteki komendy — ile kart znika
+   * z mojej biblioteki przy wykonaniu tej komendy (wszystko poza
+   * standardowym draw stepem). Wspólne źródło prawdy dla podłogi10:
+   *   • tap_for_mana — mielące tapnięcie płatności;
+   *   • resolve_springbloom — tutor po poświęceniu lądu (2);
+   *   • resolve_optional_trigger_choice (fire) — mayfire/cloak/selfMill
+   *     (selfMill = kwota z adnotacji, dedykowana wycena wyścigu M167
+   *     dostaje podłogę BEZ podwójnego podatku);
+   *   • activate_ability — efekty zdolności + płatność + tutor;
+   *   • declare_attackers — atak-triggered draw/mill po WSZYSTKICH;
+   *   • cast_* — efekty wybranego wariantu czaru (mode-aware) +
+   *     jednorazowe ETB/dies + tutor + springbloom(2) + płatność.
+   * Powtarzalne źródła (repeat) to PRZYSZŁOŚĆ — nimi zajmuje się
+   * drabina `libraryDrainTax`, nie ta podłoga.
+   */
+  function commandSelfDrain(view, cmd) {
+    if (!cmd) return 0;
+    // Własny drenaż = biblioteka maleje o `amount` (mill, draw, loot,
+    // symetryczny mill, cloak/manifest z biblioteki) i efekt dotyczy mojej
+    // strony (`drainsMyLibrary`). Union trzech zbiorów typów (L41).
+    const ownDrain = (eff) => Boolean(eff?.type) && drainsMyLibrary(eff)
+      && (LIBRARY_DRAIN_EFFECTS.has(eff.type)
+        || SYMMETRIC_DRAIN_EFFECTS.has(eff.type)
+        || FACE_DOWN_LIBRARY_EFFECT_TYPES.has(eff.type));
+    if (cmd.type === 'tap_for_mana') return tapLibraryLoss(view, cmd.objectId);
+    if (cmd.type === 'resolve_springbloom') {
+      return cmd.sacrificeLandId == null ? 0 : SPRINGBLOOM_DRAIN;
+    }
+    if (cmd.type === 'resolve_optional_trigger_choice') {
+      if (!cmd.fire) return 0;
+      if (Number.isInteger(cmd.selfMill)) return Math.max(0, cmd.selfMill);
+      let drain = 0;
+      for (const eff of pendingOptionalEffects(view)) {
+        if (ownDrain(eff)) drain += drainAmount(eff);
+      }
+      return drain;
+    }
+    if (cmd.type === 'activate_ability') {
+      let drain = paymentLibraryLoss(view, cmd) + searchLibraryLoss(view, cmd);
+      const object = objectOnBoard(view, cmd.objectId) ?? handCard(view, cmd.objectId) ?? zoneCard(view, cmd.objectId);
+      const abilities = object?.activatableAbilities
+        ?? (object?.cardId ? cardDef(object.cardId)?.abilities : undefined) ?? [];
+      const ability = abilities[cmd.abilityIndex ?? 0];
+      for (const eff of (Array.isArray(ability?.effect) ? ability.effect : [ability?.effect])) {
+        if (ownDrain(eff)) drain += drainAmount(eff);
+      }
+      return drain;
+    }
+    if (cmd.type === 'declare_attackers') {
+      let drain = 0;
+      for (const id of cmd.attackerIds ?? []) {
+        const attacker = objectOnBoard(view, id);
+        if (!attacker || attacker.controllerId !== view.playerId) continue;
+        for (const ability of cardDef(attacker.cardId)?.abilities ?? []) {
+          drain += drainEfekty(ability, 'attacks', drainsMyLibrary);
+        }
+      }
+      return drain;
+    }
+    if (isLibraryDrainCastCommand(cmd)) {
+      const karta = handCard(view, cmd.objectId) ?? zoneCard(view, cmd.objectId);
+      const def = karta?.cardId ? cardDef(karta.cardId) : undefined;
+      let drain = paymentLibraryLoss(view, cmd)
+        + searchLibraryLoss(view, cmd)
+        + oneShotLibraryDrain(def); // jednorazowe ETB/dies (mill+draw)
+      // Efekty samego czaru (mode-aware — jak searchLibraryLoss): mill,
+      // loot (draw_then_discard), draw, tutor ze spell.effects.
+      const spell = karta?.spell ?? def?.spell;
+      const mode = cmd.modeIndex != null ? spell?.modes?.[cmd.modeIndex] : null;
+      // Cel-gracz (tome-scour „Target player mills5"): stronę drenażu
+      // rozstrzyga wybrany cel OPCJI — mill na WROGA nie rusza mojej
+      // biblioteki (ta sama reguła strony co etbEnterBonusValue, L41).
+      const playerTargeted = (spell?.targets ?? []).some((t) => t?.type === 'player');
+      const targetId = cmd.targets?.[0] ?? cmd.targetId ?? null;
+      const targetIsFoe = playerTargeted && targetId != null && targetId !== view.playerId;
+      for (const eff of (mode?.effects ?? spell?.effects ?? [])) {
+        if (LIBRARY_INFLOW_EFFECTS.has(eff?.type)) {
+          drain -= ownGraveCreatures(view); // wkładamy na wierzch → biblioteka rośnie
+          continue;
+        }
+        if (!ownDrain(eff)) continue;
+        if (targetIsFoe && (eff.type === 'mill_cards' || eff.type === 'mill_from_bottom')) continue;
+        drain += drainAmount(eff);
+      }
+      if (springbloomEffects(karta).length > 0) drain += SPRINGBLOOM_DRAIN;
+      return drain;
+    }
+    return 0;
+  }
+
+  /**
+   * J2 (zgłoszenie właściciela 2026-11-23 — „po co wiele różnych
+   * blokerów? unifikować do jednej wspólnej funkcji"): JEDNA bramka
+   * drenażu biblioteki w `scoreCommand`. Podłoga10 PO drenażu obowiązuje
+   * KAŻDĄ komendę opróżniającą własną bibliotekę (patrz `commandSelfDrain`);
+   * pod nią zostają trzy reguły RODZINNE, które nie są podłogą:
+   *   • wyścig symetryczny (G 2026-10-15: własna < przeciwnika),
+   *   • fizzle tutora (Roiling 2026-11-08: <2 basic landów),
+   *   • loot bez „utkniętego" materiału / pasmo 11–20 z tyłu (2026-10-24).
+   * Standardowy draw STEP jest wyjątkiem (E2/K2/CR1: dobór bez kary
+   * cienkiej) — podłoga dotyczy drenażu ze SPELLI i zdolności.
+   */
+  function libraryDrainVeto(view, cmd) {
+    const myLib = myLibraryCount(view);
+    // A8/K2: pusta biblioteka = stan syntetyczny jednostkowych testów bez
+    // talii — podłoga nie wetuje (ta sama konwencja co libraryLossPenalty).
+    if (myLib > 0) {
+      const n = commandSelfDrain(view, cmd);
+      if (n > 0 && myLib - n < P.libraryDrainFloor) return true;
+    }
+    if (symmetricDrainRace(view, cmd)) return true;
+    if (springbloomFizzle(view, cmd)) return true;
+    if (lootCastVeto(view, cmd)) return true;
+    return false;
   }
 
   const libraryDrainTax = (view, cmd) => {
@@ -5066,16 +5232,21 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     const karta = handCard(view, cmd.objectId) ?? zoneCard(view, cmd.objectId);
     const def = karta?.cardId ? cardDef(karta.cardId) : undefined;
     const repeat = repeatLibraryDrain(def);
-    const oneShot = oneShotLibraryDrain(def);
+    const oneShotDraw = oneShotLibraryDrain(def, DRAW_DRAIN_EFFECTS);
     const payment = paymentLibraryLoss(view, cmd);
     // Repeat + payment: pełna drabina (thin 20) — powtarzalne źródła.
-    // OneShot ETB (Rager 1, Skaab 4): tylko deck-out, nie thin.
+    // J (zgłoszenie właściciela 2026-11-23, Moldgraf Millipede + korekta
+    // właściciela): jednorazowy MILL z ETB jest pilnowany TWARDEM wETem
+    // `libraryDrainVeto` (podłoga10 PO drenażu), nie drabiną marginesu 20 —
+    // „przy 15 bym się zastanawiał, a przy 20 bym na pewno rzucał". Dobór
+    // z ETB (Rager 1, CR1) ZOSTAJE przy progu deck-outu — świadoma decyzja
+    // E2/K2/CR1 (2026-09-15), nie ruszamy.
     // C (domknięcie rodziny, L41/L102): tutor z czaru (Caravan Vigil i
     // pokrewne) uszczupla bibliotekę tak samo jak wariant aktywowany.
     // I: jak wyżej — mieląca PŁATNOŚĆ na progu tapnięcia, reszta na ogólnym.
     return tapMillPenalty(view, payment)
       + libraryLossPenalty(view, repeat + searchLibraryLoss(view, cmd))
-      + oneShotDeckOutPenalty(view, oneShot);
+      + oneShotDeckOutPenalty(view, oneShotDraw);
   };
   const myLandCount = (view) => view.zones.battlefield.filter((o) => o.controllerId === view.playerId && o.kind === 'land').length;
 
@@ -5734,7 +5905,15 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     // gospodarza i okna walki), wrogi stwór dostaje prezent za naszą manę
     // (M155) — kara tylko za stwora, inny permanent nic z niego nie ma.
     if (STAT_COUNTERS.has(counterName) || KEYWORD_COUNTERS.has(counterName)) {
-      if (mine) return counterHostValue(view, target, counterName, amount);
+      if (mine) {
+        // J (zgłoszenie właściciela, Containment Membrane): licznik +1/+1 na
+        // gospodarzu unieruchomionym wrogą aurą to marnowanie — wrapper nie
+        // zaatakuje i nie obroni. Ten sam gate co aura/equip (L41); obejmuje
+        // rzut czaru (Courage in Crisis) i aktywację (Mutagen), bo obie
+        // ścieżki liczą PRZEZ counterEffectValue.
+        if (attachTargetDisabled(view, target)) return -P.disabledAttachTargetPenalty;
+        return counterHostValue(view, target, counterName, amount);
+      }
       return (target.kind === 'creature' || (target.types ?? []).includes('Creature')) ? -90 : 0;
     }
     // Licznik zasobowy (oil/level/point…): wartość TYLKO, gdy inna zdolność
@@ -6119,7 +6298,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     // bo to argument „co realnie zabieram przeciwnikowi”.
     if (!mine) delta += bounceInvestmentDelta(view, victim);
     if (!mine && victim.cardId) {
-      delta -= P.bounceFoeEtbWeight * etbEnterBonusValue(view, cardDef(victim.cardId));
+      delta -= P.bounceFoeEtbWeight * etbEnterBonusValue(view, cardDef(victim.cardId), { miller: 'foe' });
     }
     // PMSSB-1/C — wymiary STANU celu wroga (wspólne dla cast_spell,
     // activate_ability i wrappera apply_to_each_target — L41):
@@ -8820,6 +8999,43 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     }
     return (target.manaCost ?? 0) * 2;
   }
+  /**
+   * G (zgłoszenie właściciela 2026-11-21, Glorifier of Suffering): czy ta
+   * decyzja poświęcenia należy do rodziny „refleks licznikowy" — zdolność
+   * `reflexive_sacrifice` („you may sacrifice another creature or artifact"),
+   * której refleks „When you do" kładzie liczniki (`add_counter`). Rozpoznanie
+   * deskryptorowe (ADR 0002), nie po nazwie karty. Inne ofiary — Grave
+   * Exchange, champion (`moveTo: exile`), pay-or-sacrifice — nie wchodzą
+   * w rodzinę i zostają przy własnych politykach.
+   */
+  function counterReflexSacrificePending(view) {
+    const pending = view.pendingSacrifice;
+    if (!pending?.cardId) return false;
+    const abilities = cardDef(pending.cardId)?.abilities ?? [];
+    const sacStage = abilities.find((a) => a?.effect?.type === 'reflexive_sacrifice');
+    if (!sacStage) return false;
+    const reflexEvent = sacStage.effect.reflexiveEvent ?? 'reflexive_sacrifice';
+    const reflex = abilities.find((a) => a?.trigger?.event === reflexEvent);
+    return reflex?.effect?.type === 'add_counter';
+  }
+  /**
+   * G: ułomna ofiara dla refleksu licznikowego — właściciel zezwala
+   * poświęcać TYLKO odpadki:
+   *  - obca (wroga) aura na permanencie: stwór jest już wyłączony z gry
+   *    (np. Pacifism), a aura ginie z gospodarzem (CR 704.5m);
+   *  - TMC z przypiętymi aurami i equipmentem ≤ 1 (drobiazg; model N/O);
+   *  - token 1/1 bez zdolności (jawne `isToken`, brak keywordów w widoku).
+   */
+  function deficientCounterReflexSacrifice(view, target) {
+    if (!target) return false;
+    const enemyAura = (view.zones?.battlefield ?? []).some((o) => o?.attachedTo === target.id
+      && (o.kind === 'aura' || o.aura) && !o.bestow && o.controllerId !== view.playerId);
+    if (enemyAura) return true;
+    if (tmcWithAttachmentsOf(view, target) <= 1) return true;
+    return Boolean(target.isToken)
+      && (target.power ?? 0) === 1 && (target.toughness ?? 0) === 1
+      && (target.keywords ?? []).length === 0;
+  }
 
   /**
    * K (zgłoszenie właściciela 2026-10-29, Rupture Spire): ląd z ETB „zapłać {N}
@@ -10416,6 +10632,32 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     'resolve_rebound_cast',
     'resolve_grave_free_cast',
   ]);
+  /**
+   * H (zgłoszenie właściciela 2026-11-21, Epic Experiment): dwa removaly w
+   * TEN SAM cel — czar rzucony wcześniej leży na DOLE stosu i rozstrzyga się
+   * PO drugim (Summary Judgment zabija Pilgrim's Eye, Piercing Rays dostaje
+   * „cel nielegalny — bez efektu", CR 608.2b). Właściciel: „zamiast w dwie
+   * różne. BEZ SENSU." Kara za zdublowany cel usuwania MOJEGO stosu
+   * przechyla remis wariantów na drugą istotę; przy jedynym legalnym celu
+   * wynik spada, ale rzut i tak przechodzi nad `done` (i tak poszedłby do
+   * grobu — H/3). Tylko MOJE wpisy stosu: cudzy removal zduplikowany to
+   * jego fizzle, nie nasza strata. Rozpoznanie po deskryptorach (ADR 0002):
+   * damage / hard-removal po obu stronach; bounce może dołączyć przy
+   * zgłoszeniu. Jeden lejek dla całej rodziny darmowych rzutów (L41).
+   */
+  function stackRemovalDuplicationPenalty(view, effects, cmd) {
+    const targets = cmd?.targets ?? [];
+    if (targets.length === 0 || P.stackRemovalDuplicationPenalty <= 0) return 0;
+    const removes = (effs) => (effs ?? []).some((e) => e?.type === 'damage'
+      || e?.type === 'damage_divided_among_targets' || HARD_REMOVAL_EFFECTS.has(e?.type));
+    if (!removes(effects)) return 0;
+    const duplicated = (view.zones.stack ?? []).some((entry) =>
+      entry.controllerId === view.playerId
+      && (entry.targets ?? []).some((id) => targets.includes(id))
+      && removes(stackEntryEffects(entry)));
+    return duplicated ? P.stackRemovalDuplicationPenalty : 0;
+  }
+
   function freeCastTargetPenalty(view, effects, cmd) {
     const target = objectOnBoard(view, (cmd.targets ?? [])[0]) ?? null;
     const penalizeIdle = !FREE_CAST_NO_HOLD_OPTION_TYPES.has(cmd?.type);
@@ -10424,9 +10666,12 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     // cel na wrogu podnosi ją. Jeden lejek dla całej rodziny darmowych rzutów
     // (epic/suspend/rebound/madness/exile — L41), więc remisy wariantów
     // w Epic Experiment nie kończą się już pierwszym celem z brzegu.
+    // H (2026-11-21): zdublowany cel usuwania na MOIM stosie dokłada karę
+    // (`stackRemovalDuplicationPenalty`) — patrz helper wyżej.
     return selfHarmPenalty(view, effects, cmd, target)
       + friendlyMisaimPenalty(view, effects, cmd, target)
-      - preventShieldTargetValue(view, effects, cmd, { penalizeIdle });
+      - preventShieldTargetValue(view, effects, cmd, { penalizeIdle })
+      + stackRemovalDuplicationPenalty(view, effects, cmd);
   }
 
   /**
@@ -10552,6 +10797,25 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         return false;
       });
     });
+  }
+  /**
+   * J (zgłoszenie właściciela 2026-11-21, Containment Membrane): „Nakładając
+   * aurę albo equipment powinien sprawdzać czy cel jest pełnosprawny, a jeśli
+   * ma wrogą aurę to nie powinien go wyposażyć bo to marnowanie tych
+   * aur/equipmentów." Gospodarz z wrogą aurą-wrogą (`auraIsHostile` — m.in.
+   * `doesntUntap` Containment Membrane, cantAttack, pompa ujemna,
+   * losesKeywords) jest unieruchomiony: buff na nim nie zaatakuje i nie
+   * obroni — karta marnowana. Rozpoznanie po DESKRYPTORZE załączonej aury
+   * z widoku (ADR 0002), bez nazw kart; zdolności na trigger wejścia czytamy
+   * z `cardDef` — to ta sama bramka, którą ma `auraIsHostile`.
+   */
+  function attachTargetDisabled(view, creature) {
+    if (!creature || P.disabledAttachTargetPenalty <= 0) return false;
+    return (view.zones.battlefield ?? []).some((o) => o
+      && o.attachedTo === creature.id
+      && o.kind === 'aura'
+      && o.controllerId !== creature.controllerId
+      && auraIsHostile(o.aura, cardDef(o.cardId), creature));
   }
   const hasKeyword = (object, keyword) => (object?.keywords ?? []).includes(keyword);
   const canAttackNow = (object) => Boolean(object) && !object.tapped && !object.summoningSickness;
@@ -12704,17 +12968,15 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     const finish = (score) => weightedScore(cmd.type, score - wardTax - libraryTax + (score > 0 ? surgeSaving * P.creatureManaCostWeight : 0));
     // G (uwagi właściciela 2026-10-15): weto symetrycznego drenażu bibliotek —
     // Pyxis / Ghoulcaller's Bell przy mniejszej bibliotece niż przeciwnik lub <10 kartach.
-    if (symmetricDrainVeto(view, cmd)) return finish(NEVER);
     // D (PR #171): odmowa rzutu permanentu z niekorzystnym triggerem
     // symetrycznego revealu na upkeepie (Duskmantle Seer i ta sama semantyka).
+    // To NIE jest drenaż biblioteki (life-loss), więc zostaje osobno.
     if (symmetricUpkeepRevealCastVeto(view, cmd)) return finish(NEVER);
-    // J (zgłoszenie właściciela 2026-10-24): weto wariantu lootu bez
-    // „utkniętego na pipach” materiału do odrzucenia albo przy cienkiej
-    // bibliotece (Izzet Charm — patrz `lootCastVeto`).
-    if (lootCastVeto(view, cmd)) return finish(NEVER);
-    // Zgłoszenie właściciela 2026-11-08 (Roiling Regrowth): tutor poświęcający
-    // ląd drenuje bibliotekę — przy <10 kartach nie rzucamy (jak loot).
-    if (springbloomDrainVeto(view, cmd)) return finish(NEVER);
+    // J2 (zgłoszenie właściciela 2026-11-23): JEDNA bramka drenażu —
+    // podłoga10 PO drenażu dla każdej komendy + reguły rodzinne (wyścig
+    // symetryczny, fizzle tutora, loot). Zastępuje dawne: symmetricDrainVeto,
+    // lootCastVeto, springbloomDrainVeto, selfMillFloorVeto.
+    if (libraryDrainVeto(view, cmd)) return finish(NEVER);
     // M111: TRYB modalnego triggera („At the beginning of your upkeep,
     // choose one —" Etherwrought Page). Widok niesie tylko nazwy trybów,
     // więc treść bierzemy z rejestru po cardId (jak przy czarach) i wyceniamy
@@ -13329,6 +13591,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
                 + anticipatedTailValue(view, card ? cardDef(card.cardId) : undefined, cmd));
           }
           if (!target || target.controllerId !== view.playerId) return finish(-P.auraNoTargetPenalty);
+          // J (Containment Membrane): gospodarz unieruchomiony wrogą aurą —
+          // buforowanie go marnuje kartę; zdrowy cel (jeśli jest) wygrywa
+          // wariant, brak zdrowego = bot trzyma aurę w ręce.
+          if (attachTargetDisabled(view, target)) return finish(-P.disabledAttachTargetPenalty);
           // M209 (audyt M207, Guildscorn Ward): aura, ktorej CALA wartoscia
           // jest OCHRONA przed konkretna jakoscia (CR 702.16b-f), jest jalowa,
           // gdy przeciwnik nie ma czym w nia uderzyc. Bot rzucal „protection
@@ -17397,6 +17663,11 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // świeżych stworów mają realną cenę — bez tego bot nigdy nie wyposaża.
         const sourceEquip = source?.equipment && target && target.controllerId === view.playerId;
         if (sourceEquip) {
+          // J (Containment Membrane): nosiciel z wrogą aurą-wrogą (doesntUntap
+          // itd.) jest unieruchomiony — równy „10+2×moc" nie kupuje ataku;
+          // wyposażanie to marnowanie sprzętu (właściciel: niepełnosprawny
+          // cel). Kara przebija każdą premię gałęzi; ×0 = dawne zachowanie.
+          if (attachTargetDisabled(view, target)) return finish(-P.disabledAttachTargetPenalty);
           const grants = source.equipment.keywords ?? [];
           // Patologia M83 (żywy tester): re-equip do stwora, który JUŻ nosi ten
           // sprzęt, to bezczynny no-op — bot zapętlał się wyposażając ten sam
@@ -18689,6 +18960,20 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           const lossFactor = target.isToken ? 1 : P.championExileLossFactor;
           return finish(offset - lossFactor * value);
         }
+        // G (zgłoszenie właściciela 2026-11-21, Glorifier of Suffering):
+        // refleks „+1/+1 na dwóch celów" nie jest wart zdrowego stwora ani
+        // artefaktu — poświęcenie takiego permanentu dostaje ujemny wynik
+        // (zakaz → skip wygrywa). Zielone światło TYLKO dla ułomnych ofiar
+        // (`deficientCounterReflexSacrifice`): bot ma palić odpadki, nie
+        // „super fajne artefakty za 4 many". Refleks jałowy (reflexReady
+        // = false) zostaje przy starej gałęzi — tam skip i tak wygrywa.
+        // Pokrętło ×0 (counterReflexSacrificeGuard) przywraca dawne
+        // `40 − value` dla każdego kandydata (anti-over-fix M429).
+        if (cmd.reflexReady !== false && P.counterReflexSacrificeGuard > 0
+          && counterReflexSacrificePending(view)
+          && !deficientCounterReflexSacrifice(view, target)) {
+          return finish(-Math.max(1, value));
+        }
         return finish(cmd.reflexReady === false ? 5 - value : 40 - value);
       }
       case 'resolve_food_choice': {
@@ -19143,9 +19428,15 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             }
             // C: w gałęzi wrogiej obie strony celu liczą zrywanie aur (L41).
             const aura2 = auraStripDelta(t2);
+            // J (Containment Membrane): własny cel unieruchomiony wrogą aurą —
+            // ta sama kara co w gałęzi jednocylowej; wielkość celu nie
+            // przykryje marnowania (30+v ≪ -disabledAttachTargetPenalty).
+            const disabledFriendly2 = cmd.friendly && t2.controllerId === view.playerId
+              && attachTargetDisabled(view, t2);
             score += (cmd.friendly
               ? (t2.controllerId === view.playerId ? 30 + v2 + attackBonus2 : -20 - v2)
-              : (t2.controllerId === view.playerId ? (kill2 ? -60 - v2 + aura2 : -20 - v2 + aura2) : (kill2 ? 30 + v2 + 60 + aura2 : 30 + v2 + aura2 + landDenialDelta(t2))));
+              : (t2.controllerId === view.playerId ? (kill2 ? -60 - v2 + aura2 : -20 - v2 + aura2) : (kill2 ? 30 + v2 + 60 + aura2 : 30 + v2 + aura2 + landDenialDelta(t2))))
+              - (disabledFriendly2 ? P.disabledAttachTargetPenalty : 0);
           }
           // F-D (Inferno Titan, plan 2026-09-09): trigger wielocelowy z efektem
           // `damage_divided` dzieli STAŁĄ sumę (`divisionTotal`) na wybrane cele,
@@ -19223,6 +19514,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         const attackingNow = (view.combat?.attackers ?? []).includes(target.id);
         if (cmd.friendly) {
           if (target.controllerId === view.playerId) {
+            // J (Containment Membrane): cel z wrogą aurą-wrogą jest
+            // unieruchomiony — licznik/pump na nim marnuje się; zdrowy cel
+            // (albo odmowa przy allowNone) wygrywa.
+            if (attachTargetDisabled(view, target)) return finish(-P.disabledAttachTargetPenalty);
             // B (Battle-Rattle Shaman): jak w gałęzi wielocelowej (L41) —
             // pump siły idzie na stwora, którym bot zamierza ATAKOWAĆ.
             let attackBonus = attackingNow ? 25 : 0;
@@ -19253,7 +19548,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           && target.controllerId !== view.playerId) {
           if (target.isToken === true) bounceDelta += P.bounceTokenBonus;
           if (target.cardId) {
-            bounceDelta -= P.bounceFoeEtbWeight * etbEnterBonusValue(view, cardDef(target.cardId));
+            bounceDelta -= P.bounceFoeEtbWeight * etbEnterBonusValue(view, cardDef(target.cardId), { miller: 'foe' });
           }
         }
         // PMSSB-1/B (F4/F5, L41 z cast_spell): własny cel triggera-bounce

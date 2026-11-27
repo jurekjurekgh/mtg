@@ -30,7 +30,9 @@ import { resolveUntilDecision } from './helpers/deferred-trigger.js';
 const REGISTRY = createCardRegistry();
 const RIDER = [{ type: 'cant_block' }, { type: 'draw_cards', amount: 1 }];
 
-function game({ step = 'main1', active = 'p1', library = 10 } = {}) {
+// KOREKTA 2026-11-23 (podłoga10): draw4 (RT/16) przy lib10 → 6 < 10 weto;
+// 16 kart = bezpieczne dobranie (12 ≥ 10).
+function game({ step = 'main1', active = 'p1', library = 16 } = {}) {
   const state = createGameState({ seed: 60, players: [{ id: 'p1' }, { id: 'p2' }] });
   state.turn = jumpToStep(state.turn, step, active);
   state.turn.activePlayerId = state.turn.priorityPlayerId = active;

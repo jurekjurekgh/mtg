@@ -5,6 +5,7 @@ import { renderMultiTargetWizard } from '../src/table/choice-request.js';
 import {
   sacrificeCastPlanOf, commandForSacrificeSelection, singleTargetPlanOf, buttonsPlanOf,
 } from '../src/table/multi-target.js';
+import { assertNoCombinationRows } from '../src/table/no-combination-rows.js';
 import { createHeuristicBot } from '../src/controllers/heuristic-bot.js';
 import { createGameState, playerView, addObject } from '../src/engine/game-state.js';
 import { jumpToStep } from '../src/engine/turn.js';
@@ -217,6 +218,17 @@ function lashCommands() {
   ];
 }
 
+/** Pełny iloczyn z silnika: 2 cele × (2 ofiary + zapłata {4}) = 6 komend. */
+function fullLashCross() {
+  const out = [];
+  for (const target of ['foe0', 'foe1']) {
+    out.push({ type: 'cast_spell', objectId: 'lash', targets: [target], sacrificeTargetId: 'cre0' });
+    out.push({ type: 'cast_spell', objectId: 'lash', targets: [target], sacrificeTargetId: 'cre1' });
+    out.push({ type: 'cast_spell', objectId: 'lash', targets: [target], payAltCost: true });
+  }
+  return out;
+}
+
 test('r5/C: plan „cel + poświęcenie” dla grupy Bone Splinters', () => {
   const plan = sacrificeCastPlanOf(splintersCommands());
   assert.ok(plan, 'grupa pasuje do kreatora');
@@ -227,15 +239,21 @@ test('r5/C: plan „cel + poświęcenie” dla grupy Bone Splinters', () => {
   assert.equal(plan.maxTargets, 1);
 });
 
-test('r5/C: mieszana grupa payAltCost (Lash of the Balrog) trafia do przycisków', () => {
+test('r5/C: mieszana grupa payAltCost (Lash of the Balrog) tworzy PLAN grupowy', () => {
+  // F1 (zgłoszenie właściciela 2026-11-21): grupy mieszane NIE idą listą
+  // permutacji — kreator grupowy z wierszem „Zapłać {4}” w sekcji kosztu.
   const lash = lashCommands();
-  assert.equal(sacrificeCastPlanOf(lash), null,
-    'wariant „OR pay {4}" bez sacrificeTargetId nie może zostać ukryty w kreatorze');
+  const plan = sacrificeCastPlanOf(lash, { altPayAmount: 4 });
+  assert.ok(plan, 'grupa mieszana MUSI iść kreatorem grupowym (nie lista)');
+  assert.equal(plan.sacrificeMode, true);
+  assert.equal(plan.altPay, true, 'plan zna wariant zapłaty');
+  assert.equal(plan.altPayAmount, 4, 'kwota {4} z additionalCost.orPayMana');
+  assert.deepEqual([...plan.sacrifices].sort(), ['cre0', 'cre1'], 'ofiary');
   assert.equal(singleTargetPlanOf(lash), null,
     'wybór samego celu zgubiłby pole ofiary albo payAltCost (CR 601.2b)');
-  const buttons = buttonsPlanOf(lash);
-  assert.ok(buttons, 'fallback pokazuje każdą pełną komendę silnika osobno');
-  assert.equal(buttons.rows.length, 3, 'dwie ofiary i zapłata {4} są trzema osobnymi opcjami');
+  // Z pełnym iloczynem z silnika (cel × poświęć/zapłać) strażnik fail-closed
+  // krzyczy na KAŻDĄ listę permutacji — nawet fallback przyciskowy.
+  assert.throws(() => assertNoCombinationRows(fullLashCross()), /permutacji kombinacji/);
 });
 
 test('r5/C: czar bez celu (Village Rites) i pojedyncza ofiara ZOSTAJĄ listą', () => {
@@ -309,36 +327,49 @@ function sacWizard(host, plan, commands, onDone) {
   });
 }
 
-test('r5/C: Lash — fallback pozwala wskazać konkretną ofiarę albo zapłacić {4}', () => {
+test('r5/C: Lash — kreator grupowy: cel + (ofiara albo zapłata {4}), komenda z oferty', () => {
+  // F1: żadnych list permutacji „wszystkich kombinacji” — DWIE sekcje:
+  // cel czaru oraz koszt (ofiary + wiersz „Zapłać {4}”). Zatwierdzenie
+  // zawsze oddaje komendę z legalCommands (L48).
   const commands = lashCommands();
-  const plan = buttonsPlanOf(commands);
-  const labels = labelChoiceOptions(commands, LASH_SESSION, LASH_VIEW);
-  assert.match(labels[0], /poświęć Hill Giant #1/, 'pierwsza kopia ma własną etykietę');
-  assert.match(labels[1], /poświęć Hill Giant #2/, 'druga kopia ma własną etykietę');
-  assert.match(labels[2], /zapłać[\s\S]*4[\s\S]*zamiast poświęcenia/,
-    'wariant payAltCost nazywa zapłatę {4}');
-  plan.rows = plan.rows.map((row, i) => ({ ...row, label: labels[i] }));
-
-  // CR 601.2b: to trzy decyzje kosztu/celu przy rzucaniu; CR 601.2h:
-  // potwierdzenie przekazuje wybraną, pełną komendę do opłacenia.
-  for (let selected = 0; selected < commands.length; selected += 1) {
+  const plan = sacrificeCastPlanOf(commands, { altPayAmount: 4 });
+  assert.ok(plan, 'plan grupowy dla grupy mieszanej');
+  withMiniDom((host) => {
     let submitted = null;
-    withMiniDom((host) => {
-      renderMultiTargetWizard(host, {
-        view: LASH_VIEW, session: LASH_SESSION, plan, commands,
-        intro: 'Lash of the Balrog — wybierz wariant rzutu:',
-        onComplete: (command) => { submitted = command; },
-      });
-      const rows = host.findAll((node) => String(node.className).includes('multi-target-toggle'));
-      assert.equal(rows.length, 3, 'każdy legalny koszt ma osobny wiersz radiowy');
-      const confirm = host.find((node) => String(node.className).includes('multi-target-confirm'));
-      assert.ok(confirm.disabled, 'przed wyborem nie zatwierdza się domyślnego wariantu');
-      rows[selected].click();
-      assert.ok(!confirm.disabled, 'wybrany wariant można zatwierdzić');
-      confirm.click();
+    renderMultiTargetWizard(host, {
+      view: LASH_VIEW, session: LASH_SESSION, plan, commands,
+      sourceName: 'Lash of the Balrog',
+      slotLabels: ['cel', 'Poświęcenie (koszt) albo zapłata'],
+      onComplete: (command) => { submitted = command; },
     });
-    assert.equal(submitted, commands[selected], `wiersz opt-${selected} zwraca dokładnie tę komendę`);
-  }
+    const labels = host.findAll((n) => String(n.className).includes('multi-target-slot-label'))
+      .map((n) => n.textContent);
+    assert.ok(labels.some((l) => l.includes('cel')), `sekcja celu (${JSON.stringify(labels)})`);
+    assert.ok(labels.some((l) => l.includes('Poświęcenie')), 'sekcja kosztu');
+    const rows = host.findAll((n) => String(n.className).includes('multi-target-toggle'));
+    assert.equal(rows.length, 4, '1 cel + 2 ofiary + zapłata {4} = 4 wiersze (nie 3 permutacje)');
+    const rowEls = host.findAll((n) => String(n.className).includes('multi-target-row'));
+    const payEl = rowEls.find((r) => r.textContent.includes('Zapłać {4} zamiast poświęcenia'));
+    assert.ok(payEl, `wiersz zapłaty; wiersze: ${rowEls.map((r) => r.textContent).join(' | ')}`);
+    const payInput = (payEl.children ?? []).find((c) => String(c.tagName).toLowerCase() === 'input');
+    const confirm = host.find((node) => String(node.className).includes('multi-target-confirm'));
+    assert.ok(confirm.disabled, 'przed wyborem nie zatwierdza się');
+    // Cel + ZAPŁATA → wariant payAltCost.
+    rows[0].click();
+    assert.ok(confirm.disabled, 'cel bez kosztu nie zatwierdza');
+    payInput.click();
+    assert.ok(!confirm.disabled, 'cel + zapłata = zatwierdź aktywne');
+    confirm.click();
+    assert.equal(submitted.payAltCost, true, 'komenda payAltCost z oferty (L48)');
+    assert.ok(commands.includes(submitted));
+    // Cel + POŚWIĘCIE → wariant poświęcenia (ta sama sekcja, radio;
+    // cel z wyboru 1 zostaje — jedna grupa celu, jeden wybór na grupę).
+    submitted = null;
+    rows[1].click();
+    confirm.click();
+    assert.equal(submitted.sacrificeTargetId, 'cre0', 'komenda poświęcenia z oferty');
+    assert.ok(commands.includes(submitted));
+  });
 });
 
 test('r5/C: kreator ma DWA osobne wybory ptaszkiem i oddaje komendę z legalCommands', () => {

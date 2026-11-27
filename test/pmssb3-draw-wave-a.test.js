@@ -87,7 +87,7 @@ test('F9b: mayFire-draw przy lib30 (poza marginesem E) — bot odpala (fire:50, 
   assert.equal(chosen.fire, true);
 });
 
-test('F9b/E: mayFire-draw przy lib10 — odmowa via PRE-ISTNIEJACY thin-tax E (fire:-76, nie F9b)', () => {
+test('F9b/E: mayFire-draw przy lib10 — odmowa via uniwersalną podłogę (fire:−∞, nie −100)', () => {
   const state = newState();
   fillLibrary(state, 10);
   addObject(state, {
@@ -103,7 +103,11 @@ test('F9b/E: mayFire-draw przy lib10 — odmowa via PRE-ISTNIEJACY thin-tax E (f
   const { chosen, trace } = botChoice(state);
   const fire = trace.options.find((o) => o.cmd.includes('fire'));
   assert.equal(chosen.type, 'pass_priority');
-  assert.ok(fire && fire.score === -76, `E-tax: fire@lib10 = 50-(60+11*6) = -76, jest: ${JSON.stringify(fire)}`);
+  // KOREKTA WŁAŚCICIELA 2026-11-23 (podłoga10): draw1 przy lib10 → 9 < 10
+  // = twarde weto (−∞), dawniej tax −76 (50−126). Wciąż „nie F9b": to NIE
+  // jest guard pustej biblioteki (−100), tylko podłoga drenażu.
+  assert.ok(fire && Number.isFinite(fire.score) === false && fire.score < -100,
+    `E-tax: fire@lib10 = −∞ (podłoga), jest: ${JSON.stringify(fire)}`);
 });
 
 test('F10: Rager przy PUSTEJ bibliotece — bot nie rzuca (ETB-guard, L41)', () => {
@@ -119,7 +123,7 @@ test('F10: Rager przy PUSTEJ bibliotece — bot nie rzuca (ETB-guard, L41)', () 
 
 test('F10: Rager przy lib10 — guard milczy (F1: pin 71.1018 -> 68.4018)', () => {
   const state = newState();
-  fillLibrary(state, 10);
+  fillLibrary(state, 15);
   addBasics(state, 'basic-swamp', 5, 'b');
   handCard(state, 'rager', 'phyrexian-rager');
   const { chosen, trace } = botChoice(state);

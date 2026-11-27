@@ -88,19 +88,20 @@ test('O: dobranie niesie karę biblioteczną — przy 1 karcie w bibliotece nawe
     'dobranie ostatniej karty (deck-out, CR 704.5b) przebija zwrót dwóch kreatur');
 });
 
-test('O2: stopniowane pasmo biblioteczne — ≤5 kart bez rzutu, 6–10 tylko podwójny zwrot', () => {
-  // Wątpliwość właściciela (2026-10-25): sama drabina drawDeckingPenalty
-  // działa tylko do „pozostałe ≤3”, a dobranie przy 5 kartach odbiera
-  // 1 z 5 rund życia. Tabela oczekiwana ze sceny (pełny zwrot 89 pkt,
-  // jeden zwrot 30 pkt): pasmo graveReturnDrawLibrary* (margines 10,
-  // baza 24, 12/karta) trzyma progową krawędź dokładnie w tych pasmach.
+test('O2: podłoga PO drenażu — draw1 przy lib ≤ 10 = weto, granica 11', () => {
+  // Wątpliwość właściciela (2026-10-25): banda graveReturnDrawLibrary*
+  // (margines 10, baza 24, 12/karta) jeszcze pozwalała rzucać przy
+  // [6,2]/[9,2]/[10,2]. KOREKTA WŁAŚCICIELA 2026-11-23: „po wykonaniu
+  // czary library nie powinna spaść poniżej10 — wszędzie; test liczy
+  // inaczej → zmienić test". Uprising dobiera 1: lib ≤ 10 → < 10 = twarde
+  // weto; lib11 → 10 = granica, rzuca (banda dalej liczy się powyżej).
   const cases = [
     // [biblioteka, kreatur, rzuca]
     [2, 2, false], [3, 2, false], [4, 2, false],
     [5, 1, false], [5, 2, false],
-    [6, 1, false], [6, 2, true],
-    [9, 1, false], [9, 2, true],
-    [10, 1, false], [10, 2, true],
+    [6, 1, false], [6, 2, false],
+    [9, 1, false], [9, 2, false],
+    [10, 1, false], [10, 2, false],
     [11, 1, true], [11, 2, true],
   ];
   for (const [library, graveyardCreatures, casts] of cases) {

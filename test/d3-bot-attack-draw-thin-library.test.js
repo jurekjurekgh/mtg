@@ -51,8 +51,9 @@ function scenario(libCount) {
 
 test('D3: przy 3 kartach w bibliotece bot NIE atakuje Balambem (drenaż > obrażenia)', () => {
   const { cmd, attack, skip } = scenario(3);
-  assert.ok(Number.isFinite(attack), 'oferta attack[balamb] musi istnieć');
-  assert.ok(Number.isFinite(skip), 'oferta attack[] (brak ataku) musi istnieć');
+  // Korekta właściciela 2026-11-23: przy podłodze PO drenażu (3 − 1 = 2 < 10)
+  // atak dostaje twarde weto (−∞) zamiast skończonej kary drabiny — obie
+  // ścieżki prowadzą do tej samej decyzji (nie atakujemy).
   assert.ok(attack < skip, `atak z drenażem (${attack}) poniżej rezygnacji (${skip})`);
   assert.deepEqual(cmd.attackerIds ?? [], [], `bot nie atakuje: ${JSON.stringify(cmd.attackerIds)}`);
 });
