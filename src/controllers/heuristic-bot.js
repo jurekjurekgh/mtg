@@ -74,8 +74,9 @@ import { normalizeHeuristicParams } from './heuristic-params.js';
  * premia wyścigu. Reguła generyczna po keywordach i `cantBeBlocked` z widoku.
  */
 function blockerAllowsAttackerKeywords(blocker, attacker) {
-  const allowed = blocker?.canBlockOnlyKeywords;
-  return !allowed || allowed.some((keyword) => (attacker?.keywords ?? []).includes(keyword));
+  const groups = blocker?.canBlockOnlyKeywordGroups
+    ?? (blocker?.canBlockOnlyKeywords ? [blocker.canBlockOnlyKeywords] : []);
+  return groups.every((group) => group.some((keyword) => (attacker?.keywords ?? []).includes(keyword)));
 }
 
 export function attackerCanBeBlocked(attacker, blockers) {

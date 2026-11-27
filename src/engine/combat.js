@@ -1832,14 +1832,18 @@ export function attackerBlockPowerRestriction(state, attacker) {
  * rodzina względem `attackerBlockKeywordRestriction`: restrykcja siedzi na
  * BLOKERZE, a nie na atakującym. Eksportowane dla PlayerView (bot czyta
  * restrykcję z widoku — ADR 0017; audyt Batch53/C wzorzec). */
+export function blockerBlockOnlyKeywordRestrictions(state, blocker) {
+  // Każda zdolność to osobna alternatywa; wszystkie aktywne ograniczenia
+  // obowiązują jednocześnie. Stan obejmuje też zdolności nadane załącznikami.
+  return effectiveAbilities(blocker, state)
+    .filter((ability) => staticAbilityIsActive(state, blocker, ability) && Array.isArray(ability.canBlockOnlyKeywords))
+    .map((ability) => ability.canBlockOnlyKeywords);
+}
+
+// Zachowanie dotychczasowego eksportu: pierwsza grupa lub null. Do oceny
+// legalności konieczne jest użycie wszystkich grup powyżej.
 export function blockerBlockOnlyKeywordRestriction(state, blocker) {
-  // Stan jest potrzebny również dla zdolności nadanych załącznikami.
-  for (const ability of effectiveAbilities(blocker, state)) {
-    if (staticAbilityIsActive(state, blocker, ability) && Array.isArray(ability.canBlockOnlyKeywords)) {
-      return ability.canBlockOnlyKeywords;
-    }
-  }
-  return null;
+  return blockerBlockOnlyKeywordRestrictions(state, blocker)[0] ?? null;
 }
 
 /**
@@ -1868,8 +1872,8 @@ function blockRestrictionError(state, attacker, blocker) {
   // Bloker blokuje wyłącznie atakujących z danym keywordem (efektywnym).
   // Dopisana TU (M380: jedno źródło prawdy), więc oferta (`canBlock` →
   // `blockingProblem.targets`), ziarna i walidacja widzą tę samą regułę.
-  const blockOnlyKeywords = blockerBlockOnlyKeywordRestriction(state, blocker);
-  if (blockOnlyKeywords && !blockOnlyKeywords.some((kw) => hasKeyword(state, attacker, kw))) {
+  const blockOnlyGroups = blockerBlockOnlyKeywordRestrictions(state, blocker);
+  if (blockOnlyGroups.some((group) => !group.some((kw) => hasKeyword(state, attacker, kw)))) {
     return 'Bloker z ograniczeniem „can block only creatures with [keyword]" może blokować tylko atakujących z wymaganym słowem kluczowym';
   }
   // Dread Warlock: „can't be blocked except by black creatures" — bloker
