@@ -228,7 +228,19 @@ export async function runTableGame({
     return out;
   };
   const lines = [];
-  const logL = (s) => { lines.push(s); log?.(s); };
+  // Oddzielny chronologiczny strumień dla detektora okien. Modal ruchu bota
+  // bywa pokazany DOPIERO po auto-passie i zawiera starsze zdarzenia — nie
+  // wolno wyciągać ich kolejności z kolejności echa w transkrypcie.
+  const responseLines = [];
+  let flushResponseLog = () => {};
+  const logL = (s) => {
+    if (/^\s*(?:>>|\[modal choice\]|\[combat wizard\])/.test(s)) {
+      // Najpierw dopisz zdarzenia, które doprowadziły do decyzji człowieka.
+      flushResponseLog();
+      responseLines.push(s);
+    }
+    lines.push(s); log?.(s);
+  };
   // M171/Z5 (klasa L33): appendFileSync DOKLEJAŁ nowy przebieg do starego
   // pliku przy tym samym --out — transkrypt zawierał dwa przebiegi naraz
   // (stare linie sprzed fixu + nowe po nim) i wygenerował fałszywą hipotezę
@@ -347,11 +359,13 @@ export async function runTableGame({
     // Ta sama kolejność co w snapshotach i kolektorze odrzuceń (M346/F8).
     const fresh = chronologicalLogEntries(entries, freshCount);
     for (const entry of fresh) {
+      responseLines.push(`  LOG: ${entry}`);
       if (!MAIN_LOG_EVIDENCE.test(entry)) continue;
       logL(`  LOG: ${entry.slice(0, 160)}`);
     }
     mainLogSeen = entries.length;
   };
+  flushResponseLog = collectMainLog;
   const normalize = (t) => t.replace(/\d+/g, 'N').replace(/\s+/g, ' ').trim().slice(0, 60);
 
   // --- M97: ptaszkowanie akcji (oś 3) --------------------------------------
@@ -1424,7 +1438,8 @@ export async function runTableGame({
     // kart (miniaturka dokleja nazwę do wpisu w transkrypcie).
     allCardNames = new Set([...registry.all()].map((c) => c.name).filter(Boolean));
   } catch { /* rejestr niedostępny — detektor po prostu nic nie zgłosi */ }
-  const findings = runDetectors(lines, { actionRecords, windowRecords, runtimeErrors, profile, probeRecords, rejectionRecords, harmfulNames, allCardNames, myPermanentNames, enemyPermanentNames, botUnvalued });
+  collectMainLog(); // ostatnie zdarzenia po końcowym kliknięciu / limicie
+  const findings = runDetectors(lines, { actionRecords, windowRecords, runtimeErrors, profile, probeRecords, rejectionRecords, harmfulNames, allCardNames, myPermanentNames, enemyPermanentNames, botUnvalued, responseLines: responseLines.length ? responseLines : null });
   for (const line of formatFindings(findings)) logL(line);
 
   flush();

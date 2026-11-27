@@ -1357,3 +1357,22 @@ test('Audyt PR190: pierwszy Shock z auto-passem nie wycisza późniejszego bez o
   ];
   assert.equal(detectNoResponseWindow(lines).length, 1);
 });
+
+test('Audyt PR190: chronologiczny log główny rozstrzyga modal opóźniony po auto-passie', () => {
+  const delayed = [
+    '  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga',
+    '  [ROZGRYWKA] Rozgrywka',
+    '  [ROZGRYWKA]   • Nieprzyjaciel rzuca Stymied Hopes → cel: Aerith Rescue Mission',
+    '  [ROZGRYWKA]   • Stymied Hopes zostaje rozstrzygnięty',
+  ];
+  const chronological = [
+    '  LOG: Nieprzyjaciel rzuca Stymied Hopes → cel: Aerith Rescue Mission',
+    '  LOG: Auto-pass: nie masz odpowiedzi — oddajesz priorytet, stos się rozstrzyga',
+    '  LOG: Stymied Hopes zostaje rozstrzygnięty',
+  ];
+  const withoutWindow = (items) => items.filter(f => /bez okna na odpowiedź/.test(f.message));
+  assert.equal(withoutWindow(runDetectors(delayed, { responseLines: chronological })).length, 0);
+  const broken = chronological.filter(line => !line.includes('Auto-pass:'));
+  assert.equal(withoutWindow(runDetectors(delayed, { responseLines: broken })).length, 1,
+    'brak rzeczywistego dowodu musi nadal zostać zgłoszony');
+});

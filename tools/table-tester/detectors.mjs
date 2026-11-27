@@ -1377,7 +1377,7 @@ export function detectUnvaluedBotChoices(botUnvalued) {
   return found;
 }
 
-export function runDetectors(lines, { actionRecords = [], windowRecords = null, runtimeErrors = [], profile = null, probeRecords = [], rejectionRecords = null, harmfulNames = new Set(), allCardNames = new Set(), myPermanentNames = new Set(), enemyPermanentNames = new Set(), botUnvalued = null } = {}) {
+export function runDetectors(lines, { actionRecords = [], windowRecords = null, runtimeErrors = [], profile = null, probeRecords = [], rejectionRecords = null, harmfulNames = new Set(), allCardNames = new Set(), myPermanentNames = new Set(), enemyPermanentNames = new Set(), botUnvalued = null, responseLines = null } = {}) {
   const all = [
     ...detectRawText(lines),
     ...detectTileRawSlug(lines),
@@ -1393,7 +1393,7 @@ export function runDetectors(lines, { actionRecords = [], windowRecords = null, 
     // w pełni widoczne w DOM (decyzja właściciela: tester ma je łapać sam).
     ...detectDeadEndWindow(lines, windowRecords ? { windowRecords } : {}),
     ...detectStaleLogTail(windowRecords),
-    ...detectNoResponseWindow(lines),
+    ...detectNoResponseWindow(responseLines ?? lines),
     ...detectGroupWithoutTick(actionRecords),
     // M103 (L15) — wzorzec „oferta bez skutku" z M102 (U8/U9/U10):
     // pomiar sondą na klonie stanu zamiast ręcznego czytania transkryptów.
