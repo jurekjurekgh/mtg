@@ -9509,3 +9509,30 @@ RC=0 (79 modules / 5978.8 kB), golden-master **4/4 without regeneration**
 branches), tie-audit **12 ties before and 12 after** (10 `block`, 2 `play_land`,
 none of them ours), mirror-eval candidate-vs-off 6:6 / 6:6 / 7:5 on
 `srodziemie`, `warhammer-ub`, `worek-dziki`.
+
+## M467 — Owner reports: Kuhn matching, grouped Lash wizard, unified library-drain floor, turn-boundary pause (2026-11-21→25, PR #189 phase 2)
+
+**Scope:** seven owner reports fixed at root cause, all descriptor-based (ADR 0002),
+each with a knob restoring the pre-change behaviour (M429): F3 — `matchColorRequirements`
+(`src/engine/mana-cost.js`) rewritten from permutation backtracking (13! hang on X
+spells like Consume Spirit) to Kuhn's augmenting-path matching; F1 — mixed
+sacrifice-or-pay-{4} groups (Lash of the Balrog) go through the GROUP wizard, and
+`assertNoCombinationRows` now rejects any full scalar cross-product (fail-closed,
+only the M300 cast window is exempt); F2 — the mana wizard pays the FULL alt-cost
+amount (base + {N} from `additionalCost.orPayMana`, CR 601.2h); G — never sacrifice
+a healthy permanent for a counter reflex (Glorifier of Suffering); H — penalty for
+two removals from Epic Experiment aimed at the same stack object (CR 608.2b fizzle);
+J — never buff/attach onto a creature disabled by a hostile aura (Containment
+Membrane, `disabledAttachTargetPenalty`); J-Moldgraf — self-mill ETB valued through
+the shared `selfMillValue` scale with a hard veto "library AFTER mill < 10" (owner
+correction of the first ladder draft); J2 — owner mandate "one library-drain gate
+everywhere": `commandSelfDrain` + `libraryDrainVeto` (`libraryDrainFloor: 10` AFTER
+drain) absorb `selfMillFloorVeto`, `symmetricDrainVeto`, `springbloomDrainVeto`
+floor and the loot floor; 79892 — the opponent-turn pause was eaten by gesture
+splinters on "Rozumiem"/X (`MODAL_OPEN_GUARD_MS` on both buttons) and by
+`recheckAutoPass` (no-op while `awaitingBotAck`). Verification in the audit session
+(PR #190): differential probe Kuhn vs old backtracking (202k + 2k cases, 0
+mismatches), RED→GREEN mutations (F3 RED = >180 s hang; J2 5/8; J 5/7; 79892
+splinter), quick benchmark 90.0% (605/672) matching the PR report. Full documentation
+of this milestone lives in the PR #189 body and `docs/PROJECT_HISTORY.md`
+(2026-11-27 entry) — W1 repair.

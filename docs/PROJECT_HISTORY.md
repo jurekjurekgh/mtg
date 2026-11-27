@@ -19972,3 +19972,28 @@ odczytane. Bramy: `npm test` **10 546/10 546** (fast),
 `1ddf659` (audyt), `72e8bc8` (strażnik), `663405d` (pętla).
 Handoff: `docs/setup/HANDOFF_2026-11-21-audyt-pr188.md`. PR #189 gotowy do
 scalenia przez właściciela (autor nie scala).
+
+- 2026-11-27 — Audyt PR #189 (sesja `arena/307361fc-mtg`, PR #190): mapa 64/64 plików
+(`docs/audits/PR189_MAPA_PLIKOW_2026-11-27.md`) + raport
+(`docs/audits/AUDYT_PR189_2026-11-27.md`). **Ten wpis dokumentuje FAZĘ 2 PR #189**
+(zgłoszenia właściciela 2026-11-21→25.11, udokumentowane dotąd tylko w body PR) —
+znalezisko audytu W1: po squash merge treść body nie jest częścią historii `main`.
+Zmiany fazy 2 (22 commity PR #189, `56b473e`→`41bf639`): **F3** — `matchColorRequirements`
+(`src/engine/mana-cost.js`) przepisany z backtrackingu permutacji (silnia; wisiało
+na czarach X typu Consume Spirit) na algorytm Kuhna; **F1** — kreator grupowy Lash of
+the Balrog (cel + ofiara ALBO zapłata {4}), zakaz permutacyjnych modali wzmocniony
+regułą fail-closed na pełny krzyż wymiarów skalarnych (`assertNoCombinationRows`);
+**F2** — kreator many liczy PEŁNĄ kwotę zapłaty alternatywnej (baza + {orPayMana});
+**G** — zakaz poświęcania zdrowych permanentów dla refleksu licznikowego
+(Glorifier of Suffering, `counterReflexSacrificeGuard`); **H** — kara za dubel
+removalu na MOIM stosie (Epic Experiment, CR 608.2b); **J** — zakaz buforowania
+gospodarza unieruchomionego wrogą aurą (Containment Membrane,
+`disabledAttachTargetPenalty`); **J-Moldgraf** — self-mill ETB wyceniany wspólną
+skalą + twarde weto „PO millu < 10"; **J2** — UNIFIKACJA bramek drenażu biblioteki:
+jedna `commandSelfDrain` + jedna `libraryDrainVeto` (podłoga `libraryDrainFloor: 10`
+PO drenażu), wchłonięte `selfMillFloorVeto`/`symmetricDrainVeto`/`springbloomDrainVeto`/
+próg lootu; **79892** — pauza granicy tury przeciwnika (odprysk gestu na „Rozumiem"/X
++ guard `recheckAutoPass`). Weryfikacje audytu: sonda różnicowa Kuhn vs stary
+backtracking (202k + 2k przypadków, 0 rozjazdów), mutacje RED→GREEN F3 (RED = zawieszka
+>180 s), J2 (5/8), J (5/7), 79892 (odprysk); benchmark quick 90,0% (605/672) zgodny
+z raportem PR. Naprawa W1: ten wpis + M467 w `docs/ENGINE_MILESTONES.md`.
