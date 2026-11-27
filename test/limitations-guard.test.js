@@ -35,15 +35,6 @@ const ALLOWED_REASONS = [
     match: (text) => /command zone/.test(text),
     why: 'format 1v1 bez strefy dowodzenia — świadoma decyzja właściciela (nie kodujemy trybów wieloosobowych)',
   },
-  {
-    // Batch 75 (Coordinated Maneuver, tryb A): Oracle „target creature or
-    // planeswalker" — planeswalkery jako TYP nie istnieją w silniku
-    // (card-data.js, decyzja architektoniczna), więc cel trybu A ograniczono
-    // do stwora. To fakt STRUKTURALNY (j.w. — brak typu), nie brak reguły.
-    id: 'brak-planeswalkerow',
-    match: (text) => /planeswalker — typ nie istnieje w silniku/.test(text),
-    why: 'planeswalkery nie istnieją w silniku jako typ (brak lojalności/komend) — ograniczenie celu do istniejących typów',
-  },
 ];
 
 test('limitations znaczy WYŁĄCZNIE realną lukę wobec Oracle', () => {
