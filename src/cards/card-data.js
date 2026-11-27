@@ -15851,6 +15851,84 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     artId: 673, plan: 'New Capenna',
     support: { status: 'supported', limitations: [] },
   }),
+
+  // 670THS Vaporkin (THS 72) {1}{U} 2/1 Elemental — flying + „can block only
+  // creatures with flying": restrykcja STRONY BLOKERA (nowa ogólna reguła
+  // silnika `canBlockOnlyKeywords`, ADR 0002 — odwrotność rodziny
+  // cantBeBlockedByKeywords z Skyscythe Engulfer).
+  defineCard({
+    id: 'vaporkin', name: 'Vaporkin', set: 'THS',
+    types: ['Creature'], subtypes: ['Elemental'], colors: ['U'],
+    power: 2, toughness: 1, manaCost: 2, keywords: ['flying'],
+    oracleText: 'Flying\nThis creature can block only creatures with flying.',
+    imageUri: 'https://cards.scryfall.io/large/front/0/9/09b661a5-359b-4f21-b1b6-aa0988810b4d.jpg?1783939788',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.static,
+        canBlockOnlyKeywords: ['flying'],
+      }),
+    ],
+    artId: 670, plan: 'Theros',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 671TDM Coordinated Maneuver (TDM 6) {1}{W} Instant — modal „Choose one":
+  // A = obrażenia = liczba twoich stworów (slug `creatures_you_control`,
+  // liczzone przy rozstrzyganiu — CR 608.2h); B = destroy enchantment
+  // (wzorzec Trybu B Aerith Rescue Mission / modalnych batchy 45/47).
+  defineCard({
+    id: 'coordinated-maneuver', name: 'Coordinated Maneuver', set: 'TDM',
+    types: ['Instant'], colors: ['W'], manaCost: 2,
+    oracleText: 'Choose one —\n• Coordinated Maneuver deals damage equal to the number of creatures you control to target creature or planeswalker.\n• Destroy target enchantment.',
+    imageUri: 'https://cards.scryfall.io/large/front/c/6/c6569487-53c5-4b91-877d-e4e31bfa90c0.jpg?1783907419',
+    spell: {
+      timing: 'instant',
+      modes: [
+        // Tryb A (Salwa): obrażenia = liczba twoich stworów.
+        {
+          name: 'Salwa',
+          targets: [{ type: 'creature' }],
+          effects: [{ type: 'damage', amount: 'creatures_you_control' }],
+        },
+        // Tryb B (Zniszczenie): destroy enchantment.
+        {
+          name: 'Zniszczenie',
+          targets: [{ type: 'enchantment' }],
+          effects: [{ type: 'destroy_permanent' }],
+        },
+      ],
+    },
+    artId: 671, plan: 'Tarkir',
+    support: {
+      status: 'supported',
+      limitations: ['tryb A: celem nie może być planeswalker — typ nie istnieje w silniku (tylko stwór)'],
+    },
+  }),
+
+  // 675OGW Kozilek's Translator (OGW 74) {4}{B} 3/5 Eldrazi Drone — Devoid
+  // (kolory druku puste, wzorzec Scion Summoner) + „Pay 1 life: Add {C}.
+  // Activate only once each turn": STAŁY koszt życia w aktywacji (nowy klucz
+  // `life` — ADR 0002, bliźniak payLifeX z Krumar Initiate) + produkcja
+  // bezbarwna (add_mana bez colors = {C}; deskryptor, NIE MANA_SOURCE_MAP —
+  // strażnik M200/N1) + oncePerTurn (istniejący zapis Snarling Wolf).
+  defineCard({
+    id: 'kozileks-translator', name: "Kozilek's Translator", set: 'OGW',
+    types: ['Creature'], subtypes: ['Eldrazi', 'Drone'], colors: [],
+    power: 3, toughness: 5, manaCost: 5,
+    oracleText: "Devoid (This card has no color.)\nPay 1 life: Add {C}. Activate only once each turn. ({C} represents colorless mana.)",
+    imageUri: 'https://cards.scryfall.io/large/front/d/8/d80665ae-fcb2-48fd-95be-8768293bcef7.jpg?1783937915',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { life: 1 },
+        oncePerTurn: true,
+        effect: { type: 'add_mana', amount: 1 },
+      }),
+    ],
+    artId: 675, plan: 'Zendikar',
+    support: { status: 'supported', limitations: [] },
+    notes: ['Devoid: kolory druku puste (colors: []); Add {C} = 1 bezbarwna many (add_mana bez colors — pula engine jest bezbarwna); koszt życia STAŁY w koszcie aktywacji; oncePerTurn na klucz id:indeks'],
+  }),
 ]);
 /**
  * M173/B (uwaga właściciela): druki Scryfalla dla TOKENÓW. Tokeny mają

@@ -768,6 +768,16 @@ function landsControlledInView(view, controllerId) {
     && (object.kind === 'land' || (object.types ?? []).includes('Land'))).length;
 }
 
+/**
+ * Batch 75 (Coordinated Maneuver): liczba stworów gracza widziana z PlayerView —
+ * lustrzany odczyt silnika (`creaturesControlledBy`, effects.js; L41: jedna
+ * reguła, dwie strony), jak landsControlledInView dla batcha 71.
+ */
+function creaturesControlledInView(view, controllerId) {
+  return (view.zones?.battlefield ?? []).filter((object) => object.controllerId === controllerId
+    && (object.kind === 'creature' || (object.types ?? []).includes('Creature'))).length;
+}
+
 function permanentMaterialValue(object) {
   return 2 * (object?.power ?? 0) + (object?.toughness ?? 0) + (object?.manaCost ?? 0);
 }
@@ -1203,6 +1213,11 @@ function isSavageDefenseWindow(view, target) {
   const canBlockAttacker = (attacker) => {
     if (!attacker) return false;
     if (attacker.keywords?.includes('flying') && !hasFlying(target) && !hasReach(target)) return false;
+    // Batch 75 (Vaporkin): restrykcja strony BLOKERA „can block only creatures
+    // with flying" — czytana z widoku (ADR 0017), ten sam odczyt co oferta
+    // silnika (blockRestrictionError, M380).
+    const blockOnly = target.canBlockOnlyKeywords ?? null;
+    if (blockOnly && !blockOnly.some((kw) => attacker.keywords?.includes(kw))) return false;
     return true;
   };
   return combat.attackers.some((aid) => {
@@ -8447,6 +8462,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     } else if (amount === 'lands_you_control') {
       // Batch 71 (Rumbling Rockslide): kwota z lądów — wspólny odczyt z silnikiem.
       amount = landsControlledInView(view, entry?.controllerId);
+    } else if (amount === 'creatures_you_control') {
+      // Batch 75 (Coordinated Maneuver): kwota ze stworów — lustrzany odczyt
+      // silnika (`creaturesControlledBy`, effects.js; L41: jedna reguła, dwie strony).
+      amount = creaturesControlledInView(view, entry?.controllerId);
     }
     const counterBonus = effect?.amountIfTargetHasCounter;
     if (counterBonus && (target?.counters?.[counterBonus.counter] ?? 0) > 0) amount = counterBonus.amount;
@@ -17711,6 +17730,13 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           const x = cmd.xValue ?? 0;
           score -= selfLifeLossPenalty(view, x);
           score -= Math.max(0, x - lifePayThreshold(view)) * P.payLifeXOverThresholdPenalty;
+        }
+        // Batch 75 (Kozilek's Translator): STAŁY koszt życia w aktywacji
+        // („Pay 1 life: Add {C}") — ta sama drabina samouszkodzenia co
+        // payLifeX (PMSSB-36, L41): kwota stała, nie z xValue.
+        if (ability?.cost?.life) {
+          score -= selfLifeLossPenalty(view, ability.cost.life);
+          score -= Math.max(0, ability.cost.life - lifePayThreshold(view)) * P.payLifeXOverThresholdPenalty;
         }
         if (cmd.xValue != null) score -= Math.min(cmd.xValue ?? 0, 2) * 0.5; // koszt {X} — drobna kara
         // Equip: załączenie na własnym stworze jest tym lepsze, im większy

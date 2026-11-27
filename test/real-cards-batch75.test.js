@@ -82,14 +82,17 @@ function resolveStack(state, limit = 40) {
 // DANE: fala B1 (666/667/668/673) kontra snapshoty Oracle i arkusz kolekcji
 // ---------------------------------------------------------------------------
 
-test('Batch 75/B1: cztery wpisy zgadzają się ze snapshotami Oracle i arkuszem kolekcji', () => {
+test('Batch 75/B1+B2: siedem wpisów zgadza się ze snapshotami Oracle i arkuszem kolekcji', () => {
   const expected = [
     ['undersea-invader', 666, 'KHM', 'Kaldheim'],
     ['gysahl-greens', 667, 'FIN', 'Final Fantasy'],
     ['battle-hurda', 668, 'WWK', 'Zendikar'],
     ['hired-blade', 673, 'M19', 'New Capenna'],
+    ['vaporkin', 670, 'THS', 'Theros'],
+    ['coordinated-maneuver', 671, 'TDM', 'Tarkir'],
+    ['kozileks-translator', 675, 'OGW', 'Zendikar'],
   ];
-  assert.equal(expected.length, 4, 'fala B1 to cztery pozycje');
+  assert.equal(expected.length, 7, 'fala B1 (4) + grupa B (3)');
   for (const [id, artId, set, plan] of expected) {
     const card = definition(id);
     assert.ok(card, `${id}: wpis w katalogu`);
@@ -97,7 +100,14 @@ test('Batch 75/B1: cztery wpisy zgadzają się ze snapshotami Oracle i arkuszem 
     assert.equal(card.set, set, `${id}: set`);
     assert.equal(card.plan, plan, `${id}: plan (fabularne przyporządkowanie właściciela)`);
     assert.equal(card.support?.status, 'supported', `${id}: status wsparcia`);
-    assert.deepEqual(card.support?.limitations, [], `${id}: supported = bez limitations (ADR 0022)`);
+    if (id === 'coordinated-maneuver') {
+      // ADR 0022: limitation = fakt strukturalny (planeswalkery nie istnieją
+      // w silniku — patrz ALLOWED_REASONS limitations-guard).
+      assert.equal(card.support?.limitations.length, 1, `${id}: jedno limitation strukturalne`);
+      assert.match(card.support?.limitations[0], /planeswalker/, `${id}: limitation o planeswalkerze`);
+    } else {
+      assert.deepEqual(card.support?.limitations, [], `${id}: supported = bez limitations (ADR 0022)`);
+    }
 
     const snap = snapshot(id);
     assert.equal(card.name, snap.name, `${id}: nazwa ze snapshotu`);
@@ -113,13 +123,16 @@ test('Batch 75/B1: cztery wpisy zgadzają się ze snapshotami Oracle i arkuszem 
   }
 });
 
-test('Batch 75/B1: koszty many w mana-costs-data są 1:1 ze snapshotami', async () => {
+test('Batch 75/B1+B2: koszty many w mana-costs-data są 1:1 ze snapshotami', async () => {
   const { MANA_COSTS } = await import('../src/cards/mana-costs-data.js');
   const expected = {
     'undersea-invader': '{4}{U}{U}',
     'gysahl-greens': '{1}{G}',
     'battle-hurda': '{4}{W}',
     'hired-blade': '{2}{B}',
+    'vaporkin': '{1}{U}',
+    'coordinated-maneuver': '{1}{W}',
+    'kozileks-translator': '{4}{B}',
   };
   for (const [id, cost] of Object.entries(expected)) {
     assert.equal(MANA_COSTS[id], cost, `${id}: koszt rzutu`);
@@ -261,4 +274,138 @@ test('Hired Blade: flash — rzut w turze przeciwnika legalny; 3/2', () => {
   const blade = [...state.objects.values()].find((o) => o.cardId === 'hired-blade' && o.zone === 'battlefield');
   assert.ok(blade, 'wchodzi na pole bitwy');
   assert.equal(`${blade.power}/${blade.toughness}`, '3/2', 'P/T z Oracle');
+});
+
+// ---------------------------------------------------------------------------
+// 670. Vaporkin — restrykcja strony BLOKERA (canBlockOnlyKeywords, ADR 0002)
+// ---------------------------------------------------------------------------
+
+test('Vaporkin: blokuje atakującego z lataniem, ODRZUCANY na nierojącym (M380)', () => {
+  const state = game(75, 'declare_attackers', 'p2');
+  library(state, 'p1'); library(state, 'p2');
+  put(state, 'flyer', 'vaporkin', 'p2');
+  state.objects.set('flyer', Object.freeze({ ...state.objects.get('flyer'), summoningSickness: false }));
+  put(state, 'ground', 'battle-hurda', 'p2');
+  state.objects.set('ground', Object.freeze({ ...state.objects.get('ground'), summoningSickness: false }));
+  put(state, 'vap', 'vaporkin', 'p1');
+  assert.equal(execute(state, { type: 'declare_attackers', playerId: 'p2', attackerIds: ['flyer', 'ground'] }).ok, true);
+  passUntilStep(state, 'declare_blockers');
+
+  // Widok: restrykcja publiczna (ADR 0017 — bot czyta z widoku).
+  const vapView = playerView(state, 'p1').zones.battlefield.find((o) => o.id === 'vap');
+  assert.deepEqual(vapView.canBlockOnlyKeywords, ['flying'], 'PlayerView niesie canBlockOnlyKeywords');
+
+  // Ziarna oferty (M387: oferta=walidacja): Vaporkin kandyduje WYŁĄCZNIE na flyer.
+  const seeds = commands(state, 'p1').filter((c) => c.type === 'declare_blockers'
+    && Object.values(c.assignments ?? {}).flat().includes('vap'));
+  assert.ok(seeds.length > 0, 'ziarno z Vaporkinem istnieje');
+  for (const seed of seeds) {
+    assert.ok(!seed.assignments.ground?.includes('vap'), 'ziarna nie oferują Vaporkina na nierojącego');
+    assert.ok(seed.assignments.flyer?.includes('vap'), 'ziarno oferuje Vaporkina na rojącego');
+  }
+
+  // Walidacja: blok na rojącego ACCEPT, na nierojącego REJECT z komunikatem M380.
+  const dobry = execute(state, { type: 'declare_blockers', playerId: 'p1', assignments: { flyer: ['vap'] } });
+  assert.equal(dobry.ok, true, `blok rojącego legalny: ${dobry.reason ?? 'OK'}`);
+  const state2 = game(75, 'declare_attackers', 'p2');
+  library(state2, 'p1'); library(state2, 'p2');
+  put(state2, 'ground', 'battle-hurda', 'p2');
+  state2.objects.set('ground', Object.freeze({ ...state2.objects.get('ground'), summoningSickness: false }));
+  put(state2, 'vap', 'vaporkin', 'p1');
+  assert.equal(execute(state2, { type: 'declare_attackers', playerId: 'p2', attackerIds: ['ground'] }).ok, true);
+  passUntilStep(state2, 'declare_blockers');
+  const zly = execute(state2, { type: 'declare_blockers', playerId: 'p1', assignments: { ground: ['vap'] } });
+  assert.equal(zly.ok, false, 'blok nierojącego ODRZUCANY');
+  assert.match(String(zly.reason), /can block only creatures/, 'komunikat M380 z nazwą reguły');
+});
+
+// ---------------------------------------------------------------------------
+// 671. Coordinated Maneuver — modalność (tryb A: kwota ze stworów, B: destroy)
+// ---------------------------------------------------------------------------
+
+test('Coordinated Maneuver: tryb A — obrażenia równe liczbie twoich stworów (3 → zabija 3/3)', () => {
+  const state = game(75);
+  library(state, 'p1'); library(state, 'p2');
+  put(state, 'plains', 'basic-plains', 'p1');
+  put(state, 'c1', 'grollub', 'p1');
+  put(state, 'c2', 'battle-hurda', 'p1');
+  put(state, 'c3', 'vaporkin', 'p1'); // 3 stworów kontrolera czaru
+  put(state, 'of', 'grollub', 'p2'); // 3/3 — zginie od 3 obrażeń
+  put(state, 'cm', 'coordinated-maneuver', 'p1', 'hand');
+  addMana(state, 'p1', 2, { colors: ['W'] });
+
+  const cast = commands(state, 'p1').find((c) => c.type === 'cast_spell' && c.objectId === 'cm' && c.modeIndex === 0);
+  assert.ok(cast, 'tryb A oferowany');
+  assert.equal(execute(state, { ...cast, targets: ['of'] }).ok, true, 'rzut trybu A');
+  resolveStack(state);
+  const ofPo = [...state.objects.values()].find((o) => o.cardId === 'grollub' && o.controllerId === 'p2');
+  assert.equal(ofPo?.zone, 'graveyard', '3 stworów → 3 obrażenia → 3/3 w grobie');
+});
+
+test('Coordinated Maneuver: tryb B — destroy target enchantment', () => {
+  const state = game(75);
+  library(state, 'p1'); library(state, 'p2');
+  put(state, 'plains', 'basic-plains', 'p1');
+  put(state, 'enc', 'canonized-in-blood', 'p2'); // zwykły Enchantment (nie aura)
+  put(state, 'cm', 'coordinated-maneuver', 'p1', 'hand');
+  addMana(state, 'p1', 2, { colors: ['W'] });
+
+  const cast = commands(state, 'p1').find((c) => c.type === 'cast_spell' && c.objectId === 'cm' && c.modeIndex === 1);
+  assert.ok(cast, 'tryb B oferowany');
+  assert.equal(execute(state, { ...cast, targets: ['enc'] }).ok, true, 'rzut trybu B');
+  resolveStack(state);
+  const encPo = [...state.objects.values()].find((o) => o.cardId === 'canonized-in-blood');
+  assert.equal(encPo?.zone, 'graveyard', 'enchantment zniszczony (destroy)');
+});
+
+// ---------------------------------------------------------------------------
+// 675. Kozilek's Translator — STAŁY koszt życia w aktywacji + Add {C} + raz/turę
+// ---------------------------------------------------------------------------
+
+test("Kozilek's Translator: Pay 1 life → Add {C}; druga aktywacja NIEOFEROWANA (oncePerTurn)", () => {
+  const state = game(75);
+  library(state, 'p1'); library(state, 'p2');
+  put(state, 'trans', 'kozileks-translator', 'p1');
+  const lifePrzed = lifeOf(state, 'p1');
+  const act = commands(state, 'p1').find((c) => c.type === 'activate_ability' && c.objectId === 'trans');
+  assert.ok(act, 'aktywacja oferowana (koszt 1 życia, bez {T})');
+  assert.equal(execute(state, act).ok, true, 'aktywacja OK');
+  assert.equal(lifeOf(state, 'p1'), lifePrzed - 1, 'koszt 1 życia zapłacony');
+  const p1 = state.players.find((p) => p.id === 'p1');
+  assert.equal(p1.mana, 1, '1 mana w puli');
+  assert.equal(p1.manaPool?.[''], 1, 'JEDNOSTKA BEZBARWNA ({C}) — pula bezbarwna');
+  const druga = commands(state, 'p1').filter((c) => c.type === 'activate_ability' && c.objectId === 'trans');
+  assert.equal(druga.length, 0, 'oncePerTurn: druga aktywacja znika z oferty do końca tury');
+});
+
+test("Kozilek's Translator: aktywacja finansuje rzut {1}{B} (CR 605.3a) — Devoid: kolory puste", () => {
+  const state = game(75);
+  library(state, 'p1'); library(state, 'p2');
+  put(state, 'swamp', 'basic-swamp', 'p1'); // jedyne kolorowe źródło ({B})
+  put(state, 'trans', 'kozileks-translator', 'p1'); // jedyna druga mana (1 × {C})
+  put(state, 'fod', 'fake-your-own-death', 'p1', 'hand'); // {1}{B} — 2 many, pip B
+
+  // CR 605.3a: jednostka RĘCZNA (koszt życia) rozszerza ofertę rzutu już
+  // PRZED aktywacją — wykonanie wymaga sekwencji aktywuj→rzuć (silnik nigdy
+  // nie płaci kosztów ręcznych sam; kreator many/bot je sekwencjonuje).
+  const bez = commands(state, 'p1').filter((c) => c.type === 'cast_spell' && c.objectId === 'fod');
+  assert.equal(bez.length, 1, 'oferta rzutu widzi jednostkę ręczną Translatora (CR 605.3a)');
+
+  // Sekwencja: aktywacja (życie −1, pula {C}) → rzut (pula płaci {C}, swamp {B}).
+  const act = commands(state, 'p1').find((c) => c.type === 'activate_ability' && c.objectId === 'trans');
+  assert.ok(act, 'aktywacja oferowana');
+  assert.equal(execute(state, act).ok, true, 'aktywacja OK');
+  assert.equal(lifeOf(state, 'p1'), 19, 'koszt życia przy aktywacji');
+  const cast = commands(state, 'p1').find((c) => c.type === 'cast_spell' && c.objectId === 'fod');
+  assert.ok(cast, 'rzut {1}{B} po aktywacji');
+  assert.equal(execute(state, { ...cast, targets: ['trans'] }).ok, true, 'rzut OK (pula {C} + {B})');
+  resolveStack(state);
+  assert.ok(state.events.some((e) => e.type === 'ability_activated' && e.cardId === 'kozileks-translator'),
+    'event aktywacji zdolności many w logu');
+  const fodPo = [...state.objects.values()].find((o) => o.cardId === 'fake-your-own-death');
+  assert.equal(fodPo?.zone, 'graveyard', 'czar rozstrzygnięty i poszedł do grobu');
+
+  // Devoid: kolory druku PUSTE (guard snapshotów pinuje front bezbarwny).
+  const def = definition('kozileks-translator');
+  assert.deepEqual(def.colors, [], 'Devoid = colors: []');
 });

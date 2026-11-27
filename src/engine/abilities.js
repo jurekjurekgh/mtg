@@ -216,7 +216,7 @@ export function effectiveAbilityManaCost(state, playerId, ability, sourceObject)
   return base;
 }
 
-export function createAbility({ type, cost = null, effect, trigger, keyword = null, targets = null, cycling = null, channel = null, reinforce = null, bloodrush = null, forecast = false, grantsExtraBlockWithCounter = null, condition = null, pump = null, keywords = null, timing = 'instant', oncePerTurn = false, mustAttack = false, cantBeBlocked = false, scope = null, costModifier = null, costReduction = null, fromHand = false, fromGraveyard = false, cantAttackAlone = false, cantBlockAlone = false, cantAttackUnlessDefenderHasFlying = false, cantAttackUnlessDefenderPoisoned = false, opponentChoosesTarget = null, faceDownEnterFlyingCounter = false, cantBeBlockedExceptByColors = null, cantBeBlockedBySubtypes = null, cantBeBlockedByKeywords = null, cantBeBlockedByTypes = null, cantBeBlockedByPower = null, storied = false, onlyInStep = null, landwalk = null, onNthResolve = null, preventDamageByRemovingCounter = null, preventCombatDamageToController = null, entersUntapped = null, characteristicDefining = false }) {
+export function createAbility({ type, cost = null, effect, trigger, keyword = null, targets = null, cycling = null, channel = null, reinforce = null, bloodrush = null, forecast = false, grantsExtraBlockWithCounter = null, condition = null, pump = null, keywords = null, timing = 'instant', oncePerTurn = false, mustAttack = false, cantBeBlocked = false, scope = null, costModifier = null, costReduction = null, fromHand = false, fromGraveyard = false, cantAttackAlone = false, cantBlockAlone = false, cantAttackUnlessDefenderHasFlying = false, cantAttackUnlessDefenderPoisoned = false, opponentChoosesTarget = null, faceDownEnterFlyingCounter = false, cantBeBlockedExceptByColors = null, cantBeBlockedBySubtypes = null, cantBeBlockedByKeywords = null, cantBeBlockedByTypes = null, cantBeBlockedByPower = null, canBlockOnlyKeywords = null, storied = false, onlyInStep = null, landwalk = null, onNthResolve = null, preventDamageByRemovingCounter = null, preventCombatDamageToController = null, entersUntapped = null, characteristicDefining = false }) {
   if (!Object.values(ABILITY_TYPE).includes(type)) throw new TypeError('Nieprawidłowy typ zdolności');
   if (!['instant', 'sorcery'].includes(timing)) throw new RangeError('Nieprawidłowa szybkość zdolności');
   const effects = Array.isArray(effect)
@@ -297,6 +297,11 @@ export function createAbility({ type, cost = null, effect, trigger, keyword = nu
     // Rampager, CR 702.x?): statyczny próg MOCY blokera — canBlock odrzuca
     // blokerów o efektywnej mocy <= wartość. Sprawdzane przed wykonaniem bloku.
     cantBeBlockedByPower: cantBeBlockedByPower != null ? cantBeBlockedByPower : null,
+    // „This creature can block only creatures with flying" (Vaporkin, batch
+    // 75): restrykcja STRONY BLOKERA — odwrócona rodzina względem
+    // cantBeBlockedByKeywords. canBlock odrzuca atakujących BEZ któregoś z
+    // tych keywordów (CR 509.1b). Czytana przez combat (M380) i PlayerView.
+    canBlockOnlyKeywords: canBlockOnlyKeywords ? Object.freeze([...canBlockOnlyKeywords]) : null,
     // Storied (HOB, Óin the Brave): cecha KEYWORDOWA na permanencie — nie
     // modyfikuje sama statystyk, tylko umożliwia nadanie `enduringStory`
     // graczowi (hasEnduringStory w permanents.js), gdy >=3 kwalifikowane
@@ -799,6 +804,10 @@ export function legalActivatedAbilities(state, playerId) {
       // Sprawdzenie jest PRZED gałęziami szczegółowymi, więc obowiązuje każdą
       // zdolność z kosztem {E} i nie rozjeżdża się z walidacją (L48).
       if ((ability.cost?.energy ?? 0) > (state.players.find((p) => p.id === playerId)?.energy ?? 0)) continue;
+      // Batch 75 (Kozilek's Translator): STAŁY koszt życia w aktywacji
+      // („Pay 1 life: Add {C}") — oferta milczy, gdy życia brakuje (L48:
+      // oferta = walidacja, ta sama bramka co w walidacji niżej).
+      if ((ability.cost?.life ?? 0) > (state.players.find((p) => p.id === playerId)?.life ?? 0)) continue;
       if (ability.timing === 'sorcery' && !sorcerySpeed) continue;
       // Ninjutsu działa wyłącznie z ręki — na polu bitwy nie ma czego aktywować.
       if (ability.keyword === 'ninjutsu') continue;
@@ -1607,6 +1616,9 @@ export function activateAbility(state, playerId, objectId, abilityIndex, attacke
   // Koszt energii (CR 122.1): sprawdzany PRZED mutacją jak pozostałe części
   // kosztu — odmowa nie może zabrać energii ani tapnąć źródła.
   if ((cost.energy ?? 0) > (player?.energy ?? 0)) throw new Error('Niewystarczająca energia');
+  // Batch 75 (Kozilek's Translator): STAŁY koszt życia — sprawdzany PRZED
+  // mutacją (CR 601.2h), jak payLifeX (M115) i koszt energii.
+  if ((cost.life ?? 0) > (player?.life ?? 0)) throw new Error('Za mało życia na koszt');
   // Atomowa weryfikacja dodatkowych kosztów (CR 601.2h): discard a card +
   // remove a counter — sprawdzane PRZED mutacją, żeby nieudana aktywacja nie
   // zostawiła źródła tapniętego/bez licznika. Koszty tap-other/crew są
@@ -1969,6 +1981,11 @@ export function performActivation(state, ctx) {
     const player = state.players.find((entry) => entry.id === playerId);
     if (!player || (player.life ?? 0) < x) throw new Error('Za mało życia na koszt (Pay X life)');
     if (x > 0) changeLife(state, playerId, -x);
+  }
+  // Batch 75 (Kozilek's Translator): STAŁY koszt życia („Pay 1 life") — płacony
+  // przed efektem (CR 601.2h), ta sama ścieżka co payLifeX (M115).
+  if (cost.life) {
+    changeLife(state, playerId, -cost.life);
   }
   // Koszt „Sacrifice this token/permanent" (Treasure): poświęcenie źródła
   // jest częścią kosztu, więc następuje PRZED efektem (mana wpada do puli

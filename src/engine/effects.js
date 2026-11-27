@@ -535,6 +535,23 @@ export function landsControlledBy(state, playerId) {
   return count;
 }
 
+/**
+ * Batch 75 (Coordinated Maneuver): liczba STWORÓW pod kontrolą gracza — jedno
+ * źródło (L41) dla rozstrzygania efektu (`resolveDamageAmount`) i dla wyceny
+ * bota (`creaturesControlledInView`; L41: jedna reguła, dwie strony).
+ * Creature-land liczy się jako stwór (typ z linii typów, jak w `landsControlledBy`).
+ */
+export function creaturesControlledBy(state, playerId) {
+  if (!state || playerId == null) return 0;
+  let count = 0;
+  for (const id of state.zones.battlefield) {
+    const object = state.objects.get(id);
+    if (!object || object.zone !== 'battlefield' || object.controllerId !== playerId) continue;
+    if (object.kind === 'creature' || (object.types ?? []).includes('Creature')) count += 1;
+  }
+  return count;
+}
+
 export function resolveDamageAmount(state, effect, sourceObject, targetId = null, context = null) {
   // Batch 70 (Magma Pummeler): „it deals that much damage” — kwota z KONTEKSTU
   // zdarzenia (ile liczników zdjęto), nie z pola karty. Ten sam mechanizm co
@@ -559,6 +576,12 @@ export function resolveDamageAmount(state, effect, sourceObject, targetId = null
   // `landsControlledBy`, eksportowany niżej).
   if (amount === 'lands_you_control') {
     amount = landsControlledBy(state, sourceObject?.controllerId);
+  }
+  // Batch 75 (Coordinated Maneuver): „deals damage equal to the number of
+  // creatures you control" — liczba z chwili ROZSTRZYGANIA (CR 608.2h), ta
+  // sama funkcja, którą czyta oferta/wycena bota (L41: `creaturesControlledBy`).
+  if (amount === 'creatures_you_control') {
+    amount = creaturesControlledBy(state, sourceObject?.controllerId);
   }
   // Batch65 (Blitz of the Thunder-Raptor): „deals damage ... equal to the
   // number of instant and sorcery cards in your graveyard" — kwota liczona

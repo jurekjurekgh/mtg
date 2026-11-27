@@ -1,0 +1,29 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Vaporkin&set=ths&format=json",
+  "print": "ths",
+  "name": "Vaporkin",
+  "mana_cost": "{1}{U}",
+  "cmc": 2.0,
+  "type_line": "Creature — Elemental",
+  "oracle_text": "Flying\nThis creature can block only creatures with flying.",
+  "power": "2",
+  "toughness": "1",
+  "colors": [
+    "U"
+  ],
+  "color_identity": [
+    "U"
+  ],
+  "keywords": [
+    "Flying"
+  ],
+  "set": "ths",
+  "set_name": "Theros",
+  "collector_number": "72",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/0/9/09b661a5-359b-4f21-b1b6-aa0988810b4d.jpg?1783939788",
+    "normal": "https://cards.scryfall.io/normal/front/0/9/09b661a5-359b-4f21-b1b6-aa0988810b4d.jpg?1783939788"
+  },
+  "pobrano": "2026-11-27"
+}

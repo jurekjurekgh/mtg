@@ -1130,6 +1130,10 @@ const DYNAMIC_AMOUNT_NOUNS = Object.freeze({
   // lands you control" — bez tego wpisu kafel drukował surowy slug
   // `lands_you_control` zamiast treści (klasa M122/#5).
   lands_you_control: 'kontrolujesz lądów',
+  // Batch 75 (Coordinated Maneuver): „deals damage ... equal to the number of
+  // creatures you control" — bez tego wpisu kafel drukował surowy slug
+  // `creatures_you_control` zamiast treści (klasa M122/#5, jak lands_you_control).
+  creatures_you_control: 'kontrolujesz stworów',
   // Batch 65 (Blitz of the Thunder-Raptor, IKO): „deals damage ... equal to the
   // number of instant and sorcery cards in your graveyard" — bez tego wpisu
   // kafel drukował surowy slug `instants_and_sorceries_in_your_graveyard`
@@ -1810,6 +1814,10 @@ const NON_MANA_COST_LABELS = Object.freeze([
   ['exileFromGraveyard', 'wygnaj tę kartę z grobu'],
   ['exileSelfFromHand', 'wygnaj tę kartę z ręki'],
   ['payLifeX', 'zapłać X życia'],
+  // Batch 75 (Kozilek's Translator): STAŁY koszt życia w aktywacji — bez
+  // tego wpisu kafel drukował „1, :” bez treści kosztu (klasa Batch 70
+  // Puzzle-Door: koszt musi się czytać na kafle).
+  ['life', (n) => `zapłać ${n} życia`],
   // M177/E (Merchant's Dockhand): koszt „Tap X untapped artifacts you control”.
   ['tapXArtifacts', 'tapnij X swoich nietapniętych artefaktów'],
   // Batch 73 (Bladewheel Chariot, audyt PR #185 F-6): „Tap two other untapped

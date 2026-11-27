@@ -1826,6 +1826,21 @@ export function attackerBlockPowerRestriction(state, attacker) {
   return null;
 }
 
+/** Keywordy, którymi dany stwór MOŻE blokować WYŁĄCZNIE (Vaporkin, batch 75:
+ * „This creature can block only creatures with flying") — ze zdolności
+ * statycznych blokera, po keywordach EFEKTYWNYCH atakującego. To odwrócona
+ * rodzina względem `attackerBlockKeywordRestriction`: restrykcja siedzi na
+ * BLOKERZE, a nie na atakującym. Eksportowane dla PlayerView (bot czyta
+ * restrykcję z widoku — ADR 0017; audyt Batch53/C wzorzec). */
+export function blockerBlockOnlyKeywordRestriction(state, blocker) {
+  for (const ability of effectiveAbilities(blocker)) {
+    if (ability?.type === 'static' && Array.isArray(ability.canBlockOnlyKeywords)) {
+      return ability.canBlockOnlyKeywords;
+    }
+  }
+  return null;
+}
+
 /**
  * M380 (ODZNAKA, CR 509.1a + L41): JEDNO ŹRÓDŁO PRAWDY o PAROWEJ legalności
  * bloku — „czy ten bloker może blokować tego atakującego". Zwraca komunikat
@@ -1847,6 +1862,15 @@ export function attackerBlockPowerRestriction(state, attacker) {
 function blockRestrictionError(state, attacker, blocker) {
   // Detain (CR 701.35, M177/E): zatrzymany stwór nie blokuje.
   if (blocker.detained) return 'Zatrzymany (detain) stwór nie może blokować';
+  // Vaporkin (THS, batch 75): „This creature can block only creatures with
+  // flying" — restrykcja STRONY BLOKERA (odwrotność rodziny cantBeBlockedBy*).
+  // Bloker blokuje wyłącznie atakujących z danym keywordem (efektywnym).
+  // Dopisana TU (M380: jedno źródło prawdy), więc oferta (`canBlock` →
+  // `blockingProblem.targets`), ziarna i walidacja widzą tę samą regułę.
+  const blockOnlyKeywords = blockerBlockOnlyKeywordRestriction(state, blocker);
+  if (blockOnlyKeywords && !blockOnlyKeywords.some((kw) => hasKeyword(state, attacker, kw))) {
+    return 'Stwora z „can block only creatures with [keyword]" może blokować tylko stwór z tym keywordem';
+  }
   // Dread Warlock: „can't be blocked except by black creatures" — bloker
   // musi mieć jeden z dozwolonych kolorów.
   const blockColors = attackerBlockColorRestriction(state, attacker);
