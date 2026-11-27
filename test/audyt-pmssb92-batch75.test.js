@@ -200,14 +200,16 @@ test('GYS-02 (K): flashback z grobu jest w ofercie i wygrywa przy idle 7 many (p
   assert.ok((score(m, 'cast_flashback(k-1->)') ?? 0) > 0);
 });
 
-test('GYS-02 (K, F-92/1): przy zdrowej ręce wycena flashback ≈ wycena rzutu (spójność ręka/flashback)', () => {
+test('GYS-02 (K, F-92/1): ta sama wypłata z ręki i flashbacku ma tę samą wycenę', () => {
+  const [zReki] = warianty('GYS-01');
   const [, zdrowa] = warianty('GYS-02');
   const m = mierz(zdrowa);
   const fb = score(m, 'cast_flashback(k-2->)');
-  const reka = score(m, 'cast_permanent(hand-grizzled-outcasts)');
-  assert.ok(fb != null && fb >= 60, `flashback=${fb} ma być realną ofertą`);
-  assert.ok(reka != null, `Outcasts w ofercie: ${JSON.stringify(m.opcje)}`);
-  // Kotwica 58/C32: koszt many celowo niewyceniany — ręka i flashback tej
-  // samej wypłaty różnią się w granicach remisu sytuacyjnego (< 5 pkt).
-  assert.ok(Math.abs(fb - reka) < 5, `fb=${fb} vs ręka=${reka} — bez odjęcia kosztu many (58/C32)`);
+  const greensZReki = score(mierz(zReki), 'cast_spell(hand-gysahl-greens->)');
+  const outcasts = score(m, 'cast_permanent(hand-grizzled-outcasts)');
+  assert.ok(fb != null && greensZReki != null, 'oba warianty Greens są w ofercie');
+  // Kotwica 58/C32: porównujemy TĘ SAMĄ wypłatę, a nie inne stworzenie.
+  assert.equal(fb, greensZReki, 'koszt many flashbacku nie jest odliczany');
+  assert.ok(outcasts != null && fb > outcasts, `obecna decyzja: fb=${fb}, Outcasts=${outcasts}`);
+  assert.equal(m.wybrano, 'cast_flashback(k-2->)');
 });

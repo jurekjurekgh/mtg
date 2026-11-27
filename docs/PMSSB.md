@@ -4598,7 +4598,7 @@ CR 508.2). Bez jawnego jump p1 nie dostaje komend `declare_blockers`.
 | HUR-01 T | 67,05 pusty stół = 67,05 pełny; HIR-01 66,60=66,60, 70,20 przy blokerze | ✓ |
 | HUR-02 S | FS blokuje 3/3 → 14,00; 4/4 → `block[]`, oferta bloku −3,00 | ✓ darmowe usunięcie vs śmierć bez zysku |
 | GYS-01 T | cast 69,98 w każdym wariancie (ręka sporna: Shock nieprzydatny −109) | ✓ token 2/2 za 2, sporna mana nie ma kontrkandydata |
-| GYS-02 K | idle: flashback 62,98 > pass; zdrowa ręka: Outcasts 68,41 > flashback 62,98 → **Outcasts wygrywa** | ✓ (patrz F-92/1) |
+| GYS-02 K | idle: flashback 69,98 > pass; zdrowa ręka: flashback 69,98 > Outcasts 68,41 → **flashback wygrywa** | ⚠ różni się od werdyktu pro sondy; obecna polityka bez odliczania many (patrz F-92/1) |
 | SPE-01 C | equip 4/4 → 21,00 > equip 1/1 → 15,00 (main1, mana 2) | ✓ trample +1/+0 na największego |
 | SPE-02 C | kill 2/2 33,00; lethal gracz (życie 3) 999,00; ściana 0/4 → pass (−61/−81) | ✓ |
 | VAP-01 S | skorygowany pomiar: atak vs ground bez reach 8,00; vs lotnik 2/2 1,00 | ✓; pierwotny pomiar miał podmienione warunki — szczegóły w audycie PR #190 |
@@ -4616,8 +4616,8 @@ CR 508.2). Bez jawnego jump p1 nie dostaje komend `declare_blockers`.
 - **F-92/1 (Gysahl flashback a koszt many, K)** — SUSPECT NIEROZSTRZYGNIĘTY
   JAKO BUG: ścieżka `cast_flashback` współdzieli wycenę cast_spell bez
   odjęcia kosztu many (7 za 2/2). Naprawa (odjęcie `spell.flashback.cost` ×
-  waga 1) przebudowała pomiar PO poprawnie (zdrowa ręka → Outcasts 68,41 >
-  flashback 62,98), ale **łamała kotwicę 58/C32** (`audyt-pmssb58-kombinacje`:
+  waga 1) w eksperymencie dawała Outcasts 68,41 > flashback 62,98
+  (nie jest to stan po cofnięciu: wtedy flashback = 69,98), ale **łamała kotwicę 58/C32** (`audyt-pmssb58-kombinacje`:
   ręka i flashback TEJ SAMEJ wypłaty mają IDENTYCZNĄ cenę — koszt many
   celowo niewyceniany; RED 73≠72). **M429: cofnięta.** Rozstrzygnięcie:
   akceptowalne — przy idle 7 many alternatywny koszt flashbacku = 0 (2 many
