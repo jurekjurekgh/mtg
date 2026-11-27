@@ -73,11 +73,27 @@ import { normalizeHeuristicParams } from './heuristic-params.js';
  * (-10), choć nie może zostać zablokowany — a na plus wyciągała go dopiero
  * premia wyścigu. Reguła generyczna po keywordach i `cantBeBlocked` z widoku.
  */
+function blockerAllowsAttackerKeywords(blocker, attacker) {
+  const allowed = blocker?.canBlockOnlyKeywords;
+  return !allowed || allowed.some((keyword) => (attacker?.keywords ?? []).includes(keyword));
+}
+
+// Sprawdzenie pary bez menace: menace dotyczy liczby blokerów łącznie,
+// a pojedynczego kandydata nie wolno z tego powodu odrzucać w dopasowaniu.
+function blockerFitsAttackEstimate(attacker, blocker) {
+  const keywords = attacker?.keywords ?? [];
+  const blockKeywords = blocker?.keywords ?? [];
+  if (keywords.includes('flying') && !blockKeywords.includes('flying') && !blockKeywords.includes('reach')) return false;
+  if (!blockerAllowsAttackerKeywords(blocker, attacker)) return false;
+  if (attacker?.cantBeBlockedByPower != null && (blocker?.power ?? 0) <= attacker.cantBeBlockedByPower) return false;
+  const banned = Array.isArray(attacker?.cantBeBlockedByTypes) ? attacker.cantBeBlockedByTypes : [];
+  return !banned.some((type) => (blocker?.types ?? []).includes(type));
+}
+
 export function attackerCanBeBlocked(attacker, blockers) {
   if (!attacker) return false;
   if (attacker.cantBeBlocked === true) return false;
   const keywords = attacker.keywords ?? [];
-  const flying = keywords.includes('flying');
   // Audyt Batch53/C (Rust-Shield Rampager): ewazja mocowa („can't be blocked
   // by creatures with power N or less") — blokerzy o mocy ≤ progu nie liczą
   // się do obrony. Próg z PlayerView (efektywna statyka, ADR 0017).
@@ -96,7 +112,6 @@ export function attackerCanBeBlocked(attacker, blockers) {
   // test/audyt-pr135-2026-09-24-moc-efektywna.test.js.
   // Próg dotyczy MOCY, nie obrażeń bojowych, więc celowo NIE `combatPower`
   // (ten zwraca wytrzymałość przy `combatDamageByToughness`).
-  const powerCap = attacker.cantBeBlockedByPower;
   // PMSSB-79 (batch 70, Fen Hauler): „can't be blocked by [typ] creatures” —
   // ten predykat jest JEDNYM źródłem odpowiedzi „czy tego atakującego da się
   // w ogóle zablokować” dla wyceny deklaracji ataku (`rankedByThreat`),
@@ -104,14 +119,7 @@ export function attackerCanBeBlocked(attacker, blockers) {
   // prywatna kopia w `canIndividuallyBlockCrackback` (L41 — dwie odpowiedzi na
   // to samo pytanie), więc bot wyceniał Fen Haulera jak zwykłe 5/5 nawet
   // naprzeciw samych artefaktów-stworów.
-  const bannedTypes = Array.isArray(attacker.cantBeBlockedByTypes) ? attacker.cantBeBlockedByTypes : [];
-  const able = (blockers ?? []).filter((b) => {
-    const kw = b?.keywords ?? [];
-    if (flying && !kw.includes('flying') && !kw.includes('reach')) return false;
-    if (powerCap != null && (b?.power ?? 0) <= powerCap) return false;
-    if (bannedTypes.length > 0 && (b?.types ?? []).some((type) => bannedTypes.includes(type))) return false;
-    return true;
-  });
+  const able = (blockers ?? []).filter((b) => blockerFitsAttackEstimate(attacker, b));
   if (keywords.includes('menace') && able.length < 2) return false;
   return able.length > 0;
 }
@@ -1216,8 +1224,7 @@ function isSavageDefenseWindow(view, target) {
     // Batch 75 (Vaporkin): restrykcja strony BLOKERA „can block only creatures
     // with flying" — czytana z widoku (ADR 0017), ten sam odczyt co oferta
     // silnika (blockRestrictionError, M380).
-    const blockOnly = target.canBlockOnlyKeywords ?? null;
-    if (blockOnly && !blockOnly.some((kw) => attacker.keywords?.includes(kw))) return false;
+    if (!blockerAllowsAttackerKeywords(target, attacker)) return false;
     return true;
   };
   return combat.attackers.some((aid) => {
@@ -4425,14 +4432,16 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   const myLibraryCount = (view) => view.zones.library.filter((o) => o.controllerId === view.playerId).length;
   /**
    * Zgłoszenie właściciela C (2026-09-10, Gurmag Drowner): ile kart trigger
-   * exploita źródła wrzuca do grobu. „Look at the top four cards… put one of
-   * them into your hand and the rest into your graveyard" = amount - 1.
+   * exploita źródła zabiera z biblioteki. „Look at the top four cards… put one of
+   * them into your hand and the rest into your graveyard" = amount: karta
+   * wzięta do ręki również opuszcza bibliotekę.
    * Czytane z DANYCH karty po typie efektu, nie po nazwie (ADR 0002):
    * Silumgar Butcher (exploit → pump -3/-3) nie miele nic, więc bramka
    * biblioteczna go nie dotyczy.
    */
+  const lookTopHandRestGraveDrain = (amount) => Math.max(0, Number.isInteger(amount) ? amount : 4);
   const EXPLOIT_LIBRARY_COST = new Map([
-    ['look_top_put_one_hand_rest_grave', (amount) => Math.max(0, (amount ?? 1) - 1)],
+    ['look_top_put_one_hand_rest_grave', lookTopHandRestGraveDrain],
   ]);
   /**
    * B (znalezisko właściciela 2026-09-17, Silumgar Butcher): trigger exploita
@@ -4684,8 +4693,8 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
    *     krótszej bibliotece — degenerat, jak w L144);
    *   • exile_top_playable_until_next_turn — wygnanie `count` wierzchnich
    *     (Gila Courser 1, Annie Flash 2, CR 601.2b);
-   *   • look_top_put_one_hand_rest_grave — jedna do ręki, reszta (n−1) do
-   *     grobu ZAWSZE — decyzja dotyczy tylko KTÓREJ karty;
+   *   • look_top_put_one_hand_rest_grave — jedna do ręki, reszta do grobu;
+   *     wszystkie n kart opuszczają bibliotekę niezależnie od wyboru;
    *   • reveal_top_pick_land_rest_grave — reszta do grobu ZAWSZE, a pick
    *     także opuszcza bibliotekę → kwota = n (Satyr Wayfinder);
    *   • look_top_exile_one_face_down_rest_bottom — wygnanie zakryte
@@ -4702,7 +4711,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     ['draw_cards_both_players', (e) => Math.max(1, Number.isInteger(e?.amount) ? e.amount : 1)],
     ['manifest_dread', () => 2],
     ['exile_top_playable_until_next_turn', (e) => Math.max(1, Number.isInteger(e?.count) ? e.count : 1)],
-    ['look_top_put_one_hand_rest_grave', (e) => Math.max(1, (Number.isInteger(e?.amount) ? e.amount : 4) - 1)],
+    ['look_top_put_one_hand_rest_grave', (e) => lookTopHandRestGraveDrain(e?.amount)],
     ['reveal_top_pick_land_rest_grave', (e) => Math.max(1, Number.isInteger(e?.amount) ? e.amount : 4)],
     ['look_top_exile_one_face_down_rest_bottom', () => 1],
     ['exile_top_of_player_library_and_may_cast', () => 1],
@@ -18182,7 +18191,31 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             return proj && attackerCanBeBlocked(proj, blockers);
           })
           .sort((a, b) => faceDamageOf(projectedAttackerOf(b)) - faceDamageOf(projectedAttackerOf(a)));
-        const blokowalne = new Set(rankedByThreat.slice(0, blockers.length));
+        // Każdy slot musi pasować do atakującego: Vaporkin nie zajmuje
+        // slotu przeciw naziemnym. Dopasowanie z przełożeniem wcześniej
+        // przydzielonego blokera zachowuje priorytet kolejności zagrożeń.
+        // Pozostałe uproszczenia modelu (m.in. menace) nie zmieniają się.
+        const blokowalne = new Set();
+        const hasBlockerRestriction = blockers.some((blocker) => blocker.canBlockOnlyKeywords);
+        if (!hasBlockerRestriction) {
+          for (const id of rankedByThreat.slice(0, blockers.length)) blokowalne.add(id);
+        } else {
+          const assigned = new Map();
+          const assign = (id, seen) => {
+            const attacker = projectedAttackerOf(id);
+            for (const blocker of blockers) {
+              if (seen.has(blocker.id) || !blockerFitsAttackEstimate(attacker, blocker)) continue;
+              seen.add(blocker.id);
+              const previous = assigned.get(blocker.id);
+              if (previous == null || assign(previous, seen)) {
+                assigned.set(blocker.id, id);
+                return true;
+              }
+            }
+            return false;
+          };
+          for (const id of rankedByThreat) if (assign(id, new Set())) blokowalne.add(id);
+        }
         for (const id of attackers) {
           const object = projectedAttackerOf(id);
           if (!object) continue;
@@ -18191,7 +18224,13 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           // Używamy WŁASNEGO braku blokera (`[]`), a nie zmiennej `blockers`:
           // pojemność blokowania jest już rozliczona przez `blokowalne`, więc
           // nie wolno liczyć tych samych blokerów drugi raz.
-          const effectiveBlockers = blokowalne.has(id) ? blockers : [];
+          // Obok legalnego blokera może stać drugi, który tego atakującego
+          // nie może blokować (np. Vaporkin naprzeciw naziemnego stwora).
+          // Nie dodajemy jego mocy ani wytrzymałości do symulowanej walki.
+          const effectiveBlockers = blokowalne.has(id)
+            ? blockers.filter((blocker) => hasBlockerRestriction
+              ? blockerFitsAttackEstimate(object, blocker)
+              : blockerAllowsAttackerKeywords(blocker, object)) : [];
           const candidates = effectiveBlockers.map(blocker => afterBlockTriggers(view, blocker, [object]));
           const strongestBlockerPower = candidates.reduce((max, o) => Math.max(max, combatPower(o)), 0);
           const strongestBlockerToughness = candidates.reduce((max, o) => Math.max(max, o.toughness ?? 0), 0);
@@ -20731,6 +20770,11 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         manowa: manaOnlyAbility(zdolnosc) ? 1 : 0,
         cele: (cmd.targets ?? []).length,
         kosztem: zdolnosc.cost?.sacrificeSelf ? 1 : 0,
+        // Projekcja danych, nie werdykt: np. celowy clamp okna może
+        // sprowadzić różne straty do tego samego score poniżej passa.
+        ...(cmd.sacrificeCreatureId ? {
+          sacrificeLoss: sacrificePermanentLoss(view, objectOnBoard(view, cmd.sacrificeCreatureId)),
+        } : {}),
       };
     }
     if (cmd?.type === 'declare_blockers') {
@@ -21071,6 +21115,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       // (identyczne noty i nierozróżnialny wybór dla testu wyceny i audytu
       // remisów; ta sama lekcja M195/B co `tapCreatureId` wyżej).
       const celStation = cmd.tapOtherCreatureId ? `+station:${cmd.tapOtherCreatureId}` : '';
+      // Pojedyncza ofiara jest częścią kosztu i odróżnia wyceniane warianty.
+      // Bez niej ślad scala np. artefakt i dwa różne stwory w jedną etykietę,
+      // chociaż scoreCommand i wybrana komenda czytają sacrificeCreatureId.
+      const ofiara = cmd.sacrificeCreatureId ? `+sac:${cmd.sacrificeCreatureId}` : '';
       // H (zgłoszenie właściciela 2026-10-08, Krumar Initiate): warianty
       // zdolności {X} (manaX / payLifeX / maxPowerX) różnią się WYŁĄCZNIE
       // `xValue`, więc wszystkie streszczały się do tej samej etykiety —
@@ -21078,7 +21126,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       // klasa L34/L40 co M195/B / M203/2 / PMSSB-41/C wyżej). X w etykiecie
       // tylko gdy komenda go niesie, żeby nie ruszyć pinów zdolności bez {X}.
       const wariantX = cmd.xValue != null ? `,X=${cmd.xValue}` : '';
-      return `activate_ability(${cmd.objectId}#${cmd.abilityIndex ?? 0}${celTapniecia}${celStation}${wariantX}${(cmd.targets ?? []).length ? '->' + cmd.targets.join('+') : ''})`;
+      return `activate_ability(${cmd.objectId}#${cmd.abilityIndex ?? 0}${celTapniecia}${celStation}${ofiara}${wariantX}${(cmd.targets ?? []).length ? '->' + cmd.targets.join('+') : ''})`;
     }
     if (cmd.type === 'play_land') {
       // Ślad ma nazywać WARIANT (lekcja M195/B i M203/2, ta sama co wyżej): przy

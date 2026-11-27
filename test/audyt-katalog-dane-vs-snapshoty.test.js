@@ -408,8 +408,8 @@ test('dane katalogu zgodne ze snapshotami Oracle (front face, coverage, keywords
   // Batch 75 (grupa C): +token Junk (bez pliku Scryfall) → 66.
   assert.equal(bezSnapshotu, 66, `zmieniła się liczba brakujących snapshotów: ${bezSnapshotu}`);
   assert.equal(wielostronnych, 12, `zmieniła się liczba kart wielostronnych: ${wielostronnych}`);
-  assert.equal(frontTypePorownano, 671, `typy/podtypy nie porównano dla ${661 - frontTypePorownano} snapshotów`);
-  assert.equal(frontOraclePorownano, 671, `Oracle frontu nie porównano dla ${661 - frontOraclePorownano} snapshotów`);
+  assert.equal(frontTypePorownano, 671, `typy/podtypy nie porównano dla ${671 - frontTypePorownano} snapshotów`);
+  assert.equal(frontOraclePorownano, 671, `Oracle frontu nie porównano dla ${671 - frontOraclePorownano} snapshotów`);
   assert.equal(oracleTopNull, 10, `oracle_text null/brak: oczekiwano 9, jest ${oracleTopNull}`);
   assert.equal(oracleTopNullMultiface, 10, `oracle_text null/brak na DFC: oczekiwano 9, jest ${oracleTopNullMultiface}`);
   assert.equal(oracleTopEmpty, 14, `pusty oracle_text: oczekiwano 14, jest ${oracleTopEmpty}`);

@@ -1234,8 +1234,8 @@ function ptPair(power, toughness) {
     // Znak ZERA wg kierunku efektu (zwierciadło Oracle, oś 2 — żywy tester
     // 2026-11-27, Saltfield Recluse): premie drukują „+X/+0”, kary „-X/-0”
     // (Oracle karty: „Target creature gets -2/-0 until end of turn.” — kafel
-    // pokazywał „-2/+0”, co obiecywało WZMOCNIENIE obrony). Zero dziedziczy
-    // kierunek po drugiej wartości pary; (0/−2) → „+0/-2”.
+    // pokazywał „-2/+0”, choć chodzi o tę samą wartość obrony). Zero dziedziczy
+    // kierunek po drugiej wartości pary; (0/−2) → „-0/-2”.
     const kara = power < 0 || toughness < 0;
     const fmt = (v) => (v === 0 ? (kara ? '-0' : '+0') : signed(v));
     return `${fmt(power)}/${fmt(toughness)}`;

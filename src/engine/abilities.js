@@ -424,6 +424,23 @@ function manaForActivation(state, playerId, object, ability, selfAbilityKey = nu
   return baseMana;
 }
 
+/** Walidacja całego zmiennego kosztu przed dowolną mutacją i po wznowieniu. */
+function validateVariableAbilityCost(state, playerId, object, ability, abilityIndex, xValue) {
+  const cost = ability.cost ?? {};
+  if (!cost.manaX && !cost.payLifeX) return;
+  const x = xValue ?? 0;
+  if (!Number.isSafeInteger(x) || x < 0) throw new Error('X musi być nieujemną liczbą całkowitą');
+  if (cost.manaX) {
+    const selfKey = ability.oncePerTurn ? `${object.id}:${abilityIndex}` : null;
+    if (x + (cost.mana ?? 0) > manaForActivation(state, playerId, object, ability, selfKey)) {
+      throw new Error('Niewystarczająca mana');
+    }
+  }
+  const lifeDue = (cost.life ?? 0) + (cost.payLifeX ? x : 0);
+  const life = state.players.find((entry) => entry.id === playerId)?.life ?? 0;
+  if (lifeDue > life) throw new Error('Za mało życia na koszt');
+}
+
 /**
  * Kolorowe wymagania kosztu zdolności aktywowanej (CR 118.2/601.2f): deskryptor
  * `cost.colors` niesie pipy kolorów (Boros Challenger {2}{R}{W} → ['R','W']).
@@ -705,18 +722,17 @@ function crewVehiclePowerOf(state, id) {
 
 // CR 602.1a: poświęcenie stwora to koszt, NIE cel zdolności. „Another”
 // wyklucza źródło; tapped/choroba/hexproof nie wykluczają zapłaty.
-// Malevolent Noble (batch 75): `artifactOrAnother` — koszt „Sacrifice an
-// artifact or another creature”: kandydaci to stwory (bez źródła) ORAZ
-// artefakty (bez źródła — źródło-stwór i tak nie jest artefaktem).
+// „Artifact or another creature”: another dotyczy tylko stwora. Permanent
+// może mieć wiele typów (np. artefakt-ląd), a źródło samo może być artefaktem.
 function sacrificeCreatureCandidates(state, playerId, source, cost) {
   const artifactOrAnother = Boolean(cost.sacrificeCreature?.artifactOrAnother);
   return state.zones.battlefield.filter(id => {
     const o = state.objects.get(id);
-    if (o?.controllerId !== playerId || id === source.id) {
-      return false;
-    }
-    if (o.kind !== 'creature' && !(artifactOrAnother && o.kind === 'artifact')) return false;
-    return !cost.sacrificeCreature?.another || id !== source.id;
+    if (o?.controllerId !== playerId) return false;
+    const isArtifact = o.kind === 'artifact' || (o.types ?? []).includes('Artifact');
+    const isCreature = o.kind === 'creature' || (o.types ?? []).includes('Creature');
+    if (artifactOrAnother && isArtifact) return true;
+    return isCreature && (!(artifactOrAnother || cost.sacrificeCreature?.another) || id !== source.id);
   });
 }
 
@@ -1161,7 +1177,7 @@ export function legalActivatedAbilities(state, playerId) {
       if (targetSpec.length === 0 && ability.cost?.manaX && ability.cost?.payLifeX) {
         const fixed = ability.cost.mana ?? 0;
         const life = state.players.find((entry) => entry.id === playerId)?.life ?? 0;
-        const maxX = Math.min(Math.max(0, mana - fixed), life, 20);
+        const maxX = Math.min(Math.max(0, mana - fixed), Math.max(0, life - (ability.cost.life ?? 0)), 20);
         if (!canPayColoredCost(state, playerId, colorRequirementsOf(ability.cost), colorExcludeId, manaPurposeForAbility(ability))) continue;
         for (let x = 1; x <= maxX; x += 1) {
           out.push({ objectId: id, abilityIndex: index, ability, xValue: x });
@@ -1607,7 +1623,10 @@ export function activateAbility(state, playerId, objectId, abilityIndex, attacke
   // WSZYSTKICH części, dopiero potem mutujemy stan. Bez tego nieudana
   // aktywacja (np. brak many na {U}) zostawiała permanent tapnięty.
   const effManaPreview = effectiveAbilityManaCost(state, playerId, ability, object);
-  const manaCostPreview = cost.manaX ? (xValue ?? 0) : effManaPreview;
+  // Część stała {X}{B} i wspólny koszt życia muszą być sprawdzone przed
+  // odrzuceniem karty, wyborem celu przeciwnika lub tapnięciem źródła.
+  validateVariableAbilityCost(state, playerId, object, ability, abilityIndex, xValue);
+  const manaCostPreview = cost.manaX ? (xValue ?? 0) + (cost.mana ?? 0) : effManaPreview;
   const player = state.players.find((entry) => entry.id === playerId);
   // Opłacalność po manie produkowalnej (z wyłączeniem źródła przy koszcie {T}
   // — jak w ofercie) — spendMana sam do-tapuje pozostałe landy.
@@ -1755,6 +1774,9 @@ export function performActivation(state, ctx) {
     throw new Error('Zdolność wymaga permanenta na polu bitwy');
   }
   const cost = ability.cost ?? {};
+  // Wznowienie po decyzji może dostać inny stan niż pierwotna walidacja.
+  // Sprawdź zmienne koszty ponownie, zanim pobierzemy dowolną ich część.
+  validateVariableAbilityCost(state, playerId, object, ability, abilityIndex, xValue);
   // Wznowienie po decyzji discard/opponent target czyta stan ŚWIEŻO. Także
   // gdy aktywacja przeszła wcześniej przez activateAbility, gospodarz mógł
   // odejść — odmowa musi nastąpić przed wydaniem jakiegokolwiek kosztu.
@@ -2222,7 +2244,7 @@ export function legalManaAbilities(state, playerId) {
  * Zwrot: { amount, units } — jednostki jako listy kolorów (jak w planie
  * płatności; pusta lista = bezbarwna, nie pokrywa pipa kolorowego, CR 106.1a).
  */
-export function manualManaOfferUnits(state, playerId) {
+export function manualManaOfferUnits(state, playerId, reservedLife = 0) {
   // Uwaga X (zgłoszenie właściciela 2026-10-26, Holdout Settlement + Warden of
   // Geometries): oferta rzutu obiecywała manę, której PŁATNOŚĆ nie znajdzie —
   // klik w czar kończył się `illegal_spell: Niewystarczająca mana` i nic się
@@ -2246,14 +2268,26 @@ export function manualManaOfferUnits(state, playerId) {
   for (const entry of legalManaAbilities(state, playerId)) {
     if (!entry.ability || !manaAbilityHasManualCost(entry.ability)) continue;
     const units = netManualManaUnits(state, playerId, entry);
+    const life = Math.max(0, entry.ability.cost?.life ?? 0);
     const current = best.get(entry.objectId);
-    if (!current || units.length > current.length) best.set(entry.objectId, units);
+    if (!current || units.length > current.units.length
+      || (units.length === current.units.length && life < current.life)) {
+      best.set(entry.objectId, { units, life });
+    }
   }
   const units = [];
-  for (const [objectId, produced] of best) {
+  // Koszty życia różnych źródeł płaci TEN SAM gracz. Oferty poszczególnych
+  // Translatorów są legalne osobno, ale suma nie może wielokrotnie wydać tego
+  // samego życia. Dzisiejsze źródła z kosztem życia dają po jednej {C} za 1
+  // życie; strażnik katalogu sygnalizuje potrzebę planera wariantów, gdyby
+  // pojawiły się różne koszty lub kolory tych źródeł.
+  let lifeRemaining = Math.max(0, (state.players.find((p) => p.id === playerId)?.life ?? 0) - reservedLife);
+  for (const [objectId, candidate] of best) {
     const already = ownManaProductionOf(state, playerId, objectId);
-    const extra = Math.max(0, produced.length - already);
-    for (let i = 0; i < extra; i += 1) units.push(produced[i]);
+    const extra = Math.max(0, candidate.units.length - already);
+    if (extra === 0 || candidate.life > lifeRemaining) continue;
+    lifeRemaining -= candidate.life;
+    for (let i = 0; i < extra; i += 1) units.push(candidate.units[i]);
   }
   return { amount: units.length, units };
 }

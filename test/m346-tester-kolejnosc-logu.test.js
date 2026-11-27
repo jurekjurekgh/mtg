@@ -43,16 +43,17 @@ function collector(name, extra = {}) {
   let rows = [];
   const records = [];
   const printed = [];
+  const responseLines = [];
   const ctx = createContext({
     $$: () => elements(rows), text,
     rejectionRecords: records, rejectionsSeen: 0, tickedThisWindow: false,
-    mainLogSeen: 0, MAIN_LOG_EVIDENCE: /^Auto-pass:/,
+    mainLogSeen: 0, MAIN_LOG_EVIDENCE: /^Auto-pass:/, responseLines,
     logL: (line) => printed.push(line),
     chronologicalLogEntries: extractors.chronologicalLogEntries,
     ...extra,
   });
   const collect = runInContext(`${localFunction(name)}\n${name};`, ctx);
-  return { ctx, records, printed, collect, setRows: (next) => { rows = next; } };
+  return { ctx, records, printed, responseLines, collect, setRows: (next) => { rows = next; } };
 }
 
 test('M346/A: snapshot loguje sześć najnowszych wpisów w kolejności chronologicznej', () => {
@@ -99,6 +100,7 @@ test('M346/F: istniejący kolektor dowodów auto-pass zachowuje kolejność i fi
   c.setRows(['Nowa partia', 'Auto-pass: stary', 'Auto-pass: pierwszy', 'zwykły wpis', 'Auto-pass: drugi']);
   c.collect(); c.collect();
   assert.deepEqual(c.printed, ['  LOG: Auto-pass: stary', '  LOG: Auto-pass: pierwszy', '  LOG: Auto-pass: drugi']);
+  assert.deepEqual(c.responseLines, ['  LOG: Nowa partia', '  LOG: Auto-pass: stary', '  LOG: Auto-pass: pierwszy', '  LOG: zwykły wpis', '  LOG: Auto-pass: drugi'], 'dowody i zdarzenia są kompletne, chronologiczne i nie są dublowane');
 });
 
 test('M346/G: wspólny ekstraktor bierze najnowsze N z KOŃCA listy i nie mutuje wejścia', () => {

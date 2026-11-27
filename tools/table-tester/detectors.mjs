@@ -541,7 +541,10 @@ export function detectNoResponseWindow(lines) {
     // Rozstrzygnięcie tego samego czaru bez śladu oddania priorytetu = brak okna.
     if (new RegExp(`${pending.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')} zostaje rozstrzygni`).test(seg.text)) {
       const windowConfirmed = pending.evidence || (hasBlocks && blockEvidence.has(seg.block));
-      if (!windowConfirmed && judged.get(pending.name) !== seg.block) {
+      // Pod --quiet nie ma echa snapshotów ani granic `--- krok`; blok 0
+      // oznacza całą partię, nie jedną instancję. Deduplikacja per nazwa/blok
+      // ukrywała kolejny rzut tego samego czaru (także po legalnym pierwszym).
+      if (!windowConfirmed && (!hasBlocks || judged.get(pending.name) !== seg.block)) {
         push(found, 'info', `Czar bota „${pending.name}" rzucony i rozstrzygnięty bez okna na odpowiedź gracza`, seg.line);
       }
       judged.set(pending.name, seg.block);
@@ -1374,7 +1377,7 @@ export function detectUnvaluedBotChoices(botUnvalued) {
   return found;
 }
 
-export function runDetectors(lines, { actionRecords = [], windowRecords = null, runtimeErrors = [], profile = null, probeRecords = [], rejectionRecords = null, harmfulNames = new Set(), allCardNames = new Set(), myPermanentNames = new Set(), enemyPermanentNames = new Set(), botUnvalued = null } = {}) {
+export function runDetectors(lines, { actionRecords = [], windowRecords = null, runtimeErrors = [], profile = null, probeRecords = [], rejectionRecords = null, harmfulNames = new Set(), allCardNames = new Set(), myPermanentNames = new Set(), enemyPermanentNames = new Set(), botUnvalued = null, responseLines = null } = {}) {
   const all = [
     ...detectRawText(lines),
     ...detectTileRawSlug(lines),
@@ -1390,7 +1393,7 @@ export function runDetectors(lines, { actionRecords = [], windowRecords = null, 
     // w pełni widoczne w DOM (decyzja właściciela: tester ma je łapać sam).
     ...detectDeadEndWindow(lines, windowRecords ? { windowRecords } : {}),
     ...detectStaleLogTail(windowRecords),
-    ...detectNoResponseWindow(lines),
+    ...detectNoResponseWindow(responseLines ?? lines),
     ...detectGroupWithoutTick(actionRecords),
     // M103 (L15) — wzorzec „oferta bez skutku" z M102 (U8/U9/U10):
     // pomiar sondą na klonie stanu zamiast ręcznego czytania transkryptów.

@@ -1869,7 +1869,7 @@ function blockRestrictionError(state, attacker, blocker) {
   // `blockingProblem.targets`), ziarna i walidacja widzą tę samą regułę.
   const blockOnlyKeywords = blockerBlockOnlyKeywordRestriction(state, blocker);
   if (blockOnlyKeywords && !blockOnlyKeywords.some((kw) => hasKeyword(state, attacker, kw))) {
-    return 'Stwora z „can block only creatures with [keyword]" może blokować tylko stwór z tym keywordem';
+    return 'Bloker z ograniczeniem „can block only creatures with [keyword]" może blokować tylko atakujących z wymaganym słowem kluczowym';
   }
   // Dread Warlock: „can't be blocked except by black creatures" — bloker
   // musi mieć jeden z dozwolonych kolorów.

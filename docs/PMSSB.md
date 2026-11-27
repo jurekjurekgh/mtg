@@ -145,7 +145,7 @@ teraz obowiązkowy, a nie zalecany.
 | Batch 73 — 11 new cards (Plummet, Get the Point, Messenger's Speed, Might Beyond Reason, River Herald Guide, Seton's Desire, Spring-Loaded Sawblades/Bladewheel Chariot DFC, Leonin Lightbringer, Necrosavant, Kessig Flamebreather) | 11 | **DONE (2026-11-11)** | §PMSSB-89; `tools/pmssb89-batch73-scoring-sonda.mjs`; `test/audyt-pmssb89-batch73.test.js` (12 piny: 7 Wave A + 3 Wave B + 2 Wave C); probe sonda; Żywy Tester 3 partie × 400 kroków, 0 zgłoszeń detektorów, 0 niewycenionych ruchów; pokrętła bez nowych kluczy (wszystko w istniejących ścieżkach: tapTargetValue, damageTargetValue, tapBodyCost, sacrificePermanentLoss, return_permanent_from_graveyard); ADR 0002 — rozpoznawanie po deskryptorach (efekt, koszt, fromGraveyard, sacrificeCreature), nie po cardId; **SPROSTOWANE 2026-11-15 (audyt PR #185, F-16/F-20):** Leonin Lightbringer i Kessig Flamebreather NIE mają zdolności aktywowanych (Oracle: ward {2} + pump statyczny / trigger `you_cast_noncreature_spell`), więc pokrętła `tapTargetValue`/`damageTargetValue`/`tapBodyCost` nie były dla nich użyte — opis dotyczył fabrykowanych zdolności usuniętych w ostatnim commicie PR #185; sonda `tools/pmssb89-batch73-scoring-sonda.mjs` miała MARTWY blok main (pusty stdout, kod 0) i etykiety sprzeczne z Oracle; piny `test/real-cards-batch73.test.js` (F-10) i `test/audyt-pr185-f20-sonda-pmssb89.test.js`; szczegóły w §PMSSB-89 |
 | Batch 73 — pętla RĘCZNA (PMSSB-90): timing (tura/faza/krok) × cel × kontekst stanu gry (stół, ręka, biblioteka, grób, mana, próg) dla 11 kart realnych 645–655 | 11 | **DONE (2026-11-16)** | §PMSSB-90; `tools/pmssb90-batch73-petla-sonda.mjs` (53 scenariusze / 189 rekordów, wymiary S/C/T/K, harness H-1…H-7); `test/audyt-pmssb90-batch73.test.js` (46 pinów RED→GREEN + 3 kotwice); NAPRAWIONE: F-90/1 (silnik: oferta aktywacji z grobu bez `sacrificeCreatureId` — `session.js` przerywała partię), F-90/2 (`craft_transform` bez wyceny), F-90/3 (warunek ETB `tapped_creature`+`opponentControls`), F-90/4 (Threshold `must_block_enchanted`), F-90/5 (explore = wspólna skala z surveil), F-90/7+8 (equip: treść triggera sprzętu i statyka hosta `condition.equipped`), F-90/9 (`damage_each_opponent` → `opponentLifeEffectValue`), F-90/11 (haste: choroba hosta + okno `precombat_main`), F-90/12 (w PR #187: `hasPendingAbilityTwin`); ZAMKNIĘTE DECYZJĄ WŁAŚCICIELA (2026-11-16, usunięte z backlogu): F-90/5b+F-90/6 (bez nowego modelu progów; synergia grobowa przy ≥25 kartach w bibliotece), F-90/10 (paliwo triggera trwałego zostaje jak jest), `declare_attackers` vs CR 508.1 (zostaje jak jest); 26 mutacji (3 udokumentowane PRZEŻYŁE); pokrętła ×0; snapshot 4/4 bez regeneracji; tie-audit RC=0; Żywy Tester 3 partie × 400 kroków — 0 detektorów, 0 niewycenionych; bramy 10 437 fast / 10 719 all / build 5920,2 kB |
 | Batch 74 — pętla RĘCZNA (PMSSB-91): timing (tura/faza/krok) × cel × kontekst stanu gry (stół, ręka, biblioteka, grób, mana) dla 10 kart realnych 656–665 | 10 | **DONE (2026-11-16)** | §PMSSB-91; `tools/pmssb91-batch74-petla-sonda.mjs` (23 scenariusze / 96 rekordów, wymiary T/C/S/K, harness H-1…H-7 + `deklarujAtak`); `test/audyt-pmssb91-batch74.test.js` (23 piny RED→GREEN); NAPRAWIONE: F-91/1 (cap mocy debuffu — `negativePumpPowerCap`), F-91/2 (bramka ewazji dla samo-celu `cant_be_blocked` — `selfEvasionWastedPenalty`, rozjazd L41 z gałęzią ETB), F-91/3 (hold-for-Raid — `raidHoldBonus`), F-91/5 (trigger o warunku zewnętrznym nie jest powtarzalnym źródłem doboru — `externalTriggerDrainScale`); ZMIERZONE I UDOKUMENTOWANE (pin, bez zmiany kodu): F-91/4 (rad płaski), F-91/6 (sac-draw: end rywala 18,00/14,00 > main1 8,00/4,00), F-91/7 (tryby Roli bez modelu trample); ZWERYFIKOWANE: F-91/8 (battle cry), F-91/9 (Grollub), F-91/10 (Harrier), F-91/11 (deck-out); 4 mutacje (każda zabija własne piny); pokrętła ×0 odtwarzają PRZED; snapshot 4/4 bez regeneracji (`27a4e7b5…`); tie-audit 12/12; lustro 6:6, 6:6, 7:5; bramy 10 532 fast / 282 slow / build 5978,8 kB |
-| Batch 75 — wyceny nowych mechanik (spellTypesInclude, counters_on_source, artifactOrAnother) bez nowych pokręteł dla 10 kart realnych 666–675 + token Junk | 10 | **DONE (2026-11-27)** | §PMSSB-92 niżej; `test/real-cards-batch75.test.js` (18); benchmark quick 672 meczów (0 niedokończonych, 90,6%/97,0%); Żywy Tester 8 partii (0 detektorów) |
+| Batch 75 — wyceny nowych mechanik (spellTypesInclude, counters_on_source, artifactOrAnother) bez nowych pokręteł dla 10 kart realnych 666–675 + token Junk | 10 | **DONE (2026-11-27)** | §PMSSB-92 niżej; `test/real-cards-batch75.test.js` (18); benchmark quick 672 meczów (0 niedokończonych, 90,5% ogółem / 83,9% vs aggro / 97,0% vs random); Żywy Tester 8 partii (0 detektorów) |
 | bounce (`bounce_*`, `owner_library_top_or_bottom`) | 8+3 trig | DONE (2026-09-25) | §PMSSB-1 niżej; `test/audyt-pmssb1-bounce.test.js` (29); `bounce*` (10) |
 | tokeny (`create_token`) | 46 | DONE (2026-09-26) | §PMSSB-2 niżej; `test/audyt-pmssb2-tokeny.test.js` (28); `token*` (3) |
 | dobieranie (`draw_cards*`, `draw_then_discard`) | 45 | DONE (2026-09-26) | §PMSSB-3 niżej; `test/pmssb3-draw-wave-a+b.test.js` (15); `instantDrawFoeEndBonus`, `ferociousLootExpected` (2) |
@@ -4554,7 +4554,7 @@ istniejących wag. `src/controllers/heuristic-params.js` **NIEDOTKNIĘTY**
 | Junk {T}, sac → exile top „may play this turn" | token GrantedMana/rola — token artefaktowy bez ciała | 0 |
 
 **Dowód:** benchmark quick (ADR 0018, 672 meczów) po zmianach wycen — RC=0,
-**niedokończone: 0**, heuristic **90,5%** vs aggro (54/336), **97,0%** vs
+**niedokończone: 0**, heuristic **90,5%** ogółem (608/672), **83,9%** vs aggro (282/336) i **97,0%** vs
 random (326/336), śr. ~17 tur / ~421 komend (rerun po poprawkach kształtu
 kosztów: {2}{R} speara i {6}{G} flashbacku Gysahla były liczone z generykiem
 zamiast kosztem ŁĄCZNYM, CR 202.1); raport
@@ -4598,15 +4598,15 @@ CR 508.2). Bez jawnego jump p1 nie dostaje komend `declare_blockers`.
 | HUR-01 T | 67,05 pusty stół = 67,05 pełny; HIR-01 66,60=66,60, 70,20 przy blokerze | ✓ |
 | HUR-02 S | FS blokuje 3/3 → 14,00; 4/4 → `block[]`, oferta bloku −3,00 | ✓ darmowe usunięcie vs śmierć bez zysku |
 | GYS-01 T | cast 69,98 w każdym wariancie (ręka sporna: Shock nieprzydatny −109) | ✓ token 2/2 za 2, sporna mana nie ma kontrkandydata |
-| GYS-02 K | idle: flashback 62,98 > pass; zdrowa ręka: Outcasts 68,41 > flashback 62,98 → **Outcasts wygrywa** | ✓ (patrz F-92/1) |
+| GYS-02 K | idle: flashback 69,98 > pass; zdrowa ręka: flashback 69,98 > Outcasts 68,41 → **flashback wygrywa** | ⚠ różni się od werdyktu pro sondy; obecna polityka bez odliczania many (patrz F-92/1) |
 | SPE-01 C | equip 4/4 → 21,00 > equip 1/1 → 15,00 (main1, mana 2) | ✓ trample +1/+0 na największego |
-| SPE-02 C | kill 3/3 33,00; lethal gracz (życie 3) 999,00; ściana 0/4 → pass (−61/−81) | ✓ |
-| VAP-01 C | atak vs ground 1,00, vs lotnik 8,00 | ✓ |
+| SPE-02 C | kill 2/2 33,00; lethal gracz (życie 3) 999,00; ściana 0/4 → pass (−61/−81) | ✓ |
+| VAP-01 S | skorygowany pomiar: atak vs ground bez reach 8,00; vs lotnik 2/2 1,00 | ✓; pierwotny pomiar miał podmienione warunki — szczegóły w audycie PR #190 |
 | VAP-02 S | ground → blok NIEENUMEROWANY; lotnik 2/1 → block 7,00 | ✓ restrykcja blokera podana przez oferty |
 | CM-01 C | 4 stworów: destroy 84 / salwa-kill 33; 1 stwor: destroy 84, salwa ≤0 | ✓ (patrz F-92/2) |
 | CM-02 S | destroy m1 100 na Fear (enchantment creature — LEGALNY cel) | ✓ suspect „czar bez sensu" odwrócony: cel jest enchantmentem |
-| NOB-01 C | pass 0,00; aktywacje z ofiarą −2/−18 (uniform dla foddera) | ✓ odmowa świadoma: {2}+ofiara za +1/+1 w main1 bez presji to strata |
-| NOB-02 K | kandydaci 2/1,4/3,artefakt — bot passuje wszystkie | ✓ ofiara 4/4 za licznik = katastrofa; Spellbomb w main1 za manę 2 — trzymaj |
+| NOB-01 C | pass 0,00; każda aktywacja Nobla −2,00; Spellbomb −18,00 | ✓ odroczenie: clamp okna daje −2 niezależnie od ofiary; nie dowodzi braku jej wyceny (audyt PR #190 F-190/16) |
+| NOB-02 K | osobne warianty: artefakt albo 4/4 — bot passuje oba | ✓ ofiara 4/4 za licznik = katastrofa; Spellbomb w main1 za manę 2 — trzymaj |
 | GUT-01 C | premia Equipment przy Gutsym 55,80 z Gutsym / −7,20 bez | ✓ |
 | GUT-02 K | Junk impulse +2,00 (pusta ręka; Outcasts niezagrywalny przy mane 2) | ✓ |
 | TRA-01 K | mana 4+ręka → activate 4,00; mana 0 → pass (−5); życie 3 → pass (−74) | ✓ koszt życia czytany w decyzji |
@@ -4616,8 +4616,8 @@ CR 508.2). Bez jawnego jump p1 nie dostaje komend `declare_blockers`.
 - **F-92/1 (Gysahl flashback a koszt many, K)** — SUSPECT NIEROZSTRZYGNIĘTY
   JAKO BUG: ścieżka `cast_flashback` współdzieli wycenę cast_spell bez
   odjęcia kosztu many (7 za 2/2). Naprawa (odjęcie `spell.flashback.cost` ×
-  waga 1) przebudowała pomiar PO poprawnie (zdrowa ręka → Outcasts 68,41 >
-  flashback 62,98), ale **łamała kotwicę 58/C32** (`audyt-pmssb58-kombinacje`:
+  waga 1) w eksperymencie dawała Outcasts 68,41 > flashback 62,98
+  (nie jest to stan po cofnięciu: wtedy flashback = 69,98), ale **łamała kotwicę 58/C32** (`audyt-pmssb58-kombinacje`:
   ręka i flashback TEJ SAMEJ wypłaty mają IDENTYCZNĄ cenę — koszt many
   celowo niewyceniany; RED 73≠72). **M429: cofnięta.** Rozstrzygnięcie:
   akceptowalne — przy idle 7 many alternatywny koszt flashbacku = 0 (2 many
@@ -4639,7 +4639,7 @@ CR 508.2). Bez jawnego jump p1 nie dostaje komend `declare_blockers`.
   zaktualizowane na parowanie pełnej etykiety LUB sufiksu trybu (dual-match);
   golden-master fixture regenerowany ŚWIADOMIE: wszystkie 6 partii bitowo
   identyczne w decisions/scoreSum/chosenKinds (zmieniły się wyłącznie
-  etykiety NIEWYBRANYCH wariantów), rejestr regeneracji w
+  etykiety wariantów, w tym jedna wybrana; szczegóły F-190/12 w `docs/audits/AUDYT_PR190_2026-11-27.md`), rejestr regeneracji w
   `test/bot-scoring-snapshot.test.js`.
 
 **Dowód mutacyjny** (mutacje na kopii z `finally`-restore, sha256 restore
@@ -4667,3 +4667,7 @@ Z SONDY (import `SCENARIUSZE` + `stan`/`decyzja`) — zero duplikacji stanu
   REAUDYT-podłóg do ruszania).
 
 **Brama:** test:all **10 893/10 893** RC=0 (z nowymi pinami PMSSB-92).
+
+### Reaudyt PR #190 — VAP-01 (2026-11-27)
+
+Poprzedni pomiar VAP-01 w `tools/pmssb92-batch75-pomiar-po.txt` zachowany historycznie: „ground” używał dwóch Leafcrown Dryad 2/2 **reach** (mogą blokować lotnika), zaś „lotnik 2/2” używał Fear of Burning Alive 4/4 **bez flying** (nie może). Sonda teraz używa dwóch Phyrexian Rager 2/2 bez reach oraz Dementia Bat 2/2 flying, bez zmiany karty ocenianej. Walidacja bloku w teście dowodzi parowania (RED stare dane, GREEN nowe; osobna kontrola reach). Pomiar `tools/pmssb92-vap01-reaudyt-2026-11-27.txt`: atak 8,00 gdy nieblokowalny, 1,00 przy legalnym bloku; oba wyższe od passu 0. Poprzednie wnioski na podstawie etykiet były odwrotne i nie są dowodem tego kontrastu.

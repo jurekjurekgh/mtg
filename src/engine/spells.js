@@ -3410,6 +3410,8 @@ export function legalSpellCasts(state, playerId, ofertaUnitsPodany = null) {
   // rachunek dawny (audyt/rodzice bez units). Płatność (castSpell/spendMana)
   // zostaje przy producibleMana — człowiek produkuje brak w kreatorze many.
   const ofertaUnits = ofertaUnitsPodany ?? { amount: 0, units: [] };
+  const unitsAfterPhyrexianLife = (k) => k && ofertaUnits.withReservedLife
+    ? ofertaUnits.withReservedLife(2 * k) : ofertaUnits;
   const manaAvailableForOffer = (forObject, reqs = null) => manaAvailable(forObject, reqs) + ofertaUnits.amount;
   const ids = [
     ...state.zones.hand,
@@ -3466,9 +3468,10 @@ export function legalSpellCasts(state, playerId, ofertaUnitsPodany = null) {
       // base - k many + 2k życia (dotąd base +(symbols-k) przy manaCost bez
       // symboli).
       for (let k = 0; k <= phyrexianSymbols; k += 1) {
-        if (base - k > manaAvailableForOffer(object, coloredPipsOf(object.cardId, k))) continue;
         if (2 * k > (player.life ?? 0)) continue;
-        if (!hasColorForSpell(state, playerId, object.cardId, k, spellManaPurpose(object), ofertaUnits.units)) continue;
+        const variantUnits = unitsAfterPhyrexianLife(k);
+        if (base - k > manaAvailable(object, coloredPipsOf(object.cardId, k)) + variantUnits.amount) continue;
+        if (!hasColorForSpell(state, playerId, object.cardId, k, spellManaPurpose(object), variantUnits.units)) continue;
         out.push(k);
       }
       return out;

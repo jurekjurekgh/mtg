@@ -9,8 +9,8 @@
 // SYMMETRIC_DRAIN_EFFECTS, FACE_DOWN_LIBRARY_EFFECT_TYPES, LIBRARY_SEARCH_EFFECTS):
 //   • manifest_dread — wierzch 2: jeden manifest na pole, drugi do grobu
 //     (CR 701.62a) — MOJA biblioteka maleje o 2, decyzji brak;
-//   • look_top_put_one_hand_rest_grave — jedna do ręki, reszta (n−1) do
-//     grobu ZAWSZE — decyzja dotyczy tylko KTÓREJ karty (Orazca Puzzle-Door);
+//   • look_top_put_one_hand_rest_grave — jedna do ręki, reszta do grobu:
+//     wszystkie n kart opuszczają bibliotekę (Orazca Puzzle-Door);
 //   • reveal_top_pick_land_rest_grave — reszta do grobu ZAWSZE, a pick także
 //     opuszcza bibliotekę → kwota = n (Satyr Wayfinder).
 // Kontrakt: podłoga10 PO drenażu działa dla nich DOKŁADNIE tak samo jak dla
@@ -73,13 +73,13 @@ test('K/1 (cast): Manifest Dread drenuje 2 (wierzch 2: manifest + grób) — lib
     `12 − 2 = 10 — granica przechodzi; bot wybrał ${granica.cmd.type}(${granica.cmd.objectId ?? ''})`);
 });
 
-test('K/2 (aktywacja): Orazca Puzzle-Door loot2 (1 do ręki, 1 do grobu) — lib10 weto, lib11 aktywacja', () => {
-  const cienka = pick(scene({ myLib: 10, cardId: 'orazca-puzzle-door', id: 'drzwi', zone: 'battlefield' }));
+test('K/2 (aktywacja): Orazca Puzzle-Door zabiera 2 z biblioteki — lib11 weto, lib12 aktywacja', () => {
+  const cienka = pick(scene({ myLib: 11, cardId: 'orazca-puzzle-door', id: 'drzwi', zone: 'battlefield' }));
   assert.ok(!(cienka.cmd.type === 'activate_ability' && cienka.cmd.objectId === 'drzwi'),
-    `10 − 1 = 9 < 10 — weto; bot aktywował — ${JSON.stringify(cienka.cmd)}`);
-  const granica = pick(scene({ myLib: 11, cardId: 'orazca-puzzle-door', id: 'drzwi', zone: 'battlefield' }));
+    `11 − 2 = 9 < 10 — weto; bot aktywował — ${JSON.stringify(cienka.cmd)}`);
+  const granica = pick(scene({ myLib: 12, cardId: 'orazca-puzzle-door', id: 'drzwi', zone: 'battlefield' }));
   assert.ok(granica.cmd.type === 'activate_ability' && granica.cmd.objectId === 'drzwi',
-    `11 − 1 = 10 — granica przechodzi; bot wybrał ${granica.cmd.type}(${granica.cmd.objectId ?? ''})`);
+    `12 − 2 = 10 — granica przechodzi; bot wybrał ${granica.cmd.type}(${granica.cmd.objectId ?? ''})`);
 });
 
 test('K/3 (ETB one-shot): Satyr Wayfinder — reveal 4, reszta do grobu ZAWSZE — lib13 weto, lib14 rzut', () => {

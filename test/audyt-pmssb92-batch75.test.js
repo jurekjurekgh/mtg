@@ -22,6 +22,11 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { SCENARIUSZE, stan, decyzja } from '../tools/pmssb92-batch75-sonda.mjs';
+import { execute, playerView } from '../src/engine/game-state.js';
+import { declareAttackers, blockerDeclarationViolation } from '../src/engine/combat.js';
+import { jumpToStep } from '../src/engine/turn.js';
+import { createHeuristicBot } from '../src/controllers/heuristic-bot.js';
+import { createCardRegistry } from '../src/cards/card-data.js';
 
 const scenariusz = (id) => {
   const s = SCENARIUSZE.find((x) => x.id === id);
@@ -38,7 +43,7 @@ const score = (m, frag) => opcja(m, frag)?.score;
 // `creatures_you_control`; mutacyjna kotwica: bez gałęzi salwa była STAŁA).
 // ---------------------------------------------------------------------------
 
-test('CM-01 (C, F-92/2): przy 1 stworze salwa = zakaz (kwota z liczby stworów), bot niszczy enchantment', () => {
+test('CM-01 (C, F-92/2): przy 4 stworach salwa zabija, bot wybiera destroy enchantmentu', () => {
   const [w1] = warianty('CM-01');
   const m = mierz(w1);
   // 4 moje stworów: salwa 4 dmg = kill 2/2 reach (33,00), destroy = 84,00.
@@ -77,7 +82,7 @@ test('M431-suffix (mutacyjna kotwica): warianty trybów CM są rozróżnialne w 
 });
 
 // ---------------------------------------------------------------------------
-// 666MID Undersea Invader + 668THS Battle Hurda + 672THS Vaporkin —
+// 666KHM Undersea Invader + 668WWK Battle Hurda + 670THS Vaporkin —
 // harness blokowy (wzorzec pmssb91 G-02): deklaracja przy declare_attackers,
 // potem jump do declare_blockers; atakujący z katalogu (grollub 3/3,
 // grizzled 4/4, nefarious-imp 2/1 flying).
@@ -100,6 +105,24 @@ test('HUR-02 (S): first strike blokuje 3/3 za darmo (14); 4/4 — Hurda ginie, b
   const mZla = mierz(zla);
   assert.equal(mZla.wybrano, 'block[]');
   assert.ok((score(mZla, 'block[atk-4-4<hurda-bf]') ?? 0) < 0, 'blok samobójczy ma być karany');
+});
+
+test('VAP-01: opisane stany to faktycznie nieblokowalny lotnik oraz legalny latający bloker', () => {
+  const [ground, flyer] = warianty('VAP-01');
+  const first = ground.scen.budowa(ground.w);
+  declareAttackers(first, 'p1', ['vap-bf']);
+  for (const blocker of ['b1', 'b2']) {
+    assert.ok(blockerDeclarationViolation(first, 'p2', { 'vap-bf': [blocker] }),
+      `${blocker} NIE może blokować Vaporkina`);
+  }
+  const second = flyer.scen.budowa(flyer.w);
+  declareAttackers(second, 'p1', ['vap-bf']);
+  assert.equal(blockerDeclarationViolation(second, 'p2', { 'vap-bf': ['lotnik'] }), null,
+    'latający bloker musi móc zablokować Vaporkina');
+  // Kontrola anty-over-fix: nielatająca Dryada ma reach i BLOKUJE lotnika.
+  const reach = ground.scen.budowa({ ...ground.w, poleWrog: [{ id: 'reach', karta: 'leafcrown-dryad' }] });
+  declareAttackers(reach, 'p1', ['vap-bf']);
+  assert.equal(blockerDeclarationViolation(reach, 'p2', { 'vap-bf': ['reach'] }), null);
 });
 
 test('VAP-02 (S): nielegalny blok ground NIE jest enumerowany; lotnik 2/1 — legalna wymiana', () => {
@@ -130,7 +153,7 @@ test('SPE-01 (C): equip {1} idzie na największego atakującego (4/4 → 21 > 1/
 });
 
 // ---------------------------------------------------------------------------
-// 672ELD Kozilek's Translator — koszt życia {1} (TRA-01, rozstrzygnięty):
+// 675OGW Kozilek's Translator — koszt życia {1} (TRA-01, rozstrzygnięty):
 // aktywacja z zyskiem (mana 4) vs odmowa przy marnowaniu many i niskim życiu.
 // ---------------------------------------------------------------------------
 
@@ -148,7 +171,7 @@ test('TRA-01 (K): {C} za 1 życia — dopłata przy mane 4; odmowa przy mane 0 i
 });
 
 // ---------------------------------------------------------------------------
-// 673ELD Malevolent Noble (NOB-01) + 674PIP Mister Gutsy (GUT-02, token
+// 672ELD Malevolent Noble (NOB-01) + 674PIP Mister Gutsy (GUT-02, token
 // Junk) — aktywacje z kosztem ofiary: odmowa świadoma vs impulse z zyskiem.
 // ---------------------------------------------------------------------------
 
@@ -161,6 +184,37 @@ test('NOB-01 (C): {2}+ofiara za +1/+1 w main1 — bot NIE aktywuje (pass 0 > akt
   for (const o of aktywacje) assert.ok(o.score < 0, `${o.cmd}=${o.score} ma być odmową`);
 });
 
+test('NOB-01: ślad rozróżnia wycenę ofiar i wskazuje faktycznie wybraną w end stepie', () => {
+  const scen = scenariusz('NOB-01');
+  // Odwrotna kolejność niż preferencja: wybór nie może wynikać z enumeracji.
+  const state = scen.budowa({ kandydaci: ['grizzled-outcasts', 'highland-game', 'panic-spellbomb'] });
+  state.turn = jumpToStep(state.turn, 'end', 'p1');
+  state.turn.activePlayerId = 'p2';
+  state.turn.priorityPlayerId = 'p1';
+  const m = decyzja(state);
+  const labels = ['kand-0', 'kand-1', 'kand-2'].map(id => `activate_ability(noble-bf#0+sac:${id})`);
+  const values = labels.map(label => m.opcje.find(o => o.cmd === label)?.score);
+  assert.deepEqual(values, [8, 15, 18]);
+  assert.equal(m.cmd.sacrificeCreatureId, 'kand-2');
+  assert.equal(m.wybrano, labels[2]);
+});
+
+test('NOB-01: projekcja remisu pokazuje różne straty ofiar', () => {
+  const [w] = warianty('NOB-01');
+  const original = playerView(w.scen.budowa(w.w), 'p1');
+  // Syntetyczna oferta tylko Nobla: produkcyjny pass wygrywa z tym remisem −2.
+  const view = { ...original, legalCommands: original.legalCommands.filter(c => c.objectId === 'noble-bf') };
+  const bot = createHeuristicBot({ seed: 90, randomness: 0, lookahead: 0, registry: createCardRegistry() });
+  bot.chooseCommand(view, {});
+  const tie = bot.trace().at(-1).tie;
+  assert.equal(tie.length, 3);
+  assert.deepEqual(tie.map(t => [t.cmd, t.proj.sacrificeLoss]), [
+    ['activate_ability(noble-bf#0+sac:kand-0)', 2],
+    ['activate_ability(noble-bf#0+sac:kand-1)', 5],
+    ['activate_ability(noble-bf#0+sac:kand-2)', 12],
+  ]);
+});
+
 test('GUT-02 (K, token Junk): impulse aktywacja = jedyny ruch (+2) — też przy Outcasts w ręce', () => {
   for (const w of warianty('GUT-02')) {
     const m = mierz(w);
@@ -169,8 +223,31 @@ test('GUT-02 (K, token Junk): impulse aktywacja = jedyny ruch (+2) — też przy
   }
 });
 
+// GUT-02: dodatkowa kontrola stanu, nie wnioskujemy z samej etykiety.
+test('GUT-02: ląd z Junk jest dostępny, lecz nie dopłaca Outcasts z dwóch many', () => {
+  const [, w] = warianty('GUT-02');
+  const state = w.scen.budowa(w.w);
+  const commands = (p) => playerView(state, p).legalCommands;
+  const junk = commands('p1').find(c => c.type === 'activate_ability' && c.objectId === 'junk-bf');
+  assert.ok(junk);
+  assert.equal(execute(state, junk).ok, true);
+  for (let i = 0; i < 2; i += 1) {
+    const p = state.turn.priorityPlayerId;
+    const pass = commands(p).find(c => c.type === 'pass_priority');
+    assert.ok(pass);
+    assert.equal(execute(state, pass).ok, true);
+  }
+  const exiled = state.zones.exile.find(id => state.objects.get(id)?.cardId === 'basic-forest');
+  assert.ok(exiled, 'wierzch biblioteki to Forest');
+  const land = commands('p1').find(c => c.type === 'play_land' && c.objectId === exiled);
+  assert.ok(land, 'Forest z wygnania można zagrać');
+  assert.equal(execute(state, land).ok, true);
+  assert.ok(!commands('p1').some(c => c.type === 'cast_permanent' && c.objectId === 'hand-grizzled-outcasts'),
+    'dwie many i jeden zagrany ląd nie wystarczają na koszt pięć');
+});
+
 // ---------------------------------------------------------------------------
-// 675FIN Gysahl Greens (GYS-02, F-92/1 rozstrzygnięty): oferta flashback
+// 667FIN Gysahl Greens (GYS-02, F-92/1 rozstrzygnięty): oferta flashback
 // istnieje; idle 7 many = jedyny ruch; spójność ręka/flashback (kotwica 58/C32).
 // ---------------------------------------------------------------------------
 
@@ -181,14 +258,16 @@ test('GYS-02 (K): flashback z grobu jest w ofercie i wygrywa przy idle 7 many (p
   assert.ok((score(m, 'cast_flashback(k-1->)') ?? 0) > 0);
 });
 
-test('GYS-02 (K, F-92/1): przy zdrowej ręce wycena flashback ≈ wycena rzutu (spójność ręka/flashback)', () => {
+test('GYS-02 (K, F-92/1): ta sama wypłata z ręki i flashbacku ma tę samą wycenę', () => {
+  const [zReki] = warianty('GYS-01');
   const [, zdrowa] = warianty('GYS-02');
   const m = mierz(zdrowa);
   const fb = score(m, 'cast_flashback(k-2->)');
-  const reka = score(m, 'cast_permanent(hand-grizzled-outcasts)');
-  assert.ok(fb != null && fb >= 60, `flashback=${fb} ma być realną ofertą`);
-  assert.ok(reka != null, `Outcasts w ofercie: ${JSON.stringify(m.opcje)}`);
-  // Kotwica 58/C32: koszt many celowo niewyceniany — ręka i flashback tej
-  // samej wypłaty różnią się w granicach remisu sytuacyjnego (< 5 pkt).
-  assert.ok(Math.abs(fb - reka) < 5, `fb=${fb} vs ręka=${reka} — bez odjęcia kosztu many (58/C32)`);
+  const greensZReki = score(mierz(zReki), 'cast_spell(hand-gysahl-greens->)');
+  const outcasts = score(m, 'cast_permanent(hand-grizzled-outcasts)');
+  assert.ok(fb != null && greensZReki != null, 'oba warianty Greens są w ofercie');
+  // Kotwica 58/C32: porównujemy TĘ SAMĄ wypłatę, a nie inne stworzenie.
+  assert.equal(fb, greensZReki, 'koszt many flashbacku nie jest odliczany');
+  assert.ok(outcasts != null && fb > outcasts, `obecna decyzja: fb=${fb}, Outcasts=${outcasts}`);
+  assert.equal(m.wybrano, 'cast_flashback(k-2->)');
 });

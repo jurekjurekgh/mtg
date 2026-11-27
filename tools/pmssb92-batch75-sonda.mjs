@@ -298,7 +298,7 @@ const SCENARIUSZE = [
   // =========================================================================
   // 668. Battle Hurda ({4}{W} 3/3 first strike).
   // Pytanie: czy blok z first strike jest wyceniany wg PRAWdziwej wymiany
-  // (first strike zabija 4/4 bez śmierci własnej).
+  // (first strike zabija 3/3 przed ciosem, ale nie zabija 4/4).
   // =========================================================================
   {
     id: 'HUR-01', karta: 'battle-hurda', wymiar: 'T',
@@ -306,7 +306,7 @@ const SCENARIUSZE = [
     pro: '3/3 first strike za 5 to słaby koszt-tempo, gdy stół już trzyma; przy pustym stole to legitymny rozwój. Pro nie przepala 5 many na trzeciego stworora, gdy ręka ma lepsze ruchy.',
     warianty: [
       { opis: 'main1, pusty stół', mana: 5, pole: [] },
-      { opis: 'main1, mam już 4/4 i 2/2', mana: 5, pole: [{ id: 'duzy', karta: 'grizzled-outcasts' }, { id: 'maly', karta: 'soulmender' }] },
+      { opis: 'main1, mam już 4/4 i 1/1', mana: 5, pole: [{ id: 'duzy', karta: 'grizzled-outcasts' }, { id: 'maly', karta: 'soulmender' }] },
     ],
     budowa: (w) => stan({
       mana: { p1: w.mana },
@@ -316,8 +316,8 @@ const SCENARIUSZE = [
   },
   {
     id: 'HUR-02', karta: 'battle-hurda', wymiar: 'S',
-    tytul: 'Blok z first strike: 3/3 FS blokuje atakującego 4/4 — zabija bez śmierci własnej. Czy bot blokuje?',
-    pro: 'First strike: 3/3 zabija 4/4 zanim ten zdąży uderzyć — wymiana 0-za-1 to DARMOWE usunięcie 4/4. Pro blokuje zawsze, gdy stwór FS zabija atakującego i przeżywa.',
+    tytul: 'Blok 3/3 z first strike przeciw atakującemu 3/3 i 4/4 — czy bot odróżnia wymiany?',
+    pro: 'First strike: 3/3 zabija 3/3 zanim ten zdąży uderzyć, lecz 4/4 przeżywa 3 obrażenia i zabija Hurdę w normalnej turze obrażeń. Pro blokuje pierwszy przypadek, a w drugim zachowuje stwora, o ile nie wymaga tego sytuacja.',
     warianty: [
       { opis: 'wróg atakuje 3/3 (FS zabija, Hurda przeżywa)', poleWrog: [{ id: 'atk-3-3', karta: 'grollub' }] },
       { opis: 'wróg atakuje 4/4 (FS nie zabija — Hurda ginie)', poleWrog: [{ id: 'atk-4-4', karta: 'grizzled-outcasts' }] },
@@ -364,11 +364,11 @@ const SCENARIUSZE = [
   },
   {
     id: 'SPE-02', karta: 'lightning-spear', wymiar: 'C',
-    tytul: 'Strzał {2}{R}: cel = stwór do zabicia (3/3) vs gracz przy życiu 3 (LETHAL) vs ściana 0/4',
+    tytul: 'Strzał {2}{R}: cel = stwór do zabicia (2/2) vs gracz przy życiu 3 (LETHAL) vs ściana 0/4',
     pro: 'Pro strzela w stwora, którego zabija (usuwa blokera); przy życiu wroga ≤3 strzela W GRACZA (koniec gry) — lethal zawsze wygrywa z chipem. Strzał w ścianę 0/4 = marnowanie sprzętu (nie zabija, nic nie robi) — trzymaj.',
     warianty: [
-      { opis: 'wróg ma 3/3; życie wroga 20 (kill stwora)', cel: 'kill', zycie: { p1: 20, p2: 20 }, poleWrog: [{ id: 'wrog-3-3', karta: 'leafcrown-dryad' }] },
-      { opis: 'wróg ma 3/3; życie wroga 3 (LETHAL w gracza)', cel: 'lethal', zycie: { p1: 20, p2: 3 }, poleWrog: [{ id: 'wrog-3-3', karta: 'leafcrown-dryad' }] },
+      { opis: 'wróg ma 2/2; życie wroga 20 (kill stwora)', cel: 'kill', zycie: { p1: 20, p2: 20 }, poleWrog: [{ id: 'wrog-3-3', karta: 'leafcrown-dryad' }] },
+      { opis: 'wróg ma 2/2; życie wroga 3 (LETHAL w gracza)', cel: 'lethal', zycie: { p1: 20, p2: 3 }, poleWrog: [{ id: 'wrog-3-3', karta: 'leafcrown-dryad' }] },
       { opis: 'wróg ma tylko ścianę 0/4 (strzał nie zabija)', cel: 'hold', zycie: { p1: 20, p2: 20 }, poleWrog: [{ id: 'sciana', karta: 'mnemonic-wall' }] },
     ],
     budowa: (w) => {
@@ -394,8 +394,8 @@ const SCENARIUSZE = [
     tytul: 'Atak 2/1 flying: wróg ma tylko GROUND blokery (nie może zablokować) vs ma lotnika 2/2',
     pro: 'Vaporkin bez lotnika po stronie wroga jest niemal niezniszczalny w walce — atakuj zawsze. Gdy wróg ma lotnika, atak = fair trade 2/2-za-2/1 (wymiana neutralna, ale aktywna).',
     warianty: [
-      { opis: 'wróg: dwa ground blokery 2/2 (nie zablokują)', poleWrog: [{ id: 'b1', karta: 'leafcrown-dryad' }, { id: 'b2', karta: 'leafcrown-dryad' }] },
-      { opis: 'wróg: lotnik 2/2 (może zablokować)', poleWrog: [{ id: 'lotnik', karta: 'fear-of-burning-alive' }] },
+      { opis: 'wróg: dwa ground blokery 2/2 bez reach (nie zablokują)', poleWrog: [{ id: 'b1', karta: 'phyrexian-rager' }, { id: 'b2', karta: 'phyrexian-rager' }] },
+      { opis: 'wróg: lotnik 2/2 (może zablokować)', poleWrog: [{ id: 'lotnik', karta: 'dementia-bat' }] },
     ],
     budowa: (w) => {
       const state = stan({
@@ -442,11 +442,11 @@ const SCENARIUSZE = [
   // =========================================================================
   {
     id: 'CM-01', karta: 'coordinated-maneuver', wymiar: 'C',
-    tytul: 'Wybór trybu: 4 stworów (salwa 4 zabija 3/3) vs 1 stwór (salwa 1 — nie zabija) + enchantment wroga',
+    tytul: 'Wybór trybu: 4 stworów (salwa 4 zabija 2/2) vs 1 stwór (salwa 1 — nie zabija) + enchantment wroga',
     pro: 'Przy 4+ stworach salwa to removal — bierz ją, jeśli zabija. Przy 1 stworze salwa = chip 1 (słaby), więc jeśli wróg ma enchantment realnie działający, niszcz go. Gdy salwa zabija, zwykle bije zniszczenie zwykłego enchantmentu.',
     warianty: [
-      { opis: '4 moje stworów + wrogie enchantmenty + wrogi 3/3', moje: 4, wrogEnchant: true, wrog3: true },
-      { opis: '1 mój stwór + wrogie enchantmenty + wrogi 3/3', moje: 1, wrogEnchant: true, wrog3: true },
+      { opis: '4 moje stworów + wrogie enchantmenty + wrogi 2/2', moje: 4, wrogEnchant: true, wrog3: true },
+      { opis: '1 mój stwór + wrogie enchantmenty + wrogi 2/2', moje: 1, wrogEnchant: true, wrog3: true },
     ],
     budowa: (w) => {
       const pole = [];
@@ -458,10 +458,10 @@ const SCENARIUSZE = [
   },
   {
     id: 'CM-02', karta: 'coordinated-maneuver', wymiar: 'S',
-    tytul: 'Oba tryby jałowe/słabe: 1 stwór (salwa 1), brak enchantmentów — rzut dla chipa czy trzymaj?',
-    pro: 'Chip 1 obrażenia za 2 many to marnotrawstwo, gdy nic nie zabija i nie ma czego niszczyć — pro trzyma kartę na lepsze okno (obrońca moody).',
+    tytul: 'Salwa 1 nie zabija 4/4, lecz stwór wroga jest enchantmentem — czy bot wybiera destroy?',
+    pro: 'Fear of Burning Alive jest enchantment creature, więc destroy jest legalnym i silnym removalem; salwa 1 nie zabija 4/4. Pro wybiera destroy.',
     warianty: [
-      { opis: '1 mój stwór, wróg ma 6/6 (salwa nie zabija), brak enchantmentów', pole: [{ id: 'moj-0', karta: 'soulmender', gracz: 'p1' }, { id: 'duzy', karta: 'fear-of-burning-alive', gracz: 'p2' }] },
+      { opis: '1 mój stwór, wróg ma 4/4 enchantment creature (salwa nie zabija, destroy legalny)', pole: [{ id: 'moj-0', karta: 'soulmender', gracz: 'p1' }, { id: 'duzy', karta: 'fear-of-burning-alive', gracz: 'p2' }] },
     ],
     budowa: (w) => stan({
       mana: { p1: 2 },
@@ -477,11 +477,11 @@ const SCENARIUSZE = [
   // =========================================================================
   {
     id: 'NOB-01', karta: 'malevolent-noble', wymiar: 'C',
-    tytul: 'Wybór ofiary: Panic Spellbomb (artefakt 1) vs Highland Game 2/1 vs Outcasts 4/3 — kandydaci w jednej ofercie',
-    pro: 'Pro poświęca NAJTAŃSZY/WAŻNY-najmniej permanent — artefakt 1-mana przed stworem 2/1 przed 4/3. Różnica straty powinna porządkować warianty aktywacji.',
+    tytul: 'Wybór ofiary: Panic Spellbomb (artefakt 1) vs Highland Game 2/1 vs Outcasts 4/4 — kandydaci w jednej ofercie',
+    pro: 'Pro poświęca NAJTAŃSZY/WAŻNY-najmniej permanent — artefakt 1-mana przed stworem 2/1 przed 4/4. Różnica straty powinna porządkować warianty aktywacji.',
     warianty: [
-      { opis: 'kandydaci: artefakt 1, 2/1, 4/3', kandydaci: ['panic-spellbomb', 'highland-game', 'grizzled-outcasts'] },
-      { opis: 'kandydaci: tylko 2/1 i 4/3 (bez artefaktu)', kandydaci: ['highland-game', 'grizzled-outcasts'] },
+      { opis: 'kandydaci: artefakt 1, 2/1, 4/4', kandydaci: ['panic-spellbomb', 'highland-game', 'grizzled-outcasts'] },
+      { opis: 'kandydaci: tylko 2/1 i 4/4 (bez artefaktu)', kandydaci: ['highland-game', 'grizzled-outcasts'] },
     ],
     budowa: (w) => stan({
       mana: { p1: 2 },
@@ -493,11 +493,11 @@ const SCENARIUSZE = [
   },
   {
     id: 'NOB-02', karta: 'malevolent-noble', wymiar: 'K',
-    tytul: 'Opłacalność aktywacji: artefakt-fodder dostępny (aktywuj) vs tylko dobry stwór 4/3 (trzymaj)',
-    pro: '+1/+1 counter za darmowy artefakt (Spellbomb bez innych użyć) = zysk. Ten sam counter za 4/3 = strata karty i ciała — pro trzyma Nobla i czeka na fodder (albo gra go dopiero, gdy stwór i tak umiera).',
+    tytul: 'Opłacalność aktywacji: artefakt-fodder dostępny (aktywuj) vs tylko dobry stwór 4/4 (trzymaj)',
+    pro: '+1/+1 counter za darmowy artefakt (Spellbomb bez innych użyć) = zysk. Ten sam counter za 4/4 = strata karty i ciała — pro trzyma Nobla i czeka na fodder (albo gra go dopiero, gdy stwór i tak umiera).',
     warianty: [
       { opis: 'fodder: artefakt 1-mana', kandydaci: ['panic-spellbomb'] },
-      { opis: 'fodder: tylko 4/3', kandydaci: ['grizzled-outcasts'] },
+      { opis: 'fodder: tylko 4/4', kandydaci: ['grizzled-outcasts'] },
     ],
     budowa: (w) => stan({
       mana: { p1: 2 },
@@ -556,7 +556,7 @@ const SCENARIUSZE = [
     pro: 'Junk bez innych użyć (nie atakuje, nie blokuje) to darmowy impulse: aktywacja nic nie kosztuje poza tokenem. Pro aktywuje w main2, gdy ręka jest słaba albo ma co dograć; gdy ręka pełna mocnych kart, token może poczekać (sac = strata „przyszłej" aktywacji).',
     warianty: [
       { opis: 'main2, ręka PUSTA (impulse = jedyny ruch)', krok: 'main2', reka: [] },
-      { opis: 'main2, ręka: Outcasts 4/4 za 5 (impulse może przynieść 5+ many — zagrywalny land)', krok: 'main2', reka: ['grizzled-outcasts'] },
+      { opis: 'main2, ręka: Outcasts 4/4 za 5 (impulse daje zagrywalny land, ale 2 + 1 to za mało na Outcasts)', krok: 'main2', reka: ['grizzled-outcasts'] },
     ],
     budowa: (w) => {
       const state = stan({
@@ -571,7 +571,7 @@ const SCENARIUSZE = [
         id: 'junk-bf', instanceId: 'instance-junk-bf', cardId: 'token_junk',
         controllerId: 'p1', ownerId: 'p1', zone: 'battlefield',
         name: 'Junk', kind: 'artifact', types: ['Artifact', 'Token'], subtypes: ['Junk'],
-        colors: [], manaCost: 0, tapped: false, summoningSickness: false,
+        colors: [], manaCost: 0,
         abilities: REGISTRY.get('token_junk').abilities,
       });
       return state;
@@ -586,7 +586,7 @@ const SCENARIUSZE = [
   {
     id: 'TRA-01', karta: 'kozileks-translator', wymiar: 'K',
     tytul: '„Pay 1 life: Add {C}": ręka z drogi czarem (potrzeba many) vs PUSTA ręka vs życie 3',
-    pro: 'Rozgrywaj tylko wtedy, gdy mana PRZEWIDZIANA na coś się przyda: ręka z 6-mana czarem = tak; pusta ręka = mana wyparuje (nie rób); życie 3 = koszt życia pod presją to ryzyko śmierci — trzymaj, chyba że mana kończy partię.',
+    pro: 'Rozgrywaj tylko wtedy, gdy mana PRZEWIDZIANA na coś się przyda: ręka z 5-mana czarem przy 4 manach = tak; pusta ręka = mana wyparuje (nie rób); życie 3 = koszt życia pod presją to ryzyko śmierci — trzymaj, chyba że mana kończy partię.',
     warianty: [
       { opis: 'życie 20, ręka: Outcasts (5) — {C} dopełnia', zycie: 20, reka: ['grizzled-outcasts'], mana: 4 },
       { opis: 'życie 20, ręka PUSTA (mana-marnotrawstwo)', zycie: 20, reka: [], mana: 0 },

@@ -100,14 +100,7 @@ test('Batch 75/B1+B2: siedem wpisów zgadza się ze snapshotami Oracle i arkusze
     assert.equal(card.set, set, `${id}: set`);
     assert.equal(card.plan, plan, `${id}: plan (fabularne przyporządkowanie właściciela)`);
     assert.equal(card.support?.status, 'supported', `${id}: status wsparcia`);
-    if (id === 'coordinated-maneuver') {
-      // ADR 0022: limitation = fakt strukturalny (planeswalkery nie istnieją
-      // w silniku — patrz ALLOWED_REASONS limitations-guard).
-      assert.equal(card.support?.limitations.length, 1, `${id}: jedno limitation strukturalne`);
-      assert.match(card.support?.limitations[0], /planeswalker/, `${id}: limitation o planeswalkerze`);
-    } else {
-      assert.deepEqual(card.support?.limitations, [], `${id}: supported = bez limitations (ADR 0022)`);
-    }
+    assert.deepEqual(card.support?.limitations, [], `${id}: supported = bez limitations (ADR 0022)`);
 
     const snap = snapshot(id);
     assert.equal(card.name, snap.name, `${id}: nazwa ze snapshotu`);
@@ -319,7 +312,7 @@ test('Vaporkin: blokuje atakującego z lataniem, ODRZUCANY na nierojącym (M380)
   passUntilStep(state2, 'declare_blockers');
   const zly = execute(state2, { type: 'declare_blockers', playerId: 'p1', assignments: { ground: ['vap'] } });
   assert.equal(zly.ok, false, 'blok nierojącego ODRZUCANY');
-  assert.match(String(zly.reason), /can block only creatures/, 'komunikat M380 z nazwą reguły');
+  assert.match(String(zly.reason), /Bloker .*może blokować tylko atakujących/, 'komunikat opisuje ograniczenie BLOKERA, nie atakującego');
 });
 
 // ---------------------------------------------------------------------------

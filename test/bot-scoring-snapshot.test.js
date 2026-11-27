@@ -190,8 +190,10 @@ import {
  *     WSZYSTKIE sześć partii bitowo identyczne w decisions/scoreSum/
  *     chosenKinds (255/2685.4063, 293/1892.2411, 232/2969.1501,
  *     197/2857.8925, 151/1442.0099, 164/2544.1099) — zmieniły się wyłącznie
- *     etykiety NIEWYBRANYCH wariantów w pełnych śladach. Żadna decyzja nie
- *     została odwrócona. Świadoma regeneracja.
+ *     etykiety wariantów w pełnych śladach, w tym JEDNA etykieta wybranego
+ *     cast_spell (seed 1001, pozycja 144). Porównanie pełnych dumpów przed/po:
+ *     po usunięciu samego sufiksu trybu całe 293 wpisy są identyczne — nie
+ *     zmieniła się sama decyzja. Świadoma regeneracja.
  */
 
 test('golden-master: ślad bota == zamrożony fixture (bit w bit)', () => {

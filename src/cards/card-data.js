@@ -15913,7 +15913,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
         // Tryb A (Salwa): obrażenia = liczba twoich stworów.
         {
           name: 'Salwa',
-          targets: [{ type: 'creature' }],
+          targets: [{ type: 'creature_or_planeswalker' }],
           effects: [{ type: 'damage', amount: 'creatures_you_control' }],
         },
         // Tryb B (Zniszczenie): destroy enchantment.
@@ -15925,10 +15925,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
       ],
     },
     artId: 671, plan: 'Tarkir',
-    support: {
-      status: 'supported',
-      limitations: ['tryb A: celem nie może być planeswalker — typ nie istnieje w silniku (tylko stwór)'],
-    },
+    support: { status: 'supported', limitations: [] },
   }),
 
   // 675OGW Kozilek's Translator (OGW 74) {4}{B} 3/5 Eldrazi Drone — Devoid
